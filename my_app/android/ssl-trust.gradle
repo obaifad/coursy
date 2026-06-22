@@ -1,0 +1,27 @@
+// مؤقت: يصلح PKIX على بعض أجهزة Windows (فحص SSL من Antivirus/VPN).
+// احذف هذا الملف بعد إصلاح شهادات Java على الجهاز.
+
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
+import java.security.cert.X509Certificate
+
+def trustAll = [
+    new X509TrustManager() {
+        @Override
+        void checkClientTrusted(X509Certificate[] chain, String authType) {}
+
+        @Override
+        void checkServerTrusted(X509Certificate[] chain, String authType) {}
+
+        @Override
+        X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0] }
+    }
+] as TrustManager[]
+
+def sslContext = SSLContext.getInstance('TLS')
+sslContext.init(null, trustAll, new java.security.SecureRandom())
+HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
+HttpsURLConnection.setDefaultHostnameVerifier({ String hostname, javax.net.ssl.SSLSession session -> true } as HostnameVerifier)

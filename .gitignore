@@ -1,0 +1,45 @@
+# IDE
+.idea/
+*.iml
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Flutter (my_app)
+my_app/.dart_tool/
+my_app/.flutter-plugins
+my_app/.flutter-plugins-dependencies
+my_app/.pub-cache/
+my_app/.pub/
+my_app/build/
+my_app/android/build/
+my_app/**/*.hprof
+my_app/**/doc/api/
+my_app/**/*.symbols
+my_app/**/*.map.json
+my_app/android/app/debug/
+my_app/android/app/profile/
+my_app/android/app/release/
+
+# Laravel / PHP (server)
+server/**/vendor/
+server/**/node_modules/
+server/**/.env
+server/**/.env.*
+!server/**/.env.example
+server/**/storage/*.key
+server/**/storage/logs/
+server/**/storage/framework/cache/
+server/**/storage/framework/sessions/
+server/**/storage/framework/views/
+server/**/bootstrap/cache/
+
+# Secrets
+*.pem
+*.p12
+*.keystore
+!**/debug.keystore
