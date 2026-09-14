@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../core/config/api_config.dart';
+import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/models/json_helpers.dart';
 import '../../../core/services/favorites_service.dart';
@@ -15,11 +16,6 @@ import '../../../modules/auth/widgets/register_form_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/registration_closed_dialog.dart';
 import '../controllers/course_details_controller.dart';
-
-const _sectionCardShadow = [
-  BoxShadow(color: Color(0x336C63FF), blurRadius: 20, offset: Offset(0, 10)),
-  BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 4)),
-];
 
 class CourseDetailsView extends GetView<CourseDetailsController> {
   const CourseDetailsView({super.key});
@@ -109,7 +105,9 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Obx(() {
+      final _ = localeRebuildToken;
+      return Scaffold(
       backgroundColor: AppColors.surface,
       body: NestedScrollView(
         controller: _scrollController,
@@ -180,13 +178,13 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
         () => _StickyEnrollBar(
           item: item,
           hasRegisteredEnrollment: controller.hasCourseEnrollment.value,
-          isCheckingEnrollment: controller.isCheckingEnrollment.value,
           onBook: _openBooking,
           onRegistrationClosed: _onRegistrationClosedTap,
           onFavorite: controller.toggleFavorite,
         ),
       ),
     );
+    });
   }
 }
 
@@ -209,7 +207,6 @@ SliverAppBar _buildCourseHeroSliver({
           item.title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
         ),
       ),
       actions: [
@@ -490,7 +487,7 @@ class _DetailBadge extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: highlighted ? AppColors.primary : const Color(0xFF1F2937),
+              color: highlighted ? AppColors.primary : AppColors.textPrimary,
             ),
           ),
         ],
@@ -527,7 +524,7 @@ class _QuickStatsGrid extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('course_stats_title'.tr, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+          Text('course_stats_title'.tr, style: AppTypography.sectionTitle()),
           const SizedBox(height: 8),
           GridView.builder(
             shrinkWrap: true,
@@ -602,7 +599,7 @@ class _SeatsProgressCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('course_capacity'.tr, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+              Text('course_capacity'.tr, style: AppTypography.sectionTitle()),
               const Spacer(),
               Text(
                 'seats_available'.trParams({'n': '$remaining'}),
@@ -667,7 +664,7 @@ class _CourseDateTimeline extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('course_dates_title'.tr, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          Text('course_dates_title'.tr, style: AppTypography.sectionTitle()),
           const SizedBox(height: 16),
           ...List.generate(steps.length, (i) {
             final step = steps[i];
@@ -1036,7 +1033,7 @@ class _ReviewsTab extends GetView<CourseDetailsController> {
               ),
             ),
             const SizedBox(height: 16),
-            Text('recent_reviews'.tr, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            Text('recent_reviews'.tr, style: AppTypography.sectionTitle()),
             const SizedBox(height: 10),
             ...reviews.take(8).map((r) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
@@ -1081,7 +1078,10 @@ class _ReviewCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(review.studentName, style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Text(
+                      review.studentName.trim().isEmpty ? 'student'.tr : review.studentName,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
                     Row(
                       children: List.generate(5, (i) {
                         return Icon(
@@ -1206,13 +1206,8 @@ class _InstituteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SoftCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: _sectionCardShadow,
-      ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: item.instituteId != null
@@ -1221,7 +1216,7 @@ class _InstituteCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('course_institute_section'.tr, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            Text('course_institute_section'.tr, style: AppTypography.sectionTitle()),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -1239,9 +1234,9 @@ class _InstituteCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(item.institute, style: const TextStyle(fontWeight: FontWeight.w800)),
+                      Text(item.institute, style: AppTypography.cardTitle()),
                       if (item.instituteCity != null)
-                        Text(item.instituteCity!, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                        Text(item.instituteCity!, style: AppTypography.cardSubtitle()),
                     ],
                   ),
                 ),
@@ -1290,17 +1285,12 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SoftCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: _sectionCardShadow,
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          Text(title, style: AppTypography.sectionTitle()),
           const SizedBox(height: 12),
           child,
         ],
@@ -1313,7 +1303,6 @@ class _StickyEnrollBar extends StatelessWidget {
   const _StickyEnrollBar({
     required this.item,
     required this.hasRegisteredEnrollment,
-    required this.isCheckingEnrollment,
     required this.onBook,
     required this.onRegistrationClosed,
     required this.onFavorite,
@@ -1321,7 +1310,6 @@ class _StickyEnrollBar extends StatelessWidget {
 
   final CourseModel item;
   final bool hasRegisteredEnrollment;
-  final bool isCheckingEnrollment;
   final VoidCallback onBook;
   final VoidCallback onRegistrationClosed;
   final VoidCallback onFavorite;
@@ -1388,8 +1376,7 @@ class _StickyEnrollBar extends StatelessWidget {
                       )
                     : RegisterGradientButton(
                         label: alreadyRegistered ? 'enrollment_registered'.tr : 'book_now'.tr,
-                        onPressed: alreadyRegistered || isCheckingEnrollment ? null : onBook,
-                        loading: isCheckingEnrollment,
+                        onPressed: alreadyRegistered ? null : onBook,
                       ),
               ),
             ],
@@ -1499,11 +1486,19 @@ class _CourseHeroImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final url = ApiConfig.resolveMediaUrl(imagePath);
     if (url == null) return _fallback();
-    return AppNetworkImage(
-      url: url,
-      fit: BoxFit.cover,
-      ignorePointer: true,
-      errorWidget: _fallback(),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth.isFinite ? constraints.maxWidth : null;
+        final h = constraints.maxHeight.isFinite ? constraints.maxHeight : null;
+        return AppNetworkImage(
+          url: url,
+          width: w,
+          height: h,
+          fit: BoxFit.cover,
+          ignorePointer: true,
+          errorWidget: _fallback(),
+        );
+      },
     );
   }
 

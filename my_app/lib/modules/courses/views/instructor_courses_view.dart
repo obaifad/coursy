@@ -33,15 +33,9 @@ class InstructorCoursesView extends GetView<InstructorCoursesController> {
                     if (controller.courses.isEmpty)
                       SliverFillRemaining(
                         hasScrollBody: false,
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(
-                              'no_courses_for_instructor'.tr,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: AppColors.textSecondary, height: 1.5),
-                            ),
-                          ),
+                        child: AppEmptyState(
+                          message: 'no_courses_for_instructor'.tr,
+                          icon: Icons.menu_book_outlined,
                         ),
                       )
                     else ...[

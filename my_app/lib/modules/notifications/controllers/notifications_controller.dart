@@ -1,9 +1,11 @@
 import 'package:get/get.dart';
 
 import '../../../core/data/repositories/notification_repository.dart';
+import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/network/api_exception.dart';
 
-class NotificationsController extends GetxController {
+class NotificationsController extends GetxController with LatestLoadGuard {
   final NotificationRepository _repository = Get.find();
 
   final isLoading = true.obs;
@@ -21,17 +23,22 @@ class NotificationsController extends GetxController {
   }
 
   Future<void> loadNotifications() async {
+    final session = beginLoad();
     isLoading.value = true;
     errorMessage.value = null;
     _page = 1;
     try {
       final result = await _repository.fetchNotificationsPage(page: _page, perPage: _perPage);
-      items.assignAll(result.items);
-      hasMore.value = result.hasMore;
+      applyIfCurrent(session, () {
+        items.assignAll(result.items);
+        hasMore.value = result.hasMore;
+      });
+    } on ApiCancelledException {
+      return;
     } catch (e) {
-      errorMessage.value = e.toString();
+      if (shouldApply(session)) errorMessage.value = e.toString();
     } finally {
-      isLoading.value = false;
+      applyIfCurrent(session, () => isLoading.value = false);
     }
   }
 
@@ -49,5 +56,14 @@ class NotificationsController extends GetxController {
     } finally {
       isLoadingMore.value = false;
     }
+  }
+
+  void clearForLogout() {
+    items.clear();
+    hasMore.value = true;
+    errorMessage.value = null;
+    isLoading.value = false;
+    isLoadingMore.value = false;
+    _page = 1;
   }
 }

@@ -3,19 +3,31 @@ import 'package:get/get.dart';
 
 import '../config/api_config.dart';
 import 'json_helpers.dart';
+import 'media_path_resolver.dart';
 
 class CityModel {
-  CityModel({required this.id, required this.name, this.institutesCount = 0, this.coursesCount = 0});
+  CityModel({
+    required this.id,
+    required this.nameAr,
+    required this.nameEn,
+    this.institutesCount = 0,
+    this.coursesCount = 0,
+  });
 
   final int id;
-  final String name;
+  final String nameAr;
+  final String nameEn;
   final int institutesCount;
   final int coursesCount;
 
+  String get name => JsonHelpers.pickLocalized(ar: nameAr, en: nameEn);
+
   factory CityModel.fromJson(Map<String, dynamic> json) {
+    final names = JsonHelpers.bilingualText(json);
     return CityModel(
       id: JsonHelpers.parseInt(json['id']),
-      name: json['name']?.toString() ?? '',
+      nameAr: names.ar,
+      nameEn: names.en,
       institutesCount: JsonHelpers.parseInt(json['institutes_count']),
       coursesCount: JsonHelpers.parseInt(json['courses_count']),
     );
@@ -44,20 +56,21 @@ class SpecializationModel {
 
   String get filterKey => 'spec:$id';
 
-  NamedEntity toNamedEntity() => NamedEntity(id: id, name: displayName);
+  NamedEntity toNamedEntity() {
+    final names = JsonHelpers.bilingualText({
+      'name': name,
+      if (nameAr != null) 'name_ar': nameAr,
+      if (nameEn != null) 'name_en': nameEn,
+    });
+    return NamedEntity(id: id, nameAr: names.ar, nameEn: names.en);
+  }
 
   String get displayName {
-    final isAr = Get.locale?.languageCode == 'ar';
-    if (isAr) {
-      if (nameAr != null && nameAr!.isNotEmpty) return nameAr!;
-      if (name.isNotEmpty) return name;
-      if (nameEn != null && nameEn!.isNotEmpty) return nameEn!;
-    } else {
-      if (nameEn != null && nameEn!.isNotEmpty) return nameEn!;
-      if (name.isNotEmpty) return name;
-      if (nameAr != null && nameAr!.isNotEmpty) return nameAr!;
-    }
-    return '$id';
+    return JsonHelpers.pickLocalized(
+      ar: nameAr ?? (JsonHelpers.containsArabicScript(name) ? name : ''),
+      en: nameEn ?? (!JsonHelpers.containsArabicScript(name) ? name : ''),
+      fallback: name,
+    );
   }
 
   factory SpecializationModel.fromJson(Map<String, dynamic> json) {
@@ -86,52 +99,51 @@ class SpecializationModel {
 
 /// كيان بسيط (جامعة / اختصاص) — {id, name}.
 class NamedEntity {
-  NamedEntity({required this.id, required this.name});
+  NamedEntity({required this.id, required this.nameAr, required this.nameEn});
 
   final int id;
-  final String name;
+  final String nameAr;
+  final String nameEn;
+
+  String get name => JsonHelpers.pickLocalized(ar: nameAr, en: nameEn);
 
   factory NamedEntity.fromJson(Map<String, dynamic> json) {
+    final names = JsonHelpers.bilingualText(json);
     return NamedEntity(
       id: JsonHelpers.parseInt(json['id']),
-      name: json['name']?.toString() ??
-          json['name_ar']?.toString() ??
-          json['name_en']?.toString() ??
-          '',
+      nameAr: names.ar,
+      nameEn: names.en,
     );
   }
 }
 
 class CategoryModel {
-  CategoryModel({required this.id, required this.name, this.icon, this.coursesCount = 0});
+  CategoryModel({
+    required this.id,
+    required this.nameAr,
+    required this.nameEn,
+    this.icon,
+    this.coursesCount = 0,
+  });
 
   final int id;
-  final String name;
+  final String nameAr;
+  final String nameEn;
   /// القيمة الخام من الـ API: slug مثل heroicon-o-briefcase أو مسار/رابط صورة.
   final String? icon;
   final int coursesCount;
 
+  String get name => JsonHelpers.pickLocalized(ar: nameAr, en: nameEn);
+
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
+    final names = JsonHelpers.bilingualText(json);
     return CategoryModel(
       id: JsonHelpers.parseInt(json['id']),
-      name: _localizedName(json),
+      nameAr: names.ar,
+      nameEn: names.en,
       icon: _parseIcon(json['icon']),
       coursesCount: JsonHelpers.parseInt(json['courses_count']),
     );
-  }
-
-  static String _localizedName(Map<String, dynamic> json) {
-    final isAr = Get.locale?.languageCode == 'ar';
-    if (isAr) {
-      return json['name_ar']?.toString() ??
-          json['name']?.toString() ??
-          json['name_en']?.toString() ??
-          '';
-    }
-    return json['name_en']?.toString() ??
-        json['name']?.toString() ??
-        json['name_ar']?.toString() ??
-        '';
   }
 
   static String? _parseIcon(dynamic raw) {
@@ -403,7 +415,9 @@ class InstructorSubjectModel {
 class InstructorModel {
   InstructorModel({
     required this.id,
-    required this.name,
+    String? name,
+    String? nameAr,
+    String? nameEn,
     this.bio,
     this.specialization,
     this.specializationEn,
@@ -417,10 +431,12 @@ class InstructorModel {
     this.hourlyPrice,
     this.address,
     this.institutes = const [],
-  });
+  })  : nameAr = nameAr ?? name ?? '',
+        nameEn = nameEn ?? name ?? '';
 
   final int id;
-  final String name;
+  final String nameAr;
+  final String nameEn;
   final String? bio;
   final String? specialization;
   final String? specializationEn;
@@ -435,6 +451,8 @@ class InstructorModel {
   final String? address;
   final List<InstructorInstituteLink> institutes;
 
+  String get name => JsonHelpers.pickLocalized(ar: nameAr, en: nameEn);
+
   String? get resolvedImageUrl => ApiConfig.resolveMediaUrl(imageUrl);
 
   String get subjectKey => InstructorSubjectModel.keyFromParts(
@@ -444,7 +462,7 @@ class InstructorModel {
       );
 
   factory InstructorModel.fromJson(Map<String, dynamic> json) {
-    final name = JsonHelpers.localizedText(json, 'name');
+    final names = JsonHelpers.bilingualText(json);
     final bio = JsonHelpers.localizedText(json, 'bio');
     var specializationId = JsonHelpers.parseIntOrNull(json['specialization_id']);
     var specialization = JsonHelpers.localizedText(json, 'specialization');
@@ -476,9 +494,8 @@ class InstructorModel {
 
     return InstructorModel(
       id: JsonHelpers.parseInt(json['id']),
-      name: name.isNotEmpty
-          ? name
-          : (json['name']?.toString() ?? json['name_ar']?.toString() ?? json['name_en']?.toString() ?? ''),
+      nameAr: names.ar,
+      nameEn: names.en,
       bio: bio.isNotEmpty ? bio : (json['bio']?.toString() ?? json['bio_ar']?.toString() ?? json['bio_en']?.toString()),
       specialization: specialization.isNotEmpty
           ? specialization
@@ -510,8 +527,12 @@ class InstructorModel {
 class CourseModel {
   CourseModel({
     required this.id,
-    required this.title,
-    required this.institute,
+    String? title,
+    String? titleAr,
+    String? titleEn,
+    String? institute,
+    String? instituteAr,
+    String? instituteEn,
     required this.price,
     required this.rating,
     required this.duration,
@@ -544,11 +565,16 @@ class CourseModel {
     this.rawPrice,
     this.discountPrice,
     this.imageUrl,
-  });
+  })  : titleAr = titleAr ?? title ?? '',
+        titleEn = titleEn ?? title ?? '',
+        instituteAr = instituteAr ?? institute ?? '',
+        instituteEn = instituteEn ?? institute ?? '';
 
   final int id;
-  final String title;
-  final String institute;
+  final String titleAr;
+  final String titleEn;
+  final String instituteAr;
+  final String instituteEn;
   final String price;
   final double rating;
   final String duration;
@@ -581,6 +607,10 @@ class CourseModel {
   final String? rawPrice;
   final String? discountPrice;
   final String? imageUrl;
+
+  String get title => JsonHelpers.pickLocalized(ar: titleAr, en: titleEn);
+
+  String get institute => JsonHelpers.pickLocalized(ar: instituteAr, en: instituteEn);
 
   String? get resolvedImageUrl => ApiConfig.resolveMediaUrl(imageUrl);
 
@@ -668,6 +698,7 @@ class CourseModel {
     String? instituteWhatsapp,
     String? instituteWebsite,
     double? rating,
+    int? studentsCount,
     int? confirmedStudentsCount,
   }) {
     return CourseModel(
@@ -682,7 +713,7 @@ class CourseModel {
       categoryId: categoryId,
       description: description ?? this.description,
       requirements: requirements ?? this.requirements,
-      studentsCount: studentsCount,
+      studentsCount: studentsCount ?? this.studentsCount,
       confirmedStudentsCount: confirmedStudentsCount ?? this.confirmedStudentsCount,
       maxStudents: maxStudents,
       durationHours: durationHours,
@@ -710,17 +741,13 @@ class CourseModel {
   }
 
   static String? _extractCourseImagePath(Map<String, dynamic> json) {
-    const keys = ['image', 'cover_image', 'image_url', 'cover_image_url', 'thumbnail'];
-    for (final key in keys) {
-      final value = json[key]?.toString();
-      if (value != null && value.trim().isNotEmpty) return value.trim();
-    }
-    return null;
+    return MediaPathResolver.extractCourseImage(json);
   }
 
   factory CourseModel.fromJson(Map<String, dynamic> json) {
     final instituteObj = json['institute'];
-    var instituteName = '';
+    var instituteNameAr = '';
+    var instituteNameEn = '';
     var instituteRating = 0.0;
     var instituteId = JsonHelpers.parseIntOrNull(json['institute_id']);
     String? instituteCity;
@@ -730,8 +757,9 @@ class CourseModel {
     String? instituteWebsite;
 
     if (instituteObj is Map<String, dynamic>) {
-      instituteName = JsonHelpers.localizedText(instituteObj, 'name');
-      if (instituteName.isEmpty) instituteName = instituteObj['name']?.toString() ?? '';
+      final instituteNames = JsonHelpers.bilingualText(instituteObj);
+      instituteNameAr = instituteNames.ar;
+      instituteNameEn = instituteNames.en;
       instituteId = JsonHelpers.parseInt(instituteObj['id']);
       instituteRating = JsonHelpers.parseDouble(instituteObj['average_rating']);
       instituteAddress = instituteObj['address']?.toString() ??
@@ -741,28 +769,36 @@ class CourseModel {
       instituteWebsite = instituteObj['website']?.toString();
       final cityObj = instituteObj['city'];
       if (cityObj is Map<String, dynamic>) {
-        instituteCity = JsonHelpers.localizedText(cityObj, 'name');
-        if (instituteCity.isEmpty) instituteCity = cityObj['name']?.toString();
+        instituteCity = JsonHelpers.pickLocalized(
+          ar: JsonHelpers.bilingualText(cityObj).ar,
+          en: JsonHelpers.bilingualText(cityObj).en,
+        );
       }
     } else if (instituteObj is String && instituteObj.trim().isNotEmpty) {
-      instituteName = instituteObj.trim();
+      final flat = instituteObj.trim();
+      if (JsonHelpers.containsArabicScript(flat)) {
+        instituteNameAr = flat;
+      } else {
+        instituteNameEn = flat;
+      }
     }
-    if (instituteName.isEmpty) {
-      final flatInstitute = JsonHelpers.localizedText(json, 'institute_name');
-      if (flatInstitute.isNotEmpty) instituteName = flatInstitute;
+    if (instituteNameAr.isEmpty && instituteNameEn.isEmpty) {
+      final flatInstitute = JsonHelpers.bilingualText(json, 'institute_name');
+      instituteNameAr = flatInstitute.ar;
+      instituteNameEn = flatInstitute.en;
     }
 
     final categoryObj = json['category'];
     String? categoryName;
     int? categoryId = JsonHelpers.parseIntOrNull(json['category_id']);
     if (categoryObj is Map<String, dynamic>) {
-      categoryName = JsonHelpers.localizedText(categoryObj, 'name');
-      if (categoryName.isEmpty) categoryName = categoryObj['name']?.toString();
+      final catNames = JsonHelpers.bilingualText(categoryObj);
+      categoryName = JsonHelpers.pickLocalized(ar: catNames.ar, en: catNames.en);
       categoryId = JsonHelpers.parseInt(categoryObj['id']);
     }
     if ((categoryName ?? '').isEmpty) {
-      final flatCategory = JsonHelpers.localizedText(json, 'category_name');
-      if (flatCategory.isNotEmpty) categoryName = flatCategory;
+      final flatCategory = JsonHelpers.bilingualText(json, 'category_name');
+      categoryName = JsonHelpers.pickLocalized(ar: flatCategory.ar, en: flatCategory.en);
     }
 
     InstructorModel? instructor;
@@ -783,14 +819,16 @@ class CourseModel {
     final hours = JsonHelpers.parseIntOrNull(json['duration_hours']);
     final sessions = JsonHelpers.parseIntOrNull(json['sessions_count']);
 
-    final title = JsonHelpers.localizedText(json, 'title');
+    final titleNames = JsonHelpers.bilingualText(json, 'title');
     final description = JsonHelpers.localizedText(json, 'description');
     final requirements = JsonHelpers.localizedText(json, 'requirements');
 
     return CourseModel(
       id: JsonHelpers.parseInt(json['id']),
-      title: title.isNotEmpty ? title : (json['title']?.toString() ?? ''),
-      institute: instituteName,
+      titleAr: titleNames.ar,
+      titleEn: titleNames.en,
+      instituteAr: instituteNameAr,
+      instituteEn: instituteNameEn,
       instituteId: instituteId,
       categoryId: categoryId,
       price: JsonHelpers.formatSyrianPrice(json['price'], discount: json['discount_price']),
@@ -830,8 +868,12 @@ class CourseModel {
 class InstituteModel {
   InstituteModel({
     required this.id,
-    required this.name,
-    required this.city,
+    String? name,
+    String? nameAr,
+    String? nameEn,
+    String? city,
+    String? cityAr,
+    String? cityEn,
     required this.rating,
     required this.coursesCount,
     this.description,
@@ -839,11 +881,18 @@ class InstituteModel {
     this.latitude,
     this.longitude,
     this.isVerified = false,
-  });
+    this.logoUrl,
+    this.coverImageUrl,
+  })  : nameAr = nameAr ?? name ?? '',
+        nameEn = nameEn ?? name ?? '',
+        cityAr = cityAr ?? city ?? '',
+        cityEn = cityEn ?? city ?? '';
 
   final int id;
-  final String name;
-  final String city;
+  final String nameAr;
+  final String nameEn;
+  final String cityAr;
+  final String cityEn;
   final double rating;
   final int coursesCount;
   final String? description;
@@ -851,10 +900,27 @@ class InstituteModel {
   final double? latitude;
   final double? longitude;
   final bool isVerified;
+  final String? logoUrl;
+  final String? coverImageUrl;
+
+  String get name => JsonHelpers.pickLocalized(ar: nameAr, en: nameEn);
+
+  String get city => JsonHelpers.pickLocalized(ar: cityAr, en: cityEn);
+
+  String? get resolvedLogoUrl => ApiConfig.resolveMediaUrl(logoUrl);
+
+  String? get resolvedCoverImageUrl => ApiConfig.resolveMediaUrl(coverImageUrl);
+
+  /// للقوائم: لوغو ثم صورة الغلاف.
+  String? get resolvedListImageUrl => resolvedLogoUrl ?? resolvedCoverImageUrl;
 
   InstituteModel copyWith({
     String? name,
+    String? nameAr,
+    String? nameEn,
     String? city,
+    String? cityAr,
+    String? cityEn,
     double? rating,
     int? coursesCount,
     String? description,
@@ -862,11 +928,15 @@ class InstituteModel {
     double? latitude,
     double? longitude,
     bool? isVerified,
+    String? logoUrl,
+    String? coverImageUrl,
   }) {
     return InstituteModel(
       id: id,
-      name: name ?? this.name,
-      city: city ?? this.city,
+      nameAr: nameAr ?? name ?? this.nameAr,
+      nameEn: nameEn ?? name ?? this.nameEn,
+      cityAr: cityAr ?? city ?? this.cityAr,
+      cityEn: cityEn ?? city ?? this.cityEn,
       rating: rating ?? this.rating,
       coursesCount: coursesCount ?? this.coursesCount,
       description: description ?? this.description,
@@ -874,32 +944,103 @@ class InstituteModel {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       isVerified: isVerified ?? this.isVerified,
+      logoUrl: logoUrl ?? this.logoUrl,
+      coverImageUrl: coverImageUrl ?? this.coverImageUrl,
     );
   }
 
   factory InstituteModel.fromJson(Map<String, dynamic> json) {
     final cityObj = json['city'];
-    var cityName = '';
+    var cityAr = '';
+    var cityEn = '';
     if (cityObj is Map<String, dynamic>) {
-      cityName = JsonHelpers.localizedText(cityObj, 'name');
-      if (cityName.isEmpty) cityName = cityObj['name']?.toString() ?? '';
+      final cityNames = JsonHelpers.bilingualText(cityObj);
+      cityAr = cityNames.ar;
+      cityEn = cityNames.en;
     }
 
-    final name = JsonHelpers.localizedText(json, 'name');
-    final description = JsonHelpers.localizedText(json, 'description');
+    final names = JsonHelpers.bilingualText(json);
+    final descriptionNames = JsonHelpers.bilingualText(json, 'description');
 
     return InstituteModel(
       id: JsonHelpers.parseInt(json['id']),
-      name: name.isNotEmpty ? name : (json['name']?.toString() ?? ''),
-      city: cityName,
-      rating: JsonHelpers.parseDouble(json['average_rating'] ?? json['rating']),
+      nameAr: names.ar,
+      nameEn: names.en,
+      cityAr: cityAr,
+      cityEn: cityEn,
+      rating: JsonHelpers.resolveInstituteRating(json),
       coursesCount: _resolveCoursesCount(json),
-      description: description.isNotEmpty ? description : json['description']?.toString(),
+      description: JsonHelpers.pickLocalized(ar: descriptionNames.ar, en: descriptionNames.en).isEmpty
+          ? null
+          : JsonHelpers.pickLocalized(ar: descriptionNames.ar, en: descriptionNames.en),
       address: json['address']?.toString(),
       latitude: JsonHelpers.parseDoubleOrNull(json['latitude'] ?? json['lat']),
       longitude: JsonHelpers.parseDoubleOrNull(json['longitude'] ?? json['lng'] ?? json['lon']),
       isVerified: JsonHelpers.parseBool(json['is_verified']),
+      logoUrl: _extractLogoPath(json),
+      coverImageUrl: _extractCoverImagePath(json),
     );
+  }
+
+  static String? _extractMediaPath(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final resolved = _coerceMediaValue(json[key]);
+      if (resolved != null) return resolved;
+    }
+    return null;
+  }
+
+  static String? _coerceMediaValue(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is Map) {
+      final map = Map<String, dynamic>.from(raw);
+      for (final nestedKey in const [
+        'url',
+        'original_url',
+        'full_url',
+        'path',
+        'original',
+        'src',
+      ]) {
+        final nested = _coerceMediaValue(map[nestedKey]);
+        if (nested != null) return nested;
+      }
+      return null;
+    }
+    if (raw is List && raw.isNotEmpty) {
+      return _coerceMediaValue(raw.first);
+    }
+    final value = raw.toString().trim();
+    if (value.isEmpty || value == 'null') return null;
+    return value;
+  }
+
+  static String? _extractLogoPath(Map<String, dynamic> json) {
+    return _extractMediaPath(json, const [
+      'logo',
+      'logo_url',
+      'logo_path',
+      'brand_logo',
+      'icon',
+      'avatar',
+      'profile_image',
+    ]);
+  }
+
+  static String? _extractCoverImagePath(Map<String, dynamic> json) {
+    return _extractMediaPath(json, const [
+      'cover_image',
+      'cover_image_url',
+      'cover',
+      'banner',
+      'banner_image',
+      'featured_image',
+      'image',
+      'image_url',
+      'photo',
+      'thumbnail',
+      'picture',
+    ]);
   }
 
   static int _resolveCoursesCount(Map<String, dynamic> json) {
@@ -909,6 +1050,8 @@ class InstituteModel {
       'active_courses_count',
       'active_courses',
       'total_courses',
+      'published_courses_count',
+      'courses_total',
     ];
     for (final key in keys) {
       final value = json[key];
@@ -921,8 +1064,15 @@ class InstituteModel {
         if (value != null) return JsonHelpers.parseInt(value);
       }
     }
+    final meta = json['meta'];
+    if (meta is Map<String, dynamic>) {
+      for (final key in keys) {
+        final value = meta[key];
+        if (value != null) return JsonHelpers.parseInt(value);
+      }
+    }
     final courses = json['courses'];
-    if (courses is List) return courses.length;
+    if (courses is List && courses.isNotEmpty) return courses.length;
 
     final count = json['_count'];
     if (count is Map<String, dynamic>) {
@@ -944,6 +1094,9 @@ class NotificationModel {
     required this.type,
     this.isRead = false,
     this.createdAt,
+    this.courseId,
+    this.enrollmentId,
+    this.data,
   });
 
   final int id;
@@ -952,15 +1105,26 @@ class NotificationModel {
   final String type;
   final bool isRead;
   final String? createdAt;
+  final int? courseId;
+  final int? enrollmentId;
+  final Map<String, dynamic>? data;
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic>? extra;
+    if (json['data'] is Map) {
+      extra = Map<String, dynamic>.from(json['data'] as Map);
+    }
+
     return NotificationModel(
       id: JsonHelpers.parseInt(json['id']),
-      title: json['title']?.toString() ?? 'إشعار',
-      subtitle: json['body']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      subtitle: json['body']?.toString() ?? json['message']?.toString() ?? '',
       type: json['type']?.toString() ?? 'info',
       isRead: JsonHelpers.parseBool(json['is_read']),
       createdAt: json['created_at']?.toString(),
+      courseId: JsonHelpers.parseIntOrNull(extra?['course_id'] ?? json['course_id']),
+      enrollmentId: JsonHelpers.parseIntOrNull(extra?['enrollment_id'] ?? json['enrollment_id']),
+      data: extra,
     );
   }
 }
@@ -981,7 +1145,7 @@ class ReviewModel {
   final int? studentId;
 
   factory ReviewModel.fromJson(Map<String, dynamic> json) {
-    var studentName = 'طالب';
+    var studentName = '';
     var studentId = JsonHelpers.parseIntOrNull(json['student_id']);
     if (json['student'] is Map<String, dynamic>) {
       final s = json['student'] as Map<String, dynamic>;
@@ -992,7 +1156,7 @@ class ReviewModel {
       id: JsonHelpers.parseInt(json['id']),
       rating: JsonHelpers.parseInt(json['rating']),
       comment: json['comment']?.toString() ?? '',
-      studentName: studentName.isEmpty ? 'طالب' : studentName,
+      studentName: studentName,
       studentId: studentId,
     );
   }

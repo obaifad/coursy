@@ -1,10 +1,17 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 
 import '../../../core/data/repositories/enrollment_repository.dart';
+import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/network/api_exception.dart';
+import '../../../core/session/enrollment_status_coordinator.dart';
+import '../../../core/services/enrollment_sync_service.dart';
+import '../../../core/session/session_refresh.dart';
 import '../../../core/storage/token_storage.dart';
 
-class MyCoursesController extends GetxController {
+class MyCoursesController extends GetxController with LatestLoadGuard {
   final EnrollmentRepository _repository = Get.find();
 
   final isLoading = true.obs;
@@ -22,18 +29,24 @@ class MyCoursesController extends GetxController {
 
   Future<void> load() async {
     if (!isLoggedIn) {
-      isLoading.value = false;
+      clearForLogout();
       return;
     }
+    final session = beginLoad();
     isLoading.value = true;
     errorMessage.value = null;
     try {
       final result = await _repository.fetchEnrollmentsPage(perPage: 50);
-      enrollments.assignAll(result.items);
+      applyIfCurrent(session, () => enrollments.assignAll(result.items));
+      if (Get.isRegistered<EnrollmentStatusCoordinator>()) {
+        unawaited(Get.find<EnrollmentStatusCoordinator>().trackFromEnrollments(result.items));
+      }
+    } on ApiCancelledException {
+      return;
     } catch (e) {
-      errorMessage.value = e.toString();
+      if (shouldApply(session)) errorMessage.value = e.toString();
     } finally {
-      isLoading.value = false;
+      applyIfCurrent(session, () => isLoading.value = false);
     }
   }
 
@@ -64,10 +77,21 @@ class MyCoursesController extends GetxController {
         await load();
       }
       Get.snackbar('booking_cancelled_title'.tr, 'booking_cancelled_msg'.tr);
+      await SessionRefresh.afterEnrollment(
+        courseId: enrollment.courseId,
+        enrollmentId: enrollment.id,
+      );
     } catch (e) {
       Get.snackbar('error'.tr, e.toString());
     } finally {
       cancellingIds.remove(enrollment.id);
     }
+  }
+
+  void clearForLogout() {
+    enrollments.clear();
+    cancellingIds.clear();
+    errorMessage.value = null;
+    isLoading.value = false;
   }
 }

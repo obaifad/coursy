@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
+import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/app_loading.dart';
@@ -119,7 +120,7 @@ class AuthUnifiedShell extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(20),
             boxShadow: RegisterDecor.cardShadow,
           ),
           child: Padding(
@@ -150,7 +151,7 @@ class RegisterFloatingCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: RegisterDecor.cardShadow,
       ),
       child: child,
@@ -469,6 +470,165 @@ class RegisterChoiceChip extends StatelessWidget {
   }
 }
 
+Future<void> showCityPickerSheet({
+  required BuildContext context,
+  required List<CityModel> cities,
+  required int? initialSelected,
+  required ValueChanged<int> onPick,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    useSafeArea: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (context) {
+      return LocaleRebuild(
+        builder: (context) {
+          var selected = initialSelected;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'pick_city'.tr,
+                  style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 18),
+                ),
+                const SizedBox(height: 12),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: cities.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF3F4F6)),
+                    itemBuilder: (_, i) {
+                      final city = cities[i];
+                      final isSelected = selected == city.id;
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.location_city_outlined, color: AppColors.primary),
+                        title: Text(city.name, style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
+                        trailing: isSelected
+                            ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+                            : null,
+                        onTap: () {
+                          onPick(city.id);
+                          Navigator.of(context).pop();
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+class RegisterCityPicker extends StatelessWidget {
+  const RegisterCityPicker({
+    super.key,
+    required this.cities,
+    required this.selectedId,
+    required this.onChanged,
+    this.loading = false,
+    this.errorText,
+    this.onReload,
+  });
+
+  final List<CityModel> cities;
+  final int? selectedId;
+  final ValueChanged<int> onChanged;
+  final bool loading;
+  final String? errorText;
+  final VoidCallback? onReload;
+
+  @override
+  Widget build(BuildContext context) {
+    return LocaleRebuild(
+      builder: (context) {
+        final label = '${'city'.tr} *';
+
+        if (loading && cities.isEmpty) {
+          return Skeletonizer(
+            enabled: true,
+            child: InputDecorator(
+              decoration: RegisterDecor.fieldDecoration(
+                label: label,
+                prefixIcon: const Icon(Icons.location_city_outlined, color: AppColors.primary),
+              ),
+              child: Text(
+                'loading_cities'.tr,
+                style: GoogleFonts.tajawal(color: AppColors.textSecondary),
+              ),
+            ),
+          );
+        }
+
+        if (cities.isEmpty) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              InputDecorator(
+                decoration: RegisterDecor.fieldDecoration(
+                  label: label,
+                  errorText: errorText ?? 'connection_error'.tr,
+                  prefixIcon: const Icon(Icons.location_city_outlined, color: AppColors.primary),
+                ),
+                child: Text('pick_city'.tr, style: GoogleFonts.tajawal(color: AppColors.textSecondary)),
+              ),
+              if (onReload != null) ...[
+                const SizedBox(height: 8),
+                RegisterGhostButton(
+                  label: 'reload_cities'.tr,
+                  onPressed: onReload,
+                ),
+              ],
+            ],
+          );
+        }
+
+        final selected = cities.where((c) => c.id == selectedId).firstOrNull;
+
+        return InkWell(
+          onTap: () {
+            showCityPickerSheet(
+              context: context,
+              cities: cities,
+              initialSelected: selectedId,
+              onPick: onChanged,
+            );
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: InputDecorator(
+            decoration: RegisterDecor.fieldDecoration(
+              label: label,
+              errorText: errorText,
+              prefixIcon: const Icon(Icons.location_city_outlined, color: AppColors.primary),
+              suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
+            ),
+            child: Text(
+              selected?.name ?? 'pick_city'.tr,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.tajawal(
+                fontWeight: FontWeight.w600,
+                color: selected == null ? AppColors.textSecondary : const Color(0xFF111827),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class RegisterInterestPicker extends StatelessWidget {
   const RegisterInterestPicker({
     super.key,
@@ -477,6 +637,7 @@ class RegisterInterestPicker extends StatelessWidget {
     required this.onApply,
     this.loading = false,
     this.errorText,
+    this.onReload,
   });
 
   final List<CategoryModel> categories;
@@ -484,9 +645,12 @@ class RegisterInterestPicker extends StatelessWidget {
   final ValueChanged<List<int>> onApply;
   final bool loading;
   final String? errorText;
+  final VoidCallback? onReload;
 
   @override
   Widget build(BuildContext context) {
+    return LocaleRebuild(
+      builder: (context) {
     if (loading) {
       return Skeletonizer(
         enabled: true,
@@ -500,7 +664,37 @@ class RegisterInterestPicker extends StatelessWidget {
       );
     }
 
-    if (categories.isEmpty) return const SizedBox.shrink();
+    if (categories.isEmpty) {
+      final summary = selectedIds.isEmpty
+          ? 'pick_interests'.tr
+          : interestSelectionSummary(categories, selectedIds);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InputDecorator(
+            decoration: RegisterDecor.fieldDecoration(
+              label: 'interests_optional'.tr,
+              errorText: selectedIds.isEmpty ? (errorText ?? 'connection_error'.tr) : errorText,
+              prefixIcon: const Icon(Icons.interests_rounded, color: AppColors.primary),
+            ),
+            child: Text(
+              summary,
+              style: GoogleFonts.tajawal(
+                color: selectedIds.isEmpty ? AppColors.textSecondary : const Color(0xFF111827),
+                fontWeight: selectedIds.isEmpty ? FontWeight.w400 : FontWeight.w600,
+              ),
+            ),
+          ),
+          if (onReload != null) ...[
+            const SizedBox(height: 8),
+            RegisterGhostButton(
+              label: 'reload_interests'.tr,
+              onPressed: onReload,
+            ),
+          ],
+        ],
+      );
+    }
 
     final summary = interestSelectionSummary(categories, selectedIds);
 
@@ -537,6 +731,8 @@ class RegisterInterestPicker extends StatelessWidget {
         ),
       ],
     );
+      },
+    );
   }
 }
 
@@ -556,6 +752,8 @@ class RegisterInterestChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return LocaleRebuild(
+      builder: (context) {
     if (loading) {
       return Wrap(
         spacing: 8,
@@ -585,6 +783,8 @@ class RegisterInterestChips extends StatelessWidget {
           onTap: () => onToggle(category.id),
         );
       }).toList(),
+    );
+      },
     );
   }
 }

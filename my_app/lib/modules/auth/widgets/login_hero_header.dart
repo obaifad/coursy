@@ -45,7 +45,7 @@ class LoginHeroHeader extends StatelessWidget {
                   style: GoogleFonts.tajawal(
                     fontSize: metrics.welcomeTitleSize,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF1E1B4B),
+                    color: AppColors.authHeroTitle,
                     height: 1.2,
                   ),
                 ),
@@ -138,7 +138,7 @@ class _LoginWelcomeCopy extends StatelessWidget {
           style: GoogleFonts.tajawal(
             fontSize: metrics.welcomeTitleSize,
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF1E1B4B),
+            color: AppColors.authHeroTitle,
             height: 1.2,
           ),
         ),

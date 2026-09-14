@@ -3,7 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 import '../../config/api_config.dart';
+import '../../models/json_helpers.dart';
+import '../../config/app_debug_log.dart';
 import '../../models/student_profile_payload.dart';
+import '../../storage/academic_profile_cache.dart';
 import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
 import '../../network/json_parser.dart';
@@ -15,29 +18,150 @@ class ProfileRepository extends GetxService {
   final ApiClient _client;
   final TokenStorage _tokenStorage;
 
-  Future<Map<String, dynamic>> fetchMe() async {
-    final map = await _client.handle(
+  Future<Map<String, dynamic>> fetchMe() => fetchFullStudentUser();
+
+  /// `/student/me` + `/student/profile` + الكاش المحلي.
+  Future<Map<String, dynamic>> fetchFullStudentUser() async {
+    final meFuture = _client.handle(
       () => _client.get(ApiEndpoints.studentMe),
       (data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{},
     );
-    final studentId = extractStudentId(map) ?? extractStudentId(extractUserMap(map));
+    final profileFuture = _tryFetchStudentProfileRecord();
+
+    late Map<String, dynamic> meMap;
+    Map<String, dynamic>? profileRecord;
+    await Future.wait([
+      meFuture.then((value) => meMap = value),
+      profileFuture.then((value) => profileRecord = value),
+    ]);
+
+    final studentId = extractStudentId(meMap) ?? extractStudentId(extractUserMap(meMap));
     if (studentId != null && studentId > 0) {
       await _tokenStorage.saveStudentId(studentId);
     }
-    return map;
+
+    var user = mergeProfileUserData(meMap);
+    final profile = profileRecord;
+    if (profile != null && profile.isNotEmpty) {
+      final existing = extractNestedStudentProfile(user) ?? <String, dynamic>{};
+      user = {
+        ...user,
+        'student_profile': {...existing, ...profile},
+      };
+    }
+
+    final cached = await _tokenStorage.loadAcademicCache();
+    if (cached != null && !cached.isEmpty) {
+      user = _mergeAcademicCache(user, cached);
+    }
+    if (_hasAcademicFields(user)) {
+      await _persistAcademicCacheFromUser(user);
+    }
+
+    return user;
+  }
+
+  /// يملأ الحقول الأكاديمية الناقصة من الكاش المحلي (مثلاً الاهتمامات بعد التسجيل).
+  Map<String, dynamic> _mergeAcademicCache(Map<String, dynamic> user, AcademicProfileCache cache) {
+    final profile = Map<String, dynamic>.from(extractNestedStudentProfile(user) ?? {});
+
+    if ((profile['education_level']?.toString().trim().isEmpty ?? true) &&
+        cache.educationLevel != null &&
+        cache.educationLevel!.isNotEmpty) {
+      profile['education_level'] = cache.educationLevel;
+      user['education_level'] ??= cache.educationLevel;
+    }
+    if (profile['university_id'] == null && cache.universityId != null) {
+      profile['university_id'] = cache.universityId;
+      user['university_id'] ??= cache.universityId;
+    }
+    if (profile['specialization_id'] == null && cache.specializationId != null) {
+      profile['specialization_id'] = cache.specializationId;
+      user['specialization_id'] ??= cache.specializationId;
+    }
+    if (extractPreferredInterestIds({...profile, ...user}).isEmpty &&
+        cache.preferredCategoryIds.isNotEmpty) {
+      profile['preferred_tags'] = cache.preferredCategoryIds;
+      user['preferred_tags'] = cache.preferredCategoryIds;
+    }
+
+    return {...user, 'student_profile': profile};
+  }
+
+  Future<void> syncAcademicAfterRegister({
+    String? educationLevel,
+    int? universityId,
+    int? specializationId,
+    List<int>? preferredTags,
+  }) async {
+    final tagIds = preferredTags ?? const [];
+    final cache = AcademicProfileCache(
+      educationLevel: educationLevel,
+      universityId: universityId,
+      specializationId: specializationId,
+      preferredCategoryIds: tagIds,
+    );
+    if (!cache.isEmpty) {
+      await _tokenStorage.saveAcademicCache(cache);
+    }
+
+    final payload = StudentProfilePayload(
+      educationLevel: educationLevel,
+      universityId: universityId,
+      specializationId: specializationId,
+      preferredTags: tagIds.isEmpty ? null : tagIds,
+    );
+    if (cache.isEmpty) return;
+
+    try {
+      await updateProfile(payload);
+    } catch (_) {
+      // يبقى الكاش المحلي حتى نجاح حفظ لاحق من البروفايل.
+    }
+  }
+
+  Future<void> _persistAcademicCacheFromUser(Map<String, dynamic> user) async {
+    final profile = extractNestedStudentProfile(user);
+    if (profile == null) return;
+    final cache = AcademicProfileCache(
+      educationLevel: profile['education_level']?.toString(),
+      universityId: JsonHelpers.parseIntOrNull(profile['university_id']),
+      specializationId: JsonHelpers.parseIntOrNull(profile['specialization_id']),
+      preferredCategoryIds: extractPreferredInterestIds({...profile, ...user}),
+    );
+    if (!cache.isEmpty) {
+      await _tokenStorage.saveAcademicCache(cache);
+    }
+  }
+
+  bool _hasAcademicFields(Map<String, dynamic> user) {
+    if (user['education_level']?.toString().trim().isNotEmpty == true) return true;
+    if (extractPreferredInterestIds(user).isNotEmpty) return true;
+
+    final profile = extractNestedStudentProfile(user);
+    if (profile == null) return false;
+    final hasEducation = profile['education_level']?.toString().trim().isNotEmpty == true;
+    final hasUniversity = profile['university_id'] != null;
+    final hasSpecialization = profile['specialization_id'] != null;
+    final hasTags = extractPreferredInterestIds({...profile, ...user}).isNotEmpty;
+    return hasEducation || hasUniversity || hasSpecialization || hasTags;
+  }
+
+  Future<Map<String, dynamic>?> _tryFetchStudentProfileRecord() async {
+    try {
+      return await _client.handle(
+        () => _client.get(ApiEndpoints.studentProfile),
+        (data) => extractObjectMap(normalizeApiBody(data)),
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<Map<String, dynamic>> updateProfile(StudentProfilePayload payload) async {
     if (kDebugMode) {
-      final token = _tokenStorage.token;
-      debugPrint('========== PROFILE PATCH ==========');
-      debugPrint('Endpoint: ${ApiEndpoints.studentProfile}');
-      debugPrint('Token exists: ${token != null && token.isNotEmpty}');
-      if (token != null && token.isNotEmpty) {
-        debugPrint('Bearer $token');
-      }
-      debugPrint('Payload: ${payload.toJson()}');
-      debugPrint('===================================');
+      AppDebugLog.repo('Profile', 'PATCH ${ApiEndpoints.studentProfile}');
+      AppDebugLog.repo('Profile', payload.toJson().toString());
     }
     try {
       return await _client.handle(

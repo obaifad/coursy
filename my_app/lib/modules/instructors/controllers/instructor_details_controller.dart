@@ -25,12 +25,21 @@ class InstructorDetailsController extends GetxController {
   int _coursesPage = 1;
   static const _coursesPerPage = 12;
 
+  Worker? _favoritesWorker;
+
   @override
   void onInit() {
     super.onInit();
     _readArguments(Get.arguments);
+    _favoritesWorker = ever(_favoritesService.items, (_) => _syncFavorite());
     _syncFavorite();
     loadDetails();
+  }
+
+  @override
+  void onClose() {
+    _favoritesWorker?.dispose();
+    super.onClose();
   }
 
   void _readArguments(dynamic arg) {
@@ -133,7 +142,7 @@ class InstructorDetailsController extends GetxController {
 
   Future<void> toggleFavorite() async {
     if (instructorId <= 0) return;
-    final added = await _favoritesService.toggleInstructor(instructorId);
-    isFavorite.value = added || _favoritesService.isInstructorFavorite(instructorId);
+    await _favoritesService.toggleInstructor(instructorId);
+    _syncFavorite();
   }
 }

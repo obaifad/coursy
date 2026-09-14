@@ -8,3 +8,8 @@ class ApiException implements Exception {
   @override
   String toString() => message;
 }
+
+/// طلب أُلغي (CancelToken) — لا يُعرض كخطأ ولا يُحدّث الـ UI.
+class ApiCancelledException implements Exception {
+  const ApiCancelledException();
+}

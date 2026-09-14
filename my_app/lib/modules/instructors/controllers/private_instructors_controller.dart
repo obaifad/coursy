@@ -1,10 +1,11 @@
 import 'package:get/get.dart';
 
 import '../../../core/data/repositories/instructor_repository.dart';
+import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/network/api_exception.dart';
 
-class PrivateInstructorsController extends GetxController {
+class PrivateInstructorsController extends GetxController with LatestLoadGuard {
   PrivateInstructorsController(this._repository);
 
   final InstructorRepository _repository;
@@ -43,13 +44,17 @@ class PrivateInstructorsController extends GetxController {
   }
 
   Future<void> _loadSubjectFilters() async {
+    final session = beginLoad();
     isLoadingFilters.value = true;
     try {
-      subjects.assignAll(await _repository.fetchInstructorSubjectFilters());
+      final fresh = await _repository.fetchInstructorSubjectFilters();
+      applyIfCurrent(session, () => subjects.assignAll(fresh));
+    } on ApiCancelledException {
+      return;
     } catch (_) {
-      subjects.clear();
+      if (shouldApply(session)) subjects.clear();
     } finally {
-      isLoadingFilters.value = false;
+      applyIfCurrent(session, () => isLoadingFilters.value = false);
     }
   }
 
@@ -60,6 +65,7 @@ class PrivateInstructorsController extends GetxController {
   }
 
   Future<void> loadInstructors() async {
+    final session = beginLoad();
     isLoading.value = true;
     errorMessage.value = null;
     _page = 1;
@@ -71,18 +77,26 @@ class PrivateInstructorsController extends GetxController {
         subjectKey: _selectedSpecializationId == null ? selectedSubjectKey.value : null,
         specializationId: _selectedSpecializationId,
       );
-      instructors.assignAll(result.items);
-      hasMore.value = result.hasMore;
+      applyIfCurrent(session, () {
+        instructors.assignAll(result.items);
+        hasMore.value = result.hasMore;
+      });
+    } on ApiCancelledException {
+      return;
     } on ApiException catch (e) {
-      errorMessage.value = e.message;
-      instructors.clear();
-      hasMore.value = false;
+      if (shouldApply(session)) {
+        errorMessage.value = e.message;
+        instructors.clear();
+        hasMore.value = false;
+      }
     } catch (_) {
-      errorMessage.value = 'private_instructors_load_failed'.tr;
-      instructors.clear();
-      hasMore.value = false;
+      if (shouldApply(session)) {
+        errorMessage.value = 'private_instructors_load_failed'.tr;
+        instructors.clear();
+        hasMore.value = false;
+      }
     } finally {
-      isLoading.value = false;
+      applyIfCurrent(session, () => isLoading.value = false);
     }
   }
 

@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../../modules/root/controllers/root_controller.dart';
 import '../../routes/app_routes.dart';
 import '../bindings/root_binding.dart';
-import 'home_scroll_reset.dart';
 
 /// تنقل آمن إلى الشاشة الرئيسية مع تسجيل RootBinding دائماً.
 abstract final class AppNavigation {
@@ -20,8 +19,8 @@ abstract final class AppNavigation {
     final targetTab = tab ?? root.currentIndex.value;
     if (root.currentIndex.value != targetTab) {
       root.changeTab(targetTab);
-    } else if (targetTab == 2) {
-      HomeScrollReset.notifyIfHomeVisible();
+    } else {
+      root.refreshTabData(targetTab);
     }
   }
 

@@ -6,10 +6,12 @@ import 'package:get/get.dart';
 import '../../../core/data/repositories/category_repository.dart';
 import '../../../core/data/repositories/city_repository.dart';
 import '../../../core/data/repositories/search_repository.dart';
+import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/network/api_exception.dart';
 import '../../../core/storage/recent_search_storage.dart';
 
-class SearchPageController extends GetxController {
+class SearchPageController extends GetxController with LatestLoadGuard {
   final SearchRepository _searchRepository = Get.find();
   final CategoryRepository _categoryRepository = Get.find();
   final CityRepository _cityRepository = Get.find();
@@ -68,13 +70,23 @@ class SearchPageController extends GetxController {
   }
 
   Future<void> _loadFilters() async {
+    final session = beginLoad();
     try {
-      categories.assignAll(await _categoryRepository.fetchCategories());
+      final cats = await _categoryRepository.fetchCategories();
+      applyIfCurrent(session, () => categories.assignAll(cats));
+    } on ApiCancelledException {
+      return;
     } catch (_) {}
+    if (!shouldApply(session)) return;
     try {
-      cities.assignAll(await _cityRepository.fetchCities());
+      final cityList = await _cityRepository.fetchCities();
+      applyIfCurrent(session, () => cities.assignAll(cityList));
+    } on ApiCancelledException {
+      return;
     } catch (_) {}
   }
+
+  Future<void> reloadLocalizedData() => _loadFilters();
 
   void setScope(SearchScope scope) {
     if (selectedScope.value == scope) return;
@@ -107,6 +119,8 @@ class SearchPageController extends GetxController {
     isSearching.value = true;
     errorMessage.value = null;
 
+    final session = beginLoad();
+
     try {
       final result = await _searchRepository.search(
         query: text,
@@ -118,17 +132,23 @@ class SearchPageController extends GetxController {
         studyType: selectedStudyType.value.isEmpty ? null : selectedStudyType.value,
       );
 
-      courses.assignAll(result.courses);
-      institutes.assignAll(result.institutes);
-      instructors.assignAll(result.instructors);
-      totalCourses.value = result.totalCourses;
-      totalInstitutes.value = result.totalInstitutes;
-      totalInstructors.value = result.totalInstructors;
+      applyIfCurrent(session, () {
+        courses.assignAll(result.courses);
+        institutes.assignAll(result.institutes);
+        instructors.assignAll(result.instructors);
+        totalCourses.value = result.totalCourses;
+        totalInstitutes.value = result.totalInstitutes;
+        totalInstructors.value = result.totalInstructors;
+      });
+    } on ApiCancelledException {
+      return;
     } catch (e) {
-      errorMessage.value = e.toString();
-      _clearResults();
+      if (shouldApply(session)) {
+        errorMessage.value = e.toString();
+        _clearResults();
+      }
     } finally {
-      isSearching.value = false;
+      applyIfCurrent(session, () => isSearching.value = false);
     }
   }
 

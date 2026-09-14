@@ -17,7 +17,7 @@ class SyrianEducationApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetX<LocaleController>(
       builder: (locale) => GetMaterialApp(
-        title: 'app_title'.tr,
+        title: 'Coursy',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,

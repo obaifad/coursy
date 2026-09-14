@@ -6,7 +6,6 @@ import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
 import '../../network/json_parser.dart';
 import '../../services/course_rating_service.dart';
-import 'institute_repository.dart';
 
 /// نطاق البحث — عند [all] لا يُرسل type فيُبحث في الكل.
 enum SearchScope {
@@ -84,11 +83,10 @@ extension SearchScopeApi on SearchScope {
 }
 
 class SearchRepository extends GetxService {
-  SearchRepository(this._client, this._ratingService, this._instituteRepository);
+  SearchRepository(this._client, this._ratingService);
 
   final ApiClient _client;
   final CourseRatingService _ratingService;
-  final InstituteRepository _instituteRepository;
 
   Future<SearchResult> search({
     required String query,
@@ -116,7 +114,7 @@ class SearchRepository extends GetxService {
       if (verified == true) 'verified': 1,
     };
 
-    return _client.handle(
+    final result = await _client.handle(
       () => _client.get(ApiEndpoints.search, query: params),
       (data) {
         final normalized = normalizeApiBody(data);
@@ -126,8 +124,7 @@ class SearchRepository extends GetxService {
         final map = extractObjectMap(normalized) ?? normalized;
 
         final courseMaps = map.containsKey('courses') ? extractListMap(map['courses']) : const <Map<String, dynamic>>[];
-        final instituteMaps =
-            map.containsKey('institutes') ? extractListMap(map['institutes']) : const <Map<String, dynamic>>[];
+        final instituteMaps = _extractInstituteMaps(map);
         final instructorMaps =
             map.containsKey('instructors') ? extractListMap(map['instructors']) : const <Map<String, dynamic>>[];
 
@@ -137,7 +134,32 @@ class SearchRepository extends GetxService {
           instructors: instructorMaps.map(InstructorModel.fromJson).toList(),
         );
       },
-    ).then(_enrichSearchResult);
+    );
+
+    return _enrichSearchResult(result);
+  }
+
+  List<Map<String, dynamic>> _extractInstituteMaps(Map<String, dynamic> map) {
+    if (map.containsKey('institutes')) {
+      return extractListMap(map['institutes']);
+    }
+
+    final results = map['results'];
+    if (results is List) {
+      final institutes = <Map<String, dynamic>>[];
+      for (final item in results) {
+        if (item is! Map) continue;
+        final entry = Map<String, dynamic>.from(item);
+        final type = entry['type']?.toString().toLowerCase();
+        if (type != null && type != 'institute' && type != 'institutes') continue;
+        final payload = entry['item'] ?? entry['model'] ?? entry['data'] ?? entry;
+        final coerced = coerceMap(payload);
+        if (coerced != null) institutes.add(coerced);
+      }
+      if (institutes.isNotEmpty) return institutes;
+    }
+
+    return const [];
   }
 
   Future<SearchResult> _enrichSearchResult(SearchResult result) async {
@@ -146,7 +168,7 @@ class SearchRepository extends GetxService {
         : await _ratingService.enrich(result.courses);
     final institutes = result.institutes.isEmpty
         ? result.institutes
-        : await _enrichInstituteCounts(result.institutes);
+        : await _enrichInstitutes(result.institutes, searchCourses: result.courses);
 
     return SearchResult(
       courses: courses,
@@ -155,25 +177,22 @@ class SearchRepository extends GetxService {
     );
   }
 
-  /// استجابة البحث غالباً لا تتضمن courses_count — نكمّلها من تفاصيل المعهد.
-  Future<List<InstituteModel>> _enrichInstituteCounts(List<InstituteModel> institutes) async {
-    return Future.wait(
-      institutes.map((institute) async {
-        if (institute.coursesCount > 0) return institute;
-        try {
-          final details = await _instituteRepository.fetchInstituteById(institute.id);
-          if (details.coursesCount <= 0) return institute;
-          return institute.copyWith(
-            coursesCount: details.coursesCount,
-            rating: details.rating > 0 ? details.rating : institute.rating,
-            city: details.city.isNotEmpty ? details.city : institute.city,
-            isVerified: details.isVerified || institute.isVerified,
-          );
-        } catch (_) {
-          return institute;
-        }
-      }),
-    );
+  /// استكمال عدد الدورات/التقييم/اللوغو من كاش قائمة المعاهد (بدون طلبات إضافية).
+  Future<List<InstituteModel>> _enrichInstitutes(
+    List<InstituteModel> institutes, {
+    List<CourseModel> searchCourses = const [],
+  }) async {
+    var enriched = await _ratingService.enrichInstitutes(institutes);
+    if (searchCourses.isEmpty) return enriched;
+
+    return enriched
+        .map((institute) {
+          if (institute.coursesCount > 0) return institute;
+          final fromSearch = searchCourses.where((course) => course.instituteId == institute.id).length;
+          if (fromSearch <= 0) return institute;
+          return institute.copyWith(coursesCount: fromSearch);
+        })
+        .toList(growable: false);
   }
 }
 

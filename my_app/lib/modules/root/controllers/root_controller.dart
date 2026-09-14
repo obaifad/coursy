@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/navigation/home_scroll_reset.dart';
+import '../../../core/services/enrollment_sync_service.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../routes/app_routes.dart';
 import '../../profile/controllers/my_courses_controller.dart';
@@ -16,11 +19,18 @@ class RootController extends GetxController {
       return;
     }
     currentIndex.value = index;
+    refreshTabData(index);
+  }
+
+  void refreshTabData(int index) {
     if (index == 2) {
       HomeScrollReset.notifyIfHomeVisible();
     }
     if ((index == 3 || index == 4) && Get.isRegistered<MyCoursesController>()) {
       Get.find<MyCoursesController>().load();
+    }
+    if (Get.find<TokenStorage>().isLoggedIn && Get.isRegistered<EnrollmentSyncService>()) {
+      unawaited(Get.find<EnrollmentSyncService>().checkForStatusChanges());
     }
   }
 }

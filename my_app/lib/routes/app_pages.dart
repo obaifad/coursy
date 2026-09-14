@@ -129,17 +129,18 @@ class AppPages {
         ProfileController.ensureRegistered();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!Get.isRegistered<ProfileController>()) return;
-          final controller = Get.find<ProfileController>();
-          if (!controller.isLoading.value) {
-            controller.captureEditBaseline();
-          }
+          Get.find<ProfileController>().refreshForEdit();
         });
       }),
     ),
     GetPage(
       name: AppRoutes.myCourses,
       page: () => const MyCoursesView(),
-      binding: BindingsBuilder(() => Get.lazyPut<MyCoursesController>(() => MyCoursesController())),
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<MyCoursesController>()) {
+          Get.lazyPut<MyCoursesController>(() => MyCoursesController());
+        }
+      }),
     ),
     GetPage(
       name: AppRoutes.courseBooking,
@@ -155,11 +156,7 @@ class AppPages {
     GetPage(
       name: AppRoutes.favorites,
       page: () => const FavoritesView(),
-      binding: BindingsBuilder(() {
-        if (!Get.isRegistered<FavoritesController>()) {
-          Get.lazyPut<FavoritesController>(() => FavoritesController());
-        }
-      }),
+      binding: BindingsBuilder(() => FavoritesController.ensureRegistered()),
     ),
   ];
 }

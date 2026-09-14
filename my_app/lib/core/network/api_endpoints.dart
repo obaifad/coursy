@@ -16,6 +16,7 @@ abstract final class ApiEndpoints {
   static const studentNotifications = '/student/notifications';
   static const studentMobileVerificationSend = '/student/mobile-verification/send';
   static const studentMobileVerificationVerify = '/student/mobile-verification/verify';
+  static const studentDevices = '/student/devices';
   static const logout = '/logout';
 
   static const homepage = '/homepage';
@@ -24,6 +25,7 @@ abstract final class ApiEndpoints {
   static const users = '/users';
   static const cities = '/cities';
   static const categories = '/categories';
+  static const tags = '/tags';
   static const universities = '/universities';
   static const specializations = '/specializations';
   static const institutes = '/institutes';

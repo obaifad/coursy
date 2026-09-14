@@ -78,6 +78,28 @@ void main() {
     expect(city.id, 4);
   });
 
+  test('merges sibling student_profile into user map', () {
+    final user = mergeProfileUserData({
+      'data': {
+        'user': {
+          'first_name': 'John',
+          'city_id': 1,
+        },
+        'student_profile': {
+          'education_level': 'diploma',
+          'preferred_categories': [
+            {'id': 23, 'name_en': 'AI'},
+          ],
+        },
+      },
+    });
+
+    expect(user['first_name'], 'John');
+    expect(user['student_profile'], isA<Map>());
+    expect(user['student_profile']['education_level'], 'diploma');
+    expect(extractPreferredCategoryIds(user['student_profile']['preferred_categories']), [23]);
+  });
+
   test('parses notification with is_read 0', () {
     final n = NotificationModel.fromJson({
       'id': 3,

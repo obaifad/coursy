@@ -4,16 +4,20 @@ import '../../models/app_models.dart';
 import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
 import '../../network/json_parser.dart';
+import '../../network/paginated_fetch.dart';
 
 class CategoryRepository extends GetxService {
   CategoryRepository(this._client);
 
   final ApiClient _client;
 
-  Future<List<CategoryModel>> fetchCategories() async {
-    return _client.handle(
-      () => _client.get(ApiEndpoints.categories),
-      (data) => extractListMap(data).map(CategoryModel.fromJson).toList(),
+  /// كل التصنيفات/الاهتمامات — يجلب كل الصفحات حتى total من الـ API (أي عدد).
+  Future<List<CategoryModel>> fetchCategories({int perPage = 50}) async {
+    return fetchAllPages(
+      _client,
+      ApiEndpoints.categories,
+      CategoryModel.fromJson,
+      perPage: perPage,
     );
   }
 

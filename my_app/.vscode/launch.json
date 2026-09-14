@@ -16,11 +16,12 @@
       "args": ["-d", "windows"]
     },
     {
-      "name": "Masaraty (Chrome — للواجهة فقط)",
+      "name": "Masaraty (Chrome)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
-      "args": ["-d", "chrome"]
+      "args": ["-d", "chrome", "--web-port=7357"],
+      "preLaunchTask": "Start CORS dev proxy"
     }
   ]
 }

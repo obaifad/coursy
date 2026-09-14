@@ -21,6 +21,67 @@ IconData courseStudyTypeIcon(String studyType) {
   return Icons.cast_for_education_outlined;
 }
 
+const double _kCourseCardRadius = CourseCardMetrics.cardRadius;
+
+const List<BoxShadow> _courseCardShadow = [
+  BoxShadow(color: Color(0x26000000), blurRadius: 18, offset: Offset(0, 6)),
+  BoxShadow(color: Color(0x0F000000), blurRadius: 4, offset: Offset(0, 2)),
+];
+
+bool _isNewCourse(CourseModel course) {
+  final raw = course.startDate;
+  if (raw == null || raw.isEmpty) return false;
+  final parsed = DateTime.tryParse(raw);
+  if (parsed == null) return false;
+  return DateTime.now().difference(parsed).inDays.abs() <= 30;
+}
+
+String? _coursePromoBadge(CourseModel course) {
+  if (course.isFeatured) return 'course_badge_bestseller'.tr;
+  final max = course.maxStudents;
+  final enrolled = course.enrolledCountForCapacity;
+  if (max != null && max > 0) {
+    final remaining = max - enrolled;
+    if (remaining > 0 && remaining <= 5) return 'course_badge_limited_seats'.tr;
+  }
+  if (_isNewCourse(course)) return 'course_badge_new'.tr;
+  if (enrolled >= 10 || (max != null && max > 0 && enrolled >= (max * 0.75).ceil())) {
+    return 'course_badge_popular'.tr;
+  }
+  return null;
+}
+
+String _courseSummaryLine(CourseModel course) {
+  final desc = course.description?.trim();
+  if (desc != null && desc.isNotEmpty) {
+    final normalized = desc.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (normalized.length <= 54) return normalized;
+    final slice = normalized.substring(0, 54);
+    final breakAt = slice.lastIndexOf(RegExp(r'[\s،,.;]'));
+    final cut = (breakAt > 24 ? slice.substring(0, breakAt) : slice).trim();
+    return '$cut…';
+  }
+  if (course.institute.isNotEmpty) return course.institute;
+  return course.categoryName?.trim() ?? '';
+}
+
+({Color bg, Color fg}) _levelBadgeColors(String level) {
+  final l = level.toLowerCase();
+  if (l.contains('مبتد') || l.contains('beginner')) {
+    return (bg: const Color(0xFFDCFCE7), fg: const Color(0xFF166534));
+  }
+  if (l.contains('متوسط') || l.contains('intermediate')) {
+    return (bg: const Color(0xFFDBEAFE), fg: const Color(0xFF1D4ED8));
+  }
+  if (l.contains('متقد') || l.contains('advanced')) {
+    return (bg: const Color(0xFFFEE2E2), fg: const Color(0xFFB91C1C));
+  }
+  return (bg: const Color(0xFFF3F4F6), fg: const Color(0xFF4B5563));
+}
+
+String _courseActionLabel(CourseModel course) =>
+    course.isRegistrationOpen ? 'enroll_now'.tr : 'view_details'.tr;
+
 /// سعر الدورة: مبلغ عريض + عملة أصغر
 class CoursePriceText extends StatelessWidget {
   const CoursePriceText({
@@ -102,9 +163,8 @@ class AppNetworkImage extends StatelessWidget {
         width: hasExplicitSize ? w : null,
         height: hasExplicitSize ? h : null,
         fit: fit,
-        webHtmlElementStrategy: kIsWeb && hasExplicitSize
-            ? WebHtmlElementStrategy.prefer
-            : WebHtmlElementStrategy.never,
+        webHtmlElementStrategy:
+            kIsWeb ? WebHtmlElementStrategy.prefer : WebHtmlElementStrategy.never,
         errorBuilder: (_, __, ___) => errorWidget ?? const SizedBox.shrink(),
       );
     }
@@ -337,30 +397,24 @@ class CourseCard extends StatelessWidget {
         final cardHeight = constraints.maxHeight.isFinite ? constraints.maxHeight : layout.cardHeight;
         final imageHeight = layout.imageHeight;
         final titleSize = layout.titleSize;
-        final priceSize = layout.compact ? 13.0 : 15.0;
+        final priceSize = layout.compact ? 15.0 : 18.0;
+        final summary = _courseSummaryLine(course);
 
         return Container(
           height: cardHeight,
           width: constraints.maxWidth,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x1A000000),
-                blurRadius: 12,
-                spreadRadius: 1,
-                offset: Offset(0, 4),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(_kCourseCardRadius),
+            boxShadow: _courseCardShadow,
           ),
           child: Material(
             color: AppColors.card,
             elevation: 0,
             clipBehavior: Clip.antiAlias,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(_kCourseCardRadius),
             child: InkWell(
               onTap: onTap,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(_kCourseCardRadius),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -376,12 +430,11 @@ class CourseCard extends StatelessWidget {
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(
                         layout.padding,
+                        layout.padding - 2,
                         layout.padding,
                         layout.padding,
-                        layout.padding + (showActionButton ? 6 : 0),
                       ),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           SizedBox(
@@ -401,25 +454,44 @@ class CourseCard extends StatelessWidget {
                               ),
                             ),
                           ),
+                          if (summary.isNotEmpty) ...[
+                            SizedBox(height: layout.sectionGap - 1),
+                            SizedBox(
+                              height: layout.subtitleHeight,
+                              child: Align(
+                                alignment: AlignmentDirectional.centerStart,
+                                child: Text(
+                                  summary,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.tajawal(
+                                    fontSize: layout.compact ? 10.5 : 11.5,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.2,
+                                    color: const Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                           SizedBox(height: layout.sectionGap),
-                          _CourseCardTags(
-                            course: course,
-                            compact: layout.compact,
+                          SizedBox(
                             height: layout.chipsHeight,
+                            child: _CourseLevelBadgeRow(course: course, compact: layout.compact),
                           ),
                           SizedBox(height: layout.sectionGap),
                           SizedBox(
                             height: layout.statsHeight,
-                            child: _CourseCardStatsRow(
+                            child: _CourseCardCompactStats(
                               course: course,
                               compact: layout.compact,
                             ),
                           ),
-                          SizedBox(height: layout.sectionGap),
+                          const Spacer(),
                           SizedBox(
                             height: layout.priceHeight,
                             child: Align(
-                              alignment: AlignmentDirectional.topEnd,
+                              alignment: AlignmentDirectional.centerStart,
                               child: _CourseCardPriceBlock(
                                 course: course,
                                 priceSize: priceSize,
@@ -427,8 +499,8 @@ class CourseCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          const Spacer(),
                           if (showActionButton) ...[
+                            SizedBox(height: layout.sectionGap),
                             SizedBox(
                               width: double.infinity,
                               height: layout.buttonHeight,
@@ -439,28 +511,23 @@ class CourseCard extends StatelessWidget {
                                   foregroundColor: Colors.white,
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      layout.compact ? 10 : 12,
-                                    ),
+                                    borderRadius: BorderRadius.circular(layout.compact ? 10 : 12),
                                   ),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: layout.compact ? 6 : 12,
-                                  ),
+                                  padding: EdgeInsets.symmetric(horizontal: layout.compact ? 8 : 12),
                                   textStyle: GoogleFonts.tajawal(
                                     fontWeight: FontWeight.w700,
-                                    fontSize: layout.compact ? 11 : 13,
+                                    fontSize: layout.compact ? 11 : 12.5,
                                   ),
                                 ),
                                 child: FittedBox(
                                   fit: BoxFit.scaleDown,
                                   child: Text(
-                                    'view_details'.tr,
+                                    _courseActionLabel(course),
                                     maxLines: 1,
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 4),
                           ],
                         ],
                       ),
@@ -495,12 +562,11 @@ abstract final class _FeaturedCardSpace {
   _FeaturedCardSpace._();
 
   static const double sm = 8;
-  static const double md = 12;
   static const double coverGap = 10;
   static const double bodyPad = 14;
   static const double bottomPad = 18;
   static const double radius = 18;
-  static const double badgeRadius = 6;
+  static const double badgeRadius = 8;
 }
 
 /// بطاقة دورة مميزة — StatefulWidget لدعم hover على الويب/سطح المكتب.
@@ -524,23 +590,7 @@ class _FeaturedCourseCard extends StatefulWidget {
 class _FeaturedCourseCardState extends State<_FeaturedCourseCard> {
   bool _hovered = false;
 
-  String get _subtitle {
-    final desc = widget.course.description?.trim();
-    if (desc != null && desc.isNotEmpty) {
-      return _FeaturedCourseCardState._compactSubtitle(desc);
-    }
-    return widget.course.institute;
-  }
-
-  /// يختصر الوصف عند حدّ معقول مع قطع عند مسافة/فاصلة لتجنب "...intermediat".
-  static String _compactSubtitle(String raw) {
-    final normalized = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
-    if (normalized.length <= 58) return normalized;
-    final slice = normalized.substring(0, 58);
-    final breakAt = slice.lastIndexOf(RegExp(r'[\s،,.;]'));
-    final cut = (breakAt > 28 ? slice.substring(0, breakAt) : slice).trim();
-    return '$cut…';
-  }
+  String get _subtitle => _courseSummaryLine(widget.course);
 
   @override
   Widget build(BuildContext context) {
@@ -549,10 +599,7 @@ class _FeaturedCourseCardState extends State<_FeaturedCourseCard> {
             BoxShadow(color: Color(0x446C63FF), blurRadius: 22, offset: Offset(0, 10)),
             BoxShadow(color: Color(0x1A000000), blurRadius: 6, offset: Offset(0, 2)),
           ]
-        : const [
-            BoxShadow(color: Color(0x266C63FF), blurRadius: 16, offset: Offset(0, 6)),
-            BoxShadow(color: Color(0x0F000000), blurRadius: 4, offset: Offset(0, 1)),
-          ];
+        : _courseCardShadow;
 
     final card = AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -599,7 +646,7 @@ class _FeaturedCourseCardState extends State<_FeaturedCourseCard> {
                   children: [
                     // 1) العنوان — أوضح وأثقل بصرياً
                     SizedBox(
-                      height: 34,
+                      height: 32,
                       child: Align(
                         alignment: AlignmentDirectional.topStart,
                         child: Text(
@@ -608,39 +655,36 @@ class _FeaturedCourseCardState extends State<_FeaturedCourseCard> {
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.tajawal(
                             fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                            height: 1.2,
-                            color: const Color(0xFF0F172A),
+                            fontWeight: FontWeight.w800,
+                            height: 1.25,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: _FeaturedCardSpace.sm),
-                    // وصف قصير — سطران كحد أقصى مع قطع ذكي
-                    Text(
-                      _subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.start,
-                      style: GoogleFonts.tajawal(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                        height: 1.35,
-                        color: const Color(0xFF6B7280),
+                    if (_subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        _subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.tajawal(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          height: 1.2,
+                          color: const Color(0xFF6B7280),
+                        ),
                       ),
+                    ],
+                    const SizedBox(height: _FeaturedCardSpace.sm),
+                    _CourseLevelBadgeRow(course: widget.course, compact: true),
+                    const SizedBox(height: _FeaturedCardSpace.sm),
+                    SizedBox(
+                      height: 18,
+                      child: _CourseCardCompactStats(course: widget.course, compact: true),
                     ),
-                    const SizedBox(height: _FeaturedCardSpace.md),
-                    // 2) معلومات الدورة — صف واحد بأيقونات
-                    _FeaturedCourseMetaRow(course: widget.course),
-                    const SizedBox(height: _FeaturedCardSpace.md),
-                    // 3) التقييم + الطلاب — قسم مميز
-                    _FeaturedCourseStatsBand(course: widget.course),
-                    const SizedBox(height: _FeaturedCardSpace.md),
-                    // 4) السعر — إبراز أقوى + مسافة سفلية إضافية
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(bottom: 2),
-                      child: _FeaturedCoursePriceBlock(course: widget.course),
-                    ),
+                    const SizedBox(height: _FeaturedCardSpace.sm),
+                    _FeaturedCoursePriceBlock(course: widget.course),
                   ],
                 ),
               ),
@@ -672,17 +716,7 @@ class _FeaturedCourseCover extends StatelessWidget {
   final CourseModel course;
   final double imageHeight;
 
-  String? get _badgeLabel {
-    if (course.isFeatured) return 'course_badge_bestseller'.tr;
-    final raw = course.startDate;
-    if (raw != null && raw.isNotEmpty) {
-      final parsed = DateTime.tryParse(raw);
-      if (parsed != null && DateTime.now().difference(parsed).inDays.abs() <= 30) {
-        return 'course_badge_new'.tr;
-      }
-    }
-    return null;
-  }
+  String? get _badgeLabel => _coursePromoBadge(course);
 
   @override
   Widget build(BuildContext context) {
@@ -771,28 +805,15 @@ class _FeaturedCourseCover extends StatelessWidget {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(8, 4, 9, 4),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (course.isFeatured)
-                        const Padding(
-                          padding: EdgeInsetsDirectional.only(end: 3),
-                          child: Icon(
-                            Icons.local_fire_department_outlined,
-                            size: 12,
-                            color: Color(0xFFFFE082),
-                          ),
-                        ),
-                      Text(
-                        badge,
-                        style: GoogleFonts.tajawal(
-                          color: Colors.white,
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
+                  padding: const EdgeInsetsDirectional.fromSTEB(7, 3, 8, 3),
+                  child: Text(
+                    badge,
+                    style: GoogleFonts.tajawal(
+                      color: Colors.white,
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w800,
+                      height: 1.1,
+                    ),
                   ),
                 ),
               ),
@@ -809,149 +830,6 @@ class _FeaturedCourseCover extends StatelessWidget {
     if (name.contains('أعمال') || name.contains('business')) return Icons.business_center_outlined;
     if (name.contains('برمج') || name.contains('program')) return Icons.code_outlined;
     return Icons.school_outlined;
-  }
-}
-
-/// صف معلومات الدورة — نوع الدراسة + الساعات.
-class _FeaturedCourseMetaRow extends StatelessWidget {
-  const _FeaturedCourseMetaRow({required this.course});
-
-  final CourseModel course;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasStudy = course.studyType != null && course.studyType!.isNotEmpty;
-    final hasHours = course.durationHours != null && course.durationHours! > 0;
-    if (!hasStudy && !hasHours) return const SizedBox.shrink();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          if (hasStudy) ...[
-            Icon(_studyTypeIcon(course.studyType!), size: 13, color: AppColors.primary),
-            const SizedBox(width: 5),
-            Flexible(
-              child: Text(
-                course.studyType!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.tajawal(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF374151),
-                ),
-              ),
-            ),
-          ],
-          if (hasStudy && hasHours) ...[
-            const SizedBox(width: 8),
-            Container(width: 1, height: 12, color: const Color(0xFFD1D5DB)),
-            const SizedBox(width: 8),
-          ],
-          if (hasHours) ...[
-            const Icon(Icons.schedule_outlined, size: 13, color: AppColors.primary),
-            const SizedBox(width: 5),
-            Flexible(
-              child: Text(
-              'hours_unit'.trParams({'n': '${course.durationHours}'}),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.tajawal(
-                fontSize: 10.5,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF374151),
-              ),
-            ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  static IconData _studyTypeIcon(String studyType) => courseStudyTypeIcon(studyType);
-}
-
-/// قسم التقييم وعدد الطلاب — بارز ومنفصل.
-class _FeaturedCourseStatsBand extends StatelessWidget {
-  const _FeaturedCourseStatsBand({required this.course});
-
-  final CourseModel course;
-
-  @override
-  Widget build(BuildContext context) {
-    final students = course.enrolledCountForCapacity;
-    final hasRating = course.rating > 0;
-    final hasStudents = students > 0;
-    if (!hasRating && !hasStudents) return const SizedBox.shrink();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          if (hasRating)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Icon(Icons.star_outline_rounded, size: 14, color: Color(0xFFF59E0B)),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  course.rating.toStringAsFixed(1),
-                  style: GoogleFonts.tajawal(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF111827),
-                  ),
-                ),
-                Text(
-                  ' / 5',
-                  style: GoogleFonts.tajawal(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            )
-          else
-            const SizedBox.shrink(),
-          if (hasStudents)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.people_outline_rounded, size: 14, color: AppColors.primary),
-                const SizedBox(width: 4),
-                Text(
-                  'students_count'.trParams({'n': '$students'}),
-                  style: GoogleFonts.tajawal(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-        ],
-      ),
-    );
   }
 }
 
@@ -975,7 +853,7 @@ class _FeaturedCoursePriceBlock extends StatelessWidget {
             flex: 2,
             child: CoursePriceText(
               price: course.price,
-              amountSize: 17,
+              amountSize: 18,
               currencySize: 11,
             ),
           ),
@@ -985,7 +863,7 @@ class _FeaturedCoursePriceBlock extends StatelessWidget {
 
     return CoursePriceText(
       price: course.price,
-      amountSize: 17,
+      amountSize: 18,
       currencySize: 11,
     );
   }
@@ -1060,127 +938,156 @@ class _FeaturedStrikethroughPrice extends StatelessWidget {
   }
 }
 
-class _CourseCardTags extends StatelessWidget {
-  const _CourseCardTags({
-    required this.course,
-    required this.compact,
-    required this.height,
-  });
+class _CourseLevelBadgeRow extends StatelessWidget {
+  const _CourseLevelBadgeRow({required this.course, required this.compact});
 
   final CourseModel course;
   final bool compact;
-  final double height;
 
   @override
   Widget build(BuildContext context) {
-    final tags = <Widget>[];
-    if (course.studyType != null && course.studyType!.isNotEmpty) {
-      tags.add(CourseMetaChip(
-        icon: courseStudyTypeIcon(course.studyType!),
-        label: course.studyType!,
-        compact: compact,
-      ));
-    }
-    if (course.durationHours != null && course.durationHours! > 0) {
-      tags.add(CourseMetaChip(
-        icon: Icons.schedule_rounded,
-        label: 'hours_unit'.trParams({'n': '${course.durationHours}'}),
-        compact: compact,
-      ));
-    }
-    if (tags.isEmpty) {
-      return height <= 0 ? const SizedBox.shrink() : SizedBox(height: height);
-    }
+    final level = course.level.trim();
+    if (level.isEmpty) return const SizedBox.shrink();
 
-    if (height <= 0) {
-      return tags.length > 1
-          ? Row(
-              children: [
-                for (var i = 0; i < tags.length; i++) ...[
-                  if (i > 0) SizedBox(width: compact ? 4 : 6),
-                  Expanded(child: tags[i]),
-                ],
-              ],
-            )
-          : tags.first;
-    }
-
-    return SizedBox(
-      height: height,
-      child: tags.length > 1
-          ? Row(
-              children: [
-                for (var i = 0; i < tags.length; i++) ...[
-                  if (i > 0) SizedBox(width: compact ? 4 : 6),
-                  Expanded(child: tags[i]),
-                ],
-              ],
-            )
-          : tags.first,
+    final colors = _levelBadgeColors(level);
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 9, vertical: compact ? 3 : 4),
+        decoration: BoxDecoration(
+          color: colors.bg,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          level,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.tajawal(
+            fontSize: compact ? 10 : 10.5,
+            fontWeight: FontWeight.w700,
+            color: colors.fg,
+            height: 1.1,
+          ),
+        ),
+      ),
     );
   }
 }
 
-class _CourseCardStatsRow extends StatelessWidget {
-  const _CourseCardStatsRow({required this.course, required this.compact});
+class _CourseCardCompactStats extends StatelessWidget {
+  const _CourseCardCompactStats({required this.course, required this.compact});
 
   final CourseModel course;
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final students = course.enrolledCountForCapacity;
-    final starSize = compact ? 13.0 : 16.0;
-    final fontSize = compact ? 10.0 : 12.0;
+    final iconSize = compact ? 12.0 : 13.0;
+    final fontSize = compact ? 10.0 : 10.5;
+    final items = <Widget>[];
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        if (course.rating > 0)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.star_rounded, size: starSize, color: const Color(0xFFF59E0B)),
-              const SizedBox(width: 3),
-              Text(
-                course.rating.toStringAsFixed(1),
-                style: GoogleFonts.tajawal(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF374151),
-                ),
-              ),
-            ],
-          )
-        else
-          const SizedBox.shrink(),
-        if (students > 0)
+    void addItem(Widget child) {
+      if (items.isNotEmpty) {
+        items.add(Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 5),
+          child: Text('·', style: TextStyle(color: const Color(0xFFD1D5DB), fontSize: fontSize + 1)),
+        ));
+      }
+      items.add(child);
+    }
+
+    if (course.rating > 0) {
+      addItem(Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.star_rounded, size: iconSize, color: const Color(0xFFF59E0B)),
+          const SizedBox(width: 2),
+          Text(
+            course.rating.toStringAsFixed(1),
+            style: GoogleFonts.tajawal(fontSize: fontSize, fontWeight: FontWeight.w700, color: const Color(0xFF374151)),
+          ),
+        ],
+      ));
+    }
+
+    if (course.durationHours != null && course.durationHours! > 0) {
+      addItem(Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.schedule_outlined, size: iconSize, color: AppColors.primary),
+          const SizedBox(width: 2),
           Flexible(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Icon(Icons.people_outline_rounded, size: starSize, color: AppColors.textSecondary),
-                const SizedBox(width: 3),
-                Flexible(
-                  child: Text(
-                    compact
-                        ? '$students'
-                        : 'students_count'.trParams({'n': '$students'}),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.end,
-                    style: GoogleFonts.tajawal(
-                      fontSize: fontSize,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
+            child: Text(
+              'hours_unit'.trParams({'n': '${course.durationHours}'}),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.tajawal(fontSize: fontSize, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
             ),
           ),
-      ],
+        ],
+      ));
+    } else if (course.duration.isNotEmpty && course.duration != '—') {
+      addItem(Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.schedule_outlined, size: iconSize, color: AppColors.primary),
+          const SizedBox(width: 2),
+          Flexible(
+            child: Text(
+              course.duration,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.tajawal(fontSize: fontSize, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+            ),
+          ),
+        ],
+      ));
+    }
+
+    if (course.studyType != null && course.studyType!.isNotEmpty) {
+      addItem(Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(courseStudyTypeIcon(course.studyType!), size: iconSize, color: AppColors.primary),
+          const SizedBox(width: 2),
+          Flexible(
+            child: Text(
+              course.studyType!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.tajawal(fontSize: fontSize, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+            ),
+          ),
+        ],
+      ));
+    }
+
+    final students = course.enrolledCountForCapacity;
+    if (students > 0) {
+      addItem(Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.people_outline_rounded, size: iconSize, color: AppColors.primary),
+          const SizedBox(width: 2),
+          Text(
+            compact ? '$students' : 'students_count'.trParams({'n': '$students'}),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.tajawal(fontSize: fontSize, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+          ),
+        ],
+      ));
+    }
+
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Row(mainAxisSize: MainAxisSize.min, children: items),
+      ),
     );
   }
 }
@@ -1199,34 +1106,32 @@ class _CourseCardPriceBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (course.hasDiscount && course.originalPriceLabel != null) {
-      return Align(
-        alignment: AlignmentDirectional.centerEnd,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _CardStrikethroughPrice(
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Flexible(
+            child: _CardStrikethroughPrice(
               label: course.originalPriceLabel!,
               fontSize: compact ? 10 : 11,
             ),
-            SizedBox(height: compact ? 1 : 2),
-            CoursePriceText(
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            flex: 2,
+            child: CoursePriceText(
               price: course.price,
-              amountSize: compact ? 12 : priceSize,
-              currencySize: compact ? 9 : 11,
+              amountSize: priceSize,
+              currencySize: compact ? 10 : 11,
             ),
-          ],
-        ),
+          ),
+        ],
       );
     }
 
-    return Align(
-      alignment: AlignmentDirectional.centerEnd,
-      child: CoursePriceText(
-        price: course.price,
-        amountSize: priceSize,
-        currencySize: compact ? 9 : 11,
-      ),
+    return CoursePriceText(
+      price: course.price,
+      amountSize: priceSize,
+      currencySize: compact ? 10 : 11,
     );
   }
 }
@@ -1273,8 +1178,8 @@ class _CourseCardHeroImage extends StatelessWidget {
           children: [
             _CourseCardImage(
               course: course,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              fallbackSize: compact ? 36 : 44,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(_kCourseCardRadius)),
+              fallbackSize: compact ? 34 : 40,
             ),
             if (badge != null)
               PositionedDirectional(
@@ -1283,49 +1188,21 @@ class _CourseCardHeroImage extends StatelessWidget {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: maxBadgeWidth),
                   child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: compact ? 8 : 10,
-                      vertical: compact ? 4 : 5,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: compact ? 7 : 8, vertical: compact ? 3 : 4),
                     decoration: BoxDecoration(
-                      color: course.isFeatured
-                          ? const Color(0xFF1E3A8A).withValues(alpha: 0.88)
-                          : AppColors.primary.withValues(alpha: 0.92),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (course.isFeatured ? const Color(0xFF1E3A8A) : AppColors.primary)
-                              .withValues(alpha: 0.28),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
+                      color: Colors.black.withValues(alpha: 0.72),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (course.isFeatured)
-                          Padding(
-                            padding: EdgeInsetsDirectional.only(end: compact ? 3 : 4),
-                            child: Icon(
-                              Icons.local_fire_department_rounded,
-                              size: compact ? 11 : 13,
-                              color: const Color(0xFFFFB347),
-                            ),
-                          ),
-                        Flexible(
-                          child: Text(
-                            badge,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.tajawal(
-                              color: Colors.white,
-                              fontSize: compact ? 9 : 10,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      badge,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.tajawal(
+                        color: Colors.white,
+                        fontSize: compact ? 8.5 : 9,
+                        fontWeight: FontWeight.w800,
+                        height: 1.1,
+                      ),
                     ),
                   ),
                 ),
@@ -1336,19 +1213,7 @@ class _CourseCardHeroImage extends StatelessWidget {
     );
   }
 
-  String? _badgeLabel(CourseModel course) {
-    if (course.isFeatured) return 'course_badge_bestseller'.tr;
-    if (_isNewCourse(course)) return 'course_badge_new'.tr;
-    return null;
-  }
-
-  bool _isNewCourse(CourseModel course) {
-    final raw = course.startDate;
-    if (raw == null || raw.isEmpty) return false;
-    final parsed = DateTime.tryParse(raw);
-    if (parsed == null) return false;
-    return DateTime.now().difference(parsed).inDays.abs() <= 30;
-  }
+  String? _badgeLabel(CourseModel course) => _coursePromoBadge(course);
 }
 
 class _CourseCardImage extends StatelessWidget {
@@ -1368,11 +1233,19 @@ class _CourseCardImage extends StatelessWidget {
     if (url != null) {
       return ClipRRect(
         borderRadius: borderRadius,
-        child: AppNetworkImage(
-          url: url,
-          fit: BoxFit.cover,
-          ignorePointer: true,
-          errorWidget: _fallback(),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final w = constraints.maxWidth.isFinite ? constraints.maxWidth : null;
+            final h = constraints.maxHeight.isFinite ? constraints.maxHeight : null;
+            return AppNetworkImage(
+              url: url,
+              width: w,
+              height: h,
+              fit: BoxFit.cover,
+              ignorePointer: true,
+              errorWidget: _fallback(),
+            );
+          },
         ),
       );
     }

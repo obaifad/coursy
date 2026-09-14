@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 
+import '../locale/locale_controller.dart';
+
 /// مساعدات تحويل JSON مشتركة (مطابقة لـ Laravel API).
 abstract final class JsonHelpers {
   static int parseInt(dynamic value) {
@@ -54,6 +56,46 @@ abstract final class JsonHelpers {
     }
 
     return fallback;
+  }
+
+  /// تقييم المعهد من الحقل المباشر أو متوسط التقييمات المضمّنة.
+  static double resolveInstituteRating(Map<String, dynamic> json) {
+    final direct = parseDoubleOrNull(
+      json['average_rating'] ??
+          json['rating'] ??
+          json['avg_rating'] ??
+          json['reviews_average'] ??
+          json['averageRating'] ??
+          json['reviews_avg'],
+    );
+    if (direct != null && direct > 0) return direct;
+
+    final stats = json['stats'];
+    if (stats is Map) {
+      final statsMap = Map<String, dynamic>.from(stats);
+      final fromStats = parseDoubleOrNull(
+        statsMap['average_rating'] ??
+            statsMap['rating'] ??
+            statsMap['avg_rating'] ??
+            statsMap['reviews_average'],
+      );
+      if (fromStats != null && fromStats > 0) return fromStats;
+    }
+
+    if (json['reviews'] is List) {
+      final reviews = json['reviews'] as List;
+      var sum = 0.0;
+      var count = 0;
+      for (final item in reviews) {
+        if (item is Map && item['rating'] != null) {
+          sum += parseDouble(item['rating']);
+          count++;
+        }
+      }
+      if (count > 0) return sum / count;
+    }
+
+    return 0;
   }
 
   static bool parseBool(dynamic value) {
@@ -145,6 +187,79 @@ abstract final class JsonHelpers {
       }
     }
     return DateTime.tryParse(value.trim());
+  }
+
+  static String paymentStatusLabel(String? status) {
+    if (status == null || status.trim().isEmpty) return '—';
+    switch (status.trim().toLowerCase()) {
+      case 'paid':
+      case 'completed':
+        return 'payment_status_paid'.tr;
+      case 'pending':
+      case 'unpaid':
+        return 'payment_status_pending'.tr;
+      case 'failed':
+        return 'payment_status_failed'.tr;
+      case 'cancelled':
+      case 'canceled':
+        return 'payment_status_cancelled'.tr;
+      default:
+        return status;
+    }
+  }
+
+  /// يصحّح تبديل خط العرض/الطول الشائع في بيانات سوريا (~33°N، ~36°E).
+  static ({double lat, double lng})? normalizeLatLng(double? lat, double? lng) {
+    if (lat == null || lng == null) return null;
+    var latitude = lat;
+    var longitude = lng;
+    if (latitude.abs() > 90 || longitude.abs() > 180) return null;
+    if (latitude > 34 && longitude < 34) {
+      final swap = latitude;
+      latitude = longitude;
+      longitude = swap;
+    }
+    return (lat: latitude, lng: longitude);
+  }
+
+  static bool looksLikeCoordinates(String value) {
+    return RegExp(r'^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$').hasMatch(value.trim());
+  }
+
+  static bool containsArabicScript(String value) {
+    return RegExp(r'[\u0600-\u06FF]').hasMatch(value);
+  }
+
+  static bool isArabicLocale() {
+    if (Get.isRegistered<LocaleController>()) {
+      return Get.find<LocaleController>().code.value == 'ar';
+    }
+    return Get.locale?.languageCode != 'en';
+  }
+
+  /// يستخرج حقلين عربي/إنجليزي من JSON (مثل name_ar / name_en / name).
+  static ({String ar, String en}) bilingualText(Map<String, dynamic> json, [String key = 'name']) {
+    final ar = json['${key}_ar']?.toString().trim() ?? '';
+    final en = json['${key}_en']?.toString().trim() ?? '';
+    final generic = json[key]?.toString().trim() ?? '';
+
+    if (ar.isNotEmpty || en.isNotEmpty) {
+      return (
+        ar: ar.isNotEmpty ? ar : (containsArabicScript(generic) ? generic : ''),
+        en: en.isNotEmpty ? en : (!containsArabicScript(generic) ? generic : ''),
+      );
+    }
+    if (generic.isEmpty) return (ar: '', en: '');
+    if (containsArabicScript(generic)) return (ar: generic, en: '');
+    return (ar: '', en: generic);
+  }
+
+  static String pickLocalized({required String ar, required String en, String fallback = ''}) {
+    final primary = isArabicLocale() ? ar : en;
+    final secondary = isArabicLocale() ? en : ar;
+    if (primary.isNotEmpty) return primary;
+    if (secondary.isNotEmpty) return secondary;
+    return fallback;
   }
 
   static String localizedText(Map<String, dynamic> json, String key) {

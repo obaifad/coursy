@@ -176,12 +176,9 @@ class _EnrollmentCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.card,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(CourseCardMetrics.cardRadius),
         border: Border.all(color: AppColors.borderSoft),
-        boxShadow: const [
-          BoxShadow(color: Color(0x126C63FF), blurRadius: 20, offset: Offset(0, 8)),
-          BoxShadow(color: Color(0x08000000), blurRadius: 4, offset: Offset(0, 2)),
-        ],
+        boxShadow: AppShadows.card,
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -201,12 +198,7 @@ class _EnrollmentCard extends StatelessWidget {
                         enrollment.courseTitle ?? course?.title ?? 'course_details'.tr,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.tajawal(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 16,
-                          height: 1.25,
-                          color: const Color(0xFF111827),
-                        ),
+                        style: AppTypography.cardTitle(size: 16),
                       ),
                       if (course?.institute.isNotEmpty == true) ...[
                         const SizedBox(height: 4),
@@ -214,11 +206,7 @@ class _EnrollmentCard extends StatelessWidget {
                           course!.institute,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.tajawal(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
+                          style: AppTypography.cardSubtitle(size: 12),
                         ),
                       ],
                     ],
@@ -421,7 +409,10 @@ class _EnrollmentMeta {
     final rows = <_MetaRow>[
       _MetaRow(icon: Icons.confirmation_number_outlined, label: '${'booking_id'.tr} #${enrollment.id}'),
       if (enrollment.paymentStatus.isNotEmpty)
-        _MetaRow(icon: Icons.payments_outlined, label: '${'payment_status'.tr}: ${enrollment.paymentStatus}'),
+        _MetaRow(
+          icon: Icons.payments_outlined,
+          label: '${'payment_status'.tr}: ${JsonHelpers.paymentStatusLabel(enrollment.paymentStatus)}',
+        ),
       if (course?.instructor?.name.isNotEmpty == true)
         _MetaRow(icon: Icons.person_outline_rounded, label: course!.instructor!.name),
       if (course?.startDate != null)
@@ -512,50 +503,21 @@ class _MyCoursesEmptyState extends StatelessWidget {
     };
     final showBrowse = status == _EnrollmentListStatus.pending;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 88,
-            height: 88,
-            decoration: BoxDecoration(
-              color: theme.backgroundColor,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(theme.icon, size: 40, color: theme.foregroundColor),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'my_courses_empty_title'.tr,
-            style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              message,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.tajawal(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-          ),
-          if (showBrowse) ...[
-            const SizedBox(height: 24),
-            SizedBox(
+    return AppEmptyState(
+      message: 'my_courses_empty_title'.tr,
+      subtitle: message,
+      icon: theme.icon,
+      iconColor: theme.foregroundColor,
+      iconBackgroundColor: theme.backgroundColor,
+      action: showBrowse
+          ? SizedBox(
               width: 220,
               child: RegisterGradientButton(
                 label: 'browse_courses'.tr,
                 onPressed: () => AppNavigation.switchToTab(0),
               ),
-            ),
-          ],
-        ],
-      ),
+            )
+          : null,
     );
   }
 }
@@ -577,7 +539,7 @@ class _MyCoursesLoginPrompt extends StatelessWidget {
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
                   color: AppColors.card,
-                  borderRadius: BorderRadius.circular(28),
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: RegisterDecor.cardShadow,
                 ),
                 child: Column(
@@ -587,7 +549,7 @@ class _MyCoursesLoginPrompt extends StatelessWidget {
                     Text(
                       'login_to_see_courses'.tr,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 18),
+                      style: AppTypography.sectionTitle(),
                     ),
                     const SizedBox(height: 20),
                     RegisterGradientButton(

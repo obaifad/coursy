@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
 import 'legacy_session_cleanup.dart';
+import 'academic_profile_cache.dart';
 import 'secure_session_store.dart';
 import 'session_keys.dart';
 
@@ -166,6 +167,23 @@ class TokenStorage extends GetxService {
 
     await _secure.deleteAll();
     await LegacySessionCleanup.purge(_legacyBox);
+  }
+
+  Future<void> saveAcademicCache(AcademicProfileCache cache) async {
+    if (cache.isEmpty) {
+      await clearAcademicCache();
+      return;
+    }
+    await _secure.write(SessionKeys.academicProfileCache, cache.encode());
+  }
+
+  Future<AcademicProfileCache?> loadAcademicCache() async {
+    final raw = await _secure.read(SessionKeys.academicProfileCache);
+    return AcademicProfileCache.decode(raw);
+  }
+
+  Future<void> clearAcademicCache() async {
+    await _secure.delete(SessionKeys.academicProfileCache);
   }
 
   Future<void> saveToken(String token) => saveSession(token: token);

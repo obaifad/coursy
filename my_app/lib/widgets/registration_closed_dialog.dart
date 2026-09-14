@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../core/utils/external_launcher.dart';
 import '../core/models/app_models.dart';
 import '../core/models/json_helpers.dart';
 import '../core/responsive/responsive.dart';
@@ -22,12 +22,7 @@ class RegistrationClosedDialog extends StatelessWidget {
   }
 
   Future<void> _callInstitute(String phone) async {
-    final normalized = phone.replaceAll(RegExp(r'[^\d+]+'), '');
-    final uri = Uri(scheme: 'tel', path: normalized);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-      return;
-    }
+    if (await ExternalLauncher.openPhone(phone)) return;
     await Clipboard.setData(ClipboardData(text: phone));
     Get.snackbar(
       'registration_closed_phone_copied_title'.tr,

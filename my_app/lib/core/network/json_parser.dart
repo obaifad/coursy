@@ -33,7 +33,7 @@ List<Map<String, dynamic>> extractListMap(dynamic body) {
 
   if (normalized is Map) {
     final map = Map<String, dynamic>.from(normalized);
-    for (final key in ['data', 'cities', 'items', 'results']) {
+    for (final key in ['data', 'cities', 'items', 'results', 'tags']) {
       final list = map[key];
       if (list is List) {
         return list.map(coerceMap).whereType<Map<String, dynamic>>().toList();
@@ -132,27 +132,108 @@ bool isPhoneVerified(Map<String, dynamic>? user) {
 
 /// حقول المستخدم/الطالب من استجابة الملف الشخصي أو /student/me.
 Map<String, dynamic> extractProfileUserMap(dynamic body) {
+  return mergeProfileUserData(body);
+}
+
+Map<String, dynamic>? extractNestedStudentProfile(Map<String, dynamic> map) {
+  for (final key in ['student_profile', 'studentProfile', 'profile']) {
+    final value = map[key];
+    if (value is Map) return Map<String, dynamic>.from(value);
+  }
+  return null;
+}
+
+List<int> extractPreferredCategoryIds(dynamic preferred) {
+  if (preferred == null) return [];
+  if (preferred is! List) return [];
+
+  final ids = <int>[];
+  for (final item in preferred) {
+    if (item is Map) {
+      final map = Map<String, dynamic>.from(item);
+      final pivot = map['pivot'];
+      if (pivot is Map) {
+        final pivotMap = Map<String, dynamic>.from(pivot);
+        final pivotId = JsonHelpers.parseIntOrNull(
+          pivotMap['tag_id'] ??
+              pivotMap['preferred_tag_id'] ??
+              pivotMap['category_id'] ??
+              pivotMap['preferred_category_id'],
+        );
+        if (pivotId != null && pivotId > 0) {
+          ids.add(pivotId);
+          continue;
+        }
+      }
+      final id = JsonHelpers.parseIntOrNull(
+        map['id'] ?? map['tag_id'] ?? map['category_id'],
+      );
+      if (id != null && id > 0) ids.add(id);
+      continue;
+    }
+    final id = int.tryParse(item.toString());
+    if (id != null && id > 0) ids.add(id);
+  }
+  return ids;
+}
+
+/// يستخرج معرّفات الاهتمامات (tags) من استجابة الملف الشخصي.
+List<int> extractPreferredInterestIds(Map<String, dynamic> source) {
+  for (final key in [
+    'preferred_tags',
+    'preferred_tag_ids',
+    'tag_ids',
+    'tags',
+    'interests',
+    'interest_ids',
+    'preferred_categories',
+    'preferred_category_ids',
+    'category_ids',
+    'categories',
+  ]) {
+    final ids = extractPreferredCategoryIds(source[key]);
+    if (ids.isNotEmpty) return ids;
+  }
+  return [];
+}
+
+/// يدمج user + student_profile من أشكال استجابة Laravel المختلفة.
+Map<String, dynamic> mergeProfileUserData(dynamic body) {
   final normalized = normalizeApiBody(body);
   if (normalized is! Map) return {};
 
-  Map<String, dynamic> map = Map<String, dynamic>.from(normalized);
-  for (var depth = 0; depth < 4; depth++) {
-    if (map['user'] is Map) {
-      return Map<String, dynamic>.from(map['user'] as Map);
-    }
-    if (map['student'] is Map) {
-      return Map<String, dynamic>.from(map['student'] as Map);
-    }
-    if (map['data'] is Map) {
-      map = Map<String, dynamic>.from(map['data'] as Map);
-      continue;
-    }
-    if (map.containsKey('first_name') || map.containsKey('phone')) {
-      return map;
-    }
-    break;
+  Map<String, dynamic> root = Map<String, dynamic>.from(normalized);
+  if (root['data'] is Map<String, dynamic>) {
+    root = Map<String, dynamic>.from(root['data'] as Map);
   }
-  return map;
+
+  Map<String, dynamic> user = {};
+  if (root['user'] is Map) {
+    user = Map<String, dynamic>.from(root['user'] as Map);
+  } else if (root['student'] is Map) {
+    user = Map<String, dynamic>.from(root['student'] as Map);
+  } else if (root.containsKey('first_name') || root.containsKey('phone')) {
+    user = Map<String, dynamic>.from(root);
+  }
+
+  final profileSources = <Map<String, dynamic>>[
+    if (user.isNotEmpty) user,
+    root,
+    if (normalized is Map<String, dynamic>) normalized,
+  ];
+
+  Map<String, dynamic>? mergedProfile;
+  for (final source in profileSources) {
+    final profile = extractNestedStudentProfile(source);
+    if (profile == null) continue;
+    mergedProfile = mergedProfile == null ? profile : {...mergedProfile, ...profile};
+  }
+
+  if (mergedProfile != null) {
+    user['student_profile'] = mergedProfile;
+  }
+
+  return user;
 }
 
 String? extractUserDisplayName(dynamic body) {

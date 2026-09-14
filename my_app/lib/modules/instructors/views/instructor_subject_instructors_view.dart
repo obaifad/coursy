@@ -39,7 +39,7 @@ class InstructorSubjectInstructorsView extends GetView<InstructorSubjectInstruct
                             child: Text(
                               controller.errorMessage.value!,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(color: AppColors.textSecondary, height: 1.5),
+                              style: AppTypography.pageSubtitle(),
                             ),
                           ),
                         ),
@@ -53,7 +53,7 @@ class InstructorSubjectInstructorsView extends GetView<InstructorSubjectInstruct
                             child: Text(
                               'no_instructors_in_subject'.tr,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(color: AppColors.textSecondary, height: 1.5),
+                              style: AppTypography.pageSubtitle(),
                             ),
                           ),
                         ),

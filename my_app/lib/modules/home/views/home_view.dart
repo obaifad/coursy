@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
-import '../../../core/storage/token_storage.dart';
 import '../../../routes/app_routes.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../theme/app_colors.dart';
@@ -34,7 +33,7 @@ class HomeView extends GetView<HomeController> {
         final instructorSubjects = controller.instructorSubjects.toList(growable: false);
         final scrollReset = controller.horizontalScrollReset.value;
         return RefreshIndicator(
-          onRefresh: controller.loadHome,
+          onRefresh: () => controller.loadHome(forceRefresh: true),
           child: ListView(
             controller: controller.scrollController,
             primary: false,
@@ -55,16 +54,11 @@ class HomeView extends GetView<HomeController> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           const AppHomeBrandLogo(height: 80),
-                          AppIconCircleButton(
-                            onTap: () => Get.toNamed(AppRoutes.settings),
-                            icon: Icons.settings_outlined,
-                          ),
+                          _HomeSettingsButton(onTap: () => Get.toNamed(AppRoutes.settings)),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    const _HomeWelcomeLine(),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 10),
                     AppHomeSearchBar(
                       onTap: () => Get.toNamed(AppRoutes.search),
                       hint: 'home_search_hint'.tr,
@@ -86,7 +80,10 @@ class HomeView extends GetView<HomeController> {
                           const Icon(Icons.cloud_off_outlined, color: Colors.orange),
                           const SizedBox(width: 10),
                           Expanded(child: Text(controller.errorMessage.value!, style: const TextStyle(fontSize: 13))),
-                          TextButton(onPressed: controller.loadHome, child: Text('retry'.tr)),
+                          TextButton(
+                            onPressed: () => controller.loadHome(forceRefresh: true),
+                            child: Text('retry'.tr),
+                          ),
                         ],
                       ),
                     ),
@@ -122,7 +119,12 @@ class HomeView extends GetView<HomeController> {
               if (courses.isEmpty)
                 Padding(
                   padding: _sectionPad(context),
-                  child: SoftCard(child: Text('no_courses_now'.tr)),
+                  child: SoftCard(
+                    child: AppEmptyState.inline(
+                      message: 'no_courses_now'.tr,
+                      icon: Icons.menu_book_outlined,
+                    ),
+                  ),
                 )
               else
                 AppHorizontalListView(
@@ -225,7 +227,12 @@ class HomeView extends GetView<HomeController> {
               if (institutes.isEmpty)
                 Padding(
                   padding: _sectionPad(context),
-                  child: SoftCard(child: Text('no_institutes_now'.tr)),
+                  child: SoftCard(
+                    child: AppEmptyState.inline(
+                      message: 'no_institutes_now'.tr,
+                      icon: Icons.apartment_outlined,
+                    ),
+                  ),
                 )
               else
                 AppHorizontalListView(
@@ -260,7 +267,10 @@ class _CategoriesRow extends StatelessWidget {
       return Padding(
         padding: AppLayout.sectionHorizontal(context),
         child: SoftCard(
-          child: Text('no_categories'.tr, style: const TextStyle(color: AppColors.textSecondary)),
+          child: AppEmptyState.inline(
+            message: 'no_categories'.tr,
+            icon: Icons.category_outlined,
+          ),
         ),
       );
     }
@@ -526,28 +536,35 @@ class _CategoryCountBadge extends StatelessWidget {
   }
 }
 
-class _HomeWelcomeLine extends StatelessWidget {
-  const _HomeWelcomeLine();
+/// زر إعدادات دائري متدرّج — أكثر حضورًا من الأيقونة الرمادية المسطّحة السابقة.
+class _HomeSettingsButton extends StatelessWidget {
+  const _HomeSettingsButton({required this.onTap});
 
-  String _firstName(String fullName) {
-    final trimmed = fullName.trim();
-    if (trimmed.isEmpty) return trimmed;
-    return trimmed.split(RegExp(r'\s+')).first;
-  }
+  final VoidCallback onTap;
+  static const double _size = 46;
 
   @override
   Widget build(BuildContext context) {
-    final storage = Get.find<TokenStorage>();
-    return Obx(() {
-      final name = storage.userName.value?.trim();
-      final greeting = name != null && name.isNotEmpty
-          ? 'welcome_back_name'.trParams({'name': _firstName(name)})
-          : 'welcome_back'.tr;
-      return Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: Text(greeting, style: AppTypography.homeWelcome()),
-      );
-    });
+    return Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Ink(
+          width: _size,
+          height: _size,
+          decoration: const BoxDecoration(
+            gradient: AppGradients.primary,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(color: Color(0x446C63FF), blurRadius: 16, offset: Offset(0, 8)),
+            ],
+          ),
+          child: const Icon(Icons.settings_rounded, color: Colors.white, size: 22),
+        ),
+      ),
+    );
   }
 }
 

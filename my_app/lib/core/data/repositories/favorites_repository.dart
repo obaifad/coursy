@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
+import '../../config/app_debug_log.dart';
 import '../../models/favorite_model.dart';
 import '../../models/paginated_result.dart';
 import '../../network/api_client.dart';
@@ -16,12 +16,8 @@ class FavoritesRepository extends GetxService {
   final StudentIdResolver _studentIdResolver;
 
   void _log(String action, dynamic body, {String? path}) {
-    debugPrint('');
-    debugPrint('══════════════ FAVORITES ($action) ══════════════');
-    if (path != null) debugPrint('Path: $path');
-    debugPrint(body.toString());
-    debugPrint('══════════════════════════════════════════════════');
-    debugPrint('');
+    if (path != null) AppDebugLog.repo('Favorites', '$action $path');
+    AppDebugLog.repo('Favorites', body.toString());
   }
 
   Future<List<FavoriteModel>> fetchMine() async {

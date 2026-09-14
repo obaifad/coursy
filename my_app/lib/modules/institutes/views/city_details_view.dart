@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/locale/locale_rebuild.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/app_skeletons.dart';
@@ -14,6 +15,7 @@ class CityDetailsView extends GetView<CityDetailsController> {
   Widget build(BuildContext context) {
     return Obx(
       () {
+        final _ = localeRebuildToken;
         final cityInstitutesCount = controller.city.value?.institutesCount ?? 0;
         final institutesCount = cityInstitutesCount > 0 ? cityInstitutesCount : controller.institutes.length;
         final cityCoursesCount = controller.city.value?.coursesCount ?? 0;
@@ -39,17 +41,22 @@ class CityDetailsView extends GetView<CityDetailsController> {
                   SoftCard(
                     child: Row(
                       children: [
-                        _StatBox(label: 'المعاهد', value: '$institutesCount'),
+                        _StatBox(label: 'nav_institutes'.tr, value: '$institutesCount'),
                         const SizedBox(width: 12),
-                        _StatBox(label: 'الدورات', value: '$coursesCount'),
+                        _StatBox(label: 'stat_courses'.tr, value: '$coursesCount'),
                       ],
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text('معاهد المدينة', style: Theme.of(context).textTheme.titleMedium),
+                  Text('city_institutes_section'.tr, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 12),
                   if (controller.institutes.isEmpty)
-                    const SoftCard(child: Text('لا توجد معاهد في هذه المدينة'))
+                    SoftCard(
+                      child: AppEmptyState.inline(
+                        message: 'no_institutes_in_city'.tr,
+                        icon: Icons.apartment_outlined,
+                      ),
+                    )
                   else
                     ...controller.institutes.map(
                       (inst) => Padding(
@@ -66,7 +73,7 @@ class CityDetailsView extends GetView<CityDetailsController> {
                       icon: controller.isLoadingMore.value
                           ? const AppInlineLoader()
                           : const Icon(Icons.expand_more_rounded),
-                      label: const Text('تحميل المزيد'),
+                      label: Text('load_more'.tr),
                     ),
                 ],
               ),
@@ -94,7 +101,7 @@ class _StatBox extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: AppColors.primary)),
+            Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary)),
             const SizedBox(height: 4),
             Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
           ],

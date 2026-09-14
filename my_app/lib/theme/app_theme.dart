@@ -31,11 +31,14 @@ class AppTheme {
         ),
         iconTheme: const IconThemeData(color: Color(0xFF111827)),
       ),
+      // نصف القطر واللون هنا يطابقان SoftCard (design_system.dart) لضمان
+      // أن أي استخدام مستقبلي لـ Card() لا يبدو مختلفًا عن باقي كروت التطبيق.
       cardTheme: CardThemeData(
-        elevation: 2,
+        elevation: 1,
         color: AppColors.card,
-        shadowColor: AppColors.shadowPurple,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shadowColor: AppColors.shadowSoft,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       tabBarTheme: TabBarThemeData(
         labelColor: AppColors.primary,

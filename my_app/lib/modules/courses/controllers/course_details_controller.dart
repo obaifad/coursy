@@ -11,6 +11,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/services/favorites_service.dart';
 import '../../../core/services/course_rating_service.dart';
 import '../../../core/services/student_id_resolver.dart';
+import '../../../core/session/course_catalog_sync.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/utils/auth_guard.dart';
 
@@ -50,7 +51,7 @@ class CourseDetailsController extends GetxController {
       _loadDetails(arg);
     }
     if (_tokenStorage.isLoggedIn) {
-      unawaited(_favoritesService.syncFromApi());
+      unawaited(_favoritesService.syncFromApi(force: true));
     }
   }
 
@@ -62,9 +63,9 @@ class CourseDetailsController extends GetxController {
     return _favoritesService.isCourseFavorite(id);
   }
 
-  CourseModel _mergeCourseDetails(CourseModel? previous, CourseModel details) {
+  CourseModel _mergeCourseDetails(CourseModel? previous, CourseModel details, {bool hadSeed = false}) {
     if (previous == null) return details;
-    return details.copyWith(
+    final merged = details.copyWith(
       imageUrl: (details.imageUrl?.isNotEmpty ?? false) ? details.imageUrl : previous.imageUrl,
       schedules: details.schedules.isNotEmpty ? details.schedules : previous.schedules,
       instructor: details.instructor ?? previous.instructor,
@@ -78,6 +79,18 @@ class CourseDetailsController extends GetxController {
       instituteWebsite: details.instituteWebsite ?? previous.instituteWebsite,
       rating: details.rating > 0 ? details.rating : previous.rating,
     );
+    if (!hadSeed) return merged;
+    // القائمة (Home/Courses) غالباً أحدث من /courses/{id} — لا نستبدل العدد بقيمة أقدم.
+    return merged.copyWith(
+      studentsCount: _preferStudentCount(previous.studentsCount, merged.studentsCount),
+      confirmedStudentsCount: _preferStudentCount(previous.confirmedStudentsCount, merged.confirmedStudentsCount),
+    );
+  }
+
+  int? _preferStudentCount(int? seed, int? fromApi) {
+    if (seed == null) return fromApi;
+    if (fromApi == null) return seed;
+    return fromApi >= seed ? fromApi : seed;
   }
 
   Future<void> _loadDetails(int id, {bool hadSeed = false}) async {
@@ -95,7 +108,7 @@ class CourseDetailsController extends GetxController {
       final apiSchedules = results[1] as List<ScheduleModel>;
       final fetchedReviews = results[2] as List<ReviewModel>;
 
-      course.value = _mergeCourseDetails(previous, details);
+      course.value = _mergeCourseDetails(previous, details, hadSeed: hadSeed);
       schedules.assignAll(apiSchedules.isNotEmpty ? apiSchedules : details.schedules);
       reviews.assignAll(fetchedReviews);
       if (reviews.isNotEmpty && course.value != null) {
@@ -115,7 +128,7 @@ class CourseDetailsController extends GetxController {
 
   Future<void> _loadSecondaryData(int id) async {
     await Future.wait<void>([
-      _enrichConfirmedEnrollmentCount(id),
+      _refreshStudentCounts(id),
       _updateReviewPermission(),
       _checkEnrollment(id),
     ]);
@@ -123,16 +136,26 @@ class CourseDetailsController extends GetxController {
 
   Future<void> refreshEnrollment() async {
     final id = course.value?.id;
-    if (id != null) await _checkEnrollment(id);
+    if (id == null) return;
+    await Future.wait<void>([
+      _checkEnrollment(id),
+      _refreshStudentCounts(id),
+    ]);
   }
 
-  Future<void> _enrichConfirmedEnrollmentCount(int courseId) async {
-    final item = course.value;
-    if (item == null || item.confirmedStudentsCount != null) return;
-    final count = await _enrollmentRepository.countConfirmedEnrollmentsForCourse(courseId);
-    if (count != null && course.value?.id == courseId) {
-      course.value = course.value!.copyWith(confirmedStudentsCount: count);
-    }
+  Future<void> _refreshStudentCounts(int courseId) async {
+    final current = course.value;
+    if (current == null || courseId <= 0) return;
+
+    final enrollCount = await _enrollmentRepository.countConfirmedEnrollmentsForCourse(courseId);
+    if (course.value?.id != courseId || enrollCount == null) return;
+
+    final nextConfirmed = _preferStudentCount(current.confirmedStudentsCount, enrollCount);
+    final currentDisplay = current.enrolledCountForCapacity;
+    final nextDisplay = nextConfirmed ?? current.studentsCount ?? 0;
+    if (nextDisplay < currentDisplay) return;
+
+    course.value = current.copyWith(confirmedStudentsCount: nextConfirmed);
   }
 
   Future<void> _checkEnrollment(int courseId) async {
@@ -237,6 +260,10 @@ class CourseDetailsController extends GetxController {
 
   @override
   void onClose() {
+    final latest = course.value;
+    if (latest != null) {
+      CourseCatalogSync.patchCourse(latest);
+    }
     reviewCommentController.dispose();
     super.onClose();
   }

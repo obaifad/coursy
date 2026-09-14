@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/config/api_config.dart';
 import '../../../core/navigation/app_navigation.dart';
+import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../routes/app_routes.dart';
@@ -32,7 +33,9 @@ class LoginView extends GetView<AuthController> {
       }
     });
 
-    return Theme(
+    return Obx(() {
+      final _ = localeRebuildToken;
+      return Theme(
       data: Theme.of(context).copyWith(
         textTheme: GoogleFonts.tajawalTextTheme(Theme.of(context).textTheme),
       ),
@@ -91,6 +94,7 @@ class LoginView extends GetView<AuthController> {
         ),
       ),
     );
+    });
   }
 }
 

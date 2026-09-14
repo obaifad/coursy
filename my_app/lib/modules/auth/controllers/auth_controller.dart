@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/data/repositories/auth_repository.dart';
-import '../../../core/data/repositories/category_repository.dart';
+import '../../../core/data/repositories/interest_repository.dart';
 import '../../../core/data/repositories/city_repository.dart';
 import '../../../core/data/repositories/profile_repository.dart';
 import '../../../core/data/repositories/reference_repository.dart';
+import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/models/register_payload.dart';
 import '../../../core/network/api_exception.dart';
-import '../../../core/services/favorites_service.dart';
+import '../../../core/session/session_refresh.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/utils/education_level_utils.dart';
 import '../../../routes/app_routes.dart';
@@ -18,7 +19,7 @@ import '../../../routes/app_routes.dart';
 class AuthController extends GetxController {
   final AuthRepository _authRepository = Get.find();
   final CityRepository _cityRepository = Get.find();
-  final CategoryRepository _categoryRepository = Get.find();
+  final InterestRepository _interestRepository = Get.find();
   final ReferenceRepository _referenceRepository = Get.find();
 
   static const educationLevels = ['High School', 'Diploma', 'Bachelor', 'Master', 'PhD'];
@@ -47,7 +48,9 @@ class AuthController extends GetxController {
   final citiesLoading = false.obs;
   final citiesError = RxnString();
   final referencesLoading = false.obs;
+  final referencesError = RxnString();
   final categoriesLoading = false.obs;
+  final categoriesError = RxnString();
   final selectedCityId = RxnInt();
   final selectedGender = RxnString();
   final birthDate = Rxn<DateTime>();
@@ -59,63 +62,144 @@ class AuthController extends GetxController {
   final selectedSpecializationId = RxnInt();
   final selectedCategoryIds = <int>[].obs;
 
+  final isAdvancingStep = false.obs;
+  final isSubmittingRegister = false.obs;
+  final registerReferenceReady = false.obs;
+  final registerStep1Validated = false.obs;
+  final registerStep0Validated = false.obs;
+
+  int _citiesLoadId = 0;
+  int _referencesLoadId = 0;
+  int _categoriesLoadId = 0;
+
+  LocaleRequestGuard get _localeGuard => Get.find<LocaleRequestGuard>();
+
+  bool _loadStillCurrent(int loadId, int counter, int localeGen) =>
+      loadId == counter && _localeGuard.isCurrent(localeGen);
+
   @override
   void onInit() {
     super.onInit();
-    loadCities();
-    loadReferences();
-    loadCategories();
+    registerPasswordController.addListener(_validatePasswordFieldsLive);
+    confirmPasswordController.addListener(_validatePasswordFieldsLive);
+    emailController.addListener(_onRegisterIdentityChanged);
+    phoneController.addListener(_onRegisterIdentityChanged);
+  }
+
+  void _onRegisterIdentityChanged() {
+    registerStep0Validated.value = false;
+    if (registerStep.value != 0) return;
+    registerFieldErrors.remove('email');
+    registerFieldErrors.remove('phone');
+    registerFieldErrors.refresh();
+  }
+
+  /// تحميل قوائم التسجيل عند فتح الشاشة فقط — لا يُستدعى عند الدخول.
+  Future<void> prepareRegisterReferenceData({bool force = false}) async {
+    if (registerReferenceReady.value && !force) return;
+    await Future.wait([
+      loadCities(force: force),
+      loadReferences(force: force),
+      loadCategories(force: force),
+    ]);
+    registerReferenceReady.value =
+        cities.isNotEmpty && universities.isNotEmpty && categories.isNotEmpty;
   }
 
   Future<void> loadCities({bool force = false}) async {
-    if (citiesLoading.value) return;
-    if (!force && cities.isNotEmpty) return;
+    if (citiesLoading.value && !force) return;
+    final loadId = ++_citiesLoadId;
+    final localeGen = _localeGuard.capture();
     citiesLoading.value = true;
     citiesError.value = null;
     try {
-      cities.assignAll(await _cityRepository.fetchCities());
-    } catch (_) {
+      final fresh = await _cityRepository.fetchCities();
+      if (_loadStillCurrent(loadId, _citiesLoadId, localeGen)) {
+        cities.assignAll(fresh);
+      }
+    } on ApiCancelledException {
+      return;
+    } catch (e) {
+      if (!_loadStillCurrent(loadId, _citiesLoadId, localeGen)) return;
       cities.clear();
+      citiesError.value = e is ApiException ? e.message : 'connection_error'.tr;
     } finally {
-      citiesLoading.value = false;
+      if (loadId == _citiesLoadId) citiesLoading.value = false;
     }
   }
 
   Future<void> loadReferences({bool force = false}) async {
-    if (referencesLoading.value) return;
-    if (!force && universities.isNotEmpty && specializations.isNotEmpty) return;
+    if (referencesLoading.value && !force) return;
+    final loadId = ++_referencesLoadId;
+    final localeGen = _localeGuard.capture();
     referencesLoading.value = true;
+    referencesError.value = null;
     try {
       final results = await Future.wait([
         _referenceRepository.fetchUniversities(),
         _referenceRepository.fetchStudentSpecializations(),
       ]);
-      universities.assignAll(results[0]);
-      specializations.assignAll(results[1]);
-    } catch (_) {
+      if (_loadStillCurrent(loadId, _referencesLoadId, localeGen)) {
+        universities.assignAll(results[0]);
+        specializations.assignAll(results[1]);
+      }
+    } on ApiCancelledException {
+      return;
+    } catch (e) {
+      if (!_loadStillCurrent(loadId, _referencesLoadId, localeGen)) return;
       universities.clear();
       specializations.clear();
+      referencesError.value = e is ApiException ? e.message : 'connection_error'.tr;
     } finally {
-      referencesLoading.value = false;
+      if (loadId == _referencesLoadId) referencesLoading.value = false;
     }
   }
 
   Future<void> loadCategories({bool force = false}) async {
-    if (categoriesLoading.value) return;
-    if (!force && categories.isNotEmpty) return;
+    if (categoriesLoading.value && !force) return;
+    final loadId = ++_categoriesLoadId;
+    final localeGen = _localeGuard.capture();
     categoriesLoading.value = true;
+    categoriesError.value = null;
     try {
-      categories.assignAll(await _categoryRepository.fetchCategories());
-    } catch (_) {
+      final fresh = await _fetchAllInterestsWithRetry();
+      if (_loadStillCurrent(loadId, _categoriesLoadId, localeGen)) {
+        categories.assignAll(fresh);
+        if (kDebugMode) {
+          debugPrint('[Register] loaded ${fresh.length} interest tags');
+        }
+      }
+    } on ApiCancelledException {
+      return;
+    } catch (e) {
+      if (!_loadStillCurrent(loadId, _categoriesLoadId, localeGen)) return;
       categories.clear();
+      categoriesError.value = e is ApiException ? e.message : 'connection_error'.tr;
     } finally {
-      categoriesLoading.value = false;
+      if (loadId == _categoriesLoadId) categoriesLoading.value = false;
     }
   }
 
+  Future<List<CategoryModel>> _fetchAllInterestsWithRetry() async {
+    try {
+      return await _interestRepository.fetchInterests();
+    } on ApiException catch (e) {
+      if (!e.message.contains('Incomplete paginated fetch')) rethrow;
+      return _interestRepository.fetchInterests();
+    }
+  }
+
+  Future<void> reloadLocalizedData() async {
+    await Future.wait([
+      loadCities(force: true),
+      loadReferences(force: true),
+      loadCategories(force: true),
+    ]);
+  }
+
   void setEducationLevel(String? level) {
-    selectedEducationLevel.value = level;
-    if (!EducationLevelUtils.requiresUniversityFields(level)) {
+    selectedEducationLevel.value = EducationLevelUtils.normalize(level);
+    if (!EducationLevelUtils.requiresUniversityFields(selectedEducationLevel.value)) {
       selectedUniversityId.value = null;
       selectedSpecializationId.value = null;
     }
@@ -177,9 +261,7 @@ class AuthController extends GetxController {
         await Get.find<ProfileRepository>().fetchMe();
       } catch (_) {}
     }
-    if (Get.isRegistered<FavoritesService>()) {
-      await Get.find<FavoritesService>().syncFromApi();
-    }
+    await SessionRefresh.onLoginSuccess();
     AppNavigation.goToRoot(tab: 2);
   }
 
@@ -189,27 +271,26 @@ class AuthController extends GetxController {
   }
 
   Future<void> nextRegisterStep() async {
-    clearRegisterValidation();
+    registerStepError.value = null;
 
-    final fieldErrors = _collectRegisterStepErrors(registerStep.value);
+    final step = registerStep.value;
+    final fieldErrors = _collectRegisterStepErrors(step);
     if (!_applyRegisterFieldErrors(fieldErrors)) return;
 
-    isLoading.value = true;
+    isAdvancingStep.value = true;
     try {
-      if (registerStep.value == 0) {
-        final remoteError = await _validateRegisterStep0Remote();
-        if (remoteError != null) {
-          _showRegisterStepError(remoteError);
-          return;
-        }
+      if (step == 0) {
+        final blocked = await _validateRegisterStep0Remote();
+        if (blocked) return;
+        registerStep0Validated.value = true;
+      } else if (step == 1) {
+        registerStep1Validated.value = true;
       }
 
-      if (registerStep.value < 2) {
+      if (step < 2) {
         registerStep.value++;
         if (registerStep.value == 2) {
-          loadCities(force: cities.isEmpty);
-          loadReferences(force: universities.isEmpty || specializations.isEmpty);
-          loadCategories(force: categories.isEmpty);
+          prepareRegisterReferenceData(force: true);
         }
       }
     } on ApiException catch (e) {
@@ -217,7 +298,7 @@ class AuthController extends GetxController {
     } catch (_) {
       _showRegisterStepError('connection_error'.tr);
     } finally {
-      isLoading.value = false;
+      isAdvancingStep.value = false;
     }
   }
 
@@ -231,29 +312,13 @@ class AuthController extends GetxController {
   }
 
   Future<void> submitRegister() async {
-    clearRegisterValidation();
+    registerStepError.value = null;
 
-    for (var step = 0; step <= 2; step++) {
-      final fieldErrors = _collectRegisterStepErrors(step);
-      if (fieldErrors.isNotEmpty) {
-        registerStep.value = step;
-        _applyRegisterFieldErrors(fieldErrors);
-        return;
-      }
-    }
+    final step2Errors = _collectRegisterStepErrors(2);
+    if (!_applyRegisterFieldErrors(step2Errors)) return;
 
-    isLoading.value = true;
+    isSubmittingRegister.value = true;
     try {
-      if (await _authRepository.isEmailTaken(emailController.text.trim())) {
-        registerStep.value = 0;
-        _applyRegisterFieldErrors({'email': 'email_already_registered'.tr});
-        return;
-      }
-      if (await _authRepository.isPhoneTaken(phoneController.text.trim())) {
-        registerStep.value = 0;
-        _applyRegisterFieldErrors({'phone': 'phone_already_registered'.tr});
-        return;
-      }
       final phone = phoneController.text.trim();
       final payload = RegisterPayload(
         firstName: firstNameController.text.trim(),
@@ -268,7 +333,7 @@ class AuthController extends GetxController {
         educationLevel: selectedEducationLevel.value,
         universityId: requiresUniversityFields ? selectedUniversityId.value : null,
         specializationId: requiresUniversityFields ? selectedSpecializationId.value : null,
-        preferredCategories: selectedCategoryIds.isEmpty ? null : selectedCategoryIds.toList(),
+        preferredTags: selectedCategoryIds.isEmpty ? null : selectedCategoryIds.toList(),
         deviceName: GetPlatform.isAndroid
             ? 'android'
             : GetPlatform.isIOS
@@ -280,6 +345,12 @@ class AuthController extends GetxController {
 
       final autoLoggedIn = await _authRepository.register(payload);
       if (autoLoggedIn) {
+        await Get.find<ProfileRepository>().syncAcademicAfterRegister(
+          educationLevel: payload.educationLevel,
+          universityId: payload.universityId,
+          specializationId: payload.specializationId,
+          preferredTags: payload.preferredTags,
+        );
         Get.snackbar('welcome'.tr, 'account_created_ok'.tr);
         await _afterAuthSuccess();
         return;
@@ -291,12 +362,14 @@ class AuthController extends GetxController {
       Get.snackbar('register_done'.tr, 'register_login_hint'.tr);
     } on ApiException catch (e) {
       _applyApiRegisterErrors(e);
-      Get.snackbar('register_failed'.tr, registerStepError.value ?? e.message);
+      if (registerFieldErrors.isEmpty) {
+        Get.snackbar('register_failed'.tr, e.message);
+      }
     } catch (_) {
       _showRegisterStepError('connection_error'.tr);
       Get.snackbar('error'.tr, 'connection_error'.tr);
     } finally {
-      isLoading.value = false;
+      isSubmittingRegister.value = false;
     }
   }
 
@@ -357,30 +430,57 @@ class AuthController extends GetxController {
     return errors;
   }
 
-  Future<String?> _validateRegisterStep0Remote() async {
+  void _validatePasswordFieldsLive() {
+    if (registerStep.value != 1) return;
+    registerStep1Validated.value = false;
+
+    final password = registerPasswordController.text;
+    final confirm = confirmPasswordController.text;
+    final nextErrors = Map<String, String>.from(registerFieldErrors);
+
+    nextErrors.remove('password');
+    nextErrors.remove('confirmPassword');
+
+    if (password.isNotEmpty) {
+      final passwordError = _passwordValidationError(password);
+      if (passwordError != null) nextErrors['password'] = passwordError;
+    }
+
+    if (confirm.isNotEmpty || password.isNotEmpty) {
+      if (confirm.isEmpty) {
+        nextErrors['confirmPassword'] = 'confirm_password_required'.tr;
+      } else if (password != confirm) {
+        nextErrors['confirmPassword'] = 'password_mismatch'.tr;
+      }
+    }
+
+    registerFieldErrors.assignAll(nextErrors);
+    registerFieldErrors.refresh();
+  }
+
+  Future<bool> _validateRegisterStep0Remote() async {
     final email = emailController.text.trim();
     final phone = phoneController.text.trim();
 
     final emailTaken = await _authRepository.isEmailTaken(email);
     if (emailTaken) {
       _applyRegisterFieldErrors({'email': 'email_already_registered'.tr});
-      return 'email_already_registered'.tr;
+      return true;
     }
 
     final phoneTaken = await _authRepository.isPhoneTaken(phone);
     if (phoneTaken) {
       _applyRegisterFieldErrors({'phone': 'phone_already_registered'.tr});
-      return 'phone_already_registered'.tr;
+      return true;
     }
 
-    return null;
+    return false;
   }
 
   bool _applyRegisterFieldErrors(Map<String, String> errors) {
     if (errors.isEmpty) return true;
     registerFieldErrors.assignAll(errors);
     registerStepError.value = errors.values.first;
-    Get.snackbar('alert'.tr, errors.values.first);
     return false;
   }
 
@@ -392,6 +492,30 @@ class AuthController extends GetxController {
   void _applyApiRegisterErrors(ApiException e) {
     final apiFields = e.fieldErrors ?? {};
     if (apiFields.isEmpty) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('email')) {
+        _applyRegisterFieldErrors({'email': e.message});
+        registerStep.value = 0;
+        registerStep0Validated.value = false;
+        return;
+      }
+      if (msg.contains('phone')) {
+        _applyRegisterFieldErrors({'phone': e.message});
+        registerStep.value = 0;
+        registerStep0Validated.value = false;
+        return;
+      }
+      if (msg.contains('password')) {
+        _applyRegisterFieldErrors({'password': e.message});
+        registerStep.value = 1;
+        registerStep1Validated.value = false;
+        return;
+      }
+      if (msg.contains('preferred_tags') || msg.contains('preferred_categories') || msg.contains('tag_ids')) {
+        _applyRegisterFieldErrors({'interests': e.message});
+        registerStep.value = 2;
+        return;
+      }
       _showRegisterStepError(e.message);
       return;
     }
@@ -404,12 +528,24 @@ class AuthController extends GetxController {
 
     if (mapped.containsKey('email') || mapped.containsKey('phone')) {
       registerStep.value = 0;
+      registerStep0Validated.value = false;
     } else if (mapped.containsKey('password') || mapped.containsKey('confirmPassword')) {
       registerStep.value = 1;
+      registerStep1Validated.value = false;
+    } else if (mapped.containsKey('interests')) {
+      registerStep.value = 2;
     }
   }
 
   String _mapApiFieldKey(String key) {
+    if (key.startsWith('preferred_tags') ||
+        key.startsWith('preferred_tag_ids') ||
+        key.startsWith('tag_ids') ||
+        key.startsWith('preferred_categories') ||
+        key.startsWith('preferred_category_ids') ||
+        key.startsWith('category_ids')) {
+      return 'interests';
+    }
     switch (key) {
       case 'first_name':
         return 'firstName';
@@ -431,7 +567,7 @@ class AuthController extends GetxController {
   }
 
   String? _passwordValidationError(String password) {
-    if (password.length < 6) return 'password_min_6'.tr;
+    if (password.length < 8) return 'password_min_8'.tr;
     if (!RegExp(r'[A-Za-z]').hasMatch(password) || !RegExp(r'\d').hasMatch(password)) {
       return 'password_must_have_letter_number'.tr;
     }
@@ -474,6 +610,17 @@ class AuthController extends GetxController {
       default:
         return value;
     }
+  }
+
+  void resetAfterLogout() {
+    errorMessage.value = null;
+    registerStepError.value = null;
+    registerFieldErrors.clear();
+    registerStep.value = 0;
+    registerStep0Validated.value = false;
+    registerStep1Validated.value = false;
+    isLoading.value = false;
+    isAdvancingStep.value = false;
   }
 
   @override

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1066276389507",
+    "project_id": "coursy-ec580",
+    "storage_bucket": "coursy-ec580.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066276389507:android:fd24d96ec748c9f08a91b6",
+        "android_client_info": {
+          "package_name": "com.example.my_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6FHxS0Hm6DjhMa7F9_WGDS2beSU_NA6Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

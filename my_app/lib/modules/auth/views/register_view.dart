@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
+import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
@@ -19,8 +20,24 @@ final List<TextInputFormatter> _phoneInputFormatters = [
   LengthLimitingTextInputFormatter(10),
 ];
 
-class RegisterView extends GetView<AuthController> {
+class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
+
+  @override
+  State<RegisterView> createState() => _RegisterViewState();
+}
+
+class _RegisterViewState extends State<RegisterView> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!Get.isRegistered<AuthController>()) return;
+      Get.find<AuthController>().prepareRegisterReferenceData();
+    });
+  }
+
+  AuthController get controller => Get.find<AuthController>();
 
   @override
   Widget build(BuildContext context) {
@@ -36,8 +53,9 @@ class RegisterView extends GetView<AuthController> {
         resizeToAvoidBottomInset: true,
         body: SafeArea(
           child: Obx(() {
+            final _ = localeRebuildToken;
             final step = controller.registerStep.value;
-            final loading = controller.isLoading.value;
+            final loading = controller.isAdvancingStep.value || controller.isSubmittingRegister.value;
             final keyboardInset = context.keyboardInset;
             final bottomPad = keyboardInset > 0 ? keyboardInset + 16 : metrics.pageVerticalPadding + 16;
 
@@ -423,7 +441,7 @@ class _RegisterStepBody extends GetView<AuthController> {
             ),
             const SizedBox(height: 16),
             Obx(() {
-              if (controller.citiesLoading.value) {
+              if (controller.citiesLoading.value && controller.cities.isEmpty) {
                 return Skeletonizer(
                   enabled: true,
                   child: Container(
@@ -435,12 +453,12 @@ class _RegisterStepBody extends GetView<AuthController> {
                   ),
                 );
               }
-              if (controller.citiesError.value != null) {
+              if (controller.cities.isEmpty) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      controller.citiesError.value!,
+                      controller.citiesError.value ?? 'connection_error'.tr,
                       style: GoogleFonts.tajawal(color: Colors.red.shade700, height: 1.4),
                     ),
                     const SizedBox(height: 8),
@@ -451,25 +469,30 @@ class _RegisterStepBody extends GetView<AuthController> {
                   ],
                 );
               }
+              final selectedId = controller.selectedCityId.value;
+              final cityValue =
+                  controller.cities.any((c) => c.id == selectedId) ? selectedId : null;
               return DropdownButtonFormField<int>(
-                value: controller.selectedCityId.value,
+                value: cityValue,
                 isExpanded: true,
                 decoration: _dropdownDecoration(
                   label: '${'city'.tr} *',
-                  errorText: controller.registerFieldErrors['city'],
+                  errorText: controller.citiesError.value ?? controller.registerFieldErrors['city'],
                   icon: Icons.location_city_outlined,
                 ),
                 hint: Text('pick_city'.tr, style: GoogleFonts.tajawal()),
                 items: controller.cities
-                    .map((c) => DropdownMenuItem(
-                          value: c.id,
-                          child: Text(
-                            c.name,
-                            style: GoogleFonts.tajawal(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ))
+                    .map(
+                      (c) => DropdownMenuItem(
+                        value: c.id,
+                        child: Text(
+                          c.name,
+                          style: GoogleFonts.tajawal(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) => controller.selectedCityId.value = v,
               );
@@ -581,6 +604,8 @@ class _RegisterStepBody extends GetView<AuthController> {
                 categories: controller.categories,
                 selectedIds: controller.selectedCategoryIds.toList(),
                 loading: controller.categoriesLoading.value,
+                errorText: controller.categoriesError.value ?? controller.registerFieldErrors['interests'],
+                onReload: () => controller.loadCategories(force: true),
                 onApply: controller.setCategoryIds,
               ),
             ),

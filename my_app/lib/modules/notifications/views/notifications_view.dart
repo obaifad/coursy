@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/locale/locale_rebuild.dart';
+import '../../../core/navigation/push_navigation.dart';
 import '../../../core/responsive/responsive.dart';
+import '../../../core/session/remote_notification_sync.dart';
+import '../../../core/models/app_models.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/design_system.dart';
 import '../controllers/notifications_controller.dart';
@@ -11,8 +15,19 @@ class NotificationsView extends GetView<NotificationsController> {
 
   IconData _iconFor(String type) {
     switch (type) {
+      case 'enrollment':
+      case 'enrollment_pending':
+      case 'pending':
+        return Icons.hourglass_top_rounded;
       case 'approval':
+      case 'enrollment_approved':
+      case 'approved':
         return Icons.check_circle_outline_rounded;
+      case 'enrollment_rejected':
+      case 'rejected':
+      case 'enrollment_cancelled':
+      case 'cancelled':
+        return Icons.cancel_outlined;
       case 'reminder':
         return Icons.schedule_rounded;
       case 'promotion':
@@ -23,11 +38,19 @@ class NotificationsView extends GetView<NotificationsController> {
     }
   }
 
+  Future<void> _onNotificationTap(NotificationModel notification) async {
+    final data = RemoteNotificationSync.notificationToPushData(notification);
+    await RemoteNotificationSync.onMessageReceived(data);
+    PushNavigation.openFromMessageData(data);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Obx(() {
+      final _ = localeRebuildToken;
+      return Scaffold(
       appBar: AppBar(
-        title: const Text('الإشعارات'),
+        title: Text('notifications'.tr),
         actions: [
           IconButton(onPressed: controller.loadNotifications, icon: const Icon(Icons.refresh_rounded)),
         ],
@@ -39,12 +62,10 @@ class NotificationsView extends GetView<NotificationsController> {
         if (controller.items.isEmpty) {
           return RefreshIndicator(
             onRefresh: controller.loadNotifications,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: const [
-                SizedBox(height: 220),
-                Center(child: Text('لا توجد إشعارات')),
-              ],
+            child: AppEmptyState.scrollable(
+              context: context,
+              message: 'notifications_empty'.tr,
+              icon: Icons.notifications_none_rounded,
             ),
           );
         }
@@ -62,7 +83,7 @@ class NotificationsView extends GetView<NotificationsController> {
                   icon: controller.isLoadingMore.value
                       ? const AppInlineLoader()
                       : const Icon(Icons.expand_more_rounded),
-                  label: const Text('تحميل المزيد'),
+                  label: Text('load_more'.tr),
                 );
               }
               final n = controller.items[i];
@@ -74,15 +95,19 @@ class NotificationsView extends GetView<NotificationsController> {
                   padding: const EdgeInsetsDirectional.only(end: 20),
                   decoration: BoxDecoration(
                     color: Colors.redAccent.shade100,
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Icon(Icons.delete_outline_rounded, color: Colors.red),
                 ),
-                child: NotificationCard(
-                  title: n.title,
-                  subtitle: n.subtitle,
-                  icon: _iconFor(n.type),
-                  unread: !n.isRead,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => _onNotificationTap(n),
+                  child: NotificationCard(
+                    title: n.title.trim().isEmpty ? 'notification_default_title'.tr : n.title,
+                    subtitle: n.subtitle,
+                    icon: _iconFor(n.type),
+                    unread: !n.isRead,
+                  ),
                 ),
               );
             },
@@ -93,5 +118,6 @@ class NotificationsView extends GetView<NotificationsController> {
         );
       }),
     );
+    });
   }
 }

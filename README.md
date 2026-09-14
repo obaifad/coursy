@@ -1,93 +1,122 @@
-# Coursy
+<h1 align="center">Coursy</h1>
 
+<p align="center">
+  Mobile-First-Plattform zur Entdeckung & Verwaltung von Bildungskursen –<br>
+  Flutter-App mit Laravel-Backend.
+</p>
 
+<p align="center">
+  <img alt="Platform" src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS-3DDC84?logo=flutter&logoColor=white">
+  <img alt="Flutter" src="https://img.shields.io/badge/Flutter-3.8%2B-02569B?logo=flutter&logoColor=white">
+  <img alt="Backend" src="https://img.shields.io/badge/Backend-Laravel-FF2D20?logo=laravel&logoColor=white">
+  <img alt="Push" src="https://img.shields.io/badge/Push-Firebase%20Cloud%20Messaging-FFCA28?logo=firebase&logoColor=black">
+</p>
 
-## Getting started
+---
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Über das Projekt
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+**Coursy** ist eine mobile Plattform, auf der Lernende Bildungskurse, Institute und Dozenten entdecken,
+vergleichen und verfolgen können. Die App bietet eine strukturierte Such- und Filterfunktion, persönliche
+Favoritenlisten sowie Push-Benachrichtigungen zu neuen Kursen und Aktivitäten.
 
-## Add your files
+## Funktionsumfang
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+| Bereich | Beschreibung |
+|---|---|
+| 🔐 **Authentifizierung** | Registrierung/Login inkl. Telefonverifizierung und sicherer Session-Verwaltung |
+| 📚 **Kurse** | Durchsuchen, Filtern und Detailansicht von Bildungskursen |
+| 🏫 **Institute** | Übersicht und Profile teilnehmender Bildungseinrichtungen |
+| 👨‍🏫 **Dozenten** | Profile und zugehörige Kurse je Dozent |
+| ⭐ **Favoriten** | Kurse und Institute für später speichern |
+| 🔍 **Suche** | Volltextsuche über Kurse, Institute und Dozenten |
+| 🔔 **Benachrichtigungen** | Push-Benachrichtigungen (Firebase Cloud Messaging) & In-App-Benachrichtigungscenter |
+| 👤 **Profil** | Persönliche Daten, Profilbild, Kontoeinstellungen |
+| 🌐 **Onboarding** | Geführte Einführung für neue Nutzer |
+
+## Architektur
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/obayfadlounDeutsch2/coursy.git
-git branch -M main
-git push -uf origin main
+┌───────────────────────┐        HTTPS / REST        ┌───────────────────────────┐
+│     Coursy Flutter     │ ◄────────────────────────► │      Laravel Backend      │
+│  (Android · iOS · Web) │                             │   coursy.sy/api            │
+└───────────────────────┘                             └───────────────────────────┘
+          │
+          ▼
+  Firebase Cloud Messaging
+  (Push-Benachrichtigungen)
 ```
 
-## Integrate with your tools
+- **State Management:** [`GetX`](https://pub.dev/packages/get) – Controller, Bindings & Navigation
+- **Netzwerk:** [`dio`](https://pub.dev/packages/dio) für die REST-Kommunikation mit dem Backend
+- **Lokaler Speicher:** [`get_storage`](https://pub.dev/packages/get_storage) für App-Einstellungen,
+  [`flutter_secure_storage`](https://pub.dev/packages/flutter_secure_storage) für sensible Session-Daten
+- **Push-Benachrichtigungen:** Firebase Cloud Messaging + `flutter_local_notifications` + `workmanager` für
+  Hintergrundverarbeitung
+- **Backend:** Laravel-API unter `coursy.sy/api`
 
-* [Set up project integrations](https://gitlab.com/obayfadlounDeutsch2/coursy/-/settings/integrations)
+## Projektstruktur
 
-## Collaborate with your team
+```
+Course/
+├── my_app/                  # Flutter-App
+│   └── lib/
+│       ├── core/             # Config, Netzwerk-Client, Storage, Session, Push, Bindings
+│       ├── modules/          # Fachmodule (auth, courses, institutes, instructors,
+│       │                     #   favorites, search, notifications, profile, onboarding …)
+│       ├── routes/           # App-Navigation/Routing
+│       ├── theme/            # Corporate Design
+│       └── widgets/          # Wiederverwendbare UI-Komponenten
+└── server/                  # Backend-bezogene Laravel-Anpassungen
+```
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+## Erste Schritte
 
-## Test and Deploy
+### Voraussetzungen
 
-Use the built-in continuous integration in GitLab.
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) ≥ 3.8
+- Firebase-Projekt für Push-Benachrichtigungen (bereits unter `coursy-ec580` konfiguriert)
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+### Installation
 
-***
+```bash
+cd my_app
+flutter pub get
+```
 
-# Editing this README
+### App starten
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+Standardmäßig verbindet sich die App mit dem produktiven Backend (`https://coursy.sy/api`). Für lokale
+Backend-Entwicklung kann die API-Basis-URL überschrieben werden:
 
-## Suggestions for a good README
+```bash
+flutter run --dart-define=API_BASE_URL=http://<lokale-ip>:8000/api
+```
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+Für die Web-Entwicklung in Chrome (inkl. lokalem CORS-Proxy):
 
-## Name
-Choose a self-explaining name for your project.
+```bash
+./scripts/run_web_chrome.ps1
+```
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+### Tests ausführen
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+```bash
+flutter test
+```
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## Sicherheit & Datenschutz
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+- Sensible Session-Daten (Zugangstoken, Nutzerinformationen) werden ausschließlich über
+  `flutter_secure_storage` verschlüsselt auf dem Gerät abgelegt.
+- Die Kommunikation mit dem Backend erfolgt ausschließlich über HTTPS.
+- Firebase-Client-Konfigurationswerte sind – wie von Google vorgesehen – öffentliche
+  App-Identifikatoren, keine geheimen Zugangsdaten.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+## Status
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+Aktiv in Entwicklung.
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+---
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+<p align="center"><sub>© Coursy – Alle Rechte vorbehalten.</sub></p>

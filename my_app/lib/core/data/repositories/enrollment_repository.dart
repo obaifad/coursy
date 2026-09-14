@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
+import '../../config/app_debug_log.dart';
 import '../../models/app_models.dart';
 import '../../models/paginated_result.dart';
 import '../../network/api_client.dart';
@@ -17,12 +17,7 @@ class EnrollmentRepository extends GetxService {
   final StudentIdResolver _studentIdResolver;
 
   void _log(String action, dynamic body) {
-    if (!kDebugMode) return;
-    debugPrint('');
-    debugPrint('══════════════ ENROLL API ($action) ══════════════');
-    debugPrint(body.toString());
-    debugPrint('══════════════════════════════════════════════════');
-    debugPrint('');
+    AppDebugLog.repo('Enroll', '$action ${body.toString()}');
   }
 
   EnrollmentModel _parseEnrollment(dynamic body) {

@@ -4,9 +4,11 @@ import '../../../core/data/repositories/city_repository.dart';
 import '../../../core/data/repositories/course_repository.dart';
 import '../../../core/data/repositories/institute_repository.dart';
 import '../../../core/data/repositories/instructor_repository.dart';
+import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/network/api_exception.dart';
 
-class InstitutesController extends GetxController {
+class InstitutesController extends GetxController with LatestLoadGuard {
   final InstituteRepository _repository = Get.find();
   final CityRepository _cityRepository = Get.find();
 
@@ -28,10 +30,14 @@ class InstitutesController extends GetxController {
   }
 
   Future<void> _loadCities() async {
+    final session = beginLoad();
     try {
-      cities.assignAll(await _cityRepository.fetchCities());
+      final fresh = await _cityRepository.fetchCities();
+      applyIfCurrent(session, () => cities.assignAll(fresh));
+    } on ApiCancelledException {
+      return;
     } catch (_) {
-      cities.clear();
+      if (shouldApply(session)) cities.clear();
     }
   }
 
@@ -46,6 +52,7 @@ class InstitutesController extends GetxController {
   }
 
   Future<void> loadInstitutes() async {
+    final session = beginLoad();
     isLoading.value = true;
     errorMessage.value = null;
     _page = 1;
@@ -57,12 +64,16 @@ class InstitutesController extends GetxController {
           if (selectedCityId.value != null) 'city_id': selectedCityId.value,
         },
       );
-      institutes.assignAll(result.items);
-      hasMore.value = result.hasMore;
+      applyIfCurrent(session, () {
+        institutes.assignAll(result.items);
+        hasMore.value = result.hasMore;
+      });
+    } on ApiCancelledException {
+      return;
     } catch (e) {
-      errorMessage.value = e.toString();
+      if (shouldApply(session)) errorMessage.value = e.toString();
     } finally {
-      isLoading.value = false;
+      applyIfCurrent(session, () => isLoading.value = false);
     }
   }
 
@@ -182,6 +193,8 @@ class InstituteDetailsController extends GetxController {
       longitude: details.longitude ?? previous.longitude,
       coursesCount: details.coursesCount > 0 ? details.coursesCount : previous.coursesCount,
       rating: details.rating > 0 ? details.rating : previous.rating,
+      logoUrl: details.logoUrl ?? previous.logoUrl,
+      coverImageUrl: details.coverImageUrl ?? previous.coverImageUrl,
     );
   }
 

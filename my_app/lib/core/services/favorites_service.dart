@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
+import '../config/app_debug_log.dart';
 import '../data/repositories/favorites_repository.dart';
 import '../models/favorite_model.dart';
 import '../network/api_exception.dart';
@@ -20,9 +20,7 @@ class FavoritesService extends GetxService {
   DateTime? _lastSyncedAt;
   static const _syncTtl = Duration(minutes: 2);
 
-  void _log(String message) {
-    debugPrint('[Favorites] $message');
-  }
+  void _log(String message) => AppDebugLog.repo('Favorites', message);
 
   bool isCourseFavorite(int courseId) =>
       items.any((f) => f.type == FavoriteTargetType.course && f.targetId == courseId);
@@ -56,7 +54,7 @@ class FavoritesService extends GetxService {
 
   Future<void> syncFromApi({bool force = false}) async {
     if (!_tokenStorage.isLoggedIn) {
-      items.clear();
+      clearForLogout();
       return;
     }
     if (!force &&
@@ -153,5 +151,11 @@ class FavoritesService extends GetxService {
       Get.snackbar('error'.tr, e.message);
       return find() != null;
     }
+  }
+
+  void clearForLogout() {
+    items.clear();
+    _lastSyncedAt = null;
+    isSyncing.value = false;
   }
 }

@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
+import '../../config/app_debug_log.dart';
 import '../../models/app_models.dart';
 import '../../models/paginated_result.dart';
 import '../../network/api_client.dart';
@@ -17,12 +17,8 @@ class ReviewRepository extends GetxService {
   final StudentIdResolver _studentIdResolver;
 
   void _log(String action, dynamic body, {String? path}) {
-    debugPrint('');
-    debugPrint('══════════════ REVIEWS ($action) ══════════════');
-    if (path != null) debugPrint('Path: $path');
-    debugPrint(body.toString());
-    debugPrint('═════════════════════════════════════════════════');
-    debugPrint('');
+    if (path != null) AppDebugLog.repo('Reviews', '$action $path');
+    AppDebugLog.repo('Reviews', body.toString());
   }
 
   Future<List<ReviewModel>> fetchReviews({

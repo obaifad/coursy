@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -5,14 +6,15 @@ import '../../../core/data/repositories/auth_repository.dart';
 import '../../../core/locale/locale_controller.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/responsive/responsive.dart';
+import '../../../core/services/push_notification_service.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/navigation/app_navigation.dart';
+import '../../../core/session/session_refresh.dart';
 import '../../../core/bindings/root_binding.dart';
 import '../controllers/my_courses_controller.dart';
 import 'my_courses_tab_view.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
-import '../../../widgets/app_skeletons.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../modules/auth/widgets/register_form_widgets.dart';
@@ -71,12 +73,12 @@ class ProfileView extends StatelessWidget {
                           if (!storage.isLoggedIn) {
                             return Text(
                               'guest_user'.tr,
-                              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900),
+                              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
                             );
                           }
                           return Text(
                             storage.userName.value ?? 'student'.tr,
-                            style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900),
+                            style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
                           );
                         },
                       ),
@@ -198,6 +200,7 @@ Future<void> _confirmAndLogout(BuildContext context) async {
     barrierDismissible: false,
   );
   if (confirmed != true) return;
+  await SessionRefresh.onLogout();
   await Get.find<AuthRepository>().logout();
   AppNavigation.enterAsGuest();
 }
@@ -222,9 +225,7 @@ class EditProfileView extends GetView<ProfileController> {
         body: Container(
           decoration: const BoxDecoration(gradient: RegisterDecor.background),
           child: Obx(() {
-            if (controller.isLoading.value) {
-              return const AppDetailSkeleton();
-            }
+            final _ = localeRebuildToken;
             return AppMaxWidth(
               maxWidth: ResponsiveModals.dialogMaxWidth(context),
               child: ListView(
@@ -367,17 +368,16 @@ class EditProfileView extends GetView<ProfileController> {
                           ],
                         );
                       }),
-                      Obx(() {
-                        if (controller.categories.isEmpty) return const SizedBox.shrink();
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: RegisterInterestPicker(
-                            categories: controller.categories,
-                            selectedIds: controller.selectedCategoryIds.toList(),
-                            onApply: controller.setCategoryIds,
-                          ),
-                        );
-                      }),
+                      const SizedBox(height: 12),
+                      Obx(
+                        () => RegisterInterestPicker(
+                          categories: controller.categories,
+                          selectedIds: controller.selectedCategoryIds.toList(),
+                          loading: controller.listsLoading.value,
+                          onReload: () => controller.loadLists(force: true),
+                          onApply: controller.setCategoryIds,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -468,7 +468,7 @@ class _EditSectionTitle extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: Text(title, style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 16)),
+          child: Text(title, style: AppTypography.sectionTitle()),
         ),
       ],
     );
@@ -528,7 +528,9 @@ class SettingsView extends GetView<LocaleController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Obx(() {
+      final _ = localeRebuildToken;
+      return Scaffold(
       appBar: AppBar(title: Text('settings'.tr)),
       body: AppMaxWidth(
         child: ListView(
@@ -546,11 +548,33 @@ class SettingsView extends GetView<LocaleController> {
           ),
           const SizedBox(height: 12),
           SoftCard(
-            child: SwitchListTile(
-              value: true,
-              onChanged: (v) {},
-              title: Text('notifications_setting'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
-            ),
+            child: Obx(() {
+              if (kIsWeb) {
+                return SwitchListTile(
+                  value: false,
+                  onChanged: null,
+                  title: Text('notifications_setting'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text('notifications_web_unavailable'.tr),
+                );
+              }
+              final push = Get.find<PushNotificationService>();
+              final enabled = push.notificationsEnabled.value;
+              final permitted = push.notificationsPermissionGranted.value;
+              String subtitle;
+              if (!enabled) {
+                subtitle = 'notifications_setting_off'.tr;
+              } else if (!permitted) {
+                subtitle = 'notifications_permission_denied'.tr;
+              } else {
+                subtitle = 'notifications_setting_on'.tr;
+              }
+              return SwitchListTile(
+                value: enabled && permitted,
+                onChanged: push.isToggling.value ? null : push.setNotificationsEnabled,
+                title: Text('notifications_setting'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(subtitle),
+              );
+            }),
           ),
           const SizedBox(height: 12),
           SoftCard(
@@ -593,9 +617,10 @@ class SettingsView extends GetView<LocaleController> {
             ),
           ),
         ],
+        ),
       ),
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -617,7 +642,7 @@ class _SettingsDocumentView extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               child: Text(
                 body,
-                style: GoogleFonts.tajawal(fontSize: 15, height: 1.65, color: const Color(0xFF1F2937)),
+                style: GoogleFonts.tajawal(fontSize: 15, height: 1.65, color: AppColors.textPrimary),
               ),
             ),
           ],

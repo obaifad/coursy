@@ -30,9 +30,7 @@ class AppHomeSkeleton extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 6),
-          const _SkeletonTextBlock(width: 180),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           Container(
             height: 50,
             decoration: BoxDecoration(

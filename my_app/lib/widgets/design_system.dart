@@ -50,6 +50,16 @@ class AppGradients {
   );
 }
 
+/// ظلال الكروت الموحّدة عبر التطبيق — مصدر واحد لكل حاوية "بطاقة".
+abstract final class AppShadows {
+  AppShadows._();
+
+  /// ظل ناعم قياسي (يُستخدم داخل [SoftCard] وأي كارد عام آخر).
+  static const List<BoxShadow> card = [
+    BoxShadow(color: AppColors.shadowSoft, blurRadius: 16, offset: Offset(0, 8)),
+  ];
+}
+
 /// خطوط وعناوين موحّدة عبر التطبيق (Tajawal).
 abstract final class AppTypography {
   AppTypography._();
@@ -57,7 +67,7 @@ abstract final class AppTypography {
   static TextStyle pageTitle() => GoogleFonts.tajawal(
         fontSize: 26,
         fontWeight: FontWeight.w800,
-        color: const Color(0xFF111827),
+        color: AppColors.textPrimary,
         height: 1.15,
       );
 
@@ -71,13 +81,13 @@ abstract final class AppTypography {
   static TextStyle tabScreenTitle() => GoogleFonts.tajawal(
         fontSize: 22,
         fontWeight: FontWeight.w800,
-        color: const Color(0xFF111827),
+        color: AppColors.textPrimary,
       );
 
   static TextStyle homeWelcome() => GoogleFonts.tajawal(
         fontSize: 22,
         fontWeight: FontWeight.w500,
-        color: const Color(0xFF111827),
+        color: AppColors.textPrimary,
         height: 1.25,
       );
 
@@ -90,14 +100,14 @@ abstract final class AppTypography {
   static TextStyle sectionTitle() => GoogleFonts.tajawal(
         fontSize: 18,
         fontWeight: FontWeight.w800,
-        color: const Color(0xFF111827),
+        color: AppColors.textPrimary,
       );
 
   static TextStyle cardTitle({double size = 15}) => GoogleFonts.tajawal(
         fontSize: size,
         fontWeight: FontWeight.w700,
         height: 1.25,
-        color: const Color(0xFF111827),
+        color: AppColors.textPrimary,
       );
 
   static TextStyle cardSubtitle({double size = 13}) => GoogleFonts.tajawal(
@@ -329,9 +339,10 @@ abstract final class CourseCardMetrics {
   CourseCardMetrics._();
 
   static const double gridSpacing = 12;
-  static const double gridAspectRatio = 0.68;
-  static const double gridImageHeight = 130;
-  static const double gridBodyPadding = 16;
+  static const double gridAspectRatio = 0.72;
+  static const double gridImageHeight = 108;
+  static const double gridBodyPadding = 12;
+  static const double cardRadius = 18;
 
   static double featuredCardWidth(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
@@ -344,9 +355,8 @@ abstract final class CourseCardMetrics {
   /// ارتفاع القائمة الأفقية — يُقدَّر من محتوى البطاقة المميزة المعاد تصميمها.
   static double featuredCardHeight(BuildContext context) {
     final w = featuredCardWidth(context);
-    final imageH = (w / 1.55).clamp(100.0, 130.0);
-    // coverGap + title + subtitle + meta + stats + price + paddings
-    const contentH = 10 + 34 + 8 + 30 + 12 + 28 + 12 + 34 + 12 + 36 + 18 + 2;
+    final imageH = (w / 1.65).clamp(88.0, 112.0);
+    const contentH = 8 + 32 + 6 + 16 + 8 + 20 + 8 + 30 + 10 + 32 + 14;
     return imageH + contentH;
   }
 
@@ -364,33 +374,34 @@ abstract final class CourseCardMetrics {
     required bool includeButton,
   }) {
     if (isFeaturedTile(width, includeButton: includeButton)) {
-      // ارتفاع الصورة نسبي لعرض البطاقة (~نسبة 1.55:1).
-      final imageHeight = (width / 1.55).clamp(100.0, 130.0);
+      final imageHeight = (width / 1.65).clamp(88.0, 112.0);
       return _CourseCardSizeSpec(
         imageHeight: imageHeight,
         padding: 12,
-        titleHeight: 34,
+        titleHeight: 32,
+        summaryHeight: 16,
         titleSize: 13,
-        chipsHeight: 22,
-        statsHeight: 20,
-        priceHeight: 34,
+        chipsHeight: 20,
+        statsHeight: 18,
+        priceHeight: 30,
         buttonHeight: 32,
-        sectionGap: 8,
+        sectionGap: 6,
         includeButton: false,
         compact: true,
       );
     }
     if (isCompactTile(width)) {
       return _CourseCardSizeSpec(
-        imageHeight: 96,
-        padding: 12,
-        titleHeight: 36,
-        titleSize: 13,
-        chipsHeight: 24,
-        statsHeight: 18,
-        priceHeight: 38,
-        buttonHeight: 32,
-        sectionGap: 6,
+        imageHeight: 84,
+        padding: 10,
+        titleHeight: 34,
+        summaryHeight: 14,
+        titleSize: 12.5,
+        chipsHeight: 20,
+        statsHeight: 16,
+        priceHeight: 30,
+        buttonHeight: 30,
+        sectionGap: 5,
         includeButton: includeButton,
         compact: true,
       );
@@ -398,13 +409,14 @@ abstract final class CourseCardMetrics {
     return _CourseCardSizeSpec(
       imageHeight: gridImageHeight,
       padding: gridBodyPadding,
-      titleHeight: 42,
-      titleSize: 15,
-      chipsHeight: 28,
-      statsHeight: 22,
-      priceHeight: 38,
-      buttonHeight: 38,
-      sectionGap: 10,
+      titleHeight: 38,
+      summaryHeight: 16,
+      titleSize: 14,
+      chipsHeight: 22,
+      statsHeight: 18,
+      priceHeight: 32,
+      buttonHeight: 34,
+      sectionGap: 6,
       includeButton: includeButton,
       compact: false,
     );
@@ -416,8 +428,11 @@ abstract final class CourseCardMetrics {
     final w = MediaQuery.sizeOf(context).width;
     final hPad = AppLayout.horizontalPage(context);
     final available = w - hPad * 2;
-    if (available >= 720) return 4;
-    if (available >= 520) return 3;
+    // عتبات مرتفعة عمدًا: الهدف إبقاء عرض كل بطاقة ضمن الفئة "العادية" (>=220)
+    // بدل الانزلاق لفئة "مضغوطة" الأصغر على الأجهزة اللوحية — عمود إضافي واحد
+    // كان يقسّم العرض لدرجة تُنتج بطاقات أصغر مما تسمح به الشاشة الواسعة فعليًا.
+    if (available >= 1000) return 4;
+    if (available >= 700) return 3;
     return 2;
   }
 
@@ -457,7 +472,7 @@ abstract final class CourseCardMetrics {
       titleSize: spec.titleSize,
       subtitleSize: spec.compact ? 11 : 12,
       titleHeight: spec.titleHeight,
-      subtitleHeight: 0,
+      subtitleHeight: spec.summaryHeight,
       footerHeight: spec.priceHeight,
       chipsHeight: spec.chipsHeight,
       statsHeight: spec.statsHeight,
@@ -476,6 +491,7 @@ class _CourseCardSizeSpec {
     required this.imageHeight,
     required this.padding,
     required this.titleHeight,
+    required this.summaryHeight,
     required this.titleSize,
     required this.chipsHeight,
     required this.statsHeight,
@@ -489,6 +505,7 @@ class _CourseCardSizeSpec {
   final double imageHeight;
   final double padding;
   final double titleHeight;
+  final double summaryHeight;
   final double titleSize;
   final double chipsHeight;
   final double statsHeight;
@@ -501,11 +518,12 @@ class _CourseCardSizeSpec {
   double get bodyHeight {
     var h = padding * 2 +
         titleHeight +
+        summaryHeight +
         chipsHeight +
         statsHeight +
         priceHeight +
-        sectionGap * 3;
-    if (includeButton) h += buttonHeight + 10;
+        sectionGap * 4;
+    if (includeButton) h += buttonHeight + 6;
     return h;
   }
 
@@ -611,12 +629,10 @@ class SoftCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: padding ?? const EdgeInsets.all(14),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.card,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(color: AppColors.shadowSoft, blurRadius: 16, offset: Offset(0, 8)),
-        ],
+        borderRadius: BorderRadius.all(Radius.circular(20)),
+        boxShadow: AppShadows.card,
       ),
       child: child,
     );
@@ -645,7 +661,7 @@ class AppIconCircleButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = size >= 40 ? 14.0 : 12.0;
-    final resolvedIconColor = iconColor ?? (filled ? const Color(0xFF1F2937) : AppColors.primary.withValues(alpha: 0.82));
+    final resolvedIconColor = iconColor ?? (filled ? AppColors.textPrimary : AppColors.primary.withValues(alpha: 0.82));
     return Material(
       color: filled ? AppColors.card : Colors.transparent,
       borderRadius: BorderRadius.circular(radius),
@@ -1265,7 +1281,13 @@ class InstituteMiniCard extends StatelessWidget {
                   borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                   gradient: AppGradients.category,
                 ),
-                child: const Center(child: Icon(Icons.domain_rounded, color: Colors.white, size: 40)),
+                clipBehavior: Clip.antiAlias,
+                child: _InstituteCoverHeader(
+                  coverUrl: institute.resolvedCoverImageUrl,
+                  logoUrl: institute.resolvedLogoUrl,
+                  height: 88,
+                  iconSize: 40,
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.all(12),
@@ -1478,6 +1500,126 @@ class PrivateInstructorMiniCard extends StatelessWidget {
   }
 }
 
+class _InstituteLogoBox extends StatelessWidget {
+  const _InstituteLogoBox({
+    required this.imageUrl,
+    required this.size,
+    this.borderRadius = 16,
+    this.fallbackIcon = Icons.apartment_rounded,
+    this.fallbackIconSize,
+    this.border,
+  });
+
+  final String? imageUrl;
+  final double size;
+  final double borderRadius;
+  final IconData fallbackIcon;
+  final double? fallbackIconSize;
+  final BoxBorder? border;
+
+  @override
+  Widget build(BuildContext context) {
+    final iconSize = fallbackIconSize ?? size * 0.45;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadius),
+        gradient: imageUrl == null ? AppGradients.category : null,
+        color: imageUrl != null ? Colors.white : null,
+        border: border,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: imageUrl != null
+            ? AppNetworkImage(url: imageUrl!, width: size, height: size, fit: BoxFit.cover)
+            : Icon(fallbackIcon, color: Colors.white, size: iconSize),
+      ),
+    );
+  }
+}
+
+class _InstituteCoverHeader extends StatelessWidget {
+  const _InstituteCoverHeader({
+    required this.coverUrl,
+    this.logoUrl,
+    required this.height,
+    this.iconSize = 40,
+  });
+
+  final String? coverUrl;
+  final String? logoUrl;
+  final double height;
+  final double iconSize;
+
+  @override
+  Widget build(BuildContext context) {
+    if (coverUrl != null) {
+      return AppNetworkImage(url: coverUrl!, fit: BoxFit.cover);
+    }
+
+    if (logoUrl != null) {
+      return Center(
+        child: _InstituteLogoBox(
+          imageUrl: logoUrl,
+          size: iconSize * 1.6,
+          borderRadius: 16,
+          fallbackIcon: Icons.domain_rounded,
+          fallbackIconSize: iconSize,
+        ),
+      );
+    }
+
+    return Center(child: Icon(Icons.domain_rounded, color: Colors.white, size: iconSize));
+  }
+}
+
+/// غلاف صفحة تفاصيل المعهد (صورة الغلاف + لوغو دائري).
+class InstituteDetailHero extends StatelessWidget {
+  const InstituteDetailHero({super.key, required this.institute});
+
+  final InstituteModel institute;
+
+  @override
+  Widget build(BuildContext context) {
+    final coverUrl = institute.resolvedCoverImageUrl;
+    final logoUrl = institute.resolvedLogoUrl;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (coverUrl != null)
+          AppNetworkImage(url: coverUrl, fit: BoxFit.cover)
+        else
+          const DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.category)),
+        if (coverUrl != null)
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.08),
+                  Colors.black.withValues(alpha: 0.35),
+                ],
+              ),
+            ),
+          ),
+        Center(
+          child: _InstituteLogoBox(
+            imageUrl: logoUrl,
+            size: 88,
+            borderRadius: 44,
+            fallbackIcon: Icons.apartment_rounded,
+            fallbackIconSize: 42,
+            border: Border.all(color: Colors.white, width: 4),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _InstructorAvatarBox extends StatelessWidget {
   const _InstructorAvatarBox({required this.imageUrl, required this.size});
 
@@ -1518,14 +1660,10 @@ class InstituteListCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Row(
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: AppGradients.category,
-              ),
-              child: const Icon(Icons.apartment_rounded, color: Colors.white, size: 32),
+            _InstituteLogoBox(
+              imageUrl: institute.resolvedListImageUrl,
+              size: 72,
+              borderRadius: 16,
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -1666,6 +1804,128 @@ class NotificationCard extends StatelessWidget {
               decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// حالة فارغة موحّدة — نفس المظهر في كل الصفحات.
+class AppEmptyState extends StatelessWidget {
+  const AppEmptyState({
+    super.key,
+    required this.message,
+    this.subtitle,
+    this.icon = Icons.inbox_outlined,
+    this.action,
+    this.compact = false,
+    this.iconColor,
+    this.iconBackgroundColor,
+    this.iconSize,
+    this.circleSize,
+  });
+
+  final String message;
+  final String? subtitle;
+  final IconData icon;
+  final Widget? action;
+  final bool compact;
+  final Color? iconColor;
+  final Color? iconBackgroundColor;
+  final double? iconSize;
+  final double? circleSize;
+
+  /// للقوائم القابلة للسحب (RefreshIndicator / TabBarView).
+  static Widget scrollable({
+    required BuildContext context,
+    required String message,
+    String? subtitle,
+    IconData icon = Icons.inbox_outlined,
+    Widget? action,
+    bool compact = false,
+    Color? iconColor,
+    Color? iconBackgroundColor,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: AppEmptyState(
+              message: message,
+              subtitle: subtitle,
+              icon: icon,
+              action: action,
+              compact: compact,
+              iconColor: iconColor,
+              iconBackgroundColor: iconBackgroundColor,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// داخل SoftCard أو قسم أفقي في الصفحة الرئيسية.
+  static Widget inline({
+    required String message,
+    IconData icon = Icons.inbox_outlined,
+    String? subtitle,
+  }) {
+    return AppEmptyState(
+      message: message,
+      subtitle: subtitle,
+      icon: icon,
+      compact: true,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tint = iconColor ?? AppColors.primary;
+    final circle = circleSize ?? (compact ? 52.0 : 104.0);
+    final iconSz = iconSize ?? (compact ? 26.0 : 52.0);
+    final verticalPad = compact ? 16.0 : 24.0;
+    final horizontalPad = compact ? 16.0 : 32.0;
+
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: horizontalPad, vertical: verticalPad),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: circle,
+              height: circle,
+              decoration: BoxDecoration(
+                color: iconBackgroundColor ?? tint.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: iconSz, color: tint),
+            ),
+            SizedBox(height: compact ? 12 : 20),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: compact
+                  ? const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textSecondary, height: 1.45)
+                  : AppTypography.sectionTitle(),
+            ),
+            if (subtitle != null && subtitle!.isNotEmpty) ...[
+              SizedBox(height: compact ? 4 : 8),
+              Text(
+                subtitle!,
+                textAlign: TextAlign.center,
+                style: AppTypography.pageSubtitle(),
+              ),
+            ],
+            if (action != null) ...[
+              SizedBox(height: compact ? 12 : 24),
+              action!,
+            ],
+          ],
+        ),
       ),
     );
   }

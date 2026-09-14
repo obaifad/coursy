@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart' hide FormData, MultipartFile, Response;
 
 import '../config/api_config.dart';
+import '../config/app_debug_log.dart';
 import '../locale/locale_controller.dart';
 import '../storage/token_storage.dart';
 import 'api_exception.dart';
@@ -14,6 +15,15 @@ class ApiClient extends GetxService {
 
   final TokenStorage _tokenStorage;
   late final Dio dio;
+  CancelToken _readCancelToken = CancelToken();
+
+  /// يلغي طلبات GET الجارية (مثلاً عند تبديل اللغة) لمنع race condition.
+  void cancelInFlightReads([String reason = 'superseded']) {
+    if (!_readCancelToken.isCancelled) {
+      _readCancelToken.cancel(reason);
+    }
+    _readCancelToken = CancelToken();
+  }
 
   @override
   void onInit() {
@@ -44,6 +54,8 @@ class ApiClient extends GetxService {
           if (options.method.toUpperCase() == 'GET') {
             options.queryParameters = Map<String, dynamic>.from(options.queryParameters);
             options.queryParameters['lang'] = lang;
+            // لا نستبدل cancelToken مخصّصاً (مثل جلب كل صفحات pagination).
+            options.cancelToken ??= _readCancelToken;
           }
 
           final token = _tokenStorage.token;
@@ -51,12 +63,7 @@ class ApiClient extends GetxService {
             options.headers['Authorization'] = 'Bearer $token';
           }
           if (kDebugMode) {
-            final hasAuth = options.headers['Authorization'] != null;
-            debugPrint('[API] ${options.method} ${options.baseUrl}${options.path}');
-            debugPrint('[API] Auth header attached: $hasAuth');
-            if (hasAuth) {
-              debugPrint('[API] Authorization: ${options.headers['Authorization']}');
-            }
+            AppDebugLog.api(options.method.toUpperCase(), options.uri.path);
           }
           handler.next(options);
         },
@@ -64,12 +71,24 @@ class ApiClient extends GetxService {
     );
   }
 
-  Future<Response<dynamic>> get(String path, {Map<String, dynamic>? query}) {
-    return dio.get<dynamic>(path, queryParameters: query);
+  Future<Response<dynamic>> get(
+    String path, {
+    Map<String, dynamic>? query,
+    CancelToken? cancelToken,
+  }) {
+    return dio.get<dynamic>(
+      path,
+      queryParameters: query,
+      cancelToken: cancelToken,
+    );
   }
 
-  Future<Response<dynamic>> post(String path, {dynamic data}) {
-    return dio.post<dynamic>(path, data: data);
+  Future<Response<dynamic>> post(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? query,
+  }) {
+    return dio.post<dynamic>(path, data: data, queryParameters: query);
   }
 
   Future<Response<dynamic>> put(String path, {dynamic data}) {
@@ -80,8 +99,12 @@ class ApiClient extends GetxService {
     return dio.patch<dynamic>(path, data: data);
   }
 
-  Future<Response<dynamic>> delete(String path) {
-    return dio.delete<dynamic>(path);
+  Future<Response<dynamic>> delete(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? query,
+  }) {
+    return dio.delete<dynamic>(path, data: data, queryParameters: query);
   }
 
   Future<Response<dynamic>> postMultipart(String path, FormData data) {
@@ -124,6 +147,9 @@ class ApiClient extends GetxService {
     } on ApiException {
       rethrow;
     } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) {
+        throw const ApiCancelledException();
+      }
       final status = e.response?.statusCode;
       final raw = e.response?.data;
       if (_isHostingChallengeHtml(raw)) {
@@ -153,10 +179,12 @@ class ApiClient extends GetxService {
   String _dioMessage(DioException e) {
     if (kIsWeb &&
         (e.type == DioExceptionType.connectionError ||
-            e.message?.contains('XMLHttpRequest') == true)) {
-      return 'تعذر إرسال طلب الدخول من المتصفح (CORS). '
-          'شغّل التطبيق على Android أو Windows: '
-          'flutter run -d android أو flutter run -d windows';
+            e.message?.contains('XMLHttpRequest') == true ||
+            e.message?.toLowerCase().contains('cors') == true)) {
+      if (ApiConfig.usesWebDevProxy) {
+        return 'web_cors_proxy_down'.tr;
+      }
+      return 'web_cors_blocked'.tr;
     }
 
     switch (e.type) {

@@ -14,7 +14,7 @@ class RegisterPayload {
     this.educationLevel,
     this.universityId,
     this.specializationId,
-    this.preferredCategories,
+    this.preferredTags,
     this.notificationRadiusKm,
     this.role = 'student',
     this.isActive = true,
@@ -33,7 +33,7 @@ class RegisterPayload {
   final String? educationLevel;
   final int? universityId;
   final int? specializationId;
-  final List<int>? preferredCategories;
+  final List<int>? preferredTags;
   final int? notificationRadiusKm;
   final String role;
   final bool isActive;
@@ -41,14 +41,14 @@ class RegisterPayload {
   String get fullName => '$firstName $lastName'.trim();
 
   Map<String, dynamic>? _studentProfileJson() {
-    final categories = preferredCategories;
-    final hasCategories = categories != null && categories.isNotEmpty;
+    final tags = preferredTags;
+    final hasTags = tags != null && tags.isNotEmpty;
     final hasEducation = educationLevel != null && educationLevel!.isNotEmpty;
     final hasUniversity = universityId != null;
     final hasSpecialization = specializationId != null;
     final hasRadius = notificationRadiusKm != null;
 
-    if (!hasEducation && !hasUniversity && !hasSpecialization && !hasCategories && !hasRadius) {
+    if (!hasEducation && !hasUniversity && !hasSpecialization && !hasTags && !hasRadius) {
       return null;
     }
 
@@ -56,13 +56,18 @@ class RegisterPayload {
       if (hasEducation) 'education_level': educationLevel,
       if (hasUniversity) 'university_id': universityId,
       if (hasSpecialization) 'specialization_id': specializationId,
-      if (hasCategories) 'preferred_categories': categories,
+      if (hasTags) ...{
+        'preferred_tags': tags,
+        'tag_ids': tags,
+      },
       if (hasRadius) 'notification_radius_km': notificationRadiusKm,
     };
   }
 
   Map<String, dynamic> toJson() {
     final studentProfile = _studentProfileJson();
+    final tags = preferredTags;
+    final hasTags = tags != null && tags.isNotEmpty;
 
     return {
       'first_name': firstName,
@@ -77,6 +82,10 @@ class RegisterPayload {
       if (phone != null && phone!.isNotEmpty) 'phone': phone,
       if (gender != null && gender!.isNotEmpty) 'gender': gender,
       if (birthDate != null && birthDate!.isNotEmpty) 'birth_date': birthDate,
+      if (educationLevel != null && educationLevel!.isNotEmpty) 'education_level': educationLevel,
+      if (universityId != null) 'university_id': universityId,
+      if (specializationId != null) 'specialization_id': specializationId,
+      if (hasTags) 'preferred_tags': tags,
       if (studentProfile != null) 'student_profile': studentProfile,
     };
   }

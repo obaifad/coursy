@@ -7,6 +7,7 @@ abstract final class SessionKeys {
   static const phoneVerified = 'session.phone_verified';
   static const avatarUrl = 'session.avatar_url';
   static const avatarLocalPath = 'session.avatar_local_path';
+  static const academicProfileCache = 'session.academic_profile_cache';
   static const storageVersion = 'session.storage_version';
 
   /// الإصدار الحالي — عند تغيّره تُمسح الجلسة القديمة تلقائياً.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
@@ -18,7 +19,9 @@ class FavoritesView extends GetView<FavoritesController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Obx(() {
+      final _ = localeRebuildToken;
+      return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: _FavoritesAppBar(onRefresh: controller.loadFavorites),
       body: GuestGate(
@@ -31,6 +34,7 @@ class FavoritesView extends GetView<FavoritesController> {
         child: _FavoritesBody(controller: controller),
       ),
     );
+    });
   }
 }
 
@@ -39,9 +43,7 @@ class FavoritesTabView extends GetView<FavoritesController> {
 
   @override
   Widget build(BuildContext context) {
-    if (!Get.isRegistered<FavoritesController>()) {
-      Get.put(FavoritesController());
-    }
+    FavoritesController.ensureRegistered();
     return ColoredBox(
       color: AppColors.surface,
       child: SafeArea(
@@ -49,21 +51,14 @@ class FavoritesTabView extends GetView<FavoritesController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 12, 4),
-              child: Row(
+            AppScreenHeader(
+              title: 'favorites_title'.tr,
+              subtitle: 'favorites_subtitle'.tr,
+              logoInline: true,
+              logoHeight: 44,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const AppLogo(height: 32),
-                        const SizedBox(height: 8),
-                        Text('favorites_title'.tr, style: AppTypography.pageTitle()),
-                        Text('favorites_subtitle'.tr, style: AppTypography.pageSubtitle()),
-                      ],
-                    ),
-                  ),
                   IconButton(
                     onPressed: controller.loadFavorites,
                     icon: const Icon(Icons.refresh_rounded),
@@ -106,7 +101,7 @@ class _FavoritesAppBar extends StatelessWidget implements PreferredSizeWidget {
               icon: const Icon(Icons.arrow_back_rounded),
             )
           : null,
-      title: const AppLogo(height: 26),
+      title: const AppLogo(height: 60,),
       actions: [
         IconButton(
           onPressed: onRefresh,
@@ -141,11 +136,21 @@ class _FavoritesBody extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             children: [
               SizedBox(height: MediaQuery.sizeOf(context).height * 0.12),
-              _FavoritesEmptyState(
-                onExplore: () {
-                  AppNavigation.switchToTab(0);
-                  if (Get.currentRoute == AppRoutes.favorites) Get.back();
-                },
+              AppEmptyState(
+                message: 'favorites_empty'.tr,
+                icon: Icons.favorite_border_rounded,
+                iconSize: 56,
+                circleSize: 120,
+                action: SizedBox(
+                  width: 220,
+                  child: RegisterGradientButton(
+                    label: 'favorites_explore'.tr,
+                    onPressed: () {
+                      AppNavigation.switchToTab(0);
+                      if (Get.currentRoute == AppRoutes.favorites) Get.back();
+                    },
+                  ),
+                ),
               ),
             ],
           ),
@@ -220,18 +225,14 @@ class _FavoriteCourseCardState extends State<_FavoriteCourseCard> with SingleTic
       color: Colors.transparent,
       child: InkWell(
         onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(CourseCardMetrics.cardRadius),
         splashColor: AppColors.primary.withValues(alpha: 0.08),
         highlightColor: AppColors.primary.withValues(alpha: 0.04),
         child: Ink(
           decoration: BoxDecoration(
             color: AppColors.card,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.borderSoft),
-            boxShadow: const [
-              BoxShadow(color: Color(0x146C63FF), blurRadius: 20, offset: Offset(0, 8)),
-              BoxShadow(color: Color(0x06000000), blurRadius: 4, offset: Offset(0, 2)),
-            ],
+            borderRadius: BorderRadius.circular(CourseCardMetrics.cardRadius),
+            boxShadow: AppShadows.card,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -251,23 +252,14 @@ class _FavoriteCourseCardState extends State<_FavoriteCourseCard> with SingleTic
                       course.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.tajawal(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w800,
-                        height: 1.25,
-                        color: const Color(0xFF111827),
-                      ),
+                      style: AppTypography.cardTitle(size: 16),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       course.institute,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.tajawal(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textSecondary,
-                      ),
+                      style: AppTypography.cardSubtitle(size: 14),
                     ),
                     if (course.studyType != null || course.durationHours != null) ...[
                       const SizedBox(height: 10),
@@ -341,7 +333,13 @@ class _FavoriteCardImage extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             if (url != null)
-              AppNetworkImage(url: url, fit: BoxFit.cover, ignorePointer: true)
+              AppNetworkImage(
+                url: url,
+                width: double.infinity,
+                height: 140,
+                fit: BoxFit.cover,
+                ignorePointer: true,
+              )
             else
               const DecoratedBox(
                 decoration: BoxDecoration(gradient: AppGradients.cardPlaceholder),
@@ -420,40 +418,6 @@ class _FavoriteMetaChip extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _FavoritesEmptyState extends StatelessWidget {
-  const _FavoritesEmptyState({required this.onExplore});
-
-  final VoidCallback onExplore;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 88,
-          height: 88,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.favorite_border_rounded, size: 42, color: AppColors.primary),
-        ),
-        const SizedBox(height: 20),
-        Text(
-          'favorites_empty'.tr,
-          textAlign: TextAlign.center,
-          style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w800, height: 1.5),
-        ),
-        const SizedBox(height: 24),
-        SizedBox(
-          width: 220,
-          child: RegisterGradientButton(label: 'favorites_explore'.tr, onPressed: onExplore),
-        ),
-      ],
     );
   }
 }

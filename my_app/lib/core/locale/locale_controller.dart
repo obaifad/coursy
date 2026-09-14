@@ -4,6 +4,7 @@ import 'package:get_storage/get_storage.dart';
 
 import '../network/api_client.dart';
 import 'locale_refresh.dart';
+import 'locale_request_guard.dart';
 
 /// إدارة لغة التطبيق (عربي / إنجليزي) + RTL/LTR + Accept-Language للـ API.
 class LocaleController extends GetxService {
@@ -44,6 +45,12 @@ class LocaleController extends GetxService {
     }
 
     if (refreshData) {
+      if (Get.isRegistered<ApiClient>()) {
+        Get.find<ApiClient>().cancelInFlightReads('locale_changed');
+      }
+      if (Get.isRegistered<LocaleRequestGuard>()) {
+        Get.find<LocaleRequestGuard>().bump();
+      }
       await LocaleRefresh.reloadAll();
     }
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
@@ -16,6 +17,7 @@ class InstructorDetailsView extends GetView<InstructorDetailsController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final _ = localeRebuildToken;
       final item = controller.instructor.value;
       if (controller.isLoading.value && item == null) {
         return const Scaffold(body: AppDetailSkeleton());
@@ -43,7 +45,7 @@ class InstructorDetailsView extends GetView<InstructorDetailsController> {
                     ),
                   ),
                 ],
-                title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                title: Text(name),
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
                     fit: StackFit.expand,
@@ -124,7 +126,11 @@ class _InstructorInfoTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (instructor == null) {
-      return Center(child: Text('no_description'.tr));
+      return AppEmptyState.scrollable(
+        context: context,
+        message: 'no_description'.tr,
+        icon: Icons.info_outline_rounded,
+      );
     }
 
     return ListView(
@@ -283,15 +289,10 @@ class _InstructorCoursesTab extends StatelessWidget {
         return const AppGridSkeleton();
       }
       if (controller.courses.isEmpty) {
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              'no_courses_for_instructor'.tr,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary, height: 1.5),
-            ),
-          ),
+        return AppEmptyState.scrollable(
+          context: context,
+          message: 'no_courses_for_instructor'.tr,
+          icon: Icons.menu_book_outlined,
         );
       }
 
@@ -345,7 +346,11 @@ class _InstructorInstitutesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final institutes = instructor?.institutes ?? const <InstructorInstituteLink>[];
     if (institutes.isEmpty) {
-      return Center(child: Text('no_institutes_for_instructor'.tr));
+      return AppEmptyState.scrollable(
+        context: context,
+        message: 'no_institutes_for_instructor'.tr,
+        icon: Icons.apartment_outlined,
+      );
     }
 
     return ListView.separated(
@@ -478,7 +483,7 @@ class _StatChip extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.primary)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary)),
           const SizedBox(height: 4),
           Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
         ],

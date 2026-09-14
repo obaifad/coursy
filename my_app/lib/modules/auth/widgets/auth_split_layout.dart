@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/locale/locale_rebuild.dart';
 import '../../../theme/app_colors.dart';
 import 'login_hero_header.dart';
 import 'login_page_metrics.dart';
@@ -68,9 +69,11 @@ class AuthSplitHeroPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isRegister = variant == AuthSplitHeroVariant.register;
+    return Obx(() {
+      final _ = localeRebuildToken;
+      final isRegister = variant == AuthSplitHeroVariant.register;
 
-    return DecoratedBox(
+      return DecoratedBox(
       decoration: const BoxDecoration(gradient: _heroGradient),
       child: Center(
         child: Padding(
@@ -87,7 +90,7 @@ class AuthSplitHeroPanel extends StatelessWidget {
                 style: GoogleFonts.tajawal(
                   fontSize: metrics.welcomeTitleSize,
                   fontWeight: FontWeight.w800,
-                  color: const Color(0xFF1E1B4B),
+                  color: AppColors.authHeroTitle,
                   height: 1.2,
                 ),
               ),
@@ -118,5 +121,6 @@ class AuthSplitHeroPanel extends StatelessWidget {
         ),
       ),
     );
+    });
   }
 }

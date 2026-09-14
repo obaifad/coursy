@@ -3,9 +3,11 @@ import 'package:get/get.dart';
 
 import '../../../core/data/repositories/category_repository.dart';
 import '../../../core/data/repositories/course_repository.dart';
+import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/network/api_exception.dart';
 
-class CoursesController extends GetxController {
+class CoursesController extends GetxController with LatestLoadGuard {
   final CourseRepository _repository = Get.find();
   final CategoryRepository _categoryRepository = Get.find();
 
@@ -48,10 +50,14 @@ class CoursesController extends GetxController {
   }
 
   Future<void> _loadCategories() async {
+    final session = beginLoad();
     try {
-      categories.assignAll(await _categoryRepository.fetchCategories());
+      final fresh = await _categoryRepository.fetchCategories();
+      applyIfCurrent(session, () => categories.assignAll(fresh));
+    } on ApiCancelledException {
+      return;
     } catch (_) {
-      categories.clear();
+      if (shouldApply(session)) categories.clear();
     }
   }
 
@@ -71,6 +77,7 @@ class CoursesController extends GetxController {
   }
 
   Future<void> loadCourses() async {
+    final session = beginLoad();
     isLoading.value = true;
     errorMessage.value = null;
     _page = 1;
@@ -82,12 +89,16 @@ class CoursesController extends GetxController {
           if (selectedCategoryId.value != null) 'category_id': selectedCategoryId.value,
         },
       );
-      courses.assignAll(result.items);
-      hasMore.value = result.hasMore;
+      applyIfCurrent(session, () {
+        courses.assignAll(result.items);
+        hasMore.value = result.hasMore;
+      });
+    } on ApiCancelledException {
+      return;
     } catch (e) {
-      errorMessage.value = e.toString();
+      if (shouldApply(session)) errorMessage.value = e.toString();
     } finally {
-      isLoading.value = false;
+      applyIfCurrent(session, () => isLoading.value = false);
     }
   }
 

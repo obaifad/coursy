@@ -57,7 +57,7 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
               Text(
                 controller.errorMessage.value!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.textSecondary, height: 1.5),
+                style: AppTypography.pageSubtitle(),
               ),
               const SizedBox(height: 16),
               FilledButton(onPressed: controller.loadInstructors, child: Text('retry'.tr)),
@@ -76,7 +76,7 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
                 ? 'no_private_instructors'.tr
                 : 'no_instructors_in_subject'.tr,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.textSecondary, height: 1.5),
+            style: AppTypography.pageSubtitle(),
           ),
         ),
       );

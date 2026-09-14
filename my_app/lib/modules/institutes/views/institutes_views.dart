@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/locale/locale_rebuild.dart';
+import '../../../core/models/json_helpers.dart';
+import '../../../core/utils/external_launcher.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/app_skeletons.dart';
@@ -20,9 +22,11 @@ class InstitutesView extends GetView<InstitutesController> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-            child: Text('institutes_title'.tr, style: AppTypography.tabScreenTitle()),
+          AppScreenHeader(
+            title: 'institutes_title'.tr,
+            subtitle: 'institutes_subtitle'.tr,
+            logoInline: true,
+            logoHeight: 44,
           ),
           const SizedBox(height: 10),
           Obx(
@@ -56,12 +60,10 @@ class InstitutesView extends GetView<InstitutesController> {
               child: controller.isLoading.value && controller.institutes.isEmpty
                   ? const AppListSkeleton(padding: EdgeInsets.fromLTRB(16, 0, 16, 24))
                   : controller.institutes.isEmpty
-                      ? ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          children: [
-                            SizedBox(height: MediaQuery.sizeOf(context).height * 0.3),
-                            Center(child: Text('no_institutes'.tr)),
-                          ],
+                      ? AppEmptyState.scrollable(
+                          context: context,
+                          message: 'no_institutes'.tr,
+                          icon: Icons.apartment_outlined,
                         )
                       : ListView.separated(
                           physics: const AlwaysScrollableScrollPhysics(),
@@ -102,6 +104,7 @@ class InstituteDetailsView extends GetView<InstituteDetailsController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final _ = localeRebuildToken;
       final item = controller.institute.value;
       if (controller.isLoading.value && item == null) {
         return const Scaffold(body: AppDetailSkeleton());
@@ -116,27 +119,11 @@ class InstituteDetailsView extends GetView<InstituteDetailsController> {
                 expandedHeight: 200,
                 pinned: true,
                 backgroundColor: AppColors.surface,
-                title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                title: Text(name),
                 flexibleSpace: FlexibleSpaceBar(
-                  background: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Container(decoration: const BoxDecoration(gradient: AppGradients.category)),
-                      Center(
-                        child: Container(
-                          width: 88,
-                          height: 88,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: const [BoxShadow(color: AppColors.shadowPurple, blurRadius: 20)],
-                            border: Border.all(color: Colors.white, width: 4),
-                          ),
-                          child: const Icon(Icons.apartment_rounded, color: AppColors.primary, size: 42),
-                        ),
-                      ),
-                    ],
-                  ),
+                  background: item != null
+                      ? InstituteDetailHero(institute: item)
+                      : const DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.category)),
                 ),
                 bottom: PreferredSize(
                   preferredSize: const Size.fromHeight(60),
@@ -177,12 +164,19 @@ class _InfoTab extends StatelessWidget {
   const _InfoTab({required this.controller});
   final InstituteDetailsController controller;
 
+  Future<void> _openMaps(double lat, double lng) =>
+      ExternalLauncher.openMaps(lat: lat, lng: lng);
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final _ = localeRebuildToken;
       final institute = controller.institute.value;
-      final lat = institute?.latitude;
-      final lng = institute?.longitude;
+      final coords = JsonHelpers.normalizeLatLng(institute?.latitude, institute?.longitude);
+      final coursesCount = controller.displayedCoursesCount;
+      final address = institute?.address?.trim();
+      final showAddress = address != null && address.isNotEmpty && !JsonHelpers.looksLikeCoordinates(address);
+
       return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -196,8 +190,10 @@ class _InfoTab extends StatelessWidget {
                 institute?.description ?? 'institute_default_desc'.tr,
                 style: const TextStyle(color: AppColors.textSecondary, height: 1.45),
               ),
-              const SizedBox(height: 16),
-              _StatChip(label: 'stat_courses'.tr, value: '${controller.displayedCoursesCount}'),
+              if (coursesCount > 0) ...[
+                const SizedBox(height: 16),
+                _StatChip(label: 'stat_courses'.tr, value: '$coursesCount'),
+              ],
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -206,23 +202,19 @@ class _InfoTab extends StatelessWidget {
                   Expanded(child: Text(institute?.city ?? '—', style: const TextStyle(fontWeight: FontWeight.w600))),
                 ],
               ),
-              if (institute?.address != null && institute!.address!.isNotEmpty) ...[
+              if (showAddress) ...[
                 const SizedBox(height: 8),
-                Text(institute.address!, style: const TextStyle(color: AppColors.textSecondary)),
+                Text(address, style: const TextStyle(color: AppColors.textSecondary)),
               ],
-              if (lat != null && lng != null) ...[
+              if (coords != null) ...[
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.map_outlined, color: AppColors.primary, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '${lat.toStringAsFixed(5)}, ${lng.toStringAsFixed(5)}',
-                        style: const TextStyle(color: AppColors.textSecondary),
-                      ),
-                    ),
-                  ],
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    onPressed: () => _openMaps(coords.lat, coords.lng),
+                    icon: const Icon(Icons.map_outlined, size: 18),
+                    label: Text('open_in_maps'.tr),
+                  ),
                 ),
               ],
             ],
@@ -241,8 +233,13 @@ class _CoursesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final _ = localeRebuildToken;
       if (controller.courses.isEmpty) {
-        return Center(child: Text('no_courses_for_institute'.tr));
+        return AppEmptyState.scrollable(
+          context: context,
+          message: 'no_courses_for_institute'.tr,
+          icon: Icons.menu_book_outlined,
+        );
       }
       return ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -280,8 +277,13 @@ class _InstructorsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final _ = localeRebuildToken;
       if (controller.instructors.isEmpty) {
-        return Center(child: Text('no_instructors_for_institute'.tr));
+        return AppEmptyState.scrollable(
+          context: context,
+          message: 'no_instructors_for_institute'.tr,
+          icon: Icons.person_outline_rounded,
+        );
       }
       return ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -314,7 +316,7 @@ class _StatChip extends StatelessWidget {
       decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.primary)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary)),
           const SizedBox(height: 4),
           Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
         ],

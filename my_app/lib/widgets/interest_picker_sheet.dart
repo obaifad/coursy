@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../core/locale/locale_rebuild.dart';
 import '../core/models/app_models.dart';
 import '../core/responsive/responsive.dart';
 import '../theme/app_colors.dart';
@@ -24,11 +25,13 @@ Future<void> showInterestPickerSheet({
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (context) {
-      return _InterestPickerSheetBody(
-        categories: categories,
-        initialSelected: initialSelected,
-        onApply: onApply,
-        title: title ?? 'interests_optional'.tr,
+      return LocaleRebuild(
+        builder: (context) => _InterestPickerSheetBody(
+          categories: categories,
+          initialSelected: initialSelected,
+          onApply: onApply,
+          title: title ?? 'interests_optional'.tr,
+        ),
       );
     },
   );
@@ -73,7 +76,14 @@ class _InterestPickerSheetBodyState extends State<_InterestPickerSheetBody> {
 
   List<CategoryModel> get _filtered {
     if (_query.isEmpty) return widget.categories;
-    return widget.categories.where((c) => c.name.toLowerCase().contains(_query)).toList();
+    return widget.categories
+        .where(
+          (c) =>
+              c.name.toLowerCase().contains(_query) ||
+              c.nameAr.toLowerCase().contains(_query) ||
+              c.nameEn.toLowerCase().contains(_query),
+        )
+        .toList();
   }
 
   @override

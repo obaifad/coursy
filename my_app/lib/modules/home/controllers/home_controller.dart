@@ -7,12 +7,13 @@ import '../../../core/data/repositories/course_repository.dart';
 import '../../../core/data/repositories/home_repository.dart';
 import '../../../core/data/repositories/instructor_repository.dart';
 import '../../../core/data/repositories/institute_repository.dart';
+import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/services/course_rating_service.dart';
 import '../../../core/storage/token_storage.dart';
 
-class HomeController extends GetxController {
+class HomeController extends GetxController with LatestLoadGuard {
   HomeController(this._tokenStorage);
 
   final TokenStorage _tokenStorage;
@@ -61,9 +62,10 @@ class HomeController extends GetxController {
 
   void _jumpScrollToTop() {
     if (!scrollController.hasClients) return;
-    final position = scrollController.position;
-    if ((position.pixels - position.minScrollExtent).abs() > 0.5) {
-      scrollController.jumpTo(position.minScrollExtent);
+    for (final position in scrollController.positions) {
+      if ((position.pixels - position.minScrollExtent).abs() > 0.5) {
+        position.jumpTo(position.minScrollExtent);
+      }
     }
   }
 
@@ -82,6 +84,8 @@ class HomeController extends GetxController {
   Future<void> reloadLocalizedData() => loadHome(forceRefresh: true);
 
   Future<void> loadHome({bool forceRefresh = false}) async {
+    final session = beginLoad();
+
     if (!isLoading.value && !isRefreshing.value) {
       isRefreshing.value = true;
     } else {
@@ -94,51 +98,76 @@ class HomeController extends GetxController {
     try {
       try {
         final homepage = await _homeRepository.fetchHomepage();
+        if (!shouldApply(session)) return;
         if (homepage != null) {
-          _replaceIfNotEmpty(categories, homepage.categories);
-          _replaceIfNotEmpty(courses, await _ratingService.enrich(homepage.courses));
-          if (!isLoggedIn) {
-            _replaceIfNotEmpty(suggestedCourses, await _ratingService.enrich(homepage.suggestedCourses));
+          _replaceIfNotEmpty(categories, homepage.categories, session);
+          if (!forceRefresh) {
+            _replaceIfNotEmpty(courses, await _ratingService.enrich(homepage.courses), session);
+            if (!shouldApply(session)) return;
+            if (!isLoggedIn) {
+              _replaceIfNotEmpty(
+                suggestedCourses,
+                await _ratingService.enrich(homepage.suggestedCourses),
+                session,
+              );
+            }
           }
-          _replaceIfNotEmpty(institutes, homepage.institutes);
-          _replaceIfNotEmpty(cities, homepage.cities);
+          if (!shouldApply(session)) return;
+          _replaceIfNotEmpty(institutes, homepage.institutes, session);
+          _replaceIfNotEmpty(cities, homepage.cities, session);
         }
+      } on ApiCancelledException {
+        return;
       } catch (_) {
         // /homepage اختياري — نكمل بجلب القوائم المنفصلة
       }
 
+      if (!shouldApply(session)) return;
+
       await Future.wait([
-        _fetchCategories(errors),
-        _fetchCourses(errors, force: forceRefresh),
-        _fetchInstitutes(errors, force: forceRefresh),
-        _fetchPrivateInstructors(errors, force: forceRefresh),
-        _fetchInstructorSubjects(errors, force: forceRefresh),
+        _fetchCategories(errors, session),
+        _fetchCourses(errors, session, force: forceRefresh),
+        _fetchInstitutes(errors, session, force: forceRefresh),
+        _fetchPrivateInstructors(errors, session, force: forceRefresh),
+        _fetchInstructorSubjects(errors, session, force: forceRefresh),
       ]);
 
-      await _fetchSuggestedCourses(errors, force: forceRefresh);
+      if (!shouldApply(session)) return;
+
+      await _fetchSuggestedCourses(errors, session, force: forceRefresh);
+
+      if (!shouldApply(session)) return;
 
       if (categories.isEmpty && courses.isEmpty && institutes.isEmpty && errors.isNotEmpty) {
         errorMessage.value = errors.first;
       } else if (errors.isNotEmpty) {
         errorMessage.value = 'home_partial_load_error'.tr;
       }
+    } on ApiCancelledException {
+      return;
     } finally {
-      isLoading.value = false;
-      isRefreshing.value = false;
+      applyIfCurrent(session, () {
+        isLoading.value = false;
+        isRefreshing.value = false;
+      });
     }
   }
 
-  void _replaceIfNotEmpty<T>(RxList<T> target, List<T> source) {
-    if (source.isEmpty) return;
+  void _replaceIfNotEmpty<T>(RxList<T> target, List<T> source, LoadSession session) {
+    if (!shouldApply(session) || source.isEmpty) return;
     target.value = List<T>.from(source);
   }
 
-  Future<void> _fetchCategories(List<String> errors) async {
+  Future<void> _fetchCategories(List<String> errors, LoadSession session) async {
     try {
       final fresh = await _categoryRepository.fetchCategories();
-      if (fresh.isNotEmpty) {
-        categories.value = List<CategoryModel>.from(fresh);
-      }
+      applyIfCurrent(session, () {
+        if (fresh.isNotEmpty) {
+          categories.value = List<CategoryModel>.from(fresh);
+        }
+      });
+    } on ApiCancelledException {
+      return;
     } on ApiException catch (e) {
       errors.add(e.message);
     } catch (_) {
@@ -146,10 +175,17 @@ class HomeController extends GetxController {
     }
   }
 
-  Future<void> _fetchCourses(List<String> errors, {bool force = false}) async {
+  Future<void> _fetchCourses(List<String> errors, LoadSession session, {bool force = false}) async {
     if (!force && courses.isNotEmpty) return;
     try {
-      _replaceIfNotEmpty(courses, await _courseRepository.fetchCourses());
+      final fresh = await _courseRepository.fetchCourses();
+      if (!shouldApply(session)) return;
+      if (fresh.isNotEmpty) {
+        final enriched = await _ratingService.enrich(fresh);
+        applyIfCurrent(session, () => courses.assignAll(enriched));
+      }
+    } on ApiCancelledException {
+      return;
     } on ApiException catch (e) {
       errors.add(e.message);
     } catch (_) {
@@ -157,28 +193,31 @@ class HomeController extends GetxController {
     }
   }
 
-  Future<void> _fetchSuggestedCourses(List<String> errors, {bool force = false}) async {
+  Future<void> _fetchSuggestedCourses(List<String> errors, LoadSession session, {bool force = false}) async {
     try {
       if (isLoggedIn) {
         final personalized = await _courseRepository.fetchSuggestedCourses(limit: _suggestedLimit);
-        if (personalized.isNotEmpty) {
-          suggestedCourses.value = List<CourseModel>.from(personalized);
-          return;
-        }
+        if (!shouldApply(session)) return;
+        suggestedCourses.assignAll(personalized);
+        if (personalized.isNotEmpty) return;
+      } else if (!force && suggestedCourses.isNotEmpty) {
+        return;
       }
-
-      if (!force && suggestedCourses.isNotEmpty) return;
 
       final fallback = _buildSuggestedFallback();
-      if (fallback.isNotEmpty) {
-        suggestedCourses.value = List<CourseModel>.from(fallback);
-      }
+      applyIfCurrent(session, () {
+        if (fallback.isNotEmpty) {
+          suggestedCourses.value = List<CourseModel>.from(fallback);
+        }
+      });
+    } on ApiCancelledException {
+      return;
     } on ApiException catch (e) {
       if (isLoggedIn) errors.add(e.message);
-      _applySuggestedFallbackIfEmpty();
+      if (shouldApply(session)) _applySuggestedFallbackIfEmpty();
     } catch (_) {
       if (isLoggedIn) errors.add('suggested_courses_load_failed'.tr);
-      _applySuggestedFallbackIfEmpty();
+      if (shouldApply(session)) _applySuggestedFallbackIfEmpty();
     }
   }
 
@@ -205,10 +244,13 @@ class HomeController extends GetxController {
     }
   }
 
-  Future<void> _fetchInstitutes(List<String> errors, {bool force = false}) async {
+  Future<void> _fetchInstitutes(List<String> errors, LoadSession session, {bool force = false}) async {
     if (!force && institutes.isNotEmpty) return;
     try {
-      _replaceIfNotEmpty(institutes, await _instituteRepository.fetchInstitutes());
+      final fresh = await _instituteRepository.fetchInstitutes();
+      _replaceIfNotEmpty(institutes, fresh, session);
+    } on ApiCancelledException {
+      return;
     } on ApiException catch (e) {
       errors.add(e.message);
     } catch (_) {
@@ -216,7 +258,7 @@ class HomeController extends GetxController {
     }
   }
 
-  Future<void> _fetchPrivateInstructors(List<String> errors, {bool force = false}) async {
+  Future<void> _fetchPrivateInstructors(List<String> errors, LoadSession session, {bool force = false}) async {
     if (!force && privateInstructors.isNotEmpty) return;
     try {
       final result = await _instructorRepository.fetchInstructorsPage(
@@ -224,9 +266,13 @@ class HomeController extends GetxController {
         perPage: 12,
         isPrivate: true,
       );
-      if (result.items.isNotEmpty) {
-        privateInstructors.value = List<InstructorModel>.from(result.items);
-      }
+      applyIfCurrent(session, () {
+        if (result.items.isNotEmpty) {
+          privateInstructors.value = List<InstructorModel>.from(result.items);
+        }
+      });
+    } on ApiCancelledException {
+      return;
     } on ApiException catch (e) {
       errors.add(e.message);
     } catch (_) {
@@ -234,13 +280,17 @@ class HomeController extends GetxController {
     }
   }
 
-  Future<void> _fetchInstructorSubjects(List<String> errors, {bool force = false}) async {
+  Future<void> _fetchInstructorSubjects(List<String> errors, LoadSession session, {bool force = false}) async {
     if (!force && instructorSubjects.isNotEmpty) return;
     try {
       final fresh = await _instructorRepository.fetchInstructorSubjectFilters();
-      if (fresh.isNotEmpty) {
-        instructorSubjects.value = List<InstructorSubjectModel>.from(fresh);
-      }
+      applyIfCurrent(session, () {
+        if (fresh.isNotEmpty) {
+          instructorSubjects.value = List<InstructorSubjectModel>.from(fresh);
+        }
+      });
+    } on ApiCancelledException {
+      return;
     } on ApiException catch (e) {
       errors.add(e.message);
     } catch (_) {

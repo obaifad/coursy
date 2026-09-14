@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/locale/locale_rebuild.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/app_skeletons.dart';
@@ -17,6 +18,7 @@ class CategoryCoursesView extends GetView<CategoryCoursesController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final _ = localeRebuildToken;
       final isLoading = controller.isLoading.value;
       final courses = controller.sortedCourses;
       final title = controller.title.value;
@@ -49,7 +51,18 @@ class CategoryCoursesView extends GetView<CategoryCoursesController> {
                     if (courses.isEmpty)
                       SliverFillRemaining(
                         hasScrollBody: false,
-                        child: _CategoryEmptyState(onBrowse: () => Get.back()),
+                        child: AppEmptyState(
+                          message: 'no_courses_in_category'.tr,
+                          subtitle: 'browse_courses'.tr,
+                          icon: Icons.category_outlined,
+                          action: SizedBox(
+                            width: 200,
+                            child: RegisterGradientButton(
+                              label: 'browse_courses'.tr,
+                              onPressed: () => Get.back(),
+                            ),
+                          ),
+                        ),
                       )
                     else
                       SliverPadding(
@@ -144,7 +157,7 @@ class _CategoryHeroHeader extends StatelessWidget {
               SafeArea(
                 bottom: false,
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(8, 4, hPad, compact ? 16 : 20),
+                  padding: EdgeInsetsDirectional.fromSTEB(hPad, 4, hPad, compact ? 16 : 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -211,50 +224,6 @@ class _CategoryHeroHeader extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _CategoryEmptyState extends StatelessWidget {
-  const _CategoryEmptyState({required this.onBrowse});
-
-  final VoidCallback onBrowse;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 88,
-            height: 88,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.category_outlined, size: 42, color: AppColors.primary),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'no_courses_in_category'.tr,
-            textAlign: TextAlign.center,
-            style: AppTypography.sectionTitle(),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'browse_courses'.tr,
-            textAlign: TextAlign.center,
-            style: AppTypography.pageSubtitle(),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: 200,
-            child: RegisterGradientButton(label: 'browse_courses'.tr, onPressed: onBrowse),
-          ),
-        ],
       ),
     );
   }

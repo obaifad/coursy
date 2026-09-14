@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
+import '../../config/app_debug_log.dart';
 import '../../models/register_payload.dart';
 import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
@@ -23,22 +23,12 @@ class AuthRepository extends GetxService {
   final TokenStorage _tokenStorage;
 
   void _printTokenForDebug(String source, String token) {
-    if (!kDebugMode) return;
-    debugPrint('================ AUTH TOKEN ($source) ================');
-    debugPrint(token);
-    debugPrint('=====================================================');
+    AppDebugLog.secret('AUTH TOKEN ($source): $token');
   }
 
   /// طباعة رمز OTP في التيرمنال للتجربة (بيئة local/testing).
   static void printOtpToTerminal({required String code, String? phone}) {
-    if (!kDebugMode) return;
-    debugPrint('');
-    debugPrint('══════════════════════════════════════════════');
-    debugPrint('  📱 OTP VERIFICATION CODE (testing)');
-    debugPrint('  Phone: ${phone ?? '—'}');
-    debugPrint('  Code:  $code');
-    debugPrint('══════════════════════════════════════════════');
-    debugPrint('');
+    AppDebugLog.otp('OTP phone=${phone ?? '—'} code=$code');
   }
 
   String _deviceName() {
@@ -71,40 +61,40 @@ class AuthRepository extends GetxService {
     return extractUserMap(body);
   }
 
-  Future<bool> isEmailTaken(String email) {
+  Future<bool> isEmailTaken(String email) async {
     final normalized = email.trim().toLowerCase();
-    return _userExists(
+    return _searchUserExists(
       (user) => user['email']?.toString().trim().toLowerCase() == normalized,
+      query: normalized,
     );
   }
 
-  Future<bool> isPhoneTaken(String phone) {
+  Future<bool> isPhoneTaken(String phone) async {
     final normalized = _normalizePhone(phone);
-    return _userExists(
+    return _searchUserExists(
       (user) => _normalizePhone(user['phone']?.toString() ?? '') == normalized,
+      query: normalized,
     );
   }
 
-  Future<bool> _userExists(bool Function(Map<String, dynamic> user) matches) async {
-    var page = 1;
-    var lastPage = 1;
-
-    while (page <= lastPage) {
+  Future<bool> _searchUserExists(
+    bool Function(Map<String, dynamic> user) matches, {
+    required String query,
+  }) async {
+    if (query.isEmpty) return false;
+    try {
       final body = await _client.handle(
-        () => _client.get(ApiEndpoints.users, query: {'page': page}),
+        () => _client.get(
+          ApiEndpoints.users,
+          query: {'search': query, 'per_page': 25},
+        ),
         (data) => normalizeApiBody(data),
       );
-
       final users = extractListMap(body);
-      if (users.any(matches)) return true;
-
-      final meta = body is Map<String, dynamic> ? extractPagination(body) : null;
-      lastPage = meta?.lastPage ?? page;
-      if (users.isEmpty) break;
-      page++;
+      return users.any(matches);
+    } catch (_) {
+      return false;
     }
-
-    return false;
   }
 
   static String _normalizePhone(String phone) {
@@ -147,7 +137,7 @@ class AuthRepository extends GetxService {
       (data) {
         final map = normalizeApiBody(data);
         if (map is! Map<String, dynamic>) {
-          return OtpSendResult(message: 'تم إرسال رمز التحقق');
+          return OtpSendResult(message: 'otp_sent_default'.tr);
         }
         final debugCode = map['verification_code']?.toString();
         if (debugCode != null && debugCode.isNotEmpty) {
@@ -157,7 +147,7 @@ class AuthRepository extends GetxService {
           );
         }
         return OtpSendResult(
-          message: map['message']?.toString() ?? 'تم إرسال رمز التحقق بنجاح',
+          message: map['message']?.toString() ?? 'otp_sent_success'.tr,
           expiresInSeconds: map['expires_in_seconds'] is int
               ? map['expires_in_seconds'] as int
               : int.tryParse(map['expires_in_seconds']?.toString() ?? ''),

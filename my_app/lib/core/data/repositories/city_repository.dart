@@ -6,22 +6,19 @@ import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
 import '../../network/api_exception.dart';
 import '../../network/json_parser.dart';
+import '../../network/paginated_fetch.dart';
 
 class CityRepository extends GetxService {
   CityRepository(this._client);
 
   final ApiClient _client;
 
-  Future<List<CityModel>> fetchCities() async {
-    final list = await _client.handle(
-      () => _client.get(ApiEndpoints.cities),
-      (data) {
-        try {
-          return extractListMap(data).map(CityModel.fromJson).toList();
-        } on FormatException catch (e) {
-          throw ApiException(e.message);
-        }
-      },
+  Future<List<CityModel>> fetchCities({int perPage = 100}) async {
+    final list = await fetchAllPages(
+      _client,
+      ApiEndpoints.cities,
+      CityModel.fromJson,
+      perPage: perPage,
     );
     if (list.isEmpty) {
       throw ApiException('لم يتم العثور على مدن — تحقق من الاتصال أو CORS على المتصفح');

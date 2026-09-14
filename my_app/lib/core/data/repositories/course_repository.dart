@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../models/app_models.dart';
+import '../../models/json_helpers.dart';
 import '../../models/paginated_result.dart';
 import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
@@ -46,11 +47,59 @@ class CourseRepository extends GetxService {
   }
 
   Future<List<CourseModel>> fetchInstituteCourses(int instituteId) async {
-    final items = await _client.handle(
-      () => _client.get(ApiEndpoints.instituteCourses(instituteId)),
-      (data) => extractListMap(data).map(CourseModel.fromJson).toList(),
-    );
-    return _ratingService.enrich(items);
+    try {
+      final items = await _client.handle(
+        () => _client.get(ApiEndpoints.instituteCourses(instituteId)),
+        (data) => extractListMap(data).map(CourseModel.fromJson).toList(),
+      );
+      if (items.isNotEmpty) {
+        return _ratingService.enrich(items);
+      }
+    } catch (_) {}
+
+    final fallback = await fetchCourses(query: {'institute_id': instituteId});
+    return fallback.where((course) => course.instituteId == instituteId).toList();
+  }
+
+  /// عدد دورات المعهد — طلب خفيف واحد (pagination total) بدون جلب كل الدورات.
+  Future<int> countInstituteCourses(int instituteId) async {
+    if (instituteId <= 0) return 0;
+
+    try {
+      final count = await _client.handle(
+        () => _client.get(
+          ApiEndpoints.instituteCourses(instituteId),
+          query: const {'page': 1, 'per_page': 1},
+        ),
+        (data) {
+          final meta = extractPagination(normalizeApiBody(data));
+          if (meta != null && meta.total > 0) return meta.total;
+          return extractListMap(data).length;
+        },
+      );
+      if (count > 0) return count;
+    } catch (_) {}
+
+    try {
+      final page = await _client.handle(
+        () => _client.get(
+          ApiEndpoints.courses,
+          query: {'institute_id': instituteId, 'page': 1, 'per_page': 1},
+        ),
+        (data) {
+          final meta = extractPagination(normalizeApiBody(data));
+          if (meta != null && meta.total > 0) return meta.total;
+          final items = extractListMap(data);
+          return items.where((item) {
+            final id = JsonHelpers.parseIntOrNull(item['institute_id']);
+            return id == null || id == instituteId;
+          }).length;
+        },
+      );
+      return page;
+    } catch (_) {
+      return 0;
+    }
   }
 
   Future<List<CourseModel>> fetchCourses({Map<String, dynamic>? query}) async {

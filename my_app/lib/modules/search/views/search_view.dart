@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/data/repositories/search_repository.dart';
+import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
@@ -18,7 +19,9 @@ class SearchView extends GetView<SearchPageController> {
     final hPad = AppLayout.horizontalPage(context);
     final bottomPad = AppLayout.scrollBottomInset(context);
 
-    return Scaffold(
+    return Obx(() {
+      final _ = localeRebuildToken;
+      return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         title: Text('search_title'.tr, style: AppTypography.tabScreenTitle()),
@@ -135,6 +138,7 @@ class SearchView extends GetView<SearchPageController> {
         );
       }),
     );
+    });
   }
 
   List<Widget> _recentSearchWidgets(SearchPageController controller, List<String> recent) {
@@ -166,21 +170,11 @@ class SearchView extends GetView<SearchPageController> {
 
   List<Widget> _emptyResultWidgets() {
     return [
-      const SizedBox(height: 24),
-      Center(
-        child: Icon(Icons.search_off_rounded, size: 64, color: AppColors.primary.withValues(alpha: 0.35)),
-      ),
-      const SizedBox(height: 16),
-      Text(
-        'search_no_results'.tr,
-        textAlign: TextAlign.center,
-        style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 17),
-      ),
       const SizedBox(height: 8),
-      Text(
-        'search_try_tags'.tr,
-        textAlign: TextAlign.center,
-        style: GoogleFonts.tajawal(color: AppColors.textSecondary, height: 1.45),
+      AppEmptyState(
+        message: 'search_no_results'.tr,
+        subtitle: 'search_try_tags'.tr,
+        icon: Icons.search_off_rounded,
       ),
     ];
   }
@@ -419,7 +413,7 @@ class _SectionHeader extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(title, style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 16)),
+        Text(title, style: AppTypography.sectionTitle()),
         const SizedBox(width: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -511,14 +505,14 @@ class _CourseSearchTile extends StatelessWidget {
                         course.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 14),
+                        style: AppTypography.cardTitle(size: 14),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         course.institute.isNotEmpty ? course.institute : '—',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textSecondary),
+                        style: AppTypography.cardSubtitle(size: 12),
                       ),
                       const SizedBox(height: 8),
                       Row(
@@ -663,7 +657,7 @@ class _FilterSheetState extends State<_FilterSheet> {
             children: [
               Text(
                 'search_filter_title'.tr,
-                style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 17),
+                style: AppTypography.sectionTitle(),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
@@ -701,9 +695,9 @@ class _FilterSheetState extends State<_FilterSheet> {
                 decoration: InputDecoration(labelText: 'search_level_filter'.tr),
                 items: [
                   DropdownMenuItem(value: null, child: Text('filter_all'.tr)),
-                  const DropdownMenuItem(value: 'beginner', child: Text('مبتدئ')),
-                  const DropdownMenuItem(value: 'intermediate', child: Text('متوسط')),
-                  const DropdownMenuItem(value: 'advanced', child: Text('متقدم')),
+                  DropdownMenuItem(value: 'beginner', child: Text('level_beginner'.tr)),
+                  DropdownMenuItem(value: 'intermediate', child: Text('level_intermediate'.tr)),
+                  DropdownMenuItem(value: 'advanced', child: Text('level_advanced'.tr)),
                 ],
                 onChanged: (v) => setState(() => level = v),
               ),
@@ -714,9 +708,9 @@ class _FilterSheetState extends State<_FilterSheet> {
                 decoration: InputDecoration(labelText: 'search_study_type_filter'.tr),
                 items: [
                   DropdownMenuItem(value: null, child: Text('filter_all'.tr)),
-                  const DropdownMenuItem(value: 'online', child: Text('أونلاين')),
-                  const DropdownMenuItem(value: 'offline', child: Text('حضوري')),
-                  const DropdownMenuItem(value: 'hybrid', child: Text('هجين')),
+                  DropdownMenuItem(value: 'online', child: Text('study_online'.tr)),
+                  DropdownMenuItem(value: 'offline', child: Text('study_offline'.tr)),
+                  DropdownMenuItem(value: 'hybrid', child: Text('study_hybrid'.tr)),
                 ],
                 onChanged: (v) => setState(() => studyType = v),
               ),

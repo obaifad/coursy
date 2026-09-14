@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/assets/app_assets.dart';
 import '../../../core/config/app_flags.dart';
+import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../routes/app_routes.dart';
@@ -99,7 +100,9 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Obx(() {
+      final _ = localeRebuildToken;
+      return Scaffold(
       body: DecoratedBox(
         decoration: const BoxDecoration(gradient: AppGradients.splash),
         child: SafeArea(
@@ -142,6 +145,7 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
         ),
       ),
     );
+    });
   }
 }
 

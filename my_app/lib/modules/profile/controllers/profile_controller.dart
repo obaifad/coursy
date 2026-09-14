@@ -3,32 +3,34 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/data/repositories/category_repository.dart';
+import '../../../core/data/repositories/interest_repository.dart';
 import '../../../core/data/repositories/city_repository.dart';
 import '../../../core/data/repositories/profile_repository.dart';
 import '../../../core/data/repositories/reference_repository.dart';
+import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/models/json_helpers.dart';
 import '../../../core/models/student_profile_payload.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/json_parser.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/utils/education_level_utils.dart';
+import '../../../core/session/session_refresh.dart';
 import '../../../theme/app_colors.dart';
 
-class ProfileController extends GetxController {
+class ProfileController extends GetxController with LatestLoadGuard {
   ProfileController();
 
   final ProfileRepository _repository = Get.find();
   final CityRepository _cityRepository = Get.find();
   final ReferenceRepository _referenceRepository = Get.find();
-  final CategoryRepository _categoryRepository = Get.find();
+  final InterestRepository _interestRepository = Get.find();
   final TokenStorage _tokenStorage = Get.find();
   final ImagePicker _imagePicker = ImagePicker();
 
   final firstNameController = TextEditingController();
   final lastNameController = TextEditingController();
   final phoneController = TextEditingController();
-  final isLoading = false.obs;
   final isSaving = false.obs;
   final listsLoading = false.obs;
   final hasChanges = false.obs;
@@ -56,11 +58,14 @@ class ProfileController extends GetxController {
 
   String? get displayAvatarUrl => avatarUrl.value ?? _tokenStorage.userAvatarUrl.value;
 
+  Map<String, dynamic>? _cachedProfileUser;
+
   @override
   void onInit() {
     super.onInit();
     avatarUrl.value = _tokenStorage.userAvatarUrl.value;
     pickedAvatarPath.value = _tokenStorage.userAvatarLocalPath.value;
+    _applySessionSeed();
     firstNameController.addListener(_recomputeHasChanges);
     lastNameController.addListener(_recomputeHasChanges);
     ever(selectedGender, (_) => _recomputeHasChanges());
@@ -70,28 +75,81 @@ class ProfileController extends GetxController {
     ever(selectedUniversityId, (_) => _recomputeHasChanges());
     ever(selectedSpecializationId, (_) => _recomputeHasChanges());
     ever(selectedCategoryIds, (_) => _recomputeHasChanges());
-    loadLists();
-    loadProfile();
+    _bootstrapProfileForm();
   }
 
-  Future<void> loadLists() async {
+  Future<void> _bootstrapProfileForm() async {
+    await _fillAcademicGapsFromCache();
+    if (_cachedProfileUser != null) {
+      _applyUserToForm(_cachedProfileUser!);
+      captureEditBaseline();
+    }
+    await Future.wait([loadLists(), loadProfile()]);
+  }
+
+  void _applySessionSeed() {
+    if (firstNameController.text.isEmpty && lastNameController.text.isEmpty) {
+      final name = _tokenStorage.userName.value?.trim();
+      if (name != null && name.isNotEmpty) {
+        final parts = name.split(RegExp(r'\s+'));
+        firstNameController.text = parts.first;
+        if (parts.length > 1) {
+          lastNameController.text = parts.sublist(1).join(' ');
+        }
+      }
+    }
+    if (phoneController.text.isEmpty) {
+      phoneController.text = _tokenStorage.userPhone.value ?? '';
+    }
+  }
+
+  Future<void> loadLists({bool force = false}) async {
+    if (listsLoading.value && !force) return;
+    if (!force && categories.isNotEmpty && universities.isNotEmpty && specializations.isNotEmpty) {
+      return;
+    }
+    final session = beginLoad();
     listsLoading.value = true;
     try {
       final results = await Future.wait([
-        _cityRepository.fetchCities(),
-        _referenceRepository.fetchUniversities(),
-        _referenceRepository.fetchStudentSpecializations(),
-        _categoryRepository.fetchCategories(),
+        _safeList(_cityRepository.fetchCities()),
+        _safeList(_referenceRepository.fetchUniversities()),
+        _safeList(_referenceRepository.fetchStudentSpecializations()),
+        _safeList(_interestRepository.fetchInterests()),
       ]);
-      cities.assignAll(results[0] as List<CityModel>);
-      universities.assignAll(results[1] as List<NamedEntity>);
-      specializations.assignAll(results[2] as List<NamedEntity>);
-      categories.assignAll(results[3] as List<CategoryModel>);
+
+      applyIfCurrent(session, () {
+        if (results[0].isNotEmpty) cities.assignAll(results[0] as List<CityModel>);
+        if (results[1].isNotEmpty) universities.assignAll(results[1] as List<NamedEntity>);
+        if (results[2].isNotEmpty) specializations.assignAll(results[2] as List<NamedEntity>);
+        if (results[3].isNotEmpty) categories.assignAll(results[3] as List<CategoryModel>);
+        if (_cachedProfileUser != null) {
+          _applyUserToForm(_cachedProfileUser!);
+        }
+      });
+      await _fillAcademicGapsFromCache();
+    } on ApiCancelledException {
+      return;
     } catch (_) {
-      // تبقى الحقول قابلة للتعديل حتى لو تعذر تحميل القوائم.
+      await _fillAcademicGapsFromCache();
     } finally {
-      listsLoading.value = false;
+      finishLoad(session, () => listsLoading.value = false);
     }
+  }
+
+  Future<void> reloadLocalizedData() async {
+    await loadLists(force: true);
+    await loadProfile();
+  }
+
+  Future<void> refreshForEdit() async {
+    _applySessionSeed();
+    await _fillAcademicGapsFromCache();
+    if (_cachedProfileUser != null) {
+      _applyUserToForm(_cachedProfileUser!);
+      captureEditBaseline();
+    }
+    await Future.wait([loadLists(), loadProfile()]);
   }
 
   void _applyUserToForm(Map<String, dynamic> user) {
@@ -110,36 +168,55 @@ class ProfileController extends GetxController {
       avatarUrl.value = remoteAvatar;
       _tokenStorage.saveAvatar(url: remoteAvatar);
     }
-    final profileRaw = user['student_profile'];
-    if (profileRaw is Map) {
-      final profile = Map<String, dynamic>.from(profileRaw);
-      selectedEducationLevel.value = profile['education_level']?.toString();
-      selectedUniversityId.value = int.tryParse(profile['university_id']?.toString() ?? '');
-      selectedSpecializationId.value = int.tryParse(profile['specialization_id']?.toString() ?? '');
-      final preferred = profile['preferred_categories'];
-      if (preferred is List) {
-        selectedCategoryIds.assignAll(
-          preferred
-              .map((item) {
-                if (item is Map) return int.tryParse(item['id']?.toString() ?? '');
-                return int.tryParse(item.toString());
-              })
-              .whereType<int>(),
-        );
-      }
-    }
+
+    final profile = extractNestedStudentProfile(user) ?? <String, dynamic>{};
+    selectedEducationLevel.value = EducationLevelUtils.normalize(
+      profile['education_level']?.toString() ?? user['education_level']?.toString(),
+    );
+    selectedUniversityId.value = JsonHelpers.parseIntOrNull(
+      profile['university_id'] ?? user['university_id'],
+    );
+    selectedSpecializationId.value = JsonHelpers.parseIntOrNull(
+      profile['specialization_id'] ?? user['specialization_id'],
+    );
+
+    selectedCategoryIds.assignAll(extractPreferredInterestIds({...profile, ...user}));
   }
 
   Future<void> loadProfile() async {
-    isLoading.value = true;
     try {
-      final data = await _repository.fetchMe();
-      _applyUserToForm(extractProfileUserMap(data));
+      final user = await _repository.fetchFullStudentUser();
+      if (user.isNotEmpty) {
+        _cachedProfileUser = user;
+        _applyUserToForm(user);
+      }
     } catch (_) {
-      // keep form editable even on fetch failure
+      // نكمل من الكاش المحلي أدناه.
     } finally {
-      isLoading.value = false;
+      await _fillAcademicGapsFromCache();
       captureEditBaseline();
+    }
+  }
+
+  Future<void> _fillAcademicGapsFromCache() async {
+    final cached = await _tokenStorage.loadAcademicCache();
+    if (cached == null || cached.isEmpty) return;
+
+    if (selectedEducationLevel.value == null || selectedEducationLevel.value!.isEmpty) {
+      selectedEducationLevel.value = EducationLevelUtils.normalize(cached.educationLevel);
+    }
+    selectedUniversityId.value ??= cached.universityId;
+    selectedSpecializationId.value ??= cached.specializationId;
+    if (selectedCategoryIds.isEmpty && cached.preferredCategoryIds.isNotEmpty) {
+      selectedCategoryIds.assignAll(cached.preferredCategoryIds);
+    }
+  }
+
+  Future<List<T>> _safeList<T>(Future<List<T>> future) async {
+    try {
+      return await future;
+    } catch (_) {
+      return [];
     }
   }
 
@@ -196,8 +273,8 @@ class ProfileController extends GetxController {
   }
 
   void setEducationLevel(String? level) {
-    selectedEducationLevel.value = level;
-    if (!EducationLevelUtils.requiresUniversityFields(level)) {
+    selectedEducationLevel.value = EducationLevelUtils.normalize(level);
+    if (!EducationLevelUtils.requiresUniversityFields(selectedEducationLevel.value)) {
       selectedUniversityId.value = null;
       selectedSpecializationId.value = null;
     }
@@ -262,26 +339,27 @@ class ProfileController extends GetxController {
           educationLevel: selectedEducationLevel.value,
           universityId: requiresUniversityFields ? selectedUniversityId.value : null,
           specializationId: requiresUniversityFields ? selectedSpecializationId.value : null,
-          preferredCategories: selectedCategoryIds.isEmpty ? null : selectedCategoryIds.toList(),
+          preferredTags: selectedCategoryIds.isEmpty ? null : selectedCategoryIds.toList(),
           birthDate: birthDate.value == null
               ? null
               : '${birthDate.value!.year}-${birthDate.value!.month.toString().padLeft(2, '0')}-${birthDate.value!.day.toString().padLeft(2, '0')}',
         ),
       );
-      final user = extractProfileUserMap(result);
-      if (user.isNotEmpty) {
-        _applyUserToForm(user);
+      final merged = mergeProfileUserData(result);
+      if (merged.isNotEmpty) {
+        _cachedProfileUser = merged;
+        _applyUserToForm(merged);
       }
       await _repository.syncProfileToSession(
-        firstName: user['first_name']?.toString() ?? firstName,
-        lastName: user['last_name']?.toString() ?? lastName,
-        phone: user['phone']?.toString() ?? phone,
-        avatarUrl: _repository.extractAvatarUrl(user) ?? avatarUrl.value,
+        firstName: merged['first_name']?.toString() ?? firstName,
+        lastName: merged['last_name']?.toString() ?? lastName,
+        phone: merged['phone']?.toString() ?? phone,
+        avatarUrl: _repository.extractAvatarUrl(merged) ?? avatarUrl.value,
       );
       try {
-        final fresh = await _repository.fetchMe();
-        final freshUser = extractProfileUserMap(fresh);
+        final freshUser = await _repository.fetchFullStudentUser();
         if (freshUser.isNotEmpty) {
+          _cachedProfileUser = freshUser;
           _applyUserToForm(freshUser);
           await _repository.syncProfileToSession(
             firstName: freshUser['first_name']?.toString(),
@@ -296,6 +374,7 @@ class ProfileController extends GetxController {
       captureEditBaseline();
       saveSucceeded.value = true;
       _showSavedSnack();
+      await SessionRefresh.afterProfileSaved();
       await Future<void>.delayed(const Duration(milliseconds: 700));
       Get.back(result: true);
     } on ApiException catch (e) {
@@ -356,6 +435,26 @@ class ProfileController extends GetxController {
     if (!Get.isRegistered<ProfileController>()) {
       Get.lazyPut<ProfileController>(() => ProfileController(), fenix: true);
     }
+  }
+
+  void clearForLogout() {
+    _cachedProfileUser = null;
+    _editFormBaselineKey = null;
+    firstNameController.clear();
+    lastNameController.clear();
+    phoneController.clear();
+    avatarUrl.value = null;
+    pickedAvatarPath.value = null;
+    avatarDirty.value = false;
+    hasChanges.value = false;
+    saveSucceeded.value = false;
+    selectedCityId.value = null;
+    selectedGender.value = null;
+    birthDate.value = null;
+    selectedEducationLevel.value = null;
+    selectedUniversityId.value = null;
+    selectedSpecializationId.value = null;
+    selectedCategoryIds.clear();
   }
 
   @override
