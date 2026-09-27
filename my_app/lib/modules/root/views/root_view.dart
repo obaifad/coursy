@@ -1,8 +1,8 @@
+import '../../../theme/app_fonts.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../widgets/design_system.dart';
@@ -22,13 +22,7 @@ class RootView extends GetView<RootController> {
   @override
   Widget build(BuildContext context) {
     AppNavigation.ensureRootBinding();
-    const screens = [
-      CoursesView(),
-      InstitutesView(),
-      HomeView(),
-      MyCoursesTabView(),
-      ProfileView(),
-    ];
+    const screens = [CoursesView(), InstitutesView(), HomeView(), MyCoursesTabView(), ProfileView()];
 
     return Obx(
       () => PopScope(
@@ -92,18 +86,8 @@ class _RootBottomNav extends StatelessWidget {
           index: 2,
           center: true,
         ),
-        _NavItem(
-          icon: Icons.school_outlined,
-          activeIcon: Icons.school_rounded,
-          label: 'nav_my_courses'.tr,
-          index: 3,
-        ),
-        _NavItem(
-          icon: profileIcon,
-          activeIcon: profileActiveIcon,
-          label: profileLabel,
-          index: 4,
-        ),
+        _NavItem(icon: Icons.school_outlined, activeIcon: Icons.school_rounded, label: 'nav_my_courses'.tr, index: 3),
+        _NavItem(icon: profileIcon, activeIcon: profileActiveIcon, label: profileLabel, index: 4),
       ];
 
       return Padding(
@@ -120,7 +104,7 @@ class _RootBottomNav extends StatelessWidget {
                 border: Border.all(color: Colors.white.withValues(alpha: 0.65)),
                 boxShadow: const [
                   BoxShadow(color: Color(0x266C63FF), blurRadius: 28, offset: Offset(0, 12)),
-                  BoxShadow(color: Color(0x0F000000), blurRadius: 8, offset: Offset(0, 2)),
+                  BoxShadow(color: AppColors.shadowNeutralSoft, blurRadius: 8, offset: Offset(0, 2)),
                 ],
               ),
               child: Stack(
@@ -184,11 +168,7 @@ class _RootBottomNav extends StatelessWidget {
 }
 
 class _CenterNavButton extends StatelessWidget {
-  const _CenterNavButton({
-    required this.selected,
-    required this.icon,
-    required this.onTap,
-  });
+  const _CenterNavButton({required this.selected, required this.icon, required this.onTap});
 
   static const double _size = 52;
 
@@ -212,26 +192,16 @@ class _CenterNavButton extends StatelessWidget {
             gradient: selected ? AppGradients.primary : null,
             color: selected ? null : Colors.white,
             shape: BoxShape.circle,
-            border: Border.all(
-              color: selected
-                  ? Colors.transparent
-                  : AppColors.primary.withValues(alpha: 0.14),
-            ),
+            border: Border.all(color: selected ? Colors.transparent : AppColors.primary.withValues(alpha: 0.14)),
             boxShadow: [
               BoxShadow(
-                color: selected
-                    ? const Color(0x446C63FF)
-                    : const Color(0x14000000),
+                color: selected ? AppColors.shadowPrimaryStrong : AppColors.shadowNeutral,
                 blurRadius: selected ? 16 : 10,
                 offset: Offset(0, selected ? 8 : 4),
               ),
             ],
           ),
-          child: Icon(
-            icon,
-            color: selected ? Colors.white : AppColors.primary,
-            size: 24,
-          ),
+          child: Icon(icon, color: selected ? Colors.white : AppColors.primary, size: 24),
         ),
       ),
     );
@@ -239,12 +209,7 @@ class _CenterNavButton extends StatelessWidget {
 }
 
 class _SideNavButton extends StatelessWidget {
-  const _SideNavButton({
-    required this.selected,
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
+  const _SideNavButton({required this.selected, required this.icon, required this.label, required this.onTap});
 
   final bool selected;
   final IconData icon;
@@ -274,11 +239,7 @@ class _SideNavButton extends StatelessWidget {
                   color: selected ? null : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icon,
-                  color: selected ? Colors.white : AppColors.textSecondary,
-                  size: 20,
-                ),
+                child: Icon(icon, color: selected ? Colors.white : AppColors.textSecondary, size: 20),
               ),
               const SizedBox(height: 4),
               Text(
@@ -286,8 +247,8 @@ class _SideNavButton extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.tajawal(
-                  fontSize: 10,
+                style: AppFonts.tajawal(
+                  fontSize: 11,
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                   color: selected ? AppColors.primary : AppColors.textSecondary,
                 ),

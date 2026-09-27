@@ -126,11 +126,7 @@ class _InstructorInfoTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (instructor == null) {
-      return AppEmptyState.scrollable(
-        context: context,
-        message: 'no_description'.tr,
-        icon: Icons.info_outline_rounded,
-      );
+      return AppEmptyState.scrollable(context: context, message: 'no_description'.tr, icon: Icons.info_outline_rounded);
     }
 
     return ListView(
@@ -143,10 +139,7 @@ class _InstructorInfoTab extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      instructor!.name,
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
-                    ),
+                    child: Text(instructor!.name, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
                   ),
                   if (instructor!.isPrivate)
                     Container(
@@ -195,7 +188,9 @@ class _InstructorInfoTab extends StatelessWidget {
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _StatChip(label: 'stat_courses'.tr, value: '$totalCourses')),
+            Expanded(
+              child: _StatChip(label: 'stat_courses'.tr, value: '$totalCourses'),
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: _StatChip(
@@ -217,7 +212,11 @@ class _InstructorInfoTab extends StatelessWidget {
                   _InfoRow(icon: Icons.schedule_rounded, label: 'hourly_price'.tr, value: instructor!.hourlyPrice!),
                 if (instructor!.sessionPrice != null) ...[
                   const SizedBox(height: 10),
-                  _InfoRow(icon: Icons.event_available_rounded, label: 'session_price'.tr, value: instructor!.sessionPrice!),
+                  _InfoRow(
+                    icon: Icons.event_available_rounded,
+                    label: 'session_price'.tr,
+                    value: instructor!.sessionPrice!,
+                  ),
                 ],
               ],
             ),
@@ -382,10 +381,7 @@ class _InstructorInstitutesTab extends StatelessWidget {
                   Container(
                     width: 56,
                     height: 56,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      gradient: AppGradients.category,
-                    ),
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), gradient: AppGradients.category),
                     child: const Icon(Icons.apartment_rounded, color: Colors.white),
                   ),
                   const SizedBox(width: 12),
@@ -477,13 +473,13 @@ class _StatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.indicatorFill,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary)),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary),
+          ),
           const SizedBox(height: 4),
           Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
         ],

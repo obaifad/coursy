@@ -19,7 +19,7 @@ class StudentIdResolver extends GetxService {
     final me = await _profileRepository.fetchMe();
     final id = extractStudentId(me) ?? extractStudentId(extractUserMap(me));
     if (id == null || id <= 0) {
-      throw ApiException('لم يتم العثور على معرّف الطالب. أعد تسجيل الدخول.');
+      throw ApiException('error_student_id_missing'.tr);
     }
     await _tokenStorage.saveStudentId(id);
     return id;

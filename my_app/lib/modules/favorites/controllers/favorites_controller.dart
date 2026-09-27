@@ -16,11 +16,17 @@ class FavoritesController extends GetxController {
 
   Worker? _favoritesWorker;
 
+  /// أثناء reloadFromService نفسها لا نريد أن يطلق الـ worker تحميلاً ثانياً لنفس القائمة.
+  bool _syncing = false;
+
+  static const _parallelFetches = 4;
+
   @override
   void onInit() {
     super.onInit();
     _favoritesWorker = ever(_favoritesService.items, (_) {
-      unawaited(_hydrateCoursesFromService());
+      if (_syncing) return;
+      unawaited(_hydrateCoursesFromService(refreshAll: false));
     });
     loadFavorites();
   }
@@ -41,32 +47,56 @@ class FavoritesController extends GetxController {
 
   Future<void> reloadFromService({bool forceSync = true}) async {
     isLoading.value = true;
+    _syncing = true;
     try {
       if (forceSync) {
         await _favoritesService.syncFromApi(force: true);
       }
-      await _hydrateCoursesFromService();
+    } finally {
+      _syncing = false;
+    }
+    try {
+      await _hydrateCoursesFromService(refreshAll: true);
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> _hydrateCoursesFromService() async {
+  /// [refreshAll] = false: يجلب فقط الدورات الجديدة في المفضلة (بعد إضافة/حذف) ويُبقي المحمّلة.
+  /// الجلب على دفعات متوازية بدل طلب متسلسل لكل دورة.
+  Future<void> _hydrateCoursesFromService({required bool refreshAll}) async {
     final ids = _favoritesService.allCourseIds;
     if (ids.isEmpty) {
       courses.clear();
       return;
     }
 
-    final loaded = <CourseModel>[];
-    for (final id in ids) {
-      try {
-        loaded.add(await _courseRepository.fetchCourseById(id));
-      } catch (_) {
-        // تجاهل دورة محذوفة من الخادم
+    final known = refreshAll ? <int, CourseModel>{} : {for (final c in courses) c.id: c};
+    final missing = ids.where((id) => !known.containsKey(id)).toList();
+    final fetched = <int, CourseModel>{};
+    for (var i = 0; i < missing.length; i += _parallelFetches) {
+      final end = (i + _parallelFetches).clamp(0, missing.length);
+      final results = await Future.wait(
+        missing
+            .sublist(i, end)
+            .map(
+              (id) => _courseRepository
+                  .fetchCourseById(id)
+                  .then<CourseModel?>((course) => course)
+                  // تجاهل دورة محذوفة من الخادم
+                  .catchError((Object _) => null),
+            ),
+      );
+      for (final course in results) {
+        if (course != null) fetched[course.id] = course;
       }
     }
-    courses.assignAll(loaded);
+
+    final current = _favoritesService.allCourseIds;
+    courses.assignAll([
+      for (final id in current)
+        if (known[id] ?? fetched[id] case final course?) course,
+    ]);
   }
 
   Future<void> removeCourse(CourseModel course) async {

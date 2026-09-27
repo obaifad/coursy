@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:get/get.dart';
+
 import '../models/json_helpers.dart';
 
 /// يوحّد جسم الاستجابة (نص JSON، HTML، Map من Dio).
@@ -9,7 +11,7 @@ dynamic normalizeApiBody(dynamic body) {
     final trimmed = body.trim();
     if (trimmed.isEmpty) return null;
     if (trimmed.startsWith('<')) {
-      throw const FormatException('استجابة غير JSON من الخادم');
+      throw const FormatException('Non-JSON response from server');
     }
     return jsonDecode(trimmed);
   }
@@ -42,6 +44,7 @@ List<Map<String, dynamic>> extractListMap(dynamic body) {
   }
   return [];
 }
+
 PaginatedMeta? extractPagination(dynamic body) {
   if (body is! Map<String, dynamic>) return null;
   if (body['current_page'] == null) return null;
@@ -124,8 +127,12 @@ int? extractStudentIdFromBody(dynamic body) {
   return extractStudentId(extractUserMap(normalized));
 }
 
-bool isPhoneVerified(Map<String, dynamic>? user) {
-  if (user == null) return false;
+bool isPhoneVerified(Map<String, dynamic>? user) => phoneVerificationStatus(user) ?? false;
+
+/// حالة التحقق من الهاتف كما يرسلها الخادم: true/false، أو null إن لم يُرسل الحقل أصلاً
+/// (لا نفترض "غير مُتحقَّق" بلا دليل — وإلا ظهر طلب التحقق لمستخدمين مُتحقَّقين).
+bool? phoneVerificationStatus(Map<String, dynamic>? user) {
+  if (user == null || !user.containsKey('phone_verified_at')) return null;
   final v = user['phone_verified_at'];
   return v != null && v.toString().isNotEmpty && v.toString() != 'null';
 }
@@ -165,9 +172,7 @@ List<int> extractPreferredCategoryIds(dynamic preferred) {
           continue;
         }
       }
-      final id = JsonHelpers.parseIntOrNull(
-        map['id'] ?? map['tag_id'] ?? map['category_id'],
-      );
+      final id = JsonHelpers.parseIntOrNull(map['id'] ?? map['tag_id'] ?? map['category_id']);
       if (id != null && id > 0) ids.add(id);
       continue;
     }
@@ -255,14 +260,14 @@ String? extractUserDisplayName(dynamic body) {
   return user['name']?.toString();
 }
 
-String messageFromErrorBody(dynamic body, {String fallback = 'حدث خطأ غير متوقع'}) {
+String messageFromErrorBody(dynamic body, {String? fallback}) {
   final fields = fieldErrorsFromBody(body);
   if (fields.isNotEmpty) return fields.values.first;
   if (body is Map) {
     final map = Map<String, dynamic>.from(body);
     if (map['message'] is String) return map['message'] as String;
   }
-  return fallback;
+  return fallback ?? 'error_unexpected'.tr;
 }
 
 Map<String, String> fieldErrorsFromBody(dynamic body) {

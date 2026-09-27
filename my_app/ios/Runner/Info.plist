@@ -50,5 +50,9 @@
 		<string>fetch</string>
 		<string>remote-notification</string>
 	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>enrollment-periodic-watch</string>
+	</array>
 </dict>
 </plist>

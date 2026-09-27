@@ -39,69 +39,17 @@ class AuthRepository extends GetxService {
   }
 
   /// تسجيل دخول بالبريد ورقم الهاتف وكلمة المرور.
-  Future<Map<String, dynamic>?> login({
-    required String email,
-    required String phone,
-    required String password,
-  }) async {
+  Future<Map<String, dynamic>?> login({required String email, required String phone, required String password}) async {
     final body = await _client.handle(
       () => _client.post(
         ApiEndpoints.studentLogin,
-        data: {
-          'email': email.trim(),
-          'phone': phone.trim(),
-          'password': password,
-          'device_name': _deviceName(),
-        },
+        data: {'email': email.trim(), 'phone': phone.trim(), 'password': password, 'device_name': _deviceName()},
       ),
       (data) => normalizeApiBody(data),
     );
 
     await _saveSessionFromBody(body);
     return extractUserMap(body);
-  }
-
-  Future<bool> isEmailTaken(String email) async {
-    final normalized = email.trim().toLowerCase();
-    return _searchUserExists(
-      (user) => user['email']?.toString().trim().toLowerCase() == normalized,
-      query: normalized,
-    );
-  }
-
-  Future<bool> isPhoneTaken(String phone) async {
-    final normalized = _normalizePhone(phone);
-    return _searchUserExists(
-      (user) => _normalizePhone(user['phone']?.toString() ?? '') == normalized,
-      query: normalized,
-    );
-  }
-
-  Future<bool> _searchUserExists(
-    bool Function(Map<String, dynamic> user) matches, {
-    required String query,
-  }) async {
-    if (query.isEmpty) return false;
-    try {
-      final body = await _client.handle(
-        () => _client.get(
-          ApiEndpoints.users,
-          query: {'search': query, 'per_page': 25},
-        ),
-        (data) => normalizeApiBody(data),
-      );
-      final users = extractListMap(body);
-      return users.any(matches);
-    } catch (_) {
-      return false;
-    }
-  }
-
-  static String _normalizePhone(String phone) {
-    final digits = phone.replaceAll(RegExp(r'\D'), '');
-    if (digits.length == 10 && digits.startsWith('09')) return digits;
-    if (digits.length == 11 && digits.startsWith('0')) return digits.substring(0, 10);
-    return digits;
   }
 
   Future<bool> register(RegisterPayload payload) async {
@@ -132,37 +80,28 @@ class AuthRepository extends GetxService {
   }
 
   Future<OtpSendResult> sendMobileVerificationCode() async {
-    return _client.handle(
-      () => _client.post(ApiEndpoints.studentMobileVerificationSend),
-      (data) {
-        final map = normalizeApiBody(data);
-        if (map is! Map<String, dynamic>) {
-          return OtpSendResult(message: 'otp_sent_default'.tr);
-        }
-        final debugCode = map['verification_code']?.toString();
-        if (debugCode != null && debugCode.isNotEmpty) {
-          printOtpToTerminal(
-            code: debugCode,
-            phone: _tokenStorage.userPhone.value,
-          );
-        }
-        return OtpSendResult(
-          message: map['message']?.toString() ?? 'otp_sent_success'.tr,
-          expiresInSeconds: map['expires_in_seconds'] is int
-              ? map['expires_in_seconds'] as int
-              : int.tryParse(map['expires_in_seconds']?.toString() ?? ''),
-          debugCode: debugCode,
-        );
-      },
-    );
+    return _client.handle(() => _client.post(ApiEndpoints.studentMobileVerificationSend), (data) {
+      final map = normalizeApiBody(data);
+      if (map is! Map<String, dynamic>) {
+        return OtpSendResult(message: 'otp_sent_default'.tr);
+      }
+      final debugCode = map['verification_code']?.toString();
+      if (debugCode != null && debugCode.isNotEmpty) {
+        printOtpToTerminal(code: debugCode, phone: _tokenStorage.userPhone.value);
+      }
+      return OtpSendResult(
+        message: map['message']?.toString() ?? 'otp_sent_success'.tr,
+        expiresInSeconds: map['expires_in_seconds'] is int
+            ? map['expires_in_seconds'] as int
+            : int.tryParse(map['expires_in_seconds']?.toString() ?? ''),
+        debugCode: debugCode,
+      );
+    });
   }
 
   Future<Map<String, dynamic>?> verifyMobileCode(String code) async {
     return _client.handle(
-      () => _client.post(
-        ApiEndpoints.studentMobileVerificationVerify,
-        data: {'code': code.trim()},
-      ),
+      () => _client.post(ApiEndpoints.studentMobileVerificationVerify, data: {'code': code.trim()}),
       (data) {
         final normalized = normalizeApiBody(data);
         final user = extractUserMap(normalized);
@@ -180,17 +119,18 @@ class AuthRepository extends GetxService {
   Future<void> _saveSessionFromBody(dynamic body) async {
     final token = extractToken(body);
     if (token == null || token.isEmpty) {
-      throw ApiException('لم يتم استلام رمز الدخول من الخادم');
+      throw ApiException('error_no_login_token'.tr);
     }
     final user = extractUserMap(body);
     final name = extractUserDisplayName(body);
     final phone = user?['phone']?.toString();
     final studentId = extractStudentIdFromBody(body) ?? extractStudentId(user);
+    // الحالة الفعلية من الخادم (null = لم يُرسلها) — كانت تُحفظ true دائماً فيتعطّل التحقق.
     await _tokenStorage.saveSession(
       token: token,
       name: name,
       phone: phone,
-      verifiedPhone: true,
+      verifiedPhone: phoneVerificationStatus(user),
       studentId: studentId,
     );
     _printTokenForDebug('auth', token);
@@ -198,16 +138,10 @@ class AuthRepository extends GetxService {
 
   Future<void> logout() async {
     try {
-      await _client.handle(
-        () => _client.post(ApiEndpoints.studentLogout),
-        (data) => normalizeApiBody(data),
-      );
+      await _client.handle(() => _client.post(ApiEndpoints.studentLogout), (data) => normalizeApiBody(data));
     } catch (_) {
       try {
-        await _client.handle(
-          () => _client.post(ApiEndpoints.logout),
-          (data) => normalizeApiBody(data),
-        );
+        await _client.handle(() => _client.post(ApiEndpoints.logout), (data) => normalizeApiBody(data));
       } catch (_) {}
     } finally {
       await _tokenStorage.clearSession();

@@ -24,13 +24,7 @@ abstract final class RemoteNotificationSync {
     'booking',
   ];
 
-  static const _enrollmentScreens = [
-    'enrollment',
-    'enrollments',
-    'my_courses',
-    'my-courses',
-    'booking',
-  ];
+  static const _enrollmentScreens = ['enrollment', 'enrollments', 'my_courses', 'my-courses', 'booking'];
 
   /// يُستدعى عند وصول رسالة FCM (مقدمة/خلفية/بعد الضغط).
   static Future<void> onMessageReceived(Map<String, dynamic> data) async {
@@ -92,11 +86,9 @@ abstract final class RemoteNotificationSync {
     return data;
   }
 
-  static int? readCourseId(Map<String, dynamic> data) =>
-      _readId(data, const ['course_id', 'courseId']);
+  static int? readCourseId(Map<String, dynamic> data) => _readId(data, const ['course_id', 'courseId']);
 
-  static int? readEnrollmentId(Map<String, dynamic> data) =>
-      _readId(data, const ['enrollment_id', 'enrollmentId']);
+  static int? readEnrollmentId(Map<String, dynamic> data) => _readId(data, const ['enrollment_id', 'enrollmentId']);
 
   static Future<void> refreshCourseDetailsIfVisible(int courseId) async {
     if (!Get.isRegistered<CourseDetailsController>()) return;

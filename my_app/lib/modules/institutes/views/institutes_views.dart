@@ -18,55 +18,55 @@ class InstitutesView extends GetView<InstitutesController> {
   Widget build(BuildContext context) {
     return AppTabSafeArea(
       child: Obx(() {
-      final _ = localeRebuildToken;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppScreenHeader(
-            title: 'institutes_title'.tr,
-            subtitle: 'institutes_subtitle'.tr,
-            logoInline: true,
-            logoHeight: 44,
-          ),
-          const SizedBox(height: 10),
-          Obx(
-            () => HorizontalCityFilters(
-              cities: controller.cities,
-              selectedId: controller.selectedCityId.value,
-              onSelected: controller.selectCity,
+        final _ = localeRebuildToken;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppScreenHeader(
+              title: 'institutes_title'.tr,
+              subtitle: 'institutes_subtitle'.tr,
+              logoInline: true,
+              logoHeight: 44,
             ),
-          ),
-          const SizedBox(height: 8),
-          if (controller.selectedCityId.value != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: TextButton.icon(
-                  onPressed: () {
-                    final city = controller.cities.firstWhereOrNull((c) => c.id == controller.selectedCityId.value);
-                    if (city != null) {
-                      Get.toNamed(AppRoutes.cityDetails, arguments: {'id': city.id, 'name': city.name});
-                    }
-                  },
-                  icon: const Icon(Icons.map_outlined, size: 18),
-                  label: Text('city_details_btn'.tr),
-                ),
+            const SizedBox(height: 10),
+            Obx(
+              () => HorizontalCityFilters(
+                cities: controller.cities,
+                selectedId: controller.selectedCityId.value,
+                onSelected: controller.selectCity,
               ),
             ),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: controller.loadInstitutes,
-              child: controller.isLoading.value && controller.institutes.isEmpty
-                  ? const AppListSkeleton(padding: EdgeInsets.fromLTRB(16, 0, 16, 24))
-                  : controller.institutes.isEmpty
-                      ? AppEmptyState.scrollable(
-                          context: context,
-                          message: 'no_institutes'.tr,
-                          icon: Icons.apartment_outlined,
-                        )
-                      : ListView.separated(
-                          physics: const AlwaysScrollableScrollPhysics(),
+            const SizedBox(height: 8),
+            if (controller.selectedCityId.value != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      final city = controller.cities.firstWhereOrNull((c) => c.id == controller.selectedCityId.value);
+                      if (city != null) {
+                        Get.toNamed(AppRoutes.cityDetails, arguments: {'id': city.id, 'name': city.name});
+                      }
+                    },
+                    icon: const Icon(Icons.map_outlined, size: 18),
+                    label: Text('city_details_btn'.tr),
+                  ),
+                ),
+              ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: controller.loadInstitutes,
+                child: controller.isLoading.value && controller.institutes.isEmpty
+                    ? const AppListSkeleton(padding: EdgeInsets.fromLTRB(16, 0, 16, 24))
+                    : controller.institutes.isEmpty
+                    ? AppEmptyState.scrollable(
+                        context: context,
+                        message: 'no_institutes'.tr,
+                        icon: Icons.apartment_outlined,
+                      )
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
                         key: const PageStorageKey('institutes_tab'),
                         padding: AppLayout.scrollPadding(context, rootTab: true),
                         itemBuilder: (_, i) {
@@ -89,11 +89,11 @@ class InstitutesView extends GetView<InstitutesController> {
                         separatorBuilder: (_, __) => const SizedBox(height: 12),
                         itemCount: controller.institutes.length + 1,
                       ),
+              ),
             ),
-          ),
-        ],
-      );
-    }),
+          ],
+        );
+      }),
     );
   }
 }
@@ -164,8 +164,7 @@ class _InfoTab extends StatelessWidget {
   const _InfoTab({required this.controller});
   final InstituteDetailsController controller;
 
-  Future<void> _openMaps(double lat, double lng) =>
-      ExternalLauncher.openMaps(lat: lat, lng: lng);
+  Future<void> _openMaps(double lat, double lng) => ExternalLauncher.openMaps(lat: lat, lng: lng);
 
   @override
   Widget build(BuildContext context) {
@@ -178,50 +177,52 @@ class _InfoTab extends StatelessWidget {
       final showAddress = address != null && address.isNotEmpty && !JsonHelpers.looksLikeCoordinates(address);
 
       return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        SoftCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('about_institute'.tr, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 10),
-              Text(
-                institute?.description ?? 'institute_default_desc'.tr,
-                style: const TextStyle(color: AppColors.textSecondary, height: 1.45),
-              ),
-              if (coursesCount > 0) ...[
-                const SizedBox(height: 16),
-                _StatChip(label: 'stat_courses'.tr, value: '$coursesCount'),
-              ],
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Icon(Icons.location_on_rounded, color: AppColors.primary),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(institute?.city ?? '—', style: const TextStyle(fontWeight: FontWeight.w600))),
-                ],
-              ),
-              if (showAddress) ...[
-                const SizedBox(height: 8),
-                Text(address, style: const TextStyle(color: AppColors.textSecondary)),
-              ],
-              if (coords != null) ...[
-                const SizedBox(height: 8),
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: TextButton.icon(
-                    onPressed: () => _openMaps(coords.lat, coords.lng),
-                    icon: const Icon(Icons.map_outlined, size: 18),
-                    label: Text('open_in_maps'.tr),
-                  ),
+        padding: const EdgeInsets.all(16),
+        children: [
+          SoftCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('about_institute'.tr, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 10),
+                Text(
+                  institute?.description ?? 'institute_default_desc'.tr,
+                  style: const TextStyle(color: AppColors.textSecondary, height: 1.45),
                 ),
+                if (coursesCount > 0) ...[
+                  const SizedBox(height: 16),
+                  _StatChip(label: 'stat_courses'.tr, value: '$coursesCount'),
+                ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_rounded, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(institute?.city ?? '—', style: const TextStyle(fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
+                if (showAddress) ...[
+                  const SizedBox(height: 8),
+                  Text(address, style: const TextStyle(color: AppColors.textSecondary)),
+                ],
+                if (coords != null) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton.icon(
+                      onPressed: () => _openMaps(coords.lat, coords.lng),
+                      icon: const Icon(Icons.map_outlined, size: 18),
+                      label: Text('open_in_maps'.tr),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
     });
   }
 }
@@ -316,7 +317,10 @@ class _StatChip extends StatelessWidget {
       decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary)),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary),
+          ),
           const SizedBox(height: 4),
           Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
         ],

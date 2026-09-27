@@ -17,33 +17,34 @@ class CityDetailsController extends GetxController {
   int _page = 1;
   static const _perPage = 12;
 
+  /// هل لدينا اسم المدينة الفعلي (وليس العنوان الافتراضي المترجم).
+  bool _hasCityName = false;
+
   @override
   void onInit() {
     super.onInit();
     final arg = Get.arguments;
+    String? name;
     if (arg is Map<String, dynamic>) {
       cityId = (arg['id'] as int?) ?? 0;
-      title.value = arg['name']?.toString() ?? 'المدينة';
+      name = arg['name']?.toString();
     } else if (arg is CityModel) {
       cityId = arg.id;
       city.value = arg;
-      title.value = arg.name;
+      name = arg.name;
     } else {
       cityId = 0;
-      title.value = 'المدينة';
     }
+    _hasCityName = name != null && name.isNotEmpty;
+    title.value = _hasCityName ? name! : 'city'.tr;
     load();
   }
 
   Future<void> load() async {
-    final hasTitle = title.value.isNotEmpty && title.value != 'المدينة';
-    if (!hasTitle) isLoading.value = true;
+    if (!_hasCityName) isLoading.value = true;
     _page = 1;
     try {
-      await Future.wait<void>([
-        _fetchCityIfNeeded(),
-        _fetchInstitutesPage(),
-      ]);
+      await Future.wait<void>([_fetchCityIfNeeded(), _fetchInstitutesPage()]);
     } finally {
       isLoading.value = false;
     }
@@ -54,6 +55,7 @@ class CityDetailsController extends GetxController {
     try {
       city.value = await _cityRepository.fetchCityById(cityId);
       title.value = city.value!.name;
+      _hasCityName = true;
     } catch (_) {}
   }
 

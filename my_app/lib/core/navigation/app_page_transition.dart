@@ -15,10 +15,7 @@ class AppFadeScaleTransition extends CustomTransition {
     final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
     return FadeTransition(
       opacity: curved,
-      child: ScaleTransition(
-        scale: Tween<double>(begin: 0.97, end: 1).animate(curved),
-        child: child,
-      ),
+      child: ScaleTransition(scale: Tween<double>(begin: 0.97, end: 1).animate(curved), child: child),
     );
   }
 }

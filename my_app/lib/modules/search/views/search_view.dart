@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../theme/app_fonts.dart';
 import '../../../core/data/repositories/search_repository.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
@@ -22,131 +22,127 @@ class SearchView extends GetView<SearchPageController> {
     return Obx(() {
       final _ = localeRebuildToken;
       return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        title: Text('search_title'.tr, style: AppTypography.tabScreenTitle()),
         backgroundColor: AppColors.surface,
-        elevation: 0,
-        actions: [
-          Obx(() {
-            final count = controller.activeFiltersCount;
-            return IconButton(
-              tooltip: 'search_filters'.tr,
-              onPressed: () => _openFilters(context),
-              icon: Badge(
-                isLabelVisible: count > 0,
-                label: Text('$count'),
-                child: const Icon(Icons.tune_rounded),
+        appBar: AppBar(
+          title: Text('search_title'.tr, style: AppTypography.tabScreenTitle()),
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+          actions: [
+            Obx(() {
+              final count = controller.activeFiltersCount;
+              return IconButton(
+                tooltip: 'search_filters'.tr,
+                onPressed: () => _openFilters(context),
+                icon: Badge(isLabelVisible: count > 0, label: Text('$count'), child: const Icon(Icons.tune_rounded)),
+              );
+            }),
+          ],
+        ),
+        body: Obx(() {
+          final query = controller.queryText.value.trim();
+          final city = controller.selectedCityId.value;
+          final category = controller.selectedCategoryId.value;
+          final level = controller.selectedLevel.value;
+          final study = controller.selectedStudyType.value;
+          final searching = controller.isSearching.value;
+          final scope = controller.selectedScope.value;
+          final courses = controller.courses.toList(growable: false);
+          final institutes = controller.institutes.toList(growable: false);
+          final instructors = controller.instructors.toList(growable: false);
+          final totalCourses = controller.totalCourses.value;
+          final totalInstitutes = controller.totalInstitutes.value;
+          final totalInstructors = controller.totalInstructors.value;
+          final hasActiveFilters = city != null || category != null || level.isNotEmpty || study.isNotEmpty;
+          final hasQuery = query.isNotEmpty || hasActiveFilters;
+          final hasResults = controller.hasAnyResults;
+
+          final recent = controller.recentQueries.toList(growable: false);
+
+          final resultChildren = <Widget>[];
+
+          if (!hasQuery) {
+            resultChildren.addAll(_recentSearchWidgets(controller, recent));
+          } else if (searching && !hasResults) {
+            resultChildren.add(
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 48),
+                child: Center(child: AppPageLoader()),
               ),
             );
-          }),
-        ],
-      ),
-      body: Obx(() {
-        final query = controller.queryText.value.trim();
-        final city = controller.selectedCityId.value;
-        final category = controller.selectedCategoryId.value;
-        final level = controller.selectedLevel.value;
-        final study = controller.selectedStudyType.value;
-        final searching = controller.isSearching.value;
-        final scope = controller.selectedScope.value;
-        final courses = controller.courses.toList(growable: false);
-        final institutes = controller.institutes.toList(growable: false);
-        final instructors = controller.instructors.toList(growable: false);
-        final totalCourses = controller.totalCourses.value;
-        final totalInstitutes = controller.totalInstitutes.value;
-        final totalInstructors = controller.totalInstructors.value;
-        final hasActiveFilters =
-            city != null || category != null || level.isNotEmpty || study.isNotEmpty;
-        final hasQuery = query.isNotEmpty || hasActiveFilters;
-        final hasResults = controller.hasAnyResults;
+          } else if (!hasResults) {
+            resultChildren.addAll(_emptyResultWidgets());
+          } else {
+            final showCourses = scope == SearchScope.all || scope == SearchScope.courses;
+            final showInstitutes = scope == SearchScope.all || scope == SearchScope.institutes;
+            final showInstructors = scope == SearchScope.all || scope == SearchScope.instructors;
 
-        final recent = controller.recentQueries.toList(growable: false);
-
-        final resultChildren = <Widget>[];
-
-        if (!hasQuery) {
-          resultChildren.addAll(_recentSearchWidgets(controller, recent));
-        } else if (searching && !hasResults) {
-          resultChildren.add(
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 48),
-              child: Center(child: AppPageLoader()),
-            ),
-          );
-        } else if (!hasResults) {
-          resultChildren.addAll(_emptyResultWidgets());
-        } else {
-          final showCourses = scope == SearchScope.all || scope == SearchScope.courses;
-          final showInstitutes = scope == SearchScope.all || scope == SearchScope.institutes;
-          final showInstructors = scope == SearchScope.all || scope == SearchScope.instructors;
-
-          if (showCourses && courses.isNotEmpty) {
-            resultChildren.add(_SectionHeader(title: 'search_courses_section'.tr, count: totalCourses));
-            resultChildren.add(const SizedBox(height: 10));
-            resultChildren.addAll(courses.map((course) => _CourseSearchTile(course: course)));
-            resultChildren.add(const SizedBox(height: 18));
+            if (showCourses && courses.isNotEmpty) {
+              resultChildren.add(_SectionHeader(title: 'search_courses_section'.tr, count: totalCourses));
+              resultChildren.add(const SizedBox(height: 10));
+              resultChildren.addAll(courses.map((course) => _CourseSearchTile(course: course)));
+              resultChildren.add(const SizedBox(height: 18));
+            }
+            if (showInstitutes && institutes.isNotEmpty) {
+              resultChildren.add(_SectionHeader(title: 'search_institutes_section'.tr, count: totalInstitutes));
+              resultChildren.add(const SizedBox(height: 10));
+              resultChildren.addAll(institutes.map((institute) => _InstituteSearchTile(institute: institute)));
+              resultChildren.add(const SizedBox(height: 18));
+            }
+            if (showInstructors && instructors.isNotEmpty) {
+              resultChildren.add(_SectionHeader(title: 'search_instructors_section'.tr, count: totalInstructors));
+              resultChildren.add(const SizedBox(height: 10));
+              resultChildren.addAll(instructors.map((instructor) => _InstructorSearchTile(instructor: instructor)));
+            }
           }
-          if (showInstitutes && institutes.isNotEmpty) {
-            resultChildren.add(_SectionHeader(title: 'search_institutes_section'.tr, count: totalInstitutes));
-            resultChildren.add(const SizedBox(height: 10));
-            resultChildren.addAll(institutes.map((institute) => _InstituteSearchTile(institute: institute)));
-            resultChildren.add(const SizedBox(height: 18));
-          }
-          if (showInstructors && instructors.isNotEmpty) {
-            resultChildren.add(_SectionHeader(title: 'search_instructors_section'.tr, count: totalInstructors));
-            resultChildren.add(const SizedBox(height: 10));
-            resultChildren.addAll(instructors.map((instructor) => _InstructorSearchTile(instructor: instructor)));
-          }
-        }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _IntegratedSearchBox(
-                    controller: controller,
-                    searching: searching,
-                    hasText: query.isNotEmpty,
-                  ),
-                  const SizedBox(height: 10),
-                  if (hasActiveFilters) ...[
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _IntegratedSearchBox(controller: controller, searching: searching, hasText: query.isNotEmpty),
                     const SizedBox(height: 10),
-                    _ActiveFilterChipsContent(
-                      controller: controller,
-                      city: city,
-                      category: category,
-                      level: level,
-                      study: study,
-                    ),
+                    if (hasActiveFilters) ...[
+                      const SizedBox(height: 10),
+                      _ActiveFilterChipsContent(
+                        controller: controller,
+                        city: city,
+                        category: category,
+                        level: level,
+                        study: study,
+                      ),
+                    ],
+                    const SizedBox(height: 12),
                   ],
-                  const SizedBox(height: 12),
-                ],
+                ),
               ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.fromLTRB(hPad, 0, hPad, bottomPad),
-                children: resultChildren,
+              Expanded(
+                child: ListView(padding: EdgeInsets.fromLTRB(hPad, 0, hPad, bottomPad), children: resultChildren),
               ),
-            ),
-          ],
-        );
-      }),
-    );
+            ],
+          );
+        }),
+      );
     });
   }
 
   List<Widget> _recentSearchWidgets(SearchPageController controller, List<String> recent) {
     return [
-      Text('search_recent'.tr, style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 15)),
+      Row(
+        children: [
+          Expanded(
+            child: Text('search_recent'.tr, style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 15)),
+          ),
+          if (recent.isNotEmpty)
+            TextButton(onPressed: controller.clearRecentSearches, child: Text('search_clear_recent'.tr)),
+        ],
+      ),
       const SizedBox(height: 12),
       if (recent.isEmpty)
-        Text('search_no_recent'.tr, style: GoogleFonts.tajawal(color: AppColors.textSecondary))
+        Text('search_no_recent'.tr, style: AppFonts.tajawal(color: AppColors.textSecondary))
       else
         Wrap(
           spacing: 10,
@@ -155,7 +151,7 @@ class SearchView extends GetView<SearchPageController> {
               .map(
                 (q) => ActionChip(
                   avatar: const Icon(Icons.history_rounded, size: 16, color: AppColors.primary),
-                  label: Text(q, style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
+                  label: Text(q, style: AppFonts.tajawal(fontWeight: FontWeight.w600)),
                   onPressed: () {
                     controller.queryController.text = q;
                     controller.queryText.value = q;
@@ -171,11 +167,7 @@ class SearchView extends GetView<SearchPageController> {
   List<Widget> _emptyResultWidgets() {
     return [
       const SizedBox(height: 8),
-      AppEmptyState(
-        message: 'search_no_results'.tr,
-        subtitle: 'search_try_tags'.tr,
-        icon: Icons.search_off_rounded,
-      ),
+      AppEmptyState(message: 'search_no_results'.tr, subtitle: 'search_try_tags'.tr, icon: Icons.search_off_rounded),
     ];
   }
 
@@ -185,20 +177,14 @@ class SearchView extends GetView<SearchPageController> {
       showDragHandle: true,
       isScrollControlled: true,
       backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
       builder: (_) => _FilterSheet(controller: controller),
     );
   }
 }
 
 class _IntegratedSearchBox extends StatelessWidget {
-  const _IntegratedSearchBox({
-    required this.controller,
-    required this.searching,
-    required this.hasText,
-  });
+  const _IntegratedSearchBox({required this.controller, required this.searching, required this.hasText});
 
   final SearchPageController controller;
   final bool searching;
@@ -230,7 +216,7 @@ class _IntegratedSearchBox extends StatelessWidget {
                       onSubmitted: (_) => controller.submitSearch(),
                       decoration: InputDecoration(
                         hintText: scope.hintKey.tr,
-                        hintStyle: GoogleFonts.tajawal(color: AppColors.textSecondary, fontSize: 14),
+                        hintStyle: AppFonts.tajawal(color: AppColors.textSecondary, fontSize: 14),
                         border: InputBorder.none,
                         filled: true,
                         fillColor: AppColors.card,
@@ -241,13 +227,7 @@ class _IntegratedSearchBox extends StatelessWidget {
                   if (searching)
                     const Padding(
                       padding: EdgeInsetsDirectional.only(end: 12),
-                      child: Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: AppInlineLoader(size: 20),
-                        ),
-                      ),
+                      child: Center(child: SizedBox(width: 20, height: 20, child: AppInlineLoader(size: 20))),
                     )
                   else if (hasText)
                     IconButton(
@@ -265,7 +245,7 @@ class _IntegratedSearchBox extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             scope.descriptionKey.tr,
-            style: GoogleFonts.tajawal(
+            style: AppFonts.tajawal(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppColors.textSecondary,
@@ -302,7 +282,9 @@ class _SearchScopeSelector extends StatelessWidget {
           )
           .toList(),
       child: InkWell(
-        borderRadius: const BorderRadiusDirectional.horizontal(start: Radius.circular(20)).resolve(Directionality.of(context)),
+        borderRadius: const BorderRadiusDirectional.horizontal(
+          start: Radius.circular(20),
+        ).resolve(Directionality.of(context)),
         child: Padding(
           padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 10, 10),
           child: Column(
@@ -311,8 +293,8 @@ class _SearchScopeSelector extends StatelessWidget {
             children: [
               Text(
                 'search_scope_label'.tr,
-                style: GoogleFonts.tajawal(
-                  fontSize: 10,
+                style: AppFonts.tajawal(
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textSecondary,
                   height: 1.1,
@@ -326,11 +308,7 @@ class _SearchScopeSelector extends StatelessWidget {
                   const SizedBox(width: 5),
                   Text(
                     scope.labelKey.tr,
-                    style: GoogleFonts.tajawal(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
-                    ),
+                    style: AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primary),
                   ),
                   const SizedBox(width: 2),
                   const Icon(Icons.expand_more_rounded, size: 18, color: AppColors.primary),
@@ -361,7 +339,7 @@ class _SearchScopeMenuTile extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: selected ? AppColors.primary.withValues(alpha: 0.12) : const Color(0xFFF7F6FF),
+              color: selected ? AppColors.primary.withValues(alpha: 0.12) : AppColors.surfaceSoft,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(scope.icon, size: 18, color: AppColors.primary),
@@ -373,20 +351,16 @@ class _SearchScopeMenuTile extends StatelessWidget {
               children: [
                 Text(
                   scope.labelKey.tr,
-                  style: GoogleFonts.tajawal(
+                  style: AppFonts.tajawal(
                     fontWeight: FontWeight.w800,
                     fontSize: 14,
-                    color: selected ? AppColors.primary : const Color(0xFF111827),
+                    color: selected ? AppColors.primary : AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   scope.descriptionKey.tr,
-                  style: GoogleFonts.tajawal(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                    height: 1.35,
-                  ),
+                  style: AppFonts.tajawal(fontSize: 12, color: AppColors.textSecondary, height: 1.35),
                 ),
               ],
             ),
@@ -417,13 +391,10 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(width: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            color: AppColors.indicatorFill,
-            borderRadius: BorderRadius.circular(20),
-          ),
+          decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(20)),
           child: Text(
             'search_results_count'.trParams({'n': '$count'}),
-            style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary),
+            style: AppFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary),
           ),
         ),
       ],
@@ -517,11 +488,11 @@ class _CourseSearchTile extends StatelessWidget {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 15),
+                          const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 15),
                           const SizedBox(width: 3),
                           Text(
                             course.rating.toStringAsFixed(1),
-                            style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700),
+                            style: AppFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -529,7 +500,7 @@ class _CourseSearchTile extends StatelessWidget {
                               course.price,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.tajawal(
+                              style: AppFonts.tajawal(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.primary,
@@ -575,8 +546,7 @@ class _ActiveFilterChipsContent extends StatelessWidget {
         if (category != null)
           InputChip(
             label: Text(
-              controller.categories.firstWhereOrNull((c) => c.id == category)?.name ??
-                  'search_category_filter'.tr,
+              controller.categories.firstWhereOrNull((c) => c.id == category)?.name ?? 'search_category_filter'.tr,
             ),
             onDeleted: () {
               controller.selectedCategoryId.value = null;
@@ -585,9 +555,7 @@ class _ActiveFilterChipsContent extends StatelessWidget {
           ),
         if (city != null)
           InputChip(
-            label: Text(
-              controller.cities.firstWhereOrNull((c) => c.id == city)?.name ?? 'search_city_filter'.tr,
-            ),
+            label: Text(controller.cities.firstWhereOrNull((c) => c.id == city)?.name ?? 'search_city_filter'.tr),
             onDeleted: () {
               controller.selectedCityId.value = null;
               controller.runSearch(resetPage: true, saveRecent: false);
@@ -610,7 +578,7 @@ class _ActiveFilterChipsContent extends StatelessWidget {
             },
           ),
         ActionChip(
-          label: Text('search_clear'.tr, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+          label: Text('search_clear'.tr, style: AppFonts.tajawal(fontWeight: FontWeight.w700)),
           onPressed: controller.clearFilters,
         ),
       ],
@@ -655,11 +623,7 @@ class _FilterSheetState extends State<_FilterSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'search_filter_title'.tr,
-                style: AppTypography.sectionTitle(),
-                textAlign: TextAlign.center,
-              ),
+              Text('search_filter_title'.tr, style: AppTypography.sectionTitle(), textAlign: TextAlign.center),
               const SizedBox(height: 16),
               if (c.categories.isNotEmpty)
                 DropdownButtonFormField<int?>(
@@ -668,9 +632,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                   decoration: InputDecoration(labelText: 'search_category_filter'.tr),
                   items: [
                     DropdownMenuItem(value: null, child: Text('filter_all'.tr)),
-                    ...c.categories.map(
-                      (cat) => DropdownMenuItem(value: cat.id, child: Text(cat.name)),
-                    ),
+                    ...c.categories.map((cat) => DropdownMenuItem(value: cat.id, child: Text(cat.name))),
                   ],
                   onChanged: (v) => setState(() => categoryId = v),
                 ),
@@ -682,9 +644,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                   decoration: InputDecoration(labelText: 'search_city_filter'.tr),
                   items: [
                     DropdownMenuItem(value: null, child: Text('filter_all_cities'.tr)),
-                    ...c.cities.map(
-                      (city) => DropdownMenuItem(value: city.id, child: Text(city.name)),
-                    ),
+                    ...c.cities.map((city) => DropdownMenuItem(value: city.id, child: Text(city.name))),
                   ],
                   onChanged: (v) => setState(() => cityId = v),
                 ),
@@ -734,12 +694,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                   Expanded(
                     child: FilledButton(
                       onPressed: () {
-                        c.applyFilters(
-                          cityId: cityId,
-                          categoryId: categoryId,
-                          level: level,
-                          studyType: studyType,
-                        );
+                        c.applyFilters(cityId: cityId, categoryId: categoryId, level: level, studyType: studyType);
                         Navigator.pop(context);
                       },
                       child: Text('search_apply_filters'.tr),

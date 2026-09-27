@@ -57,9 +57,7 @@ class FavoritesService extends GetxService {
       clearForLogout();
       return;
     }
-    if (!force &&
-        _lastSyncedAt != null &&
-        DateTime.now().difference(_lastSyncedAt!) < _syncTtl) {
+    if (!force && _lastSyncedAt != null && DateTime.now().difference(_lastSyncedAt!) < _syncTtl) {
       return;
     }
     isSyncing.value = true;

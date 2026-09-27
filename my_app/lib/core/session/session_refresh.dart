@@ -14,6 +14,7 @@ import '../services/app_lifecycle_sync.dart';
 import '../services/enrollment_sync_service.dart';
 import '../services/enrollment_watch_scheduler.dart';
 import '../services/push_notification_service.dart';
+import '../storage/recent_search_storage.dart';
 import 'enrollment_status_coordinator.dart';
 import 'remote_notification_sync.dart';
 
@@ -60,6 +61,9 @@ abstract final class SessionRefresh {
 
   /// بعد تسجيل الخروج — مسح الذاكرة المؤقتة في كل المتحكمات النشطة.
   static Future<void> onLogout() async {
+    if (Get.isRegistered<RecentSearchStorage>()) {
+      await Get.find<RecentSearchStorage>().clear();
+    }
     if (Get.isRegistered<FavoritesService>()) {
       Get.find<FavoritesService>().clearForLogout();
     }

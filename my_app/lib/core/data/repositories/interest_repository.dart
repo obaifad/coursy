@@ -12,11 +12,6 @@ class InterestRepository extends GetxService {
   final ApiClient _client;
 
   Future<List<CategoryModel>> fetchInterests({int perPage = 50}) async {
-    return fetchAllPages(
-      _client,
-      ApiEndpoints.tags,
-      CategoryModel.fromJson,
-      perPage: perPage,
-    );
+    return fetchAllPages(_client, ApiEndpoints.tags, CategoryModel.fromJson, perPage: perPage);
   }
 }

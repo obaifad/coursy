@@ -22,11 +22,7 @@ Future<List<T>> fetchAllPages<T>(
 
   while (page <= maxPages) {
     final result = await client.handle(
-      () => client.get(
-        path,
-        query: {...baseQuery, 'page': page, 'per_page': perPage},
-        cancelToken: cancelToken,
-      ),
+      () => client.get(path, query: {...baseQuery, 'page': page, 'per_page': perPage}, cancelToken: cancelToken),
       (data) => PaginatedResult<T>.fromBody(data, mapper),
     );
     if (result.total > 0) expectedTotal = result.total;
@@ -48,9 +44,7 @@ Future<List<T>> fetchAllPages<T>(
   }
 
   if (expectedTotal > 0 && all.length < expectedTotal) {
-    throw ApiException(
-      'Incomplete paginated fetch for $path: got ${all.length} of $expectedTotal',
-    );
+    throw ApiException('Incomplete paginated fetch for $path: got ${all.length} of $expectedTotal');
   }
 
   return all;

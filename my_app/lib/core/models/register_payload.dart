@@ -56,10 +56,7 @@ class RegisterPayload {
       if (hasEducation) 'education_level': educationLevel,
       if (hasUniversity) 'university_id': universityId,
       if (hasSpecialization) 'specialization_id': specializationId,
-      if (hasTags) ...{
-        'preferred_tags': tags,
-        'tag_ids': tags,
-      },
+      if (hasTags) ...{'preferred_tags': tags, 'tag_ids': tags},
       if (hasRadius) 'notification_radius_km': notificationRadiusKm,
     };
   }

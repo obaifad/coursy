@@ -36,6 +36,7 @@ class LoginPageMetrics {
   final double maxContentWidth;
   final double splitPanelPadding;
   final bool compactHeader;
+
   /// تخطيط نصفين (فورم + لوحة ترحيب) على التابلت وسطح المكتب.
   final bool useSplitLayout;
 

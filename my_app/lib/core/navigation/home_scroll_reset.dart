@@ -11,6 +11,7 @@ abstract final class HomeScrollReset {
     }
     if (Get.find<RootController>().currentIndex.value != 2) return;
     Get.find<HomeController>().resetScrollPosition();
-    Get.find<HomeController>().loadHome(forceRefresh: true);
+    // يُستدعى عند كل عودة للرئيسية (تبديل تبويب / زر رجوع) — نعيد التحميل فقط إن كانت البيانات قديمة.
+    Get.find<HomeController>().refreshIfStale();
   }
 }

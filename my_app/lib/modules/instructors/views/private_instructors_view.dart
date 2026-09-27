@@ -16,9 +16,7 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('private_instructors_title'.tr),
-      ),
+      appBar: AppBar(title: Text('private_instructors_title'.tr)),
       body: Obx(() {
         final _ = localeRebuildToken;
         if (controller.isLoading.value && controller.instructors.isEmpty) {
@@ -35,9 +33,7 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
               onSelected: controller.selectSubject,
               isLoading: controller.isLoadingFilters.value && controller.subjects.isEmpty,
             ),
-            Expanded(
-              child: _buildBody(context),
-            ),
+            Expanded(child: _buildBody(context)),
           ],
         );
       }),
@@ -54,11 +50,7 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
             children: [
               const Icon(Icons.cloud_off_outlined, size: 48, color: AppColors.textSecondary),
               const SizedBox(height: 12),
-              Text(
-                controller.errorMessage.value!,
-                textAlign: TextAlign.center,
-                style: AppTypography.pageSubtitle(),
-              ),
+              Text(controller.errorMessage.value!, textAlign: TextAlign.center, style: AppTypography.pageSubtitle()),
               const SizedBox(height: 16),
               FilledButton(onPressed: controller.loadInstructors, child: Text('retry'.tr)),
             ],
@@ -72,9 +64,7 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            controller.selectedSubjectKey.value == null
-                ? 'no_private_instructors'.tr
-                : 'no_instructors_in_subject'.tr,
+            controller.selectedSubjectKey.value == null ? 'no_private_instructors'.tr : 'no_instructors_in_subject'.tr,
             textAlign: TextAlign.center,
             style: AppTypography.pageSubtitle(),
           ),
@@ -84,31 +74,29 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
 
     return AppMaxWidth(
       child: RefreshIndicator(
-      onRefresh: controller.loadInstructors,
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: AppLayout.scrollPadding(context),
-        itemCount: controller.instructors.length + 1,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (_, i) {
-          if (i == controller.instructors.length) {
-            if (!controller.hasMore.value) return const SizedBox(height: 8);
-            return OutlinedButton.icon(
-              onPressed: controller.isLoadingMore.value ? null : controller.loadMore,
-              icon: controller.isLoadingMore.value
-                  ? const AppInlineLoader()
-                  : const Icon(Icons.expand_more_rounded),
-              label: Text('load_more'.tr),
-            );
-          }
+        onRefresh: controller.loadInstructors,
+        child: ListView.separated(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: AppLayout.scrollPadding(context),
+          itemCount: controller.instructors.length + 1,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (_, i) {
+            if (i == controller.instructors.length) {
+              if (!controller.hasMore.value) return const SizedBox(height: 8);
+              return OutlinedButton.icon(
+                onPressed: controller.isLoadingMore.value ? null : controller.loadMore,
+                icon: controller.isLoadingMore.value ? const AppInlineLoader() : const Icon(Icons.expand_more_rounded),
+                label: Text('load_more'.tr),
+              );
+            }
 
-          final item = controller.instructors[i];
-          return PrivateInstructorListCard(
-            instructor: item,
-            onTap: () => Get.toNamed(AppRoutes.instructorDetails, arguments: item),
-          );
-        },
-      ),
+            final item = controller.instructors[i];
+            return PrivateInstructorListCard(
+              instructor: item,
+              onTap: () => Get.toNamed(AppRoutes.instructorDetails, arguments: item),
+            );
+          },
+        ),
       ),
     );
   }

@@ -15,10 +15,7 @@ class PaginatedResult<T> {
   final int total;
   final bool hasMore;
 
-  factory PaginatedResult.fromBody(
-    dynamic body,
-    T Function(Map<String, dynamic>) mapper,
-  ) {
+  factory PaginatedResult.fromBody(dynamic body, T Function(Map<String, dynamic>) mapper) {
     final items = extractListMap(body).map(mapper).toList();
     final meta = extractPagination(normalizeApiBody(body));
     return PaginatedResult<T>(

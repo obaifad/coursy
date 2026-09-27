@@ -1,14 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../network/api_client.dart';
 import 'locale_refresh.dart';
 import 'locale_request_guard.dart';
+import '../../theme/app_colors.dart';
 
 /// إدارة لغة التطبيق (عربي / إنجليزي) + RTL/LTR + Accept-Language للـ API.
 class LocaleController extends GetxService {
   static const _storageKey = 'app_locale';
+
+  /// نسخة من اللغة في SharedPreferences يقرؤها الفحص الخلفي (Workmanager) لإشعاراته —
+  /// GetStorage لا يُستخدم من الـ isolate الخلفي.
+  static const backgroundLocaleKey = 'app_locale';
+
   late final GetStorage _box;
 
   final RxString code = 'ar'.obs;
@@ -26,12 +35,22 @@ class LocaleController extends GetxService {
     if (Get.isRegistered<ApiClient>()) {
       Get.find<ApiClient>().dio.options.headers['Accept-Language'] = initial;
     }
+    unawaited(_mirrorForBackground(initial));
+  }
+
+  Future<void> _mirrorForBackground(String value) async {
+    try {
+      await SharedPreferencesAsync().setString(backgroundLocaleKey, value);
+    } catch (_) {
+      // غير حرج — الإشعارات الخلفية تستخدم العربية افتراضياً.
+    }
   }
 
   Future<void> setLocale(String newCode) async {
     if (newCode != 'ar' && newCode != 'en') return;
     if (newCode == code.value) return;
     await _box.write(_storageKey, newCode);
+    unawaited(_mirrorForBackground(newCode));
     await _apply(newCode, refreshData: true);
     Get.snackbar('language_changed'.tr, 'language_changed_desc'.tr);
   }
@@ -99,7 +118,7 @@ class _LanguageTile extends StatelessWidget {
         tileColor: selected ? const Color(0x146C63FF) : null,
         leading: Text(flag, style: const TextStyle(fontSize: 28)),
         title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.w800 : FontWeight.w600)),
-        trailing: selected ? const Icon(Icons.check_circle_rounded, color: Color(0xFF6C63FF)) : null,
+        trailing: selected ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
         onTap: () async {
           Get.back();
           await locale.setLocale(code);

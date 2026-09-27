@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../theme/app_fonts.dart';
 import '../core/locale/locale_rebuild.dart';
 import '../core/models/app_models.dart';
 import '../core/responsive/responsive.dart';
@@ -21,9 +21,7 @@ Future<void> showInterestPickerSheet({
     showDragHandle: true,
     isScrollControlled: true,
     useSafeArea: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-    ),
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
     builder: (context) {
       return LocaleRebuild(
         builder: (context) => _InterestPickerSheetBody(
@@ -98,100 +96,84 @@ class _InterestPickerSheetBodyState extends State<_InterestPickerSheetBody> {
         return AppMaxWidth(
           maxWidth: ResponsiveModals.sheetMaxWidth(context),
           child: Padding(
-          padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + context.keyboardInset),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(widget.title, style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 18)),
-              const SizedBox(height: 4),
-              Text(
-                'pick_interests'.tr,
-                style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'search_interests'.tr,
-                  prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary),
-                  filled: true,
-                  fillColor: AppColors.indicatorFill,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + context.keyboardInset),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(widget.title, style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 18)),
+                const SizedBox(height: 4),
+                Text('pick_interests'.tr, style: AppFonts.tajawal(fontSize: 13, color: AppColors.textSecondary)),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'search_interests'.tr,
+                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary),
+                    filled: true,
+                    fillColor: AppColors.indicatorFill,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 ),
-              ),
-              const SizedBox(height: 10),
-              if (_selected.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'interests_selected_count'.trParams({'count': '${_selected.length}'}),
-                    style: GoogleFonts.tajawal(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                      color: AppColors.primary,
+                const SizedBox(height: 10),
+                if (_selected.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      'interests_selected_count'.trParams({'count': '${_selected.length}'}),
+                      style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.primary),
                     ),
                   ),
-                ),
-              Expanded(
-                child: filtered.isEmpty
-                    ? Center(
-                        child: Text(
-                          'no_results'.tr,
-                          style: GoogleFonts.tajawal(color: AppColors.textSecondary),
+                Expanded(
+                  child: filtered.isEmpty
+                      ? Center(
+                          child: Text('no_results'.tr, style: AppFonts.tajawal(color: AppColors.textSecondary)),
+                        )
+                      : ListView.separated(
+                          controller: scrollController,
+                          itemCount: filtered.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.neutralFill),
+                          itemBuilder: (_, i) {
+                            final category = filtered[i];
+                            final selected = _selected.contains(category.id);
+                            return CheckboxListTile(
+                              value: selected,
+                              activeColor: AppColors.primary,
+                              controlAffinity: ListTileControlAffinity.leading,
+                              contentPadding: EdgeInsets.zero,
+                              secondary: CategoryIcon(
+                                category: category,
+                                size: 36,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              title: Text(category.name, style: AppFonts.tajawal(fontWeight: FontWeight.w600)),
+                              onChanged: (_) {
+                                setState(() {
+                                  if (selected) {
+                                    _selected.remove(category.id);
+                                  } else {
+                                    _selected.add(category.id);
+                                  }
+                                });
+                              },
+                            );
+                          },
                         ),
-                      )
-                    : ListView.separated(
-                        controller: scrollController,
-                        itemCount: filtered.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF3F4F6)),
-                        itemBuilder: (_, i) {
-                          final category = filtered[i];
-                          final selected = _selected.contains(category.id);
-                          return CheckboxListTile(
-                            value: selected,
-                            activeColor: AppColors.primary,
-                            controlAffinity: ListTileControlAffinity.leading,
-                            contentPadding: EdgeInsets.zero,
-                            secondary: CategoryIcon(
-                              category: category,
-                              size: 36,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            title: Text(
-                              category.name,
-                              style: GoogleFonts.tajawal(fontWeight: FontWeight.w600),
-                            ),
-                            onChanged: (_) {
-                              setState(() {
-                                if (selected) {
-                                  _selected.remove(category.id);
-                                } else {
-                                  _selected.add(category.id);
-                                }
-                              });
-                            },
-                          );
-                        },
-                      ),
-              ),
-              const SizedBox(height: 12),
-              FilledButton(
-                onPressed: () {
-                  widget.onApply(_selected);
-                  Navigator.of(context).pop();
-                },
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                child: Text('done'.tr),
-              ),
-            ],
-          ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: () {
+                    widget.onApply(_selected);
+                    Navigator.of(context).pop();
+                  },
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: Text('done'.tr),
+                ),
+              ],
+            ),
           ),
         );
       },

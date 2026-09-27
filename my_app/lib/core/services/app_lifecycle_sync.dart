@@ -8,18 +8,20 @@ import '../storage/token_storage.dart';
 import 'enrollment_sync_service.dart';
 import 'push_notification_service.dart';
 
-/// مزامنة عند العودة للتطبيق + مراقبة دورية لحالة التسجيل.
+/// مزامنة عند العودة للتطبيق + مراقبة دورية (احتياطية) لحالة التسجيل.
+/// المصدر الأساسي للتحديثات هو FCM — الاستطلاع هنا متباعد لتوفير البطارية والباقة.
 class AppLifecycleSync extends GetxService with WidgetsBindingObserver {
-  static const _pollInterval = Duration(seconds: 12);
+  static const _pollInterval = Duration(minutes: 2);
 
   Timer? _pollTimer;
   bool _isForeground = true;
 
+  /// المراقبة تبدأ من `main` (بعد seedStatuses) أو بعد تسجيل الدخول — لا نبدأها هنا
+  /// حتى لا يسبق أول فحص تحميلَ الحالات المحفوظة.
   @override
   void onInit() {
     super.onInit();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => startWatching());
   }
 
   @override
@@ -64,7 +66,7 @@ class AppLifecycleSync extends GetxService with WidgetsBindingObserver {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(_pollInterval, (_) {
       if (!_isForeground || !Get.find<TokenStorage>().isLoggedIn) return;
-      unawaited(_pollEnrollments());
+      unawaited(_pollEnrollments(force: true));
     });
   }
 
@@ -79,13 +81,13 @@ class AppLifecycleSync extends GetxService with WidgetsBindingObserver {
     AppNavigation.ensureRootBinding();
 
     if (Get.isRegistered<PushNotificationService>()) {
-      await Get.find<PushNotificationService>().ensurePermissionsAndSyncToken();
+      await Get.find<PushNotificationService>().ensurePermissionsAndSyncToken(requestPermission: false);
     }
     await _pollEnrollments();
   }
 
-  Future<void> _pollEnrollments() async {
+  Future<void> _pollEnrollments({bool force = false}) async {
     if (!Get.isRegistered<EnrollmentSyncService>()) return;
-    await Get.find<EnrollmentSyncService>().checkForStatusChanges();
+    await Get.find<EnrollmentSyncService>().checkForStatusChanges(force: force);
   }
 }

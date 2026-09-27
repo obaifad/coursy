@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../theme/app_fonts.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/app_skeletons.dart';
@@ -86,9 +86,7 @@ class InstructorSubjectInstructorsView extends GetView<InstructorSubjectInstruct
                             final loadingMore = controller.isLoadingMore.value;
                             return OutlinedButton.icon(
                               onPressed: loadingMore ? null : controller.loadMore,
-                              icon: loadingMore
-                                  ? const AppInlineLoader()
-                                  : const Icon(Icons.expand_more_rounded),
+                              icon: loadingMore ? const AppInlineLoader() : const Icon(Icons.expand_more_rounded),
                               label: Text('load_more'.tr),
                             );
                           }),
@@ -129,10 +127,7 @@ class _SubjectHeroHeader extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.05),
-                      Colors.black.withValues(alpha: 0.38),
-                    ],
+                    colors: [Colors.black.withValues(alpha: 0.05), Colors.black.withValues(alpha: 0.38)],
                   ),
                 ),
               ),
@@ -150,10 +145,7 @@ class _SubjectHeroHeader extends StatelessWidget {
                         constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                         icon: Container(
                           padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
-                          ),
+                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
                           child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
                         ),
                       ),
@@ -167,11 +159,7 @@ class _SubjectHeroHeader extends StatelessWidget {
                         ),
                         child: Text(
                           'instructor_subject_count'.trParams({'count': '$instructorsCount'}),
-                          style: GoogleFonts.tajawal(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
-                          ),
+                          style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -179,7 +167,7 @@ class _SubjectHeroHeader extends StatelessWidget {
                         title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.tajawal(
+                        style: AppFonts.tajawal(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
                           fontSize: titleSize,
@@ -192,7 +180,7 @@ class _SubjectHeroHeader extends StatelessWidget {
                           'instructor_subject_subtitle'.tr,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.tajawal(
+                          style: AppFonts.tajawal(
                             color: Colors.white.withValues(alpha: 0.88),
                             fontSize: 13,
                             fontWeight: FontWeight.w500,

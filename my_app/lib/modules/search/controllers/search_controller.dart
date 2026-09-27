@@ -59,8 +59,7 @@ class SearchPageController extends GetxController with LatestLoadGuard {
     return n;
   }
 
-  bool get hasAnyResults =>
-      courses.isNotEmpty || institutes.isNotEmpty || instructors.isNotEmpty;
+  bool get hasAnyResults => courses.isNotEmpty || institutes.isNotEmpty || instructors.isNotEmpty;
 
   @override
   void onInit() {
@@ -70,7 +69,7 @@ class SearchPageController extends GetxController with LatestLoadGuard {
   }
 
   Future<void> _loadFilters() async {
-    final session = beginLoad();
+    final session = beginLoad('filters');
     try {
       final cats = await _categoryRepository.fetchCategories();
       applyIfCurrent(session, () => categories.assignAll(cats));
@@ -97,10 +96,7 @@ class SearchPageController extends GetxController with LatestLoadGuard {
   void _onQueryChanged() {
     queryText.value = queryController.text;
     _debounce?.cancel();
-    _debounce = Timer(
-      const Duration(milliseconds: 360),
-      () => runSearch(resetPage: true, saveRecent: false),
-    );
+    _debounce = Timer(const Duration(milliseconds: 360), () => runSearch(resetPage: true, saveRecent: false));
   }
 
   Future<void> runSearch({bool resetPage = true, bool saveRecent = true, String? overrideQuery}) async {
@@ -144,7 +140,7 @@ class SearchPageController extends GetxController with LatestLoadGuard {
       return;
     } catch (e) {
       if (shouldApply(session)) {
-        errorMessage.value = e.toString();
+        errorMessage.value = userErrorMessage(e);
         _clearResults();
       }
     } finally {
@@ -160,6 +156,8 @@ class SearchPageController extends GetxController with LatestLoadGuard {
     totalInstitutes.value = 0;
     totalInstructors.value = 0;
   }
+
+  Future<void> clearRecentSearches() => _recentStorage.clear();
 
   Future<void> submitSearch() async {
     queryText.value = queryController.text;

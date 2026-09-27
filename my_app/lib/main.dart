@@ -13,7 +13,6 @@ import 'core/services/enrollment_sync_service.dart';
 import 'core/services/enrollment_watch_scheduler.dart';
 import 'core/services/favorites_service.dart';
 import 'core/services/push_notification_service.dart';
-import 'core/storage/favorites_storage.dart';
 import 'core/storage/token_storage.dart';
 import 'core/storage/recent_search_storage.dart';
 
@@ -25,7 +24,6 @@ Future<void> main() async {
   AppBindings().dependencies();
   await Get.find<LocaleController>().init();
   await Get.find<TokenStorage>().init();
-  await Get.find<FavoritesStorage>().init();
   await Get.find<RecentSearchStorage>().init();
   if (Get.isRegistered<PushNotificationService>()) {
     await Get.find<PushNotificationService>().init();
@@ -42,7 +40,8 @@ Future<void> _postLaunchSync() async {
 
   try {
     if (Get.isRegistered<PushNotificationService>()) {
-      await Get.find<PushNotificationService>().ensurePermissionsAndSyncToken();
+      // الإذن يُطلب في PushNotificationService.init — هنا نزامن التوكن فقط.
+      await Get.find<PushNotificationService>().ensurePermissionsAndSyncToken(requestPermission: false);
     }
   } catch (e) {
     AppDebugLog.fcm('post-launch token sync failed: $e');

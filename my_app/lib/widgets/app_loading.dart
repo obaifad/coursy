@@ -8,11 +8,7 @@ enum AppLoaderSize { small, medium, large }
 
 /// ثلاث نقاط نابضة — لودر خفيف بألوان العلامة (بدون مكتبات خارجية).
 class AppDotsLoader extends StatefulWidget {
-  const AppDotsLoader({
-    super.key,
-    this.color,
-    this.size = AppLoaderSize.medium,
-  });
+  const AppDotsLoader({super.key, this.color, this.size = AppLoaderSize.medium});
 
   final Color? color;
   final AppLoaderSize size;
@@ -27,10 +23,7 @@ class _AppDotsLoaderState extends State<AppDotsLoader> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat();
   }
 
   @override
@@ -110,10 +103,7 @@ class AppInlineLoader extends StatelessWidget {
       width: size,
       height: size,
       child: FittedBox(
-        child: AppDotsLoader(
-          color: color ?? AppColors.primary,
-          size: AppLoaderSize.small,
-        ),
+        child: AppDotsLoader(color: color ?? AppColors.primary, size: AppLoaderSize.small),
       ),
     );
   }
@@ -121,11 +111,7 @@ class AppInlineLoader extends StatelessWidget {
 
 /// لودر مركزي بين الصفحات — حلقة ناعمة + نقاط العلامة.
 class AppPageLoader extends StatefulWidget {
-  const AppPageLoader({
-    super.key,
-    this.message,
-    this.light = false,
-  });
+  const AppPageLoader({super.key, this.message, this.light = false});
 
   final String? message;
   final bool light;
@@ -140,10 +126,7 @@ class _AppPageLoaderState extends State<AppPageLoader> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    _ringController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat();
+    _ringController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat();
   }
 
   @override
@@ -167,16 +150,9 @@ class _AppPageLoaderState extends State<AppPageLoader> with SingleTickerProvider
             animation: _ringController,
             builder: (_, __) {
               return CustomPaint(
-                painter: _ArcRingPainter(
-                  progress: _ringController.value,
-                  color: accent,
-                  trackColor: ringColor,
-                ),
+                painter: _ArcRingPainter(progress: _ringController.value, color: accent, trackColor: ringColor),
                 child: Center(
-                  child: AppDotsLoader(
-                    color: accent,
-                    size: AppLoaderSize.small,
-                  ),
+                  child: AppDotsLoader(color: accent, size: AppLoaderSize.small),
                 ),
               );
             },
@@ -201,11 +177,7 @@ class _AppPageLoaderState extends State<AppPageLoader> with SingleTickerProvider
 }
 
 class _ArcRingPainter extends CustomPainter {
-  _ArcRingPainter({
-    required this.progress,
-    required this.color,
-    required this.trackColor,
-  });
+  _ArcRingPainter({required this.progress, required this.color, required this.trackColor});
 
   final double progress;
   final Color color;

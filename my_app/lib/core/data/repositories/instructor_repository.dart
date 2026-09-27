@@ -26,13 +26,7 @@ class InstructorRepository extends GetxService {
       if (specs.isEmpty) return fetchInstructorSubjects();
 
       final counts = await _countPrivateInstructorsBySpecializationId();
-      return specs
-          .map(
-            (spec) => spec.toSubjectFilter().copyWith(
-                  instructorsCount: counts[spec.id] ?? 0,
-                ),
-          )
-          .toList();
+      return specs.map((spec) => spec.toSubjectFilter().copyWith(instructorsCount: counts[spec.id] ?? 0)).toList();
     } catch (_) {
       return fetchInstructorSubjects();
     }
@@ -128,31 +122,29 @@ class InstructorRepository extends GetxService {
       if (page > 20) break;
     }
 
-    final subjects = counts.values
-        .map(
-          (e) => InstructorSubjectModel(
-            key: e.key,
-            name: e.displayName,
-            nameEn: e.nameEn,
-            nameAr: e.nameAr,
-            instructorsCount: e.count,
-          ),
-        )
-        .toList()
-      ..sort((a, b) {
-        final byCount = b.instructorsCount.compareTo(a.instructorsCount);
-        if (byCount != 0) return byCount;
-        return a.name.compareTo(b.name);
-      });
+    final subjects =
+        counts.values
+            .map(
+              (e) => InstructorSubjectModel(
+                key: e.key,
+                name: e.displayName,
+                nameEn: e.nameEn,
+                nameAr: e.nameAr,
+                instructorsCount: e.count,
+              ),
+            )
+            .toList()
+          ..sort((a, b) {
+            final byCount = b.instructorsCount.compareTo(a.instructorsCount);
+            if (byCount != 0) return byCount;
+            return a.name.compareTo(b.name);
+          });
 
     return subjects;
   }
 
   /// يحمّل كل المدرّسين لمادة معيّنة (مع pagination محلي).
-  Future<List<InstructorModel>> fetchInstructorsBySubject({
-    required String subjectKey,
-    bool privateOnly = true,
-  }) async {
+  Future<List<InstructorModel>> fetchInstructorsBySubject({required String subjectKey, bool privateOnly = true}) async {
     final specId = specializationIdFromFilterKey(subjectKey);
     final all = <InstructorModel>[];
     var page = 1;
@@ -176,16 +168,13 @@ class InstructorRepository extends GetxService {
   }
 
   Future<InstructorModel> fetchInstructorById(int id) async {
-    return _client.handle(
-      () => _client.get(ApiEndpoints.instructorById(id)),
-      (data) {
-        final map = extractObjectMap(data);
-        if (map == null) {
-          throw Exception('instructor_invalid_data'.tr);
-        }
-        return InstructorModel.fromJson(map);
-      },
-    );
+    return _client.handle(() => _client.get(ApiEndpoints.instructorById(id)), (data) {
+      final map = extractObjectMap(data);
+      if (map == null) {
+        throw Exception('instructor_invalid_data'.tr);
+      }
+      return InstructorModel.fromJson(map);
+    });
   }
 
   Future<PaginatedResult<CourseModel>> fetchInstructorCoursesPage({
@@ -194,10 +183,7 @@ class InstructorRepository extends GetxService {
     int perPage = 15,
   }) async {
     return _client.handle(
-      () => _client.get(
-        ApiEndpoints.instructorCourses(instructorId),
-        query: {'page': page, 'per_page': perPage},
-      ),
+      () => _client.get(ApiEndpoints.instructorCourses(instructorId), query: {'page': page, 'per_page': perPage}),
       (data) => PaginatedResult<CourseModel>.fromBody(data, CourseModel.fromJson),
     );
   }
@@ -221,12 +207,7 @@ class InstructorRepository extends GetxService {
 }
 
 class _SubjectAccumulator {
-  _SubjectAccumulator({
-    required this.key,
-    this.nameEn,
-    this.nameAr,
-    this.localized,
-  });
+  _SubjectAccumulator({required this.key, this.nameEn, this.nameAr, this.localized});
 
   final String key;
   String? nameEn;

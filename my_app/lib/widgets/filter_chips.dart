@@ -52,10 +52,7 @@ class CourseFiltersPanel extends StatelessWidget {
           padding: EdgeInsetsDirectional.fromSTEB(inset, 0, inset, 0),
           child: Align(
             alignment: AlignmentDirectional.centerStart,
-            child: CourseSortDropdown(
-              selected: selectedSort,
-              onSelected: onSortSelected,
-            ),
+            child: CourseSortDropdown(selected: selectedSort, onSelected: onSortSelected),
           ),
         ),
       ],
@@ -82,18 +79,9 @@ class HorizontalCategoryFilters extends StatelessWidget {
       height: 44,
       separatorWidth: 8,
       children: [
-        _FilterChip(
-          label: 'filter_all'.tr,
-          selected: selectedId == null,
-          onTap: () => onSelected(null),
-        ),
+        _FilterChip(label: 'filter_all'.tr, selected: selectedId == null, onTap: () => onSelected(null)),
         for (final cat in categories)
-          _FilterChip(
-            label: cat.name,
-            selected: selectedId == cat.id,
-            category: cat,
-            onTap: () => onSelected(cat.id),
-          ),
+          _FilterChip(label: cat.name, selected: selectedId == cat.id, category: cat, onTap: () => onSelected(cat.id)),
       ],
     );
   }
@@ -198,11 +186,7 @@ class HorizontalInstructorSubjectFilters extends StatelessWidget {
 }
 
 class _SubjectFilterChip extends StatelessWidget {
-  const _SubjectFilterChip({
-    required this.subject,
-    required this.selected,
-    required this.onTap,
-  });
+  const _SubjectFilterChip({required this.subject, required this.selected, required this.onTap});
 
   final InstructorSubjectModel subject;
   final bool selected;
@@ -217,10 +201,10 @@ class _SubjectFilterChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : const Color(0xFFF7F6FF),
+          color: selected ? AppColors.primary : AppColors.surfaceSoft,
           borderRadius: BorderRadius.circular(20),
           boxShadow: selected
-              ? const [BoxShadow(color: Color(0x336C63FF), blurRadius: 10, offset: Offset(0, 4))]
+              ? const [BoxShadow(color: AppColors.shadowPrimary, blurRadius: 10, offset: Offset(0, 4))]
               : null,
         ),
         child: Row(
@@ -241,7 +225,7 @@ class _SubjectFilterChip extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
-                color: selected ? Colors.white : const Color(0xFF374151),
+                color: selected ? Colors.white : AppColors.textBody,
               ),
             ),
           ],
@@ -252,11 +236,7 @@ class _SubjectFilterChip extends StatelessWidget {
 }
 
 class CourseSortDropdown extends StatelessWidget {
-  const CourseSortDropdown({
-    super.key,
-    required this.selected,
-    required this.onSelected,
-  });
+  const CourseSortDropdown({super.key, required this.selected, required this.onSelected});
 
   final CourseSortOption selected;
   final ValueChanged<CourseSortOption> onSelected;
@@ -293,7 +273,7 @@ class CourseSortDropdown extends StatelessWidget {
                       option.labelKey.tr,
                       style: TextStyle(
                         fontWeight: option == selected ? FontWeight.w800 : FontWeight.w600,
-                        color: option == selected ? AppColors.primary : const Color(0xFF374151),
+                        color: option == selected ? AppColors.primary : AppColors.textBody,
                       ),
                     ),
                   ],
@@ -303,7 +283,7 @@ class CourseSortDropdown extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             decoration: BoxDecoration(
-              color: const Color(0xFFF7F6FF),
+              color: AppColors.surfaceSoft,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
             ),
@@ -312,11 +292,7 @@ class CourseSortDropdown extends StatelessWidget {
               children: [
                 Text(
                   selected.labelKey.tr,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: Color(0xFF374151),
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textBody),
                 ),
                 const SizedBox(width: 4),
                 Icon(Icons.expand_more_rounded, size: 20, color: AppColors.primary.withValues(alpha: 0.85)),
@@ -330,12 +306,7 @@ class CourseSortDropdown extends StatelessWidget {
 }
 
 class HorizontalCityFilters extends StatelessWidget {
-  const HorizontalCityFilters({
-    super.key,
-    required this.cities,
-    required this.selectedId,
-    required this.onSelected,
-  });
+  const HorizontalCityFilters({super.key, required this.cities, required this.selectedId, required this.onSelected});
 
   final List<CityModel> cities;
   final int? selectedId;
@@ -348,29 +319,16 @@ class HorizontalCityFilters extends StatelessWidget {
       height: 44,
       separatorWidth: 8,
       children: [
-        _FilterChip(
-          label: 'filter_all_cities'.tr,
-          selected: selectedId == null,
-          onTap: () => onSelected(null),
-        ),
+        _FilterChip(label: 'filter_all_cities'.tr, selected: selectedId == null, onTap: () => onSelected(null)),
         for (final city in cities)
-          _FilterChip(
-            label: city.name,
-            selected: selectedId == city.id,
-            onTap: () => onSelected(city.id),
-          ),
+          _FilterChip(label: city.name, selected: selectedId == city.id, onTap: () => onSelected(city.id)),
       ],
     );
   }
 }
 
 class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.category,
-  });
+  const _FilterChip({required this.label, required this.selected, required this.onTap, this.category});
 
   final String label;
   final bool selected;
@@ -386,10 +344,10 @@ class _FilterChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : const Color(0xFFF7F6FF),
+          color: selected ? AppColors.primary : AppColors.surfaceSoft,
           borderRadius: BorderRadius.circular(20),
           boxShadow: selected
-              ? const [BoxShadow(color: Color(0x336C63FF), blurRadius: 10, offset: Offset(0, 4))]
+              ? const [BoxShadow(color: AppColors.shadowPrimary, blurRadius: 10, offset: Offset(0, 4))]
               : null,
         ),
         child: Row(
@@ -405,7 +363,7 @@ class _FilterChip extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
-                color: selected ? Colors.white : const Color(0xFF374151),
+                color: selected ? Colors.white : AppColors.textBody,
               ),
             ),
           ],
@@ -425,12 +383,9 @@ class _ChipCategoryIcon extends StatelessWidget {
     return CategoryIcon(
       category: category,
       size: 22,
-      borderRadius: BorderRadius.circular(7),
+      borderRadius: BorderRadius.circular(8),
       iconColor: selected ? Colors.white : AppColors.primary,
-      backgroundColor: selected
-          ? Colors.white.withValues(alpha: 0.22)
-          : AppColors.primary.withValues(alpha: 0.1),
+      backgroundColor: selected ? Colors.white.withValues(alpha: 0.22) : AppColors.primary.withValues(alpha: 0.1),
     );
   }
 }
-

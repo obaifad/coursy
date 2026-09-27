@@ -19,9 +19,8 @@ class SyrianEducationApp extends StatelessWidget {
       builder: (locale) => GetMaterialApp(
         title: 'Coursy',
         debugShowCheckedModeBanner: false,
+        // التطبيق بتصميم فاتح فقط (لا يوجد وضع داكن مُصمَّم).
         theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.light,
         translations: AppTranslations(),
         locale: locale.locale,
         fallbackLocale: const Locale('ar'),
@@ -44,8 +43,11 @@ class SyrianEducationApp extends StatelessWidget {
         builder: (context, child) {
           return Directionality(
             textDirection: locale.isRtl ? TextDirection.rtl : TextDirection.ltr,
+            // نحترم حجم الخط في إعدادات الجهاز (إمكانية الوصول) مع حدّ أعلى يحمي التخطيط من الانكسار.
             child: MediaQuery(
-              data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1)),
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: MediaQuery.textScalerOf(context).clamp(minScaleFactor: 1, maxScaleFactor: 1.3)),
               child: child ?? const SizedBox.shrink(),
             ),
           );

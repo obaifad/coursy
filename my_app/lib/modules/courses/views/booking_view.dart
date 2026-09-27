@@ -34,7 +34,10 @@ class CourseBookingView extends GetView<BookingController> {
                   ],
                 ),
                 const SizedBox(height: 14),
-                Text(c.price, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900, fontSize: 22)),
+                Text(
+                  c.price,
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900, fontSize: 22),
+                ),
               ],
             ),
           ),
@@ -73,10 +76,7 @@ class _InfoChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.indicatorFill,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

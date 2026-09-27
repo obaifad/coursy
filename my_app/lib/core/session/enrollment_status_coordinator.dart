@@ -14,9 +14,14 @@ class EnrollmentStatusCoordinator extends GetxService {
   final Map<int, String> _statuses = {};
   final Set<String> _delivered = {};
 
+  /// الطالب الذي حُمّلت حالته من التخزين — قبل التحميل لا نقارن ولا نحفظ
+  /// (وإلا تُستبدل الحالات المحفوظة قبل قراءتها ويضيع اكتشاف الموافقة).
+  int? _loadedFor;
+
   void reset() {
     _statuses.clear();
     _delivered.clear();
+    _loadedFor = null;
     final sid = Get.find<TokenStorage>().studentId;
     if (sid != null) {
       unawaited(EnrollmentStatusStore.clear(sid));
@@ -26,22 +31,37 @@ class EnrollmentStatusCoordinator extends GetxService {
   Future<void> loadFromStore() async {
     final sid = Get.find<TokenStorage>().studentId;
     if (sid == null) return;
+    await EnrollmentStatusStore.migrateFromGetStorage(sid);
+    final statuses = await EnrollmentStatusStore.loadStatuses(sid);
+    final delivered = await EnrollmentStatusStore.loadDelivered(sid);
     _statuses
       ..clear()
-      ..addAll(EnrollmentStatusStore.loadStatuses(sid));
+      ..addAll(statuses);
     _delivered
       ..clear()
-      ..addAll(EnrollmentStatusStore.loadDelivered(sid));
+      ..addAll(delivered);
+    _loadedFor = sid;
+  }
+
+  Future<void> _ensureLoaded() async {
+    final sid = Get.find<TokenStorage>().studentId;
+    if (sid == null || _loadedFor == sid) return;
+    await loadFromStore();
   }
 
   bool wasDeliveredForEnrollment(int enrollmentId) =>
-      _delivered.contains('approved:$enrollmentId') ||
-      _delivered.contains('rejected:$enrollmentId');
+      _delivered.contains('approved:$enrollmentId') || _delivered.contains('rejected:$enrollmentId');
 
   Future<void> trackFromEnrollments(List<EnrollmentModel> enrollments) async {
     if (!Get.find<TokenStorage>().isLoggedIn) {
       reset();
       return;
+    }
+    await _ensureLoaded();
+    final sid = Get.find<TokenStorage>().studentId;
+    if (sid != null) {
+      // الفحص الخلفي ربما أظهر إشعاراً بالفعل — لا نكرره.
+      _delivered.addAll(await EnrollmentStatusStore.loadDelivered(sid));
     }
 
     for (final enrollment in enrollments) {
@@ -66,15 +86,21 @@ class EnrollmentStatusCoordinator extends GetxService {
 
   /// بعد حجز جديد — سجّل الحالة pending لاكتشاف الموافقة لاحقاً.
   void markPending(EnrollmentModel enrollment) {
-    _statuses[enrollment.id] = enrollment.status.toLowerCase();
-    unawaited(_persist());
+    unawaited(() async {
+      await _ensureLoaded();
+      _statuses[enrollment.id] = enrollment.status.toLowerCase();
+      await _persist();
+    }());
   }
 
   Future<void> _persist() async {
     final sid = Get.find<TokenStorage>().studentId;
-    if (sid == null) return;
+    if (sid == null || _loadedFor != sid) return;
     await EnrollmentStatusStore.persistStatuses(_statuses, sid);
-    await EnrollmentStatusStore.persistDelivered(_delivered, sid);
+    final merged = await EnrollmentStatusStore.persistDelivered(_delivered, sid);
+    _delivered
+      ..clear()
+      ..addAll(merged);
   }
 
   Future<void> _onApproved(EnrollmentModel enrollment) async {
@@ -95,10 +121,7 @@ class EnrollmentStatusCoordinator extends GetxService {
       payload: _payloadFor(enrollment, type: 'enrollment_approved'),
     );
 
-    await SessionRefresh.afterEnrollmentStatusChanged(
-      courseId: enrollment.courseId,
-      enrollmentId: enrollment.id,
-    );
+    await SessionRefresh.afterEnrollmentStatusChanged(courseId: enrollment.courseId, enrollmentId: enrollment.id);
     await _persist();
   }
 
@@ -120,10 +143,7 @@ class EnrollmentStatusCoordinator extends GetxService {
       payload: _payloadFor(enrollment, type: 'enrollment_rejected'),
     );
 
-    await SessionRefresh.afterEnrollmentStatusChanged(
-      courseId: enrollment.courseId,
-      enrollmentId: enrollment.id,
-    );
+    await SessionRefresh.afterEnrollmentStatusChanged(courseId: enrollment.courseId, enrollmentId: enrollment.id);
     await _persist();
   }
 
@@ -134,9 +154,7 @@ class EnrollmentStatusCoordinator extends GetxService {
     return parts.join('&');
   }
 
-  static bool _isApproved(String status) =>
-      status == 'approved' || status == 'confirmed';
+  static bool _isApproved(String status) => status == 'approved' || status == 'confirmed';
 
-  static bool _isRejected(String status) =>
-      status == 'rejected' || status == 'cancelled';
+  static bool _isRejected(String status) => status == 'rejected' || status == 'cancelled';
 }

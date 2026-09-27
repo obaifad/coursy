@@ -1,8 +1,10 @@
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
+/// آخر عمليات البحث على هذا الجهاز — تُمسح عند تسجيل الخروج حتى لا يراها حساب آخر.
 class RecentSearchStorage extends GetxService {
   static const _key = 'recent_searches';
+  static const _maxItems = 8;
 
   late final GetStorage _box;
   final queries = <String>[].obs;
@@ -18,9 +20,14 @@ class RecentSearchStorage extends GetxService {
     if (q.isEmpty) return;
     queries.remove(q);
     queries.insert(0, q);
-    if (queries.length > 8) {
-      queries.removeRange(8, queries.length);
+    if (queries.length > _maxItems) {
+      queries.removeRange(_maxItems, queries.length);
     }
     await _box.write(_key, queries.toList());
+  }
+
+  Future<void> clear() async {
+    queries.clear();
+    await _box.remove(_key);
   }
 }

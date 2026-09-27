@@ -3,11 +3,7 @@ import 'json_helpers.dart';
 enum FavoriteTargetType { course, institute, instructor }
 
 class FavoriteModel {
-  FavoriteModel({
-    required this.id,
-    required this.type,
-    required this.targetId,
-  });
+  FavoriteModel({required this.id, required this.type, required this.targetId});
 
   final int id;
   final FavoriteTargetType type;
@@ -58,10 +54,6 @@ class FavoriteModel {
       targetId = JsonHelpers.parseInt(json['favoritable_id'] ?? json['id']);
     }
 
-    return FavoriteModel(
-      id: JsonHelpers.parseInt(json['id']),
-      type: type,
-      targetId: targetId,
-    );
+    return FavoriteModel(id: JsonHelpers.parseInt(json['id']), type: type, targetId: targetId);
   }
 }

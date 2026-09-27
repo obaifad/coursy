@@ -22,8 +22,7 @@ class PrivateInstructorsController extends GetxController with LatestLoadGuard {
   int _page = 1;
   static const _perPage = 15;
 
-  int? get _selectedSpecializationId =>
-      InstructorRepository.specializationIdFromFilterKey(selectedSubjectKey.value);
+  int? get _selectedSpecializationId => InstructorRepository.specializationIdFromFilterKey(selectedSubjectKey.value);
 
   @override
   void onInit() {

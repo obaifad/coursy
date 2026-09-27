@@ -49,75 +49,73 @@ class NotificationsView extends GetView<NotificationsController> {
     return Obx(() {
       final _ = localeRebuildToken;
       return Scaffold(
-      appBar: AppBar(
-        title: Text('notifications'.tr),
-        actions: [
-          IconButton(onPressed: controller.loadNotifications, icon: const Icon(Icons.refresh_rounded)),
-        ],
-      ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const AppListSkeleton();
-        }
-        if (controller.items.isEmpty) {
-          return RefreshIndicator(
-            onRefresh: controller.loadNotifications,
-            child: AppEmptyState.scrollable(
-              context: context,
-              message: 'notifications_empty'.tr,
-              icon: Icons.notifications_none_rounded,
+        appBar: AppBar(
+          title: Text('notifications'.tr),
+          actions: [IconButton(onPressed: controller.loadNotifications, icon: const Icon(Icons.refresh_rounded))],
+        ),
+        body: Obx(() {
+          if (controller.isLoading.value) {
+            return const AppListSkeleton();
+          }
+          if (controller.items.isEmpty) {
+            return RefreshIndicator(
+              onRefresh: controller.loadNotifications,
+              child: AppEmptyState.scrollable(
+                context: context,
+                message: 'notifications_empty'.tr,
+                icon: Icons.notifications_none_rounded,
+              ),
+            );
+          }
+          return AppMaxWidth(
+            child: RefreshIndicator(
+              onRefresh: controller.loadNotifications,
+              child: ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                itemBuilder: (_, i) {
+                  if (i == controller.items.length) {
+                    if (!controller.hasMore.value) return const SizedBox.shrink();
+                    return OutlinedButton.icon(
+                      onPressed: controller.isLoadingMore.value ? null : controller.loadMoreNotifications,
+                      icon: controller.isLoadingMore.value
+                          ? const AppInlineLoader()
+                          : const Icon(Icons.expand_more_rounded),
+                      label: Text('load_more'.tr),
+                    );
+                  }
+                  final n = controller.items[i];
+                  return Dismissible(
+                    key: ValueKey(n.id),
+                    direction: DismissDirection.horizontal,
+                    background: Container(
+                      alignment: AlignmentDirectional.centerEnd,
+                      padding: const EdgeInsetsDirectional.only(end: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent.shade100,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () => _onNotificationTap(n),
+                      child: NotificationCard(
+                        title: n.title.trim().isEmpty ? 'notification_default_title'.tr : n.title,
+                        subtitle: n.subtitle,
+                        icon: _iconFor(n.type),
+                        unread: !n.isRead,
+                      ),
+                    ),
+                  );
+                },
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemCount: controller.items.length + 1,
+              ),
             ),
           );
-        }
-        return AppMaxWidth(
-          child: RefreshIndicator(
-          onRefresh: controller.loadNotifications,
-          child: ListView.separated(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            itemBuilder: (_, i) {
-              if (i == controller.items.length) {
-                if (!controller.hasMore.value) return const SizedBox.shrink();
-                return OutlinedButton.icon(
-                  onPressed: controller.isLoadingMore.value ? null : controller.loadMoreNotifications,
-                  icon: controller.isLoadingMore.value
-                      ? const AppInlineLoader()
-                      : const Icon(Icons.expand_more_rounded),
-                  label: Text('load_more'.tr),
-                );
-              }
-              final n = controller.items[i];
-              return Dismissible(
-                key: ValueKey(n.id),
-                direction: DismissDirection.horizontal,
-                background: Container(
-                  alignment: AlignmentDirectional.centerEnd,
-                  padding: const EdgeInsetsDirectional.only(end: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.redAccent.shade100,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Icon(Icons.delete_outline_rounded, color: Colors.red),
-                ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () => _onNotificationTap(n),
-                  child: NotificationCard(
-                    title: n.title.trim().isEmpty ? 'notification_default_title'.tr : n.title,
-                    subtitle: n.subtitle,
-                    icon: _iconFor(n.type),
-                    unread: !n.isRead,
-                  ),
-                ),
-              );
-            },
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemCount: controller.items.length + 1,
-          ),
-          ),
-        );
-      }),
-    );
+        }),
+      );
     });
   }
 }

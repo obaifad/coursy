@@ -1,99 +1,65 @@
 import 'package:get/get.dart';
 
 import '../models/app_models.dart';
-import '../models/json_helpers.dart';
 import '../models/paginated_result.dart';
 import '../network/api_client.dart';
 import '../network/api_endpoints.dart';
-import '../network/json_parser.dart';
 
-/// يكمّل تقييم الدورات عندما لا يُرجعه endpoint القائمة (/courses).
+/// يكمّل تقييم الدورات (من تقييم المعهد) وبيانات المعاهد الناقصة من كاش قائمة المعاهد.
 class CourseRatingService extends GetxService {
   CourseRatingService(this._client);
 
   final ApiClient _client;
 
-  Map<int, double>? _reviewAverages;
+  /// أقصى عدد صفحات لقائمة المعاهد — حماية من حلقة لا تنتهي إن أعاد الخادم next_page_url دائماً.
+  static const _maxInstitutePages = 10;
+
+  /// مدة صلاحية الكاش قبل إعادة الجلب.
+  static const _cacheTtl = Duration(minutes: 30);
+
   Map<int, double>? _instituteRatings;
   Map<int, int>? _instituteCoursesCounts;
   Map<int, InstituteModel>? _instituteProfiles;
   Future<void>? _loading;
+  DateTime? _loadedAt;
 
   void invalidateCache() {
-    _reviewAverages = null;
     _instituteRatings = null;
     _instituteCoursesCounts = null;
     _instituteProfiles = null;
     _loading = null;
+    _loadedAt = null;
   }
 
   Future<void> _ensureLoaded() {
-    return _loading ??= _loadCaches();
+    final loadedAt = _loadedAt;
+    if (loadedAt != null && DateTime.now().difference(loadedAt) > _cacheTtl) {
+      invalidateCache();
+    }
+    return _loading ??= _loadCaches().catchError((Object e) {
+      // لا نحتفظ بمستقبل فاشل — المحاولة التالية تعيد الجلب.
+      _loading = null;
+      throw e;
+    });
   }
 
+  /// تقييم الدورة يأتي من الخادم (`average_rating`) — لا ننزّل كل تقييمات المنصة لحسابه محلياً.
   Future<void> _loadCaches() async {
-    final reviewAverages = await _fetchReviewAverages();
     final instituteStats = await _fetchInstituteStats();
-    _reviewAverages = reviewAverages;
     _instituteRatings = instituteStats.ratings;
     _instituteCoursesCounts = instituteStats.coursesCounts;
     _instituteProfiles = instituteStats.profiles;
-  }
-
-  Future<Map<int, double>> _fetchReviewAverages() async {
-    final sums = <int, double>{};
-    final counts = <int, int>{};
-    var page = 1;
-
-    while (true) {
-      try {
-        final pageResult = await _client.handle(
-          () => _client.get(ApiEndpoints.reviews, query: {'page': page, 'per_page': 100}),
-          (data) {
-            final parsed = PaginatedResult<Map<String, dynamic>>.fromBody(
-              data,
-              (json) => json,
-            );
-            if (parsed.items.isNotEmpty) return parsed;
-            final items = extractListMap(data);
-            return PaginatedResult<Map<String, dynamic>>(
-              items: items,
-              currentPage: page,
-              lastPage: page,
-              total: items.length,
-              hasMore: false,
-            );
-          },
-        );
-
-        for (final item in pageResult.items) {
-          final courseId = JsonHelpers.parseIntOrNull(item['course_id']);
-          if (courseId == null || courseId <= 0) continue;
-          sums[courseId] = (sums[courseId] ?? 0) + JsonHelpers.parseDouble(item['rating']);
-          counts[courseId] = (counts[courseId] ?? 0) + 1;
-        }
-
-        if (!pageResult.hasMore) break;
-        page++;
-      } catch (_) {
-        break;
-      }
-    }
-
-    return {
-      for (final id in sums.keys)
-        if (counts[id] != null && counts[id]! > 0) id: sums[id]! / counts[id]!,
-    };
+    _loadedAt = DateTime.now();
   }
 
   Future<({Map<int, double> ratings, Map<int, int> coursesCounts, Map<int, InstituteModel> profiles})>
-      _fetchInstituteStats() async {
+  _fetchInstituteStats() async {
     final ratings = <int, double>{};
     final coursesCounts = <int, int>{};
     final profiles = <int, InstituteModel>{};
     var page = 1;
 
-    while (true) {
+    while (page <= _maxInstitutePages) {
       try {
         final pageResult = await _client.handle(
           () => _client.get(ApiEndpoints.institutes, query: {'page': page, 'per_page': 100}),
@@ -121,9 +87,6 @@ class CourseRatingService extends GetxService {
   }
 
   double resolve(CourseModel course) {
-    final reviewAvg = _reviewAverages?[course.id];
-    if (reviewAvg != null && reviewAvg > 0) return reviewAvg;
-
     if (course.rating > 0) return course.rating;
 
     final instituteId = course.instituteId;

@@ -54,7 +54,8 @@ class ProfileController extends GetxController with LatestLoadGuard {
 
   static const educationLevels = ['High School', 'Diploma', 'Bachelor', 'Master', 'PhD'];
 
-  String? get displayAvatarLocalPath => pickedAvatarPath.value ?? _tokenStorage.userAvatarLocalPath.value;
+  /// معاينة الصورة المختارة قبل رفعها — في الذاكرة فقط؛ مسار image_picker مؤقت وقد يحذفه النظام.
+  String? get displayAvatarLocalPath => pickedAvatarPath.value;
 
   String? get displayAvatarUrl => avatarUrl.value ?? _tokenStorage.userAvatarUrl.value;
 
@@ -64,7 +65,6 @@ class ProfileController extends GetxController with LatestLoadGuard {
   void onInit() {
     super.onInit();
     avatarUrl.value = _tokenStorage.userAvatarUrl.value;
-    pickedAvatarPath.value = _tokenStorage.userAvatarLocalPath.value;
     _applySessionSeed();
     firstNameController.addListener(_recomputeHasChanges);
     lastNameController.addListener(_recomputeHasChanges);
@@ -173,9 +173,7 @@ class ProfileController extends GetxController with LatestLoadGuard {
     selectedEducationLevel.value = EducationLevelUtils.normalize(
       profile['education_level']?.toString() ?? user['education_level']?.toString(),
     );
-    selectedUniversityId.value = JsonHelpers.parseIntOrNull(
-      profile['university_id'] ?? user['university_id'],
-    );
+    selectedUniversityId.value = JsonHelpers.parseIntOrNull(profile['university_id'] ?? user['university_id']);
     selectedSpecializationId.value = JsonHelpers.parseIntOrNull(
       profile['specialization_id'] ?? user['specialization_id'],
     );
@@ -260,7 +258,6 @@ class ProfileController extends GetxController with LatestLoadGuard {
       if (picked == null) return;
       pickedAvatarPath.value = picked.path;
       avatarDirty.value = true;
-      await _tokenStorage.saveAvatar(localPath: picked.path);
       _recomputeHasChanges();
     } catch (_) {
       Get.snackbar('error'.tr, 'pick_image_failed'.tr);
@@ -280,8 +277,7 @@ class ProfileController extends GetxController with LatestLoadGuard {
     }
   }
 
-  bool get requiresUniversityFields =>
-      EducationLevelUtils.requiresUniversityFields(selectedEducationLevel.value);
+  bool get requiresUniversityFields => EducationLevelUtils.requiresUniversityFields(selectedEducationLevel.value);
 
   String? validateProfile() {
     if (requiresUniversityFields) {
@@ -310,17 +306,14 @@ class ProfileController extends GetxController with LatestLoadGuard {
         try {
           final path = pickedAvatarPath.value!;
           final avatarResult = kIsWeb
-              ? await _repository.uploadAvatarBytes(
-                  await XFile(path).readAsBytes(),
-                  filename: 'avatar.jpg',
-                )
+              ? await _repository.uploadAvatarBytes(await XFile(path).readAsBytes(), filename: 'avatar.jpg')
               : await _repository.uploadAvatar(path);
           final avatarUser = extractProfileUserMap(avatarResult);
           if (avatarUser.isNotEmpty) {
             final remoteAvatar = _repository.extractAvatarUrl(avatarUser);
             if (remoteAvatar != null) {
               avatarUrl.value = remoteAvatar;
-              await _tokenStorage.saveAvatar(url: remoteAvatar, localPath: '');
+              await _tokenStorage.saveAvatar(url: remoteAvatar);
               pickedAvatarPath.value = null;
             }
           }
@@ -340,9 +333,7 @@ class ProfileController extends GetxController with LatestLoadGuard {
           universityId: requiresUniversityFields ? selectedUniversityId.value : null,
           specializationId: requiresUniversityFields ? selectedSpecializationId.value : null,
           preferredTags: selectedCategoryIds.isEmpty ? null : selectedCategoryIds.toList(),
-          birthDate: birthDate.value == null
-              ? null
-              : '${birthDate.value!.year}-${birthDate.value!.month.toString().padLeft(2, '0')}-${birthDate.value!.day.toString().padLeft(2, '0')}',
+          birthDate: birthDate.value == null ? null : EducationLevelUtils.formatApiDate(birthDate.value!),
         ),
       );
       final merged = mergeProfileUserData(result);
@@ -414,22 +405,7 @@ class ProfileController extends GetxController with LatestLoadGuard {
     _recomputeHasChanges();
   }
 
-  String educationLevelLabel(String value) {
-    switch (value) {
-      case 'High School':
-        return 'edu_high_school'.tr;
-      case 'Diploma':
-        return 'edu_diploma'.tr;
-      case 'Bachelor':
-        return 'edu_bachelor'.tr;
-      case 'Master':
-        return 'edu_master'.tr;
-      case 'PhD':
-        return 'edu_phd'.tr;
-      default:
-        return value;
-    }
-  }
+  String educationLevelLabel(String value) => EducationLevelUtils.label(value);
 
   static void ensureRegistered() {
     if (!Get.isRegistered<ProfileController>()) {

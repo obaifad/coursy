@@ -25,10 +25,10 @@ class CategoryCoursesController extends GetxController {
     final arg = Get.arguments;
     if (arg is Map<String, dynamic>) {
       categoryId = (arg['id'] as int?) ?? 0;
-      title.value = arg['name']?.toString() ?? 'التصنيف';
+      title.value = arg['name']?.toString() ?? 'category_default_title'.tr;
     } else {
       categoryId = 0;
-      title.value = 'التصنيف';
+      title.value = 'category_default_title'.tr;
     }
     loadCourses();
   }

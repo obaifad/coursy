@@ -33,14 +33,11 @@ class HomeView extends GetView<HomeController> {
         final instructorSubjects = controller.instructorSubjects.toList(growable: false);
         final scrollReset = controller.horizontalScrollReset.value;
         return RefreshIndicator(
-          onRefresh: () => controller.loadHome(forceRefresh: true),
+          onRefresh: () => controller.loadHome(forceRefresh: true, refreshStatic: true),
           child: ListView(
             controller: controller.scrollController,
             primary: false,
-            padding: EdgeInsetsDirectional.only(
-              top: 4,
-              bottom: AppLayout.scrollBottomInset(context, rootTab: true),
-            ),
+            padding: EdgeInsetsDirectional.only(top: 4, bottom: AppLayout.scrollBottomInset(context, rootTab: true)),
             children: [
               Padding(
                 padding: _sectionPad(context),
@@ -59,10 +56,7 @@ class HomeView extends GetView<HomeController> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    AppHomeSearchBar(
-                      onTap: () => Get.toNamed(AppRoutes.search),
-                      hint: 'home_search_hint'.tr,
-                    ),
+                    AppHomeSearchBar(onTap: () => Get.toNamed(AppRoutes.search), hint: 'home_search_hint'.tr),
                   ],
                 ),
               ),
@@ -81,7 +75,7 @@ class HomeView extends GetView<HomeController> {
                           const SizedBox(width: 10),
                           Expanded(child: Text(controller.errorMessage.value!, style: const TextStyle(fontSize: 13))),
                           TextButton(
-                            onPressed: () => controller.loadHome(forceRefresh: true),
+                            onPressed: () => controller.loadHome(forceRefresh: true, refreshStatic: true),
                             child: Text('retry'.tr),
                           ),
                         ],
@@ -91,10 +85,7 @@ class HomeView extends GetView<HomeController> {
                 ),
                 const SizedBox(height: 12),
               ],
-              Padding(
-                padding: _sectionPad(context),
-                child: const _HomeHeroBanner(),
-              ),
+              Padding(padding: _sectionPad(context), child: const _HomeHeroBanner()),
               const SizedBox(height: 22),
               Padding(
                 padding: _sectionPad(context),
@@ -120,10 +111,7 @@ class HomeView extends GetView<HomeController> {
                 Padding(
                   padding: _sectionPad(context),
                   child: SoftCard(
-                    child: AppEmptyState.inline(
-                      message: 'no_courses_now'.tr,
-                      icon: Icons.menu_book_outlined,
-                    ),
+                    child: AppEmptyState.inline(message: 'no_courses_now'.tr, icon: Icons.menu_book_outlined),
                   ),
                 )
               else
@@ -228,10 +216,7 @@ class HomeView extends GetView<HomeController> {
                 Padding(
                   padding: _sectionPad(context),
                   child: SoftCard(
-                    child: AppEmptyState.inline(
-                      message: 'no_institutes_now'.tr,
-                      icon: Icons.apartment_outlined,
-                    ),
+                    child: AppEmptyState.inline(message: 'no_institutes_now'.tr, icon: Icons.apartment_outlined),
                   ),
                 )
               else
@@ -267,10 +252,7 @@ class _CategoriesRow extends StatelessWidget {
       return Padding(
         padding: AppLayout.sectionHorizontal(context),
         child: SoftCard(
-          child: AppEmptyState.inline(
-            message: 'no_categories'.tr,
-            icon: Icons.category_outlined,
-          ),
+          child: AppEmptyState.inline(message: 'no_categories'.tr, icon: Icons.category_outlined),
         ),
       );
     }
@@ -288,12 +270,7 @@ class _CategoriesRow extends StatelessWidget {
           count: cat.coursesCount,
           onTap: () => Get.toNamed(
             AppRoutes.categoryCourses,
-            arguments: {
-              'id': cat.id,
-              'name': cat.name,
-              'icon': cat.icon,
-              'coursesCount': cat.coursesCount,
-            },
+            arguments: {'id': cat.id, 'name': cat.name, 'icon': cat.icon, 'coursesCount': cat.coursesCount},
           ),
         );
       },
@@ -342,11 +319,7 @@ class _InstructorSubjectsRow extends StatelessWidget {
           subject: subject,
           onTap: () => Get.toNamed(
             AppRoutes.instructorSubjectInstructors,
-            arguments: {
-              'key': subject.key,
-              'name': subject.name,
-              'instructorsCount': subject.instructorsCount,
-            },
+            arguments: {'key': subject.key, 'name': subject.name, 'instructorsCount': subject.instructorsCount},
           ),
         );
       },
@@ -368,7 +341,7 @@ class _InstructorSubjectChip extends StatelessWidget {
         height: _CategoryChip.height,
         padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 14, 0),
         decoration: BoxDecoration(
-          color: const Color(0xFFF7F6FF),
+          color: AppColors.surfaceSoft,
           borderRadius: BorderRadius.circular(16),
           boxShadow: const [BoxShadow(color: AppColors.shadowSoft, blurRadius: 8, offset: Offset(0, 4))],
         ),
@@ -416,7 +389,7 @@ class _CityChip extends StatelessWidget {
         height: height,
         padding: _padding,
         decoration: BoxDecoration(
-          color: const Color(0xFFF7F6FF),
+          color: AppColors.surfaceSoft,
           borderRadius: BorderRadius.circular(16),
           boxShadow: const [BoxShadow(color: AppColors.shadowSoft, blurRadius: 8, offset: Offset(0, 4))],
         ),
@@ -472,7 +445,7 @@ class _CategoryChip extends StatelessWidget {
         height: height,
         padding: _padding,
         decoration: BoxDecoration(
-          color: const Color(0xFFF7F6FF),
+          color: AppColors.surfaceSoft,
           borderRadius: BorderRadius.circular(16),
           boxShadow: const [BoxShadow(color: AppColors.shadowSoft, blurRadius: 8, offset: Offset(0, 4))],
         ),
@@ -489,17 +462,10 @@ class _CategoryChip extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.start,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                  height: 1.2,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, height: 1.2),
               ),
             ),
-            if (count > 0) ...[
-              const SizedBox(width: 6),
-              _CategoryCountBadge(count: count),
-            ],
+            if (count > 0) ...[const SizedBox(width: 6), _CategoryCountBadge(count: count)],
           ],
         ),
       ),
@@ -525,12 +491,7 @@ class _CategoryCountBadge extends StatelessWidget {
       ),
       child: Text(
         '$count',
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          color: AppColors.primary,
-          height: 1,
-        ),
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary, height: 1),
       ),
     );
   }
@@ -557,9 +518,7 @@ class _HomeSettingsButton extends StatelessWidget {
           decoration: const BoxDecoration(
             gradient: AppGradients.primary,
             shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(color: Color(0x446C63FF), blurRadius: 16, offset: Offset(0, 8)),
-            ],
+            boxShadow: [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 16, offset: Offset(0, 8))],
           ),
           child: const Icon(Icons.settings_rounded, color: Colors.white, size: 22),
         ),
@@ -583,9 +542,7 @@ class _HomeHeroBanner extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
-          BoxShadow(color: AppColors.shadowPurple, blurRadius: 20, offset: Offset(0, 12)),
-        ],
+        boxShadow: const [BoxShadow(color: AppColors.shadowPurple, blurRadius: 20, offset: Offset(0, 12))],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(22),
@@ -628,7 +585,7 @@ class _HomeHeroBanner extends StatelessWidget {
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w700,
-                                      fontSize: 11.5,
+                                      fontSize: 12,
                                       height: 1.25,
                                     ),
                                   ),
@@ -685,7 +642,7 @@ class _HomeHeroBanner extends StatelessWidget {
             ],
           ),
         ),
-        ),
+      ),
     );
   }
 }

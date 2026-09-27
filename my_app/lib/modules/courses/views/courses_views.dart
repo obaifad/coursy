@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../theme/app_fonts.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../routes/app_routes.dart';
 import '../../../widgets/app_widgets.dart';
@@ -17,63 +17,63 @@ class CoursesView extends GetView<CoursesController> {
   Widget build(BuildContext context) {
     return AppTabSafeArea(
       child: Obx(() {
-      final _ = localeRebuildToken;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _AllCoursesHeroHeader(coursesCount: controller.courses.length),
-          const SizedBox(height: 10),
-          CourseFiltersPanel(
-            categories: controller.categories,
-            selectedCategoryId: controller.selectedCategoryId.value,
-            onCategorySelected: controller.selectCategory,
-            selectedSort: controller.selectedSort.value,
-            onSortSelected: controller.selectSort,
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: controller.loadCourses,
-              child: controller.isLoading.value && controller.courses.isEmpty
-                  ? const AppGridSkeleton(padding: EdgeInsets.fromLTRB(16, 16, 16, 8))
-                  : controller.courses.isEmpty
-                      ? AppEmptyState.scrollable(
-                          context: context,
-                          message: 'no_courses'.tr,
-                          icon: Icons.menu_book_outlined,
-                        )
-                      : GridView.builder(
-                              controller: controller.scrollController,
-                              key: const PageStorageKey('courses_tab'),
-                              padding: EdgeInsets.fromLTRB(
-                                AppLayout.horizontalPage(context),
-                                16,
-                                AppLayout.horizontalPage(context),
-                                AppLayout.scrollBottomInset(context, rootTab: true),
-                              ),
-                              itemCount: controller.sortedCourses.length +
-                                  (controller.isLoadingMore.value ? 1 : 0),
-                              gridDelegate: AppGridLayouts.courseGridFor(context),
-                              itemBuilder: (_, i) {
-                                if (i >= controller.sortedCourses.length) {
-                                  return const Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(vertical: 20),
-                                      child: AppInlineLoader(),
-                                    ),
-                                  );
-                                }
-                                final course = controller.sortedCourses[i];
-                                return CourseCard(
-                                  course: course,
-                                  onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
-                                );
-                              },
-                            ),
+        final _ = localeRebuildToken;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _AllCoursesHeroHeader(
+              coursesCount: controller.totalCount.value > controller.courses.length
+                  ? controller.totalCount.value
+                  : controller.courses.length,
             ),
-          ),
-        ],
-      );
+            const SizedBox(height: 10),
+            CourseFiltersPanel(
+              categories: controller.categories,
+              selectedCategoryId: controller.selectedCategoryId.value,
+              onCategorySelected: controller.selectCategory,
+              selectedSort: controller.selectedSort.value,
+              onSortSelected: controller.selectSort,
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: controller.loadCourses,
+                child: controller.isLoading.value && controller.courses.isEmpty
+                    ? const AppGridSkeleton(padding: EdgeInsets.fromLTRB(16, 16, 16, 8))
+                    : controller.courses.isEmpty
+                    ? AppEmptyState.scrollable(
+                        context: context,
+                        message: 'no_courses'.tr,
+                        icon: Icons.menu_book_outlined,
+                      )
+                    : GridView.builder(
+                        controller: controller.scrollController,
+                        key: const PageStorageKey('courses_tab'),
+                        padding: EdgeInsets.fromLTRB(
+                          AppLayout.horizontalPage(context),
+                          16,
+                          AppLayout.horizontalPage(context),
+                          AppLayout.scrollBottomInset(context, rootTab: true),
+                        ),
+                        itemCount: controller.sortedCourses.length + (controller.isLoadingMore.value ? 1 : 0),
+                        gridDelegate: AppGridLayouts.courseGridFor(context),
+                        itemBuilder: (_, i) {
+                          if (i >= controller.sortedCourses.length) {
+                            return const Center(
+                              child: Padding(padding: EdgeInsets.symmetric(vertical: 20), child: AppInlineLoader()),
+                            );
+                          }
+                          final course = controller.sortedCourses[i];
+                          return CourseCard(
+                            course: course,
+                            onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
+                          );
+                        },
+                      ),
+              ),
+            ),
+          ],
+        );
       }),
     );
   }
@@ -103,10 +103,7 @@ class _AllCoursesHeroHeader extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.05),
-                    Colors.black.withValues(alpha: 0.38),
-                  ],
+                  colors: [Colors.black.withValues(alpha: 0.05), Colors.black.withValues(alpha: 0.38)],
                 ),
               ),
             ),
@@ -125,17 +122,13 @@ class _AllCoursesHeroHeader extends StatelessWidget {
                     ),
                     child: Text(
                       'category_courses_count'.trParams({'count': '$coursesCount'}),
-                      style: GoogleFonts.tajawal(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                      ),
+                      style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'all_courses'.tr,
-                    style: GoogleFonts.tajawal(
+                    style: AppFonts.tajawal(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
                       fontSize: compact ? 22 : 24,
@@ -146,7 +139,7 @@ class _AllCoursesHeroHeader extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       'browse_courses'.tr,
-                      style: GoogleFonts.tajawal(
+                      style: AppFonts.tajawal(
                         color: Colors.white.withValues(alpha: 0.88),
                         fontSize: 13,
                         fontWeight: FontWeight.w500,

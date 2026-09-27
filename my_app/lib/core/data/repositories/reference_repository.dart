@@ -12,12 +12,7 @@ class ReferenceRepository extends GetxService {
   final ApiClient _client;
 
   Future<List<NamedEntity>> fetchUniversities() async {
-    return fetchAllPages(
-      _client,
-      ApiEndpoints.universities,
-      NamedEntity.fromJson,
-      perPage: 100,
-    );
+    return fetchAllPages(_client, ApiEndpoints.universities, NamedEntity.fromJson, perPage: 100);
   }
 
   /// اختصاصات الطلاب من `/specializations?type=student`.

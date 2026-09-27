@@ -30,7 +30,7 @@ class InstitutesController extends GetxController with LatestLoadGuard {
   }
 
   Future<void> _loadCities() async {
-    final session = beginLoad();
+    final session = beginLoad('cities');
     try {
       final fresh = await _cityRepository.fetchCities();
       applyIfCurrent(session, () => cities.assignAll(fresh));
@@ -60,9 +60,7 @@ class InstitutesController extends GetxController with LatestLoadGuard {
       final result = await _repository.fetchInstitutesPage(
         page: _page,
         perPage: _perPage,
-        query: {
-          if (selectedCityId.value != null) 'city_id': selectedCityId.value,
-        },
+        query: {if (selectedCityId.value != null) 'city_id': selectedCityId.value},
       );
       applyIfCurrent(session, () {
         institutes.assignAll(result.items);
@@ -71,7 +69,7 @@ class InstitutesController extends GetxController with LatestLoadGuard {
     } on ApiCancelledException {
       return;
     } catch (e) {
-      if (shouldApply(session)) errorMessage.value = e.toString();
+      if (shouldApply(session)) errorMessage.value = userErrorMessage(e);
     } finally {
       applyIfCurrent(session, () => isLoading.value = false);
     }
@@ -80,20 +78,22 @@ class InstitutesController extends GetxController with LatestLoadGuard {
   Future<void> loadMoreInstitutes() async {
     if (!hasMore.value || isLoadingMore.value || isLoading.value) return;
     isLoadingMore.value = true;
+    // إن تغيّرت المدينة أثناء التحميل تُهمل الصفحة القديمة بدل خلطها بالقائمة الجديدة.
+    final session = currentLoad();
     try {
       final nextPage = _page + 1;
       final result = await _repository.fetchInstitutesPage(
         page: nextPage,
         perPage: _perPage,
-        query: {
-          if (selectedCityId.value != null) 'city_id': selectedCityId.value,
-        },
+        query: {if (selectedCityId.value != null) 'city_id': selectedCityId.value},
       );
-      institutes.addAll(result.items);
-      _page = nextPage;
-      hasMore.value = result.hasMore;
+      applyIfCurrent(session, () {
+        institutes.addAll(result.items);
+        _page = nextPage;
+        hasMore.value = result.hasMore;
+      });
     } catch (_) {
-      hasMore.value = false;
+      if (shouldApply(session)) hasMore.value = false;
     } finally {
       isLoadingMore.value = false;
     }
@@ -138,11 +138,7 @@ class InstituteDetailsController extends GetxController {
     final hasSeed = institute.value != null;
     if (!hasSeed) isLoading.value = true;
     try {
-      await Future.wait<void>([
-        _fetchInstituteDetails(),
-        _fetchCourses(),
-        _fetchInstructors(),
-      ]);
+      await Future.wait<void>([_fetchInstituteDetails(), _fetchCourses(), _fetchInstructors()]);
     } finally {
       isLoading.value = false;
     }
@@ -184,9 +180,12 @@ class InstituteDetailsController extends GetxController {
 
   InstituteModel _mergeInstitute(InstituteModel? previous, InstituteModel details) {
     if (previous == null) return details;
+    // النسختان العربية والإنجليزية منفصلتان — تمرير `name` المترجم كان يثبّت لغة واحدة.
     return details.copyWith(
-      name: details.name.isNotEmpty ? details.name : previous.name,
-      city: details.city.isNotEmpty ? details.city : previous.city,
+      nameAr: details.nameAr.isNotEmpty ? details.nameAr : previous.nameAr,
+      nameEn: details.nameEn.isNotEmpty ? details.nameEn : previous.nameEn,
+      cityAr: details.cityAr.isNotEmpty ? details.cityAr : previous.cityAr,
+      cityEn: details.cityEn.isNotEmpty ? details.cityEn : previous.cityEn,
       description: details.description ?? previous.description,
       address: details.address ?? previous.address,
       latitude: details.latitude ?? previous.latitude,

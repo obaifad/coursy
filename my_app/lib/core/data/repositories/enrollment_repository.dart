@@ -26,7 +26,7 @@ class EnrollmentRepository extends GetxService {
     final map = extractObjectMap(normalized);
     if (map != null) return EnrollmentModel.fromJson(map);
     if (normalized is Map<String, dynamic>) return EnrollmentModel.fromJson(normalized);
-    throw ApiException('استجابة التسجيل في الدورة غير صالحة');
+    throw ApiException('error_invalid_server_response'.tr);
   }
 
   Future<PaginatedResult<EnrollmentModel>> fetchEnrollmentsPage({int page = 1, int perPage = 15}) async {
@@ -43,39 +43,16 @@ class EnrollmentRepository extends GetxService {
     );
   }
 
-  /// عدد التسجيلات المؤكّدة لدورة (بدون المعلّقة).
-  Future<int?> countConfirmedEnrollmentsForCourse(int courseId) async {
-    if (courseId <= 0) return null;
-    try {
-      var page = 1;
-      var count = 0;
-      while (true) {
-        final result = await _client.handle(
-          () => _client.get(ApiEndpoints.enrollments, query: {'page': page, 'per_page': 100}),
-          (data) => PaginatedResult<EnrollmentModel>.fromBody(data, EnrollmentModel.fromJson),
-        );
-        count += result.items
-            .where((e) => e.courseId == courseId && e.countsTowardCourseCapacity)
-            .length;
-        if (!result.hasMore) break;
-        page++;
-      }
-      return count;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Map<String, dynamic> _enrollmentBody(int courseId, int studentId) => {
-        'course_id': courseId,
-        'student_id': studentId,
-        'status': 'pending',
-        'payment_status': 'unpaid',
-      };
-
   Future<EnrollmentModel> enrollInCourse(int courseId) async {
     final studentId = await _studentIdResolver.resolve();
-    final body = _enrollmentBody(courseId, studentId);
+    // TODO(backend): حالة التسجيل والدفع يجب أن يحددها الخادم ويتجاهل القيم القادمة من التطبيق.
+    // تبقى هنا لأن الخادم الحالي قد يشترطها في التحقق — احذفها بعد تأكيد مطوّر الخادم.
+    final body = <String, dynamic>{
+      'course_id': courseId,
+      'student_id': studentId,
+      'status': 'pending',
+      'payment_status': 'unpaid',
+    };
 
     final attempts = [
       ApiPostAttempt(path: ApiEndpoints.studentEnrollments, data: body),
@@ -90,10 +67,7 @@ class EnrollmentRepository extends GetxService {
 
   Future<EnrollmentModel> cancelEnrollment(int enrollmentId) async {
     return _client.handle(
-      () => _client.post(
-        ApiEndpoints.studentCancelEnrollment(enrollmentId),
-        data: const <String, dynamic>{},
-      ),
+      () => _client.post(ApiEndpoints.studentCancelEnrollment(enrollmentId), data: const <String, dynamic>{}),
       _parseEnrollment,
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../theme/app_fonts.dart';
 import '../../../core/data/repositories/auth_repository.dart';
 import '../../../core/locale/locale_controller.dart';
 import '../../../core/locale/locale_rebuild.dart';
@@ -15,7 +16,6 @@ import '../controllers/my_courses_controller.dart';
 import 'my_courses_tab_view.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../modules/auth/widgets/register_form_widgets.dart';
 import '../../../widgets/design_system.dart';
@@ -33,42 +33,43 @@ class ProfileView extends StatelessWidget {
     return Obx(() {
       final _ = localeRebuildToken;
       return ListView(
-      key: const PageStorageKey('profile_tab'),
-      padding: EdgeInsets.zero,
-      children: [
-        Container(
-          width: double.infinity,
-          decoration: const BoxDecoration(
-            gradient: AppGradients.primary,
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
-          ),
-          child: SafeArea(
-            bottom: false,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: Column(
-                    children: [
-                      Obx(() {
-                        ProfileController.ensureRegistered();
-                        final storage = Get.find<TokenStorage>();
-                        final controller = Get.isRegistered<ProfileController>() ? Get.find<ProfileController>() : null;
-                        return ProfileAvatar(
-                          size: 88,
-                          imageUrl: controller?.displayAvatarUrl ?? storage.userAvatarUrl.value,
-                          localPath: controller?.displayAvatarLocalPath ?? storage.userAvatarLocalPath.value,
-                          onTap: storage.isLoggedIn
-                              ? () {
-                                  ProfileController.ensureRegistered();
-                                  Get.find<ProfileController>().pickAvatar();
-                                }
-                              : null,
-                        );
-                      }),
-                      const SizedBox(height: 14),
-                      Obx(
-                        () {
+        key: const PageStorageKey('profile_tab'),
+        padding: EdgeInsets.zero,
+        children: [
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: AppGradients.primary,
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: Column(
+                      children: [
+                        Obx(() {
+                          ProfileController.ensureRegistered();
+                          final storage = Get.find<TokenStorage>();
+                          final controller = Get.isRegistered<ProfileController>()
+                              ? Get.find<ProfileController>()
+                              : null;
+                          return ProfileAvatar(
+                            size: 88,
+                            imageUrl: controller?.displayAvatarUrl ?? storage.userAvatarUrl.value,
+                            localPath: controller?.displayAvatarLocalPath,
+                            onTap: storage.isLoggedIn
+                                ? () {
+                                    ProfileController.ensureRegistered();
+                                    Get.find<ProfileController>().pickAvatar();
+                                  }
+                                : null,
+                          );
+                        }),
+                        const SizedBox(height: 14),
+                        Obx(() {
                           final storage = Get.find<TokenStorage>();
                           if (!storage.isLoggedIn) {
                             return Text(
@@ -80,11 +81,9 @@ class ProfileView extends StatelessWidget {
                             storage.userName.value ?? 'student'.tr,
                             style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
                           );
-                        },
-                      ),
-                      const SizedBox(height: 4),
-                      Obx(
-                        () {
+                        }),
+                        const SizedBox(height: 4),
+                        Obx(() {
                           final storage = Get.find<TokenStorage>();
                           if (!storage.isLoggedIn) {
                             return Text(
@@ -98,85 +97,92 @@ class ProfileView extends StatelessWidget {
                             phone != null && phone.isNotEmpty ? phone : 'student'.tr,
                             style: const TextStyle(color: Colors.white70),
                           );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  decoration: const BoxDecoration(
-                    color: AppColors.card,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                    boxShadow: [BoxShadow(color: AppColors.shadowSoft, blurRadius: 16, offset: Offset(0, -4))],
-                  ),
-                  child: Obx(() {
-                    if (!Get.find<TokenStorage>().isLoggedIn) {
-                      return SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: () => Get.toNamed(AppRoutes.login),
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                          child: Text('login'.tr),
-                        ),
-                      );
-                    }
-                    final mc = Get.find<MyCoursesController>();
-                    return AppStatsRow(
-                      items: [
-                        AppStatItem(value: '${mc.confirmed.length}', label: 'stat_active'.tr),
-                        AppStatItem(value: '${mc.completed.length}', label: 'stat_completed'.tr),
-                        AppStatItem(value: '${mc.pending.length}', label: 'stat_review'.tr),
+                        }),
                       ],
-                    );
-                  }),
-                ),
-              ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    decoration: const BoxDecoration(
+                      color: AppColors.card,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                      boxShadow: [BoxShadow(color: AppColors.shadowSoft, blurRadius: 16, offset: Offset(0, -4))],
+                    ),
+                    child: Obx(() {
+                      if (!Get.find<TokenStorage>().isLoggedIn) {
+                        return SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: () => Get.toNamed(AppRoutes.login),
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                            child: Text('login'.tr),
+                          ),
+                        );
+                      }
+                      final mc = Get.find<MyCoursesController>();
+                      return AppStatsRow(
+                        items: [
+                          AppStatItem(value: '${mc.confirmed.length}', label: 'stat_active'.tr),
+                          AppStatItem(value: '${mc.completed.length}', label: 'stat_completed'.tr),
+                          AppStatItem(value: '${mc.pending.length}', label: 'stat_review'.tr),
+                        ],
+                      );
+                    }),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Obx(() {
-            final loggedIn = Get.find<TokenStorage>().isLoggedIn;
-            if (!loggedIn) {
-              return const SizedBox.shrink();
-            }
-            return Column(
-              children: [
-                ProfileMenuTile(
-                  title: 'profile_edit'.tr,
-                  icon: Icons.edit_outlined,
-                  onTap: () => Get.toNamed(AppRoutes.editProfile),
-                ),
-                ProfileMenuTile(
-                  title: 'favorites_title'.tr,
-                  icon: Icons.favorite_rounded,
-                  onTap: () => Get.toNamed(AppRoutes.favorites),
-                ),
-                ProfileMenuTile(
-                  title: 'my_courses'.tr,
-                  icon: Icons.menu_book_outlined,
-                  onTap: () => AppNavigation.switchToTab(3),
-                ),
-                ProfileMenuTile(
-                  title: 'logout'.tr,
-                  icon: Icons.logout_rounded,
-                  trailing: const SizedBox.shrink(),
-                  onTap: () => _confirmAndLogout(context),
-                ),
-              ],
-            );
-          }),
-        ),
-        SizedBox(height: AppLayout.rootNavReserve(context) + 12),
-      ],
-    );
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Obx(() {
+              final storage = Get.find<TokenStorage>();
+              if (!storage.isLoggedIn) {
+                return const SizedBox.shrink();
+              }
+              // يظهر فقط إن أكّد الخادم أن الرقم غير مُتحقَّق منه (null = غير معروف → لا نزعج المستخدم).
+              final needsPhoneVerification = storage.phoneVerified.value == false;
+              return Column(
+                children: [
+                  if (needsPhoneVerification)
+                    ProfileMenuTile(
+                      title: 'verify_phone_title'.tr,
+                      icon: Icons.verified_user_outlined,
+                      onTap: () => Get.toNamed(AppRoutes.phoneVerification, arguments: storage.userPhone.value),
+                    ),
+                  ProfileMenuTile(
+                    title: 'profile_edit'.tr,
+                    icon: Icons.edit_outlined,
+                    onTap: () => Get.toNamed(AppRoutes.editProfile),
+                  ),
+                  ProfileMenuTile(
+                    title: 'favorites_title'.tr,
+                    icon: Icons.favorite_rounded,
+                    onTap: () => Get.toNamed(AppRoutes.favorites),
+                  ),
+                  ProfileMenuTile(
+                    title: 'my_courses'.tr,
+                    icon: Icons.menu_book_outlined,
+                    onTap: () => AppNavigation.switchToTab(3),
+                  ),
+                  ProfileMenuTile(
+                    title: 'logout'.tr,
+                    icon: Icons.logout_rounded,
+                    trailing: const SizedBox.shrink(),
+                    onTap: () => _confirmAndLogout(context),
+                  ),
+                ],
+              );
+            }),
+          ),
+          SizedBox(height: AppLayout.rootNavReserve(context) + 12),
+        ],
+      );
     });
   }
 }
@@ -187,14 +193,8 @@ Future<void> _confirmAndLogout(BuildContext context) async {
       title: Text('logout_confirm_title'.tr),
       content: Text('logout_confirm_message'.tr),
       actions: [
-        TextButton(
-          onPressed: () => Get.back(result: false),
-          child: Text('cancel'.tr),
-        ),
-        FilledButton(
-          onPressed: () => Get.back(result: true),
-          child: Text('confirm'.tr),
-        ),
+        TextButton(onPressed: () => Get.back(result: false), child: Text('cancel'.tr)),
+        FilledButton(onPressed: () => Get.back(result: true), child: Text('confirm'.tr)),
       ],
     ),
     barrierDismissible: false,
@@ -211,9 +211,7 @@ class EditProfileView extends GetView<ProfileController> {
   @override
   Widget build(BuildContext context) {
     return Theme(
-      data: Theme.of(context).copyWith(
-        textTheme: GoogleFonts.tajawalTextTheme(Theme.of(context).textTheme),
-      ),
+      data: Theme.of(context).copyWith(textTheme: AppFonts.tajawalTextTheme(Theme.of(context).textTheme)),
       child: Scaffold(
         backgroundColor: AppColors.surface,
         appBar: AppBar(
@@ -229,193 +227,185 @@ class EditProfileView extends GetView<ProfileController> {
             return AppMaxWidth(
               maxWidth: ResponsiveModals.dialogMaxWidth(context),
               child: ListView(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 120 + context.keyboardInset),
-              children: [
-                const _EditProfileAvatar(),
-                const SizedBox(height: 20),
-                RegisterFloatingCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _EditSectionTitle(title: 'personal_info'.tr, icon: Icons.person_outline_rounded),
-                      const SizedBox(height: 14),
-                      RegisterFloatingField(
-                        controller: controller.firstNameController,
-                        label: 'first_name_label'.tr,
-                        textInputAction: TextInputAction.next,
-                        prefixIcon: Icons.badge_outlined,
-                      ),
-                      const SizedBox(height: 12),
-                      RegisterFloatingField(
-                        controller: controller.lastNameController,
-                        label: 'last_name_label'.tr,
-                        textInputAction: TextInputAction.next,
-                        prefixIcon: Icons.badge_outlined,
-                      ),
-                      const SizedBox(height: 12),
-                      RegisterFloatingField(
-                        controller: controller.phoneController,
-                        label: 'phone'.tr,
-                        readOnly: true,
-                        prefixIcon: Icons.phone_android_rounded,
-                        suffixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.textSecondary.withValues(alpha: 0.7)),
-                      ),
-                      const SizedBox(height: 12),
-                      Text('gender'.tr, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13)),
-                      const SizedBox(height: 8),
-                      Obx(
-                        () => Wrap(
-                          spacing: 8,
-                          children: [
-                            RegisterChoiceChip(
-                              label: 'male'.tr,
-                              selected: controller.selectedGender.value == 'male',
-                              onTap: () => controller.setGender('male'),
-                            ),
-                            RegisterChoiceChip(
-                              label: 'female'.tr,
-                              selected: controller.selectedGender.value == 'female',
-                              onTap: () => controller.setGender('female'),
-                            ),
-                          ],
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 120 + context.keyboardInset),
+                children: [
+                  const _EditProfileAvatar(),
+                  const SizedBox(height: 20),
+                  RegisterFloatingCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _EditSectionTitle(title: 'personal_info'.tr, icon: Icons.person_outline_rounded),
+                        const SizedBox(height: 14),
+                        RegisterFloatingField(
+                          controller: controller.firstNameController,
+                          label: 'first_name_label'.tr,
+                          textInputAction: TextInputAction.next,
+                          prefixIcon: Icons.badge_outlined,
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Obx(
-                        () => RegisterDateField(
-                          label: 'birth_date'.tr,
-                          value: controller.birthDate.value == null
-                              ? null
-                              : _formatDate(controller.birthDate.value!),
-                          onTap: () async {
-                            final now = DateTime.now();
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: controller.birthDate.value ?? DateTime(now.year - 20),
-                              firstDate: DateTime(1950),
-                              lastDate: now,
-                            );
-                            if (picked != null) controller.birthDate.value = picked;
-                          },
+                        const SizedBox(height: 12),
+                        RegisterFloatingField(
+                          controller: controller.lastNameController,
+                          label: 'last_name_label'.tr,
+                          textInputAction: TextInputAction.next,
+                          prefixIcon: Icons.badge_outlined,
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Obx(
-                        () => _ProfileDropdown<int>(
-                          label: 'city'.tr,
-                          icon: Icons.location_city_rounded,
-                          value: controller.selectedCityId.value,
-                          hint: 'pick_city'.tr,
-                          items: controller.cities
-                              .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
-                              .toList(),
-                          onChanged: (v) => controller.selectedCityId.value = v,
+                        const SizedBox(height: 12),
+                        RegisterFloatingField(
+                          controller: controller.phoneController,
+                          label: 'phone'.tr,
+                          readOnly: true,
+                          prefixIcon: Icons.phone_android_rounded,
+                          suffixIcon: Icon(
+                            Icons.lock_outline_rounded,
+                            color: AppColors.textSecondary.withValues(alpha: 0.7),
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        Text('gender'.tr, style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13)),
+                        const SizedBox(height: 8),
+                        Obx(
+                          () => Wrap(
+                            spacing: 8,
+                            children: [
+                              RegisterChoiceChip(
+                                label: 'male'.tr,
+                                selected: controller.selectedGender.value == 'male',
+                                onTap: () => controller.setGender('male'),
+                              ),
+                              RegisterChoiceChip(
+                                label: 'female'.tr,
+                                selected: controller.selectedGender.value == 'female',
+                                onTap: () => controller.setGender('female'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Obx(
+                          () => RegisterDateField(
+                            label: 'birth_date'.tr,
+                            value: controller.birthDate.value == null ? null : _formatDate(controller.birthDate.value!),
+                            onTap: () async {
+                              final now = DateTime.now();
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: controller.birthDate.value ?? DateTime(now.year - 20),
+                                firstDate: DateTime(1950),
+                                lastDate: now,
+                              );
+                              if (picked != null) controller.birthDate.value = picked;
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Obx(
+                          () => _ProfileDropdown<int>(
+                            label: 'city'.tr,
+                            icon: Icons.location_city_rounded,
+                            value: controller.selectedCityId.value,
+                            hint: 'pick_city'.tr,
+                            items: controller.cities
+                                .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+                                .toList(),
+                            onChanged: (v) => controller.selectedCityId.value = v,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 14),
-                RegisterFloatingCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _EditSectionTitle(title: 'academic_info'.tr, icon: Icons.school_outlined),
-                      const SizedBox(height: 14),
-                      Obx(
-                        () => _ProfileDropdown<String>(
-                          label: 'education_level_optional'.tr,
-                          icon: Icons.school_outlined,
-                          value: controller.selectedEducationLevel.value,
-                          hint: 'education_level_hint'.tr,
-                          items: ProfileController.educationLevels
-                              .map(
-                                (e) => DropdownMenuItem(
-                                  value: e,
-                                  child: Text(controller.educationLevelLabel(e)),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: controller.setEducationLevel,
+                  const SizedBox(height: 14),
+                  RegisterFloatingCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _EditSectionTitle(title: 'academic_info'.tr, icon: Icons.school_outlined),
+                        const SizedBox(height: 14),
+                        Obx(
+                          () => _ProfileDropdown<String>(
+                            label: 'education_level_optional'.tr,
+                            icon: Icons.school_outlined,
+                            value: controller.selectedEducationLevel.value,
+                            hint: 'education_level_hint'.tr,
+                            items: ProfileController.educationLevels
+                                .map((e) => DropdownMenuItem(value: e, child: Text(controller.educationLevelLabel(e))))
+                                .toList(),
+                            onChanged: controller.setEducationLevel,
+                          ),
                         ),
-                      ),
-                      Obx(() {
-                        if (!controller.requiresUniversityFields) return const SizedBox.shrink();
-                        return Column(
-                          children: [
-                            const SizedBox(height: 12),
-                            _ProfileDropdown<int>(
-                              label: 'university_optional'.tr,
-                              icon: Icons.account_balance_rounded,
-                              value: controller.selectedUniversityId.value,
-                              hint: 'pick_university'.tr,
-                              items: controller.universities
-                                  .map((u) => DropdownMenuItem(value: u.id, child: Text(u.name)))
-                                  .toList(),
-                              onChanged: (v) => controller.selectedUniversityId.value = v,
-                            ),
-                            const SizedBox(height: 12),
-                            _ProfileDropdown<int>(
-                              label: 'specialization_optional'.tr,
-                              icon: Icons.workspace_premium_outlined,
-                              value: controller.selectedSpecializationId.value,
-                              hint: 'pick_specialization'.tr,
-                              items: controller.specializations
-                                  .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name)))
-                                  .toList(),
-                              onChanged: (v) => controller.selectedSpecializationId.value = v,
-                            ),
-                          ],
-                        );
-                      }),
-                      const SizedBox(height: 12),
-                      Obx(
-                        () => RegisterInterestPicker(
-                          categories: controller.categories,
-                          selectedIds: controller.selectedCategoryIds.toList(),
-                          loading: controller.listsLoading.value,
-                          onReload: () => controller.loadLists(force: true),
-                          onApply: controller.setCategoryIds,
+                        Obx(() {
+                          if (!controller.requiresUniversityFields) return const SizedBox.shrink();
+                          return Column(
+                            children: [
+                              const SizedBox(height: 12),
+                              _ProfileDropdown<int>(
+                                label: 'university_optional'.tr,
+                                icon: Icons.account_balance_rounded,
+                                value: controller.selectedUniversityId.value,
+                                hint: 'pick_university'.tr,
+                                items: controller.universities
+                                    .map((u) => DropdownMenuItem(value: u.id, child: Text(u.name)))
+                                    .toList(),
+                                onChanged: (v) => controller.selectedUniversityId.value = v,
+                              ),
+                              const SizedBox(height: 12),
+                              _ProfileDropdown<int>(
+                                label: 'specialization_optional'.tr,
+                                icon: Icons.workspace_premium_outlined,
+                                value: controller.selectedSpecializationId.value,
+                                hint: 'pick_specialization'.tr,
+                                items: controller.specializations
+                                    .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name)))
+                                    .toList(),
+                                onChanged: (v) => controller.selectedSpecializationId.value = v,
+                              ),
+                            ],
+                          );
+                        }),
+                        const SizedBox(height: 12),
+                        Obx(
+                          () => RegisterInterestPicker(
+                            categories: controller.categories,
+                            selectedIds: controller.selectedCategoryIds.toList(),
+                            loading: controller.listsLoading.value,
+                            onReload: () => controller.loadLists(force: true),
+                            onApply: controller.setCategoryIds,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
             );
           }),
         ),
-        bottomNavigationBar: Obx(
-          () {
-            controller.hasChanges.value;
-            return SafeArea(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.shadowSoft.withValues(alpha: 0.8),
-                      blurRadius: 18,
-                      offset: const Offset(0, -6),
-                    ),
-                  ],
-                ),
-                child: RegisterGradientButton(
-                  label: 'save_changes'.tr,
-                  loading: controller.isSaving.value,
-                  success: controller.saveSucceeded.value,
-                  onPressed: controller.isSaving.value ||
-                          controller.saveSucceeded.value ||
-                          !controller.hasChanges.value
-                      ? null
-                      : controller.saveProfile,
-                ),
+        bottomNavigationBar: Obx(() {
+          controller.hasChanges.value;
+          return SafeArea(
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadowSoft.withValues(alpha: 0.8),
+                    blurRadius: 18,
+                    offset: const Offset(0, -6),
+                  ),
+                ],
               ),
-            );
-          },
-        ),
+              child: RegisterGradientButton(
+                label: 'save_changes'.tr,
+                loading: controller.isSaving.value,
+                success: controller.saveSucceeded.value,
+                onPressed: controller.isSaving.value || controller.saveSucceeded.value || !controller.hasChanges.value
+                    ? null
+                    : controller.saveProfile,
+              ),
+            ),
+          );
+        }),
       ),
     );
   }
@@ -467,9 +457,7 @@ class _EditSectionTitle extends StatelessWidget {
           child: Icon(icon, color: AppColors.primary, size: 20),
         ),
         const SizedBox(width: 10),
-        Expanded(
-          child: Text(title, style: AppTypography.sectionTitle()),
-        ),
+        Expanded(child: Text(title, style: AppTypography.sectionTitle())),
       ],
     );
   }
@@ -501,7 +489,7 @@ class _ProfileDropdown<T> extends StatelessWidget {
         label: label,
         prefixIcon: Icon(icon, color: AppColors.primary),
       ),
-      hint: Text(hint, style: GoogleFonts.tajawal()),
+      hint: Text(hint, style: AppFonts.tajawal()),
       items: items,
       onChanged: onChanged,
     );
@@ -517,9 +505,7 @@ class MyCoursesView extends GetView<MyCoursesController> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: MyCoursesTabView(),
-    );
+    return const Scaffold(body: MyCoursesTabView());
   }
 }
 
@@ -531,94 +517,87 @@ class SettingsView extends GetView<LocaleController> {
     return Obx(() {
       final _ = localeRebuildToken;
       return Scaffold(
-      appBar: AppBar(title: Text('settings'.tr)),
-      body: AppMaxWidth(
-        child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          SoftCard(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-            child: Column(
-              children: [
-                const AppLogo(height: 52, alignment: Alignment.center),
-                const SizedBox(height: 10),
-                Text('app_tagline'.tr, style: AppTypography.pageSubtitle(), textAlign: TextAlign.center),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          SoftCard(
-            child: Obx(() {
-              if (kIsWeb) {
-                return SwitchListTile(
-                  value: false,
-                  onChanged: null,
-                  title: Text('notifications_setting'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text('notifications_web_unavailable'.tr),
-                );
-              }
-              final push = Get.find<PushNotificationService>();
-              final enabled = push.notificationsEnabled.value;
-              final permitted = push.notificationsPermissionGranted.value;
-              String subtitle;
-              if (!enabled) {
-                subtitle = 'notifications_setting_off'.tr;
-              } else if (!permitted) {
-                subtitle = 'notifications_permission_denied'.tr;
-              } else {
-                subtitle = 'notifications_setting_on'.tr;
-              }
-              return SwitchListTile(
-                value: enabled && permitted,
-                onChanged: push.isToggling.value ? null : push.setNotificationsEnabled,
-                title: Text('notifications_setting'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text(subtitle),
-              );
-            }),
-          ),
-          const SizedBox(height: 12),
-          SoftCard(
-            child: Column(
-              children: [
-                Obx(
-                  () => ListTile(
-                    leading: const Icon(Icons.language_rounded, color: AppColors.primary),
-                    title: Text('language'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    trailing: Text(
-                      controller.languageLabel,
-                      style: const TextStyle(color: AppColors.textSecondary),
-                    ),
-                    onTap: controller.showLanguagePicker,
-                  ),
+        appBar: AppBar(title: Text('settings'.tr)),
+        body: AppMaxWidth(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              SoftCard(
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                child: Column(
+                  children: [
+                    const AppLogo(height: 52, alignment: Alignment.center),
+                    const SizedBox(height: 10),
+                    Text('app_tagline'.tr, style: AppTypography.pageSubtitle(), textAlign: TextAlign.center),
+                  ],
                 ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.privacy_tip_outlined, color: AppColors.primary),
-                  title: Text('privacy_policy'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  onTap: () => Get.to(
-                    () => _SettingsDocumentView(
-                      title: 'privacy_policy'.tr,
-                      body: 'privacy_policy_body'.tr,
+              ),
+              const SizedBox(height: 12),
+              SoftCard(
+                child: Obx(() {
+                  if (kIsWeb) {
+                    return SwitchListTile(
+                      value: false,
+                      onChanged: null,
+                      title: Text('notifications_setting'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      subtitle: Text('notifications_web_unavailable'.tr),
+                    );
+                  }
+                  final push = Get.find<PushNotificationService>();
+                  final enabled = push.notificationsEnabled.value;
+                  final permitted = push.notificationsPermissionGranted.value;
+                  String subtitle;
+                  if (!enabled) {
+                    subtitle = 'notifications_setting_off'.tr;
+                  } else if (!permitted) {
+                    subtitle = 'notifications_permission_denied'.tr;
+                  } else {
+                    subtitle = 'notifications_setting_on'.tr;
+                  }
+                  return SwitchListTile(
+                    value: enabled && permitted,
+                    onChanged: push.isToggling.value ? null : push.setNotificationsEnabled,
+                    title: Text('notifications_setting'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text(subtitle),
+                  );
+                }),
+              ),
+              const SizedBox(height: 12),
+              SoftCard(
+                child: Column(
+                  children: [
+                    Obx(
+                      () => ListTile(
+                        leading: const Icon(Icons.language_rounded, color: AppColors.primary),
+                        title: Text('language'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        trailing: Text(
+                          controller.languageLabel,
+                          style: const TextStyle(color: AppColors.textSecondary),
+                        ),
+                        onTap: controller.showLanguagePicker,
+                      ),
                     ),
-                  ),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.info_outline_rounded, color: AppColors.primary),
-                  title: Text('about_app'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  onTap: () => Get.to(
-                    () => _SettingsDocumentView(
-                      title: 'about_app'.tr,
-                      body: 'about_app_body'.tr,
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.privacy_tip_outlined, color: AppColors.primary),
+                      title: Text('privacy_policy'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      onTap: () => Get.to(
+                        () => _SettingsDocumentView(title: 'privacy_policy'.tr, body: 'privacy_policy_body'.tr),
+                      ),
                     ),
-                  ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.info_outline_rounded, color: AppColors.primary),
+                      title: Text('about_app'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      onTap: () =>
+                          Get.to(() => _SettingsDocumentView(title: 'about_app'.tr, body: 'about_app_body'.tr)),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
         ),
-      ),
       );
     });
   }
@@ -640,10 +619,7 @@ class _SettingsDocumentView extends StatelessWidget {
           children: [
             SoftCard(
               padding: const EdgeInsets.all(20),
-              child: Text(
-                body,
-                style: GoogleFonts.tajawal(fontSize: 15, height: 1.65, color: AppColors.textPrimary),
-              ),
+              child: Text(body, style: AppFonts.tajawal(fontSize: 15, height: 1.65, color: AppColors.textPrimary)),
             ),
           ],
         ),

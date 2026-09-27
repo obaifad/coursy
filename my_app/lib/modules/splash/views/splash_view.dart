@@ -1,8 +1,8 @@
+import '../../../theme/app_fonts.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/assets/app_assets.dart';
 import '../../../core/config/app_flags.dart';
@@ -103,59 +103,51 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
     return Obx(() {
       final _ = localeRebuildToken;
       return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: AppGradients.splash),
-        child: SafeArea(
-          child: Center(
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, _) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _CoursySplashLogo(
-                      reveal: _reveal.value,
-                      scale: _scale.value,
-                      glow: _glow.value,
-                    ),
-                    const SizedBox(height: 28),
-                    Opacity(
-                      opacity: _taglineOpacity.value,
-                      child: Text(
-                        'app_tagline'.tr,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.tajawal(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          height: 1.4,
+        body: DecoratedBox(
+          decoration: const BoxDecoration(gradient: AppGradients.splash),
+          child: SafeArea(
+            child: Center(
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, _) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _CoursySplashLogo(reveal: _reveal.value, scale: _scale.value, glow: _glow.value),
+                      const SizedBox(height: 28),
+                      Opacity(
+                        opacity: _taglineOpacity.value,
+                        child: Text(
+                          'app_tagline'.tr,
+                          textAlign: TextAlign.center,
+                          style: AppFonts.tajawal(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            height: 1.4,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 44),
-                    Opacity(
-                      opacity: _loaderOpacity.value,
-                      child: const AppDotsLoader(color: Colors.white, size: AppLoaderSize.large),
-                    ),
-                  ],
-                );
-              },
+                      const SizedBox(height: 44),
+                      Opacity(
+                        opacity: _loaderOpacity.value,
+                        child: const AppDotsLoader(color: Colors.white, size: AppLoaderSize.large),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
     });
   }
 }
 
 /// شعار Coursy: كشف أفقي (يسار → يمين) + تكبير خفيف + توهج ناعم في النهاية.
 class _CoursySplashLogo extends StatelessWidget {
-  const _CoursySplashLogo({
-    required this.reveal,
-    required this.scale,
-    required this.glow,
-  });
+  const _CoursySplashLogo({required this.reveal, required this.scale, required this.glow});
 
   final double reveal;
   final double scale;
@@ -192,11 +184,7 @@ class _CoursySplashLogo extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
-                      BoxShadow(
-                        color: Colors.white.withValues(alpha: 0.55),
-                        blurRadius: 40,
-                        spreadRadius: 2,
-                      ),
+                      BoxShadow(color: Colors.white.withValues(alpha: 0.55), blurRadius: 40, spreadRadius: 2),
                     ],
                   ),
                 ),
@@ -205,11 +193,7 @@ class _CoursySplashLogo extends StatelessWidget {
             Directionality(
               textDirection: TextDirection.ltr,
               child: ClipRect(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: reveal.clamp(0.001, 1),
-                  child: logo,
-                ),
+                child: Align(alignment: Alignment.centerLeft, widthFactor: reveal.clamp(0.001, 1), child: logo),
               ),
             ),
           ],

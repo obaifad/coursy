@@ -81,10 +81,24 @@ class HomeController extends GetxController with LatestLoadGuard {
     loadHome();
   }
 
-  Future<void> reloadLocalizedData() => loadHome(forceRefresh: true);
+  Future<void> reloadLocalizedData() => loadHome(forceRefresh: true, refreshStatic: true);
 
-  Future<void> loadHome({bool forceRefresh = false}) async {
+  static const _staleAfter = Duration(minutes: 2);
+  DateTime? _lastLoadedAt;
+
+  /// إعادة تحميل عند العودة للرئيسية فقط إن مرّ [_staleAfter] على آخر تحميل.
+  Future<void> refreshIfStale() {
+    final last = _lastLoadedAt;
+    if (last != null && DateTime.now().difference(last) < _staleAfter) return Future<void>.value();
+    return loadHome(forceRefresh: true);
+  }
+
+  /// [forceRefresh]: يعيد جلب الدورات والمعاهد والمدرّسين والمقترحات (بعد الدخول/الخروج/التسجيل...).
+  /// [refreshStatic]: يعيد أيضاً جلب القوائم الثابتة (التصنيفات، تخصصات المدرّسين) — عند السحب
+  /// للتحديث أو تغيير اللغة فقط؛ لا تتغير بتسجيل الدخول، وجلبها مكلف (عدّ المدرّسين عبر عدة صفحات).
+  Future<void> loadHome({bool forceRefresh = false, bool refreshStatic = false}) async {
     final session = beginLoad();
+    _lastLoadedAt = DateTime.now();
 
     if (!isLoading.value && !isRefreshing.value) {
       isRefreshing.value = true;
@@ -105,11 +119,7 @@ class HomeController extends GetxController with LatestLoadGuard {
             _replaceIfNotEmpty(courses, await _ratingService.enrich(homepage.courses), session);
             if (!shouldApply(session)) return;
             if (!isLoggedIn) {
-              _replaceIfNotEmpty(
-                suggestedCourses,
-                await _ratingService.enrich(homepage.suggestedCourses),
-                session,
-              );
+              _replaceIfNotEmpty(suggestedCourses, await _ratingService.enrich(homepage.suggestedCourses), session);
             }
           }
           if (!shouldApply(session)) return;
@@ -125,11 +135,11 @@ class HomeController extends GetxController with LatestLoadGuard {
       if (!shouldApply(session)) return;
 
       await Future.wait([
-        _fetchCategories(errors, session),
+        _fetchCategories(errors, session, force: refreshStatic),
         _fetchCourses(errors, session, force: forceRefresh),
         _fetchInstitutes(errors, session, force: forceRefresh),
         _fetchPrivateInstructors(errors, session, force: forceRefresh),
-        _fetchInstructorSubjects(errors, session, force: forceRefresh),
+        _fetchInstructorSubjects(errors, session, force: refreshStatic),
       ]);
 
       if (!shouldApply(session)) return;
@@ -158,7 +168,9 @@ class HomeController extends GetxController with LatestLoadGuard {
     target.value = List<T>.from(source);
   }
 
-  Future<void> _fetchCategories(List<String> errors, LoadSession session) async {
+  Future<void> _fetchCategories(List<String> errors, LoadSession session, {bool force = false}) async {
+    // /homepage يُرجع التصنيفات غالباً — لا نعيد جلب كل صفحاتها في كل تحميل.
+    if (!force && categories.isNotEmpty) return;
     try {
       final fresh = await _categoryRepository.fetchCategories();
       applyIfCurrent(session, () {
@@ -261,11 +273,7 @@ class HomeController extends GetxController with LatestLoadGuard {
   Future<void> _fetchPrivateInstructors(List<String> errors, LoadSession session, {bool force = false}) async {
     if (!force && privateInstructors.isNotEmpty) return;
     try {
-      final result = await _instructorRepository.fetchInstructorsPage(
-        page: 1,
-        perPage: 12,
-        isPrivate: true,
-      );
+      final result = await _instructorRepository.fetchInstructorsPage(page: 1, perPage: 12, isPrivate: true);
       applyIfCurrent(session, () {
         if (result.items.isNotEmpty) {
           privateInstructors.value = List<InstructorModel>.from(result.items);

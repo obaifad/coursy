@@ -21,11 +21,7 @@ class ReviewRepository extends GetxService {
     AppDebugLog.repo('Reviews', body.toString());
   }
 
-  Future<List<ReviewModel>> fetchReviews({
-    int? courseId,
-    int? instituteId,
-    int? instructorId,
-  }) async {
+  Future<List<ReviewModel>> fetchReviews({int? courseId, int? instituteId, int? instructorId}) async {
     final query = <String, dynamic>{
       if (courseId != null) 'course_id': courseId,
       if (instituteId != null) 'institute_id': instituteId,
@@ -40,10 +36,7 @@ class ReviewRepository extends GetxService {
     for (final path in paths) {
       try {
         return await _client.handle(
-          () => _client.get(
-            path,
-            query: path == ApiEndpoints.courseReviews(courseId ?? 0) ? null : query,
-          ),
+          () => _client.get(path, query: path == ApiEndpoints.courseReviews(courseId ?? 0) ? null : query),
           (data) {
             _log('LIST', data, path: path);
             final page = PaginatedResult<ReviewModel>.fromBody(data, ReviewModel.fromJson);
@@ -71,16 +64,14 @@ class ReviewRepository extends GetxService {
     if (courseId != null) {
       final path = '${ApiEndpoints.courseReviews(courseId)}?rating=$safeRating';
       return _client.handle(
-        () => _client.post(
-          path,
-          data: comment.trim().isEmpty ? const <String, dynamic>{} : {'comment': comment.trim()},
-        ),
+        () =>
+            _client.post(path, data: comment.trim().isEmpty ? const <String, dynamic>{} : {'comment': comment.trim()}),
         (raw) {
           final body = normalizeApiBody(raw);
           _log('SUBMIT', body, path: path);
           final map = extractObjectMap(body) ?? (body is Map<String, dynamic> ? body : <String, dynamic>{});
           if (map.isEmpty) {
-            return ReviewModel(id: 0, rating: safeRating, comment: comment.trim(), studentName: 'أنت');
+            return ReviewModel(id: 0, rating: safeRating, comment: comment.trim(), studentName: 'review_you'.tr);
           }
           return ReviewModel.fromJson(map);
         },
@@ -108,7 +99,7 @@ class ReviewRepository extends GetxService {
       _log('SUBMIT', body);
       final map = extractObjectMap(body) ?? (body is Map<String, dynamic> ? body : <String, dynamic>{});
       if (map.isEmpty) {
-        return ReviewModel(id: 0, rating: safeRating, comment: comment.trim(), studentName: 'أنت');
+        return ReviewModel(id: 0, rating: safeRating, comment: comment.trim(), studentName: 'review_you'.tr);
       }
       return ReviewModel.fromJson(map);
     });

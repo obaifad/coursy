@@ -51,7 +51,8 @@ class CourseDetailsController extends GetxController {
       _loadDetails(arg);
     }
     if (_tokenStorage.isLoggedIn) {
-      unawaited(_favoritesService.syncFromApi(force: true));
+      // مع مدة الصلاحية (دقيقتان) بدل فرض المزامنة عند كل فتح لصفحة دورة.
+      unawaited(_favoritesService.syncFromApi());
     }
   }
 
@@ -127,35 +128,29 @@ class CourseDetailsController extends GetxController {
   }
 
   Future<void> _loadSecondaryData(int id) async {
-    await Future.wait<void>([
-      _refreshStudentCounts(id),
-      _updateReviewPermission(),
-      _checkEnrollment(id),
-    ]);
+    await Future.wait<void>([_updateReviewPermission(), _checkEnrollment(id)]);
   }
 
   Future<void> refreshEnrollment() async {
     final id = course.value?.id;
     if (id == null) return;
-    await Future.wait<void>([
-      _checkEnrollment(id),
-      _refreshStudentCounts(id),
-    ]);
+    await Future.wait<void>([_checkEnrollment(id), _refreshStudentCounts(id)]);
   }
 
+  /// أعداد الطلاب من `/courses/{id}` نفسها — بدون تنزيل تسجيلات كل الطلاب.
   Future<void> _refreshStudentCounts(int courseId) async {
-    final current = course.value;
-    if (current == null || courseId <= 0) return;
-
-    final enrollCount = await _enrollmentRepository.countConfirmedEnrollmentsForCourse(courseId);
-    if (course.value?.id != courseId || enrollCount == null) return;
-
-    final nextConfirmed = _preferStudentCount(current.confirmedStudentsCount, enrollCount);
-    final currentDisplay = current.enrolledCountForCapacity;
-    final nextDisplay = nextConfirmed ?? current.studentsCount ?? 0;
-    if (nextDisplay < currentDisplay) return;
-
-    course.value = current.copyWith(confirmedStudentsCount: nextConfirmed);
+    if (course.value == null || courseId <= 0) return;
+    try {
+      final fresh = await _courseRepository.fetchCourseById(courseId);
+      final current = course.value;
+      if (current == null || current.id != courseId) return;
+      course.value = current.copyWith(
+        studentsCount: fresh.studentsCount ?? current.studentsCount,
+        confirmedStudentsCount: fresh.confirmedStudentsCount ?? current.confirmedStudentsCount,
+      );
+    } catch (_) {
+      // نُبقي الأعداد الحالية.
+    }
   }
 
   Future<void> _checkEnrollment(int courseId) async {

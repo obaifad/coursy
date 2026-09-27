@@ -22,7 +22,8 @@ class PushNotificationService extends GetxService {
 
   static const _storageKey = 'push_notifications_enabled';
 
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  // getter وليس حقلاً: على الويب/Windows لا يُهيّأ Firebase، والوصول المبكر لـ instance يُسقط التطبيق عند الإقلاع.
+  FirebaseMessaging get _messaging => FirebaseMessaging.instance;
 
   late final GetStorage _prefs;
 
@@ -42,11 +43,7 @@ class PushNotificationService extends GetxService {
     await PushLocalNotifications.ensureInitialized(onTap: _openFromPayload);
 
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
-      await _messaging.setForegroundNotificationPresentationOptions(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
+      await _messaging.setForegroundNotificationPresentationOptions(alert: true, badge: true, sound: true);
     }
 
     _tokenRefreshSub = _messaging.onTokenRefresh.listen(_onTokenRefresh);
@@ -67,20 +64,19 @@ class PushNotificationService extends GetxService {
   }
 
   /// يطلب إذن الإشعارات (Android 13+) ثم يسجّل توكن FCM.
-  Future<void> ensurePermissionsAndSyncToken() async {
-    if (!notificationsEnabled.value) return;
+  ///
+  /// [requestPermission] = false (عند العودة للتطبيق): نقرأ حالة الإذن فقط بدون إظهار نافذة النظام.
+  /// التوكن يُرسل للخادم فقط إذا تغيّر منذ آخر تسجيل ناجح.
+  Future<void> ensurePermissionsAndSyncToken({bool requestPermission = true}) async {
+    if (kIsWeb || !notificationsEnabled.value) return;
 
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      notificationsPermissionGranted.value = await PushLocalNotifications.hasAndroidPermission();
-    }
-
-    final granted = await _requestPermissions();
+    final granted = requestPermission ? await _requestPermissions() : await _hasPermission();
     notificationsPermissionGranted.value = granted;
     AppDebugLog.fcm('notifications enabled=${notificationsEnabled.value} permission=$granted');
     if (!granted) {
       AppDebugLog.fcm('notification permission not granted — token sync only');
     }
-    await syncDeviceTokenIfLoggedIn(force: true);
+    await syncDeviceTokenIfLoggedIn();
   }
 
   Future<void> syncDeviceTokenIfLoggedIn({bool force = false}) async {
@@ -162,10 +158,20 @@ class PushNotificationService extends GetxService {
     }
   }
 
-  Future<void> _registerToken(String token, {bool force = false}) async {
-    if (!_tokenStorage.isLoggedIn || !notificationsEnabled.value) return;
-    if (!force && _lastSyncedToken == token) return;
+  Future<void> _registerToken(String token, {bool force = false}) {
+    if (!_tokenStorage.isLoggedIn || !notificationsEnabled.value) return Future<void>.value();
+    if (!force && _lastSyncedToken == token) return Future<void>.value();
+    // طلبات متزامنة (init + post-launch + resume) تشترك في نفس التسجيل الجاري.
+    final running = _registering;
+    if (running != null) return running;
+    final future = _registerWithRetry(token);
+    _registering = future;
+    return future.whenComplete(() => _registering = null);
+  }
 
+  Future<void>? _registering;
+
+  Future<void> _registerWithRetry(String token) async {
     for (var attempt = 1; attempt <= 3; attempt++) {
       try {
         AppDebugLog.fcm('registering device token (${token.length} chars) attempt=$attempt');
@@ -187,6 +193,15 @@ class PushNotificationService extends GetxService {
 
   Future<void> _onTokenRefresh(String token) => _registerToken(token, force: true);
 
+  Future<bool> _hasPermission() async {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return PushLocalNotifications.hasAndroidPermission();
+    }
+    final settings = await _messaging.getNotificationSettings();
+    return settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
+  }
+
   Future<bool> _requestPermissions() async {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       final granted = await PushLocalNotifications.requestAndroidPermission();
@@ -194,12 +209,7 @@ class PushNotificationService extends GetxService {
       return granted;
     }
 
-    final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
+    final settings = await _messaging.requestPermission(alert: true, badge: true, sound: true, provisional: false);
     AppDebugLog.fcm('ios permission: ${settings.authorizationStatus}');
     return settings.authorizationStatus == AuthorizationStatus.authorized ||
         settings.authorizationStatus == AuthorizationStatus.provisional;

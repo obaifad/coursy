@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../theme/app_fonts.dart';
 import '../../../core/config/api_config.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
@@ -151,10 +151,7 @@ class _EnrollmentList extends GetView<MyCoursesController> {
           padding: AppLayout.scrollPadding(context, rootTab: true, top: 8),
           itemCount: items.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (_, i) => _EnrollmentCard(
-            enrollment: items[i],
-            controller: controller,
-          ),
+          itemBuilder: (_, i) => _EnrollmentCard(enrollment: items[i], controller: controller),
         ),
       );
     });
@@ -221,9 +218,7 @@ class _EnrollmentCard extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: [
-                  for (final m in meta.rows) _MetaChip(icon: m.icon, label: m.label),
-                ],
+                children: [for (final m in meta.rows) _MetaChip(icon: m.icon, label: m.label)],
               ),
             ],
             const SizedBox(height: 16),
@@ -237,17 +232,15 @@ class _EnrollmentCard extends StatelessWidget {
                       return OutlinedButton.icon(
                         onPressed: isCancelling ? null : () => _confirmCancel(context, enrollment),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFFDC2626),
-                          side: BorderSide(color: const Color(0xFFDC2626).withValues(alpha: 0.35)),
+                          foregroundColor: AppColors.danger,
+                          side: BorderSide(color: AppColors.danger.withValues(alpha: 0.35)),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        icon: isCancelling
-                            ? const AppInlineLoader()
-                            : const Icon(Icons.close_rounded, size: 18),
+                        icon: isCancelling ? const AppInlineLoader() : const Icon(Icons.close_rounded, size: 18),
                         label: Text(
                           isCancelling ? 'saving'.tr : 'cancel_booking'.tr,
-                          style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13),
+                          style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13),
                         ),
                       );
                     }),
@@ -283,14 +276,11 @@ class _EnrollmentCard extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('cancel_booking'.tr, style: GoogleFonts.tajawal(fontWeight: FontWeight.w800)),
+        title: Text('cancel_booking'.tr, style: AppFonts.tajawal(fontWeight: FontWeight.w800)),
         content: Text('cancel_booking_confirm'.tr),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text('cancel'.tr)),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text('confirm'.tr),
-          ),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text('confirm'.tr)),
         ],
       ),
     );
@@ -346,11 +336,7 @@ class _StatusBadge extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: GoogleFonts.tajawal(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: theme.foregroundColor,
-            ),
+            style: AppFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w800, color: theme.foregroundColor),
           ),
         ],
       ),
@@ -368,10 +354,7 @@ class _MetaChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: AppColors.indicatorFill,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -379,11 +362,7 @@ class _MetaChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: GoogleFonts.tajawal(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF374151),
-            ),
+            style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textBody),
           ),
         ],
       ),
@@ -431,11 +410,7 @@ class _EnrollmentMeta {
 }
 
 class _EnrollmentStatusTheme {
-  const _EnrollmentStatusTheme({
-    required this.backgroundColor,
-    required this.foregroundColor,
-    required this.icon,
-  });
+  const _EnrollmentStatusTheme({required this.backgroundColor, required this.foregroundColor, required this.icon});
 
   final Color backgroundColor;
   final Color foregroundColor;
@@ -454,14 +429,14 @@ class _EnrollmentStatusTheme {
   );
 
   static const completed = _EnrollmentStatusTheme(
-    backgroundColor: Color(0xFFDBEAFE),
+    backgroundColor: AppColors.infoSoft,
     foregroundColor: Color(0xFF2563EB),
     icon: Icons.school_outlined,
   );
 
   static const cancelled = _EnrollmentStatusTheme(
-    backgroundColor: Color(0xFFFEE2E2),
-    foregroundColor: Color(0xFFDC2626),
+    backgroundColor: AppColors.dangerSoft,
+    foregroundColor: AppColors.danger,
     icon: Icons.cancel_outlined,
   );
 
@@ -512,10 +487,7 @@ class _MyCoursesEmptyState extends StatelessWidget {
       action: showBrowse
           ? SizedBox(
               width: 220,
-              child: RegisterGradientButton(
-                label: 'browse_courses'.tr,
-                onPressed: () => AppNavigation.switchToTab(0),
-              ),
+              child: RegisterGradientButton(label: 'browse_courses'.tr, onPressed: () => AppNavigation.switchToTab(0)),
             )
           : null,
     );
@@ -546,16 +518,9 @@ class _MyCoursesLoginPrompt extends StatelessWidget {
                   children: [
                     const AppLogo(height: 44),
                     const SizedBox(height: 20),
-                    Text(
-                      'login_to_see_courses'.tr,
-                      textAlign: TextAlign.center,
-                      style: AppTypography.sectionTitle(),
-                    ),
+                    Text('login_to_see_courses'.tr, textAlign: TextAlign.center, style: AppTypography.sectionTitle()),
                     const SizedBox(height: 20),
-                    RegisterGradientButton(
-                      label: 'login'.tr,
-                      onPressed: () => Get.toNamed(AppRoutes.login),
-                    ),
+                    RegisterGradientButton(label: 'login'.tr, onPressed: () => Get.toNamed(AppRoutes.login)),
                   ],
                 ),
               ),

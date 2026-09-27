@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../theme/app_fonts.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
 import '../../../routes/app_routes.dart';
@@ -22,18 +22,18 @@ class FavoritesView extends GetView<FavoritesController> {
     return Obx(() {
       final _ = localeRebuildToken;
       return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: _FavoritesAppBar(onRefresh: controller.loadFavorites),
-      body: GuestGate(
-        message: 'guest_favorites_hint'.tr,
-        exploreCta: 'favorites_explore'.tr,
-        onExplore: () {
-          AppNavigation.switchToTab(0);
-          Get.back();
-        },
-        child: _FavoritesBody(controller: controller),
-      ),
-    );
+        backgroundColor: AppColors.surface,
+        appBar: _FavoritesAppBar(onRefresh: controller.loadFavorites),
+        body: GuestGate(
+          message: 'guest_favorites_hint'.tr,
+          exploreCta: 'favorites_explore'.tr,
+          onExplore: () {
+            AppNavigation.switchToTab(0);
+            Get.back();
+          },
+          child: _FavoritesBody(controller: controller),
+        ),
+      );
     });
   }
 }
@@ -66,7 +66,7 @@ class FavoritesTabView extends GetView<FavoritesController> {
                   ),
                   TextButton(
                     onPressed: () => Get.toNamed(AppRoutes.favorites),
-                    child: Text('view_all'.tr, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+                    child: Text('view_all'.tr, style: AppFonts.tajawal(fontWeight: FontWeight.w700)),
                   ),
                 ],
               ),
@@ -96,18 +96,11 @@ class _FavoritesAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: AppColors.surface,
       surfaceTintColor: Colors.transparent,
       leading: Navigator.canPop(context)
-          ? IconButton(
-              onPressed: Get.back,
-              icon: const Icon(Icons.arrow_back_rounded),
-            )
+          ? IconButton(onPressed: Get.back, icon: const Icon(Icons.arrow_back_rounded))
           : null,
-      title: const AppLogo(height: 60,),
+      title: const AppLogo(height: 60),
       actions: [
-        IconButton(
-          onPressed: onRefresh,
-          icon: const Icon(Icons.refresh_rounded),
-          tooltip: 'retry'.tr,
-        ),
+        IconButton(onPressed: onRefresh, icon: const Icon(Icons.refresh_rounded), tooltip: 'retry'.tr),
         const SizedBox(width: 4),
       ],
     );
@@ -167,10 +160,7 @@ class _FavoritesBody extends StatelessWidget {
           separatorBuilder: (_, __) => const SizedBox(height: 16),
           itemBuilder: (_, i) {
             final course = controller.courses[i];
-            return _FavoriteCourseCard(
-              course: course,
-              controller: controller,
-            );
+            return _FavoriteCourseCard(course: course, controller: controller);
           },
         ),
       );
@@ -282,11 +272,11 @@ class _FavoriteCourseCardState extends State<_FavoriteCourseCard> with SingleTic
                     Row(
                       children: [
                         if (course.rating > 0) ...[
-                          const Icon(Icons.star_rounded, size: 18, color: Color(0xFFF59E0B)),
+                          const Icon(Icons.star_rounded, size: 18, color: AppColors.ratingStar),
                           const SizedBox(width: 4),
                           Text(
                             course.rating.toStringAsFixed(1),
-                            style: GoogleFonts.tajawal(
+                            style: AppFonts.tajawal(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF92400E),
@@ -333,19 +323,11 @@ class _FavoriteCardImage extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             if (url != null)
-              AppNetworkImage(
-                url: url,
-                width: double.infinity,
-                height: 140,
-                fit: BoxFit.cover,
-                ignorePointer: true,
-              )
+              AppNetworkImage(url: url, width: double.infinity, height: 140, fit: BoxFit.cover, ignorePointer: true)
             else
               const DecoratedBox(
                 decoration: BoxDecoration(gradient: AppGradients.cardPlaceholder),
-                child: Center(
-                  child: Icon(Icons.school_rounded, color: Colors.white70, size: 44),
-                ),
+                child: Center(child: Icon(Icons.school_rounded, color: Colors.white70, size: 44)),
               ),
             DecoratedBox(
               decoration: BoxDecoration(
@@ -372,11 +354,7 @@ class _FavoriteCardImage extends StatelessWidget {
                     height: 42,
                     child: Center(
                       child: removing
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: AppInlineLoader(),
-                            )
+                          ? const SizedBox(width: 18, height: 18, child: AppInlineLoader())
                           : ScaleTransition(
                               scale: heartScale,
                               child: const Icon(Icons.favorite_rounded, color: Colors.redAccent, size: 22),
@@ -403,10 +381,7 @@ class _FavoriteMetaChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.indicatorFill,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -414,7 +389,7 @@ class _FavoriteMetaChip extends StatelessWidget {
           const SizedBox(width: 5),
           Text(
             label,
-            style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF374151)),
+            style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textBody),
           ),
         ],
       ),

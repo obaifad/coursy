@@ -25,13 +25,7 @@ class GuestContinueButton extends StatelessWidget {
 
 /// يعرض محتوى للمسجّل، أو شاشة دعوة لتسجيل الدخول للزائر.
 class GuestGate extends StatelessWidget {
-  const GuestGate({
-    super.key,
-    required this.message,
-    required this.child,
-    this.exploreCta,
-    this.onExplore,
-  });
+  const GuestGate({super.key, required this.message, required this.child, this.exploreCta, this.onExplore});
 
   final String message;
   final Widget child;
@@ -48,11 +42,7 @@ class GuestGate extends StatelessWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             SizedBox(height: MediaQuery.sizeOf(context).height * 0.15),
-            EmptyStateView(
-              message: message,
-              cta: 'login'.tr,
-              onCta: () => Get.toNamed(AppRoutes.login),
-            ),
+            EmptyStateView(message: message, cta: 'login'.tr, onCta: () => Get.toNamed(AppRoutes.login)),
             if (exploreCta != null && onExplore != null) ...[
               const SizedBox(height: 8),
               Center(

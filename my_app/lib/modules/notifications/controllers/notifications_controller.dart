@@ -36,7 +36,7 @@ class NotificationsController extends GetxController with LatestLoadGuard {
     } on ApiCancelledException {
       return;
     } catch (e) {
-      if (shouldApply(session)) errorMessage.value = e.toString();
+      if (shouldApply(session)) errorMessage.value = userErrorMessage(e);
     } finally {
       applyIfCurrent(session, () => isLoading.value = false);
     }

@@ -21,21 +21,14 @@ class FavoritesRepository extends GetxService {
   }
 
   Future<List<FavoriteModel>> fetchMine() async {
-    return _client.handle(
-      () => _client.get(ApiEndpoints.studentFavorites),
-      (data) {
-        _log('LIST', data, path: ApiEndpoints.studentFavorites);
-        final page = PaginatedResult<FavoriteModel>.fromBody(data, FavoriteModel.fromJson);
-        return page.items;
-      },
-    );
+    return _client.handle(() => _client.get(ApiEndpoints.studentFavorites), (data) {
+      _log('LIST', data, path: ApiEndpoints.studentFavorites);
+      final page = PaginatedResult<FavoriteModel>.fromBody(data, FavoriteModel.fromJson);
+      return page.items;
+    });
   }
 
-  Future<Map<String, dynamic>> addFavorite({
-    int? courseId,
-    int? instituteId,
-    int? instructorId,
-  }) async {
+  Future<Map<String, dynamic>> addFavorite({int? courseId, int? instituteId, int? instructorId}) async {
     if (courseId != null) {
       return _postCourseFavorite(courseId);
     }
@@ -50,34 +43,25 @@ class FavoritesRepository extends GetxService {
       data['student_id'] = studentId;
     } catch (_) {}
 
-    return _client.handle(
-      () => _client.post(ApiEndpoints.studentFavorites, data: data),
-      (raw) {
-        final body = normalizeApiBody(raw);
-        _log('ADD', body, path: ApiEndpoints.studentFavorites);
-        if (body is Map<String, dynamic>) return body;
-        return <String, dynamic>{'data': body};
-      },
-    );
+    return _client.handle(() => _client.post(ApiEndpoints.studentFavorites, data: data), (raw) {
+      final body = normalizeApiBody(raw);
+      _log('ADD', body, path: ApiEndpoints.studentFavorites);
+      if (body is Map<String, dynamic>) return body;
+      return <String, dynamic>{'data': body};
+    });
   }
 
   Future<void> removeFavorite(int favoriteId, {int? courseId}) async {
     ApiException? lastError;
 
     if (courseId != null) {
-      final paths = [
-        ApiEndpoints.courseFavorite(courseId),
-        ApiEndpoints.studentCourseFavorite(courseId),
-      ];
+      final paths = [ApiEndpoints.courseFavorite(courseId), ApiEndpoints.studentCourseFavorite(courseId)];
       for (final path in paths) {
         try {
-          await _client.handle(
-            () => _client.delete(path),
-            (raw) {
-              _log('REMOVE', normalizeApiBody(raw), path: path);
-              return null;
-            },
-          );
+          await _client.handle(() => _client.delete(path), (raw) {
+            _log('REMOVE', normalizeApiBody(raw), path: path);
+            return null;
+          });
           return;
         } on ApiException catch (e) {
           lastError = e;
@@ -87,19 +71,14 @@ class FavoritesRepository extends GetxService {
       }
     }
 
-    final paths = [
-      ApiEndpoints.resourceById(ApiEndpoints.studentFavorites, favoriteId),
-    ];
+    final paths = [ApiEndpoints.resourceById(ApiEndpoints.studentFavorites, favoriteId)];
 
     for (final path in paths) {
       try {
-        await _client.handle(
-          () => _client.delete(path),
-          (raw) {
-            _log('REMOVE', normalizeApiBody(raw), path: path);
-            return null;
-          },
-        );
+        await _client.handle(() => _client.delete(path), (raw) {
+          _log('REMOVE', normalizeApiBody(raw), path: path);
+          return null;
+        });
         return;
       } on ApiException catch (e) {
         lastError = e;
@@ -108,27 +87,21 @@ class FavoritesRepository extends GetxService {
       }
     }
 
-    throw lastError ?? ApiException('تعذر إزالة العنصر من المفضلة');
+    throw lastError ?? ApiException('error_favorite_remove'.tr);
   }
 
   Future<Map<String, dynamic>> _postCourseFavorite(int courseId) async {
-    final paths = [
-      ApiEndpoints.courseFavorite(courseId),
-      ApiEndpoints.studentCourseFavorite(courseId),
-    ];
+    final paths = [ApiEndpoints.courseFavorite(courseId), ApiEndpoints.studentCourseFavorite(courseId)];
     ApiException? lastError;
 
     for (final path in paths) {
       try {
-        return await _client.handle(
-          () => _client.post(path, data: const <String, dynamic>{}),
-          (raw) {
-            final body = normalizeApiBody(raw);
-            _log('ADD', body, path: path);
-            if (body is Map<String, dynamic>) return body;
-            return <String, dynamic>{'data': body};
-          },
-        );
+        return await _client.handle(() => _client.post(path, data: const <String, dynamic>{}), (raw) {
+          final body = normalizeApiBody(raw);
+          _log('ADD', body, path: path);
+          if (body is Map<String, dynamic>) return body;
+          return <String, dynamic>{'data': body};
+        });
       } on ApiException catch (e) {
         lastError = e;
         if (e.statusCode == 404 || e.statusCode == 405) continue;
@@ -136,7 +109,6 @@ class FavoritesRepository extends GetxService {
       }
     }
 
-    throw lastError ?? ApiException('تعذر إضافة الدورة إلى المفضلة');
+    throw lastError ?? ApiException('error_favorite_add'.tr);
   }
 }
-

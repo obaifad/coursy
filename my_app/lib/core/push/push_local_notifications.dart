@@ -21,10 +21,7 @@ abstract final class PushLocalNotifications {
     const androidSettings = AndroidInitializationSettings('@drawable/ic_notification');
     const iosSettings = DarwinInitializationSettings();
     await _plugin.initialize(
-      settings: const InitializationSettings(
-        android: androidSettings,
-        iOS: iosSettings,
-      ),
+      settings: const InitializationSettings(android: androidSettings, iOS: iosSettings),
       onDidReceiveNotificationResponse: onTap == null
           ? null
           : (response) {
@@ -131,10 +128,9 @@ abstract final class PushLocalNotifications {
     final notification = message.notification;
     final data = message.data;
 
-    final title = notification?.title ??
-        data['title']?.toString() ??
-        data['notification_title']?.toString();
-    final body = notification?.body ??
+    final title = notification?.title ?? data['title']?.toString() ?? data['notification_title']?.toString();
+    final body =
+        notification?.body ??
         data['body']?.toString() ??
         data['message']?.toString() ??
         data['notification_body']?.toString();
@@ -143,11 +139,7 @@ abstract final class PushLocalNotifications {
       return null;
     }
 
-    return (
-      title: title ?? 'Coursy',
-      body: body ?? '',
-      payload: _encodePayload(data),
-    );
+    return (title: title ?? 'Coursy', body: body ?? '', payload: _encodePayload(data));
   }
 
   static String _encodePayload(Map<String, dynamic> data) {

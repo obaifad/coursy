@@ -9,6 +9,7 @@ import '../../models/student_profile_payload.dart';
 import '../../storage/academic_profile_cache.dart';
 import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
+import '../../network/api_exception.dart';
 import '../../network/json_parser.dart';
 import '../../storage/token_storage.dart';
 
@@ -30,14 +31,15 @@ class ProfileRepository extends GetxService {
 
     late Map<String, dynamic> meMap;
     Map<String, dynamic>? profileRecord;
-    await Future.wait([
-      meFuture.then((value) => meMap = value),
-      profileFuture.then((value) => profileRecord = value),
-    ]);
+    await Future.wait([meFuture.then((value) => meMap = value), profileFuture.then((value) => profileRecord = value)]);
 
     final studentId = extractStudentId(meMap) ?? extractStudentId(extractUserMap(meMap));
     if (studentId != null && studentId > 0) {
       await _tokenStorage.saveStudentId(studentId);
+    }
+    final phoneVerified = phoneVerificationStatus(extractUserMap(meMap) ?? meMap);
+    if (phoneVerified != null) {
+      await _tokenStorage.savePhoneVerified(phoneVerified);
     }
 
     var user = mergeProfileUserData(meMap);
@@ -79,8 +81,7 @@ class ProfileRepository extends GetxService {
       profile['specialization_id'] = cache.specializationId;
       user['specialization_id'] ??= cache.specializationId;
     }
-    if (extractPreferredInterestIds({...profile, ...user}).isEmpty &&
-        cache.preferredCategoryIds.isNotEmpty) {
+    if (extractPreferredInterestIds({...profile, ...user}).isEmpty && cache.preferredCategoryIds.isNotEmpty) {
       profile['preferred_tags'] = cache.preferredCategoryIds;
       user['preferred_tags'] = cache.preferredCategoryIds;
     }
@@ -163,30 +164,14 @@ class ProfileRepository extends GetxService {
       AppDebugLog.repo('Profile', 'PATCH ${ApiEndpoints.studentProfile}');
       AppDebugLog.repo('Profile', payload.toJson().toString());
     }
+    Map<String, dynamic> mapper(dynamic data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{};
     try {
-      return await _client.handle(
-        () => _client.patch(ApiEndpoints.studentProfile, data: payload.toJson()),
-        (data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{},
-      );
-    } catch (_) {
-      try {
-        return await _client.handle(
-          () => _client.post(ApiEndpoints.studentProfile, data: payload.toJson()),
-          (data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{},
-        );
-      } catch (_) {
-        final queryPath =
-            '${ApiEndpoints.studentProfile}?first_name=${Uri.encodeQueryComponent(payload.firstName ?? '')}'
-            '&last_name=${Uri.encodeQueryComponent(payload.lastName ?? '')}'
-            '&phone=${Uri.encodeQueryComponent(payload.phone ?? '')}'
-            '${payload.gender == null ? '' : '&gender=${Uri.encodeQueryComponent(payload.gender!)}'}'
-            '${payload.birthDate == null ? '' : '&birth_date=${Uri.encodeQueryComponent(payload.birthDate!)}'}'
-            '${payload.cityId == null ? '' : '&city_id=${payload.cityId}'}';
-        return _client.handle(
-          () => _client.post(queryPath, data: const <String, dynamic>{}),
-          (data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{},
-        );
-      }
+      return await _client.handle(() => _client.patch(ApiEndpoints.studentProfile, data: payload.toJson()), mapper);
+    } on ApiException catch (e) {
+      // POST فقط إن كان الخادم لا يدعم PATCH على هذا المسار. أخطاء التحقق (422) تُعرض كما هي.
+      // (أُزيلت محاولة ثالثة كانت ترسل الاسم والهاتف وتاريخ الميلاد داخل رابط الطلب.)
+      if (e.statusCode != 404 && e.statusCode != 405) rethrow;
+      return _client.handle(() => _client.post(ApiEndpoints.studentProfile, data: payload.toJson()), mapper);
     }
   }
 
@@ -207,9 +192,7 @@ class ProfileRepository extends GetxService {
   }
 
   Future<Map<String, dynamic>> uploadAvatarBytes(List<int> bytes, {String filename = 'avatar.jpg'}) async {
-    final formData = dio.FormData.fromMap({
-      'avatar': dio.MultipartFile.fromBytes(bytes, filename: filename),
-    });
+    final formData = dio.FormData.fromMap({'avatar': dio.MultipartFile.fromBytes(bytes, filename: filename)});
     return _client.handle(
       () => _client.postMultipart(ApiEndpoints.studentProfile, formData),
       (data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{},
@@ -218,21 +201,14 @@ class ProfileRepository extends GetxService {
 
   Future<Map<String, dynamic>> uploadAvatar(String filePath) async {
     final fileName = filePath.split(RegExp(r'[\\/]')).last;
-    final formData = dio.FormData.fromMap({
-      'avatar': await dio.MultipartFile.fromFile(filePath, filename: fileName),
-    });
+    final formData = dio.FormData.fromMap({'avatar': await dio.MultipartFile.fromFile(filePath, filename: fileName)});
     return _client.handle(
       () => _client.postMultipart(ApiEndpoints.studentProfile, formData),
       (data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{},
     );
   }
 
-  Future<void> syncProfileToSession({
-    String? firstName,
-    String? lastName,
-    String? phone,
-    String? avatarUrl,
-  }) async {
+  Future<void> syncProfileToSession({String? firstName, String? lastName, String? phone, String? avatarUrl}) async {
     final token = _tokenStorage.token;
     if (token == null || token.isEmpty) return;
 

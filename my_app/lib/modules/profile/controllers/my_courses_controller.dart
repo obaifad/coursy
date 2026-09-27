@@ -7,7 +7,6 @@ import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/session/enrollment_status_coordinator.dart';
-import '../../../core/services/enrollment_sync_service.dart';
 import '../../../core/session/session_refresh.dart';
 import '../../../core/storage/token_storage.dart';
 
@@ -44,10 +43,26 @@ class MyCoursesController extends GetxController with LatestLoadGuard {
     } on ApiCancelledException {
       return;
     } catch (e) {
-      if (shouldApply(session)) errorMessage.value = e.toString();
+      if (shouldApply(session)) errorMessage.value = userErrorMessage(e);
     } finally {
       applyIfCurrent(session, () => isLoading.value = false);
     }
+  }
+
+  /// يدمج نتيجة الفحص الدوري مع القائمة الحالية بدون حذف عناصر غير موجودة في الصفحة المُرجعة
+  /// (الفحص الدوري قد يُرجع الصفحة الأولى فقط من الخادم).
+  void mergeEnrollments(List<EnrollmentModel> fresh) {
+    if (fresh.isEmpty) return;
+    final merged = List<EnrollmentModel>.from(enrollments);
+    for (final item in fresh) {
+      final index = merged.indexWhere((e) => e.id == item.id);
+      if (index >= 0) {
+        merged[index] = item;
+      } else {
+        merged.insert(0, item);
+      }
+    }
+    enrollments.assignAll(merged);
   }
 
   List<EnrollmentModel> byStatus(Set<String> statuses) {
@@ -77,12 +92,9 @@ class MyCoursesController extends GetxController with LatestLoadGuard {
         await load();
       }
       Get.snackbar('booking_cancelled_title'.tr, 'booking_cancelled_msg'.tr);
-      await SessionRefresh.afterEnrollment(
-        courseId: enrollment.courseId,
-        enrollmentId: enrollment.id,
-      );
+      await SessionRefresh.afterEnrollment(courseId: enrollment.courseId, enrollmentId: enrollment.id);
     } catch (e) {
-      Get.snackbar('error'.tr, e.toString());
+      Get.snackbar('error'.tr, userErrorMessage(e));
     } finally {
       cancellingIds.remove(enrollment.id);
     }

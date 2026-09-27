@@ -66,11 +66,7 @@ class AppPages {
       page: () => const PhoneVerificationView(),
       binding: BindingsBuilder(() => Get.lazyPut<PhoneVerificationController>(() => PhoneVerificationController())),
     ),
-    GetPage(
-      name: AppRoutes.root,
-      page: () => const RootView(),
-      binding: RootBinding(),
-    ),
+    GetPage(name: AppRoutes.root, page: () => const RootView(), binding: RootBinding()),
     GetPage(
       name: AppRoutes.search,
       page: () => const SearchView(),
@@ -95,9 +91,7 @@ class AppPages {
       name: AppRoutes.privateInstructors,
       page: () => const PrivateInstructorsView(),
       binding: BindingsBuilder(
-        () => Get.lazyPut<PrivateInstructorsController>(
-          () => PrivateInstructorsController(Get.find()),
-        ),
+        () => Get.lazyPut<PrivateInstructorsController>(() => PrivateInstructorsController(Get.find())),
       ),
     ),
     GetPage(

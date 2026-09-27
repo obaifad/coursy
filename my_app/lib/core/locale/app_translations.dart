@@ -2,10 +2,7 @@ import 'package:get/get.dart';
 
 class AppTranslations extends Translations {
   @override
-  Map<String, Map<String, String>> get keys => {
-        'ar': _ar,
-        'en': _en,
-      };
+  Map<String, Map<String, String>> get keys => {'ar': _ar, 'en': _en};
 
   static const Map<String, String> _ar = {
     'app_title': 'Coursy',
@@ -36,7 +33,8 @@ class AppTranslations extends Translations {
     'language': 'اللغة',
     'privacy_policy': 'سياسة الخصوصية',
     'about_app': 'عن التطبيق',
-    'privacy_policy_body': 'آخر تحديث: يونيو 2026\n\n'
+    'privacy_policy_body':
+        'آخر تحديث: يونيو 2026\n\n'
         'مرحباً بك في تطبيق Coursy. نحن نحترم خصوصيتك ونلتزم بحماية بياناتك الشخصية وفقاً للقوانين المعمول بها في الجمهورية العربية السورية.\n\n'
         '1) البيانات التي نجمعها\n'
         '• بيانات التسجيل: الاسم، البريد الإلكتروني، رقم الهاتف، المدينة، ومعلومات أكاديمية اختيارية.\n'
@@ -54,7 +52,8 @@ class AppTranslations extends Translations {
         'يمكنك طلب الاطلاع على بياناتك أو تصحيحها أو حذف حسابك عبر التواصل معنا من داخل التطبيق أو عبر قنوات الدعم الرسمية.\n\n'
         '6) التواصل\n'
         'لأي استفسار حول الخصوصية، راسلنا عبر قنوات الدعم المعتمدة في التطبيق.',
-    'about_app_body': 'Coursy — منصة تعليمية سورية\n\n'
+    'about_app_body':
+        'Coursy — منصة تعليمية سورية\n\n'
         'Coursy منصة رقمية تجمع الدورات التدريبية والمعاهد والمدرّبين في مكان واحد، لتسهيل البحث والتسجيل والمتابعة داخل سوريا.\n\n'
         'ماذا نقدّم؟\n'
         '• تصفّح الدورات حسب المدينة والتخصص والمعهد.\n'
@@ -93,6 +92,7 @@ class AppTranslations extends Translations {
     'search_scope_desc_instructors': 'أسماء وتخصصات المدرّبين فقط',
     'search_recent': 'عمليات بحث حديثة',
     'search_no_recent': 'لا توجد عمليات بحث حديثة',
+    'search_clear_recent': 'مسح السجل',
     'search_filters': 'الفلاتر',
     'search_filter_title': 'تصفية النتائج',
     'search_no_results': 'لا توجد نتائج مطابقة',
@@ -279,7 +279,8 @@ class AppTranslations extends Translations {
     'otp_verify_failed': 'تعذر التحقق من الرمز',
     'forgot_title': 'استعادة كلمة المرور',
     'forgot_phone_title': 'استعادة الحساب برقم الهاتف',
-    'forgot_phone_desc': 'سجّل الدخول برقم هاتفك. إذا لم يكن مؤكدًا بعد، ستنتقل لصفحة إرسال رمز التحقق (OTP) وتأكيد الرقم.',
+    'forgot_phone_desc':
+        'سجّل الدخول برقم هاتفك. إذا لم يكن مؤكدًا بعد، ستنتقل لصفحة إرسال رمز التحقق (OTP) وتأكيد الرقم.',
     'go_to_login': 'الانتقال لتسجيل الدخول',
     'profile_edit': 'تعديل الملف الشخصي',
     'personal_info': 'المعلومات الشخصية',
@@ -339,8 +340,24 @@ class AppTranslations extends Translations {
     'enter_valid_email': 'أدخل بريدًا إلكترونيًا صالحًا',
     'login_failed': 'فشل الدخول',
     'connection_error': 'تعذر الاتصال بالخادم',
-    'web_cors_hint': 'تشغيل Chrome لا يدعم طلب الدخول (POST) بسبب CORS.\nللاختبار استخدم Android أو Windows:\nflutter run -d android',
-    'web_cors_blocked': 'المتصفح حجب الاتصال بـ API (CORS).\nالتطبيق يعمل من localhost والـ API على coursy.sy — يجب تفعيل CORS على الخادم، أو شغّل التطبيق على Android/Windows للتطوير.',
+    'error_unexpected': 'حدث خطأ غير متوقع',
+    'error_request_failed': 'فشل الطلب (@status)',
+    'error_invalid_server_response': 'استجابة غير متوقعة من الخادم',
+    'error_connection_timeout': 'تعذر الاتصال بالخادم. تحقق من اتصالك بالإنترنت.',
+    'error_bad_certificate': 'تعذر التحقق من شهادة الأمان للخادم.',
+    'error_no_api_route': 'تعذر تنفيذ الطلب على الخادم',
+    'error_invalid_data': 'بيانات غير صالحة من الخادم',
+    'error_no_login_token': 'لم يتم استلام رمز الدخول من الخادم',
+    'error_no_cities': 'تعذر تحميل المدن',
+    'error_favorite_remove': 'تعذر إزالة العنصر من المفضلة',
+    'error_favorite_add': 'تعذر إضافة الدورة إلى المفضلة',
+    'error_student_id_missing': 'تعذر تحديد حسابك. أعد تسجيل الدخول.',
+    'review_you': 'أنت',
+    'category_default_title': 'التصنيف',
+    'web_cors_hint':
+        'تشغيل Chrome لا يدعم طلب الدخول (POST) بسبب CORS.\nللاختبار استخدم Android أو Windows:\nflutter run -d android',
+    'web_cors_blocked':
+        'المتصفح حجب الاتصال بـ API (CORS).\nالتطبيق يعمل من localhost والـ API على coursy.sy — يجب تفعيل CORS على الخادم، أو شغّل التطبيق على Android/Windows للتطوير.',
     'web_cors_proxy_down': 'بروكسي التطوير غير شغّال.\nمن مجلد my_app نفّذ:\n.\\scripts\\run_web_chrome.ps1',
     'register_failed': 'فشل التسجيل',
     'register_done': 'تم التسجيل',
@@ -422,11 +439,13 @@ class AppTranslations extends Translations {
     'day_sunday': 'الأحد',
     'category_label': 'التصنيف: @name',
     'registration_closed_title': 'انتهت فترة التسجيل',
-    'registration_closed_message': 'لم يعد بإمكانك التسجيل عبر التطبيق لهذه الدورة. تواصل مع المعهد مباشرة لاستكمال عملية التسجيل.',
+    'registration_closed_message':
+        'لم يعد بإمكانك التسجيل عبر التطبيق لهذه الدورة. تواصل مع المعهد مباشرة لاستكمال عملية التسجيل.',
     'registration_closed_deadline': 'آخر موعد كان: @date',
     'registration_closed_institute_label': 'المعهد',
     'registration_closed_phone_label': 'رقم التواصل',
-    'registration_closed_no_phone': 'لم يتوفر رقم تواصل للمعهد حالياً. يُرجى زيارة صفحة المعهد أو التواصل عبر القنوات الرسمية.',
+    'registration_closed_no_phone':
+        'لم يتوفر رقم تواصل للمعهد حالياً. يُرجى زيارة صفحة المعهد أو التواصل عبر القنوات الرسمية.',
     'registration_closed_call': 'اتصال',
     'registration_closed_action': 'انتهى التسجيل',
     'enrollment_registered': 'تم التسجيل',
@@ -537,7 +556,8 @@ class AppTranslations extends Translations {
     'language': 'Language',
     'privacy_policy': 'Privacy policy',
     'about_app': 'About',
-    'privacy_policy_body': 'Last updated: June 2026\n\n'
+    'privacy_policy_body':
+        'Last updated: June 2026\n\n'
         'Welcome to Coursy. We respect your privacy and are committed to protecting your personal data in line with applicable regulations in the Syrian Arab Republic.\n\n'
         '1) Data we collect\n'
         '• Registration data: name, email, phone number, city, and optional academic details.\n'
@@ -555,7 +575,8 @@ class AppTranslations extends Translations {
         'You may request access, correction, or deletion of your account by contacting us through in-app or official support channels.\n\n'
         '6) Contact\n'
         'For privacy questions, reach us through the approved support channels in the app.',
-    'about_app_body': 'Coursy — Syrian learning platform\n\n'
+    'about_app_body':
+        'Coursy — Syrian learning platform\n\n'
         'Coursy is a digital platform that brings together training courses, institutes, and instructors in one place, making it easier to discover, enroll, and follow up across Syria.\n\n'
         'What we offer\n'
         '• Browse courses by city, field, and institute.\n'
@@ -594,6 +615,7 @@ class AppTranslations extends Translations {
     'search_scope_desc_instructors': 'Tutor names and subjects only',
     'search_recent': 'Recent searches',
     'search_no_recent': 'No recent searches',
+    'search_clear_recent': 'Clear history',
     'search_filters': 'Filters',
     'search_filter_title': 'Filter results',
     'search_no_results': 'No matching results',
@@ -840,8 +862,23 @@ class AppTranslations extends Translations {
     'enter_valid_email': 'Enter a valid email address',
     'login_failed': 'Login failed',
     'connection_error': 'Could not connect to server',
+    'error_unexpected': 'Something went wrong',
+    'error_request_failed': 'Request failed (@status)',
+    'error_invalid_server_response': 'Unexpected response from the server',
+    'error_connection_timeout': 'Could not reach the server. Check your internet connection.',
+    'error_bad_certificate': 'Could not verify the server security certificate.',
+    'error_no_api_route': 'The server could not complete the request',
+    'error_invalid_data': 'Invalid data from the server',
+    'error_no_login_token': 'No login token was received from the server',
+    'error_no_cities': 'Could not load cities',
+    'error_favorite_remove': 'Could not remove the item from favorites',
+    'error_favorite_add': 'Could not add the course to favorites',
+    'error_student_id_missing': 'Could not identify your account. Please sign in again.',
+    'review_you': 'You',
+    'category_default_title': 'Category',
     'web_cors_hint': 'Chrome blocks login POST (CORS).\nUse Android or Windows:\nflutter run -d android',
-    'web_cors_blocked': 'Browser blocked API access (CORS).\nThe app runs on localhost while the API is on coursy.sy — enable CORS on the server, or use Android/Windows for development.',
+    'web_cors_blocked':
+        'Browser blocked API access (CORS).\nThe app runs on localhost while the API is on coursy.sy — enable CORS on the server, or use Android/Windows for development.',
     'web_cors_proxy_down': 'Dev CORS proxy is not running.\nFrom my_app run:\n.\\scripts\\run_web_chrome.ps1',
     'register_failed': 'Registration failed',
     'register_done': 'Registered',
@@ -962,7 +999,8 @@ class AppTranslations extends Translations {
     'submit_review': 'Submit review',
     'submitting_review': 'Submitting...',
     'review_not_enrolled_hint': 'Enroll in this course first to submit a review saved on the server.',
-    'review_once_only': 'You have already reviewed this course. Only one review is allowed and it cannot be edited or deleted.',
+    'review_once_only':
+        'You have already reviewed this course. Only one review is allowed and it cannot be edited or deleted.',
     'reviews_loading': 'Checking enrollment...',
     'institutes_title': 'Institutes & centers',
     'institutes_subtitle': 'Discover the best institutes and learning centers',

@@ -33,10 +33,7 @@ class ApiClient extends GetxService {
         baseUrl: ApiConfig.baseUrl,
         connectTimeout: ApiConfig.connectTimeout,
         receiveTimeout: ApiConfig.receiveTimeout,
-        headers: const {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
+        headers: const {'Accept': 'application/json', 'Content-Type': 'application/json'},
         validateStatus: (status) => status != null && status < 500,
       ),
     );
@@ -46,9 +43,7 @@ class ApiClient extends GetxService {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          final lang = Get.isRegistered<LocaleController>()
-              ? Get.find<LocaleController>().code.value
-              : 'ar';
+          final lang = Get.isRegistered<LocaleController>() ? Get.find<LocaleController>().code.value : 'ar';
           options.headers['Accept-Language'] = lang;
           // لا نضيف lang كـ query على POST/PATCH/PUT — Laravel قد يدمجه في body ويكسر insert (مثل enrollments).
           if (options.method.toUpperCase() == 'GET') {
@@ -71,23 +66,11 @@ class ApiClient extends GetxService {
     );
   }
 
-  Future<Response<dynamic>> get(
-    String path, {
-    Map<String, dynamic>? query,
-    CancelToken? cancelToken,
-  }) {
-    return dio.get<dynamic>(
-      path,
-      queryParameters: query,
-      cancelToken: cancelToken,
-    );
+  Future<Response<dynamic>> get(String path, {Map<String, dynamic>? query, CancelToken? cancelToken}) {
+    return dio.get<dynamic>(path, queryParameters: query, cancelToken: cancelToken);
   }
 
-  Future<Response<dynamic>> post(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? query,
-  }) {
+  Future<Response<dynamic>> post(String path, {dynamic data, Map<String, dynamic>? query}) {
     return dio.post<dynamic>(path, data: data, queryParameters: query);
   }
 
@@ -99,11 +82,7 @@ class ApiClient extends GetxService {
     return dio.patch<dynamic>(path, data: data);
   }
 
-  Future<Response<dynamic>> delete(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? query,
-  }) {
+  Future<Response<dynamic>> delete(String path, {dynamic data, Map<String, dynamic>? query}) {
     return dio.delete<dynamic>(path, data: data, queryParameters: query);
   }
 
@@ -122,16 +101,13 @@ class ApiClient extends GetxService {
       final body = response.data;
 
       if (_isHostingChallengeHtml(body)) {
-        throw ApiException(
-          'الخادم لم يرجع JSON (غالباً حماية الاستضافة على POST). '
-          'جرّب التطبيق على Android أو Windows، أو اطلب من مبرمج الـ API تفعيل CORS ودعم POST.',
-          statusCode: status,
-        );
+        // صفحة حماية الاستضافة بدل JSON.
+        throw ApiException('error_invalid_server_response'.tr, statusCode: status);
       }
 
       if (status >= 400) {
         throw ApiException(
-          messageFromErrorBody(body, fallback: 'فشل الطلب ($status)'),
+          messageFromErrorBody(body, fallback: 'error_request_failed'.trParams({'status': '$status'})),
           statusCode: status,
           fieldErrors: fieldErrorsFromBody(body),
         );
@@ -139,8 +115,8 @@ class ApiClient extends GetxService {
 
       try {
         normalizeApiBody(body);
-      } on FormatException catch (e) {
-        throw ApiException(e.message, statusCode: status);
+      } on FormatException {
+        throw ApiException('error_invalid_server_response'.tr, statusCode: status);
       }
 
       return mapper(body);
@@ -153,20 +129,10 @@ class ApiClient extends GetxService {
       final status = e.response?.statusCode;
       final raw = e.response?.data;
       if (_isHostingChallengeHtml(raw)) {
-        throw ApiException(
-          'الخادم لم يرجع JSON على طلب POST. شغّل التطبيق على Android/Windows وليس Chrome.',
-          statusCode: status,
-        );
+        throw ApiException('error_invalid_server_response'.tr, statusCode: status);
       }
-      final msg = messageFromErrorBody(
-        raw,
-        fallback: _dioMessage(e),
-      );
-      throw ApiException(
-        msg,
-        statusCode: status,
-        fieldErrors: fieldErrorsFromBody(raw),
-      );
+      final msg = messageFromErrorBody(raw, fallback: _dioMessage(e));
+      throw ApiException(msg, statusCode: status, fieldErrors: fieldErrorsFromBody(raw));
     }
   }
 
@@ -192,11 +158,15 @@ class ApiClient extends GetxService {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        return 'تعذر الاتصال بالخادم. تحقق من الإنترنت وعنوان API: ${ApiConfig.baseUrl}';
+        // لا نعرض عنوان الـ API للمستخدم — يظهر في سجل التطوير فقط.
+        AppDebugLog.api('CONNECTION FAILED', ApiConfig.baseUrl);
+        return 'error_connection_timeout'.tr;
       case DioExceptionType.badCertificate:
-        return 'خطأ في شهادة HTTPS للخادم.';
+        return 'error_bad_certificate'.tr;
       default:
-        return e.message ?? 'فشل الاتصال بالخادم';
+        // مثل أخطاء 5xx — نص Dio التقني (بالإنجليزية) لا يُعرض للمستخدم.
+        final status = e.response?.statusCode;
+        return status == null ? 'connection_error'.tr : 'error_request_failed'.trParams({'status': '$status'});
     }
   }
 }

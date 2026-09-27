@@ -33,10 +33,7 @@ class InstructorCoursesView extends GetView<InstructorCoursesController> {
                     if (controller.courses.isEmpty)
                       SliverFillRemaining(
                         hasScrollBody: false,
-                        child: AppEmptyState(
-                          message: 'no_courses_for_instructor'.tr,
-                          icon: Icons.menu_book_outlined,
-                        ),
+                        child: AppEmptyState(message: 'no_courses_for_instructor'.tr, icon: Icons.menu_book_outlined),
                       )
                     else ...[
                       SliverPadding(
@@ -105,10 +102,7 @@ class _InstructorHeader extends StatelessWidget {
           Container(
             width: 64,
             height: 64,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-            ),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
             child: const Icon(Icons.person_rounded, color: AppColors.primary, size: 34),
           ),
           const SizedBox(width: 14),
@@ -118,11 +112,7 @@ class _InstructorHeader extends StatelessWidget {
               children: [
                 Text(
                   controller.instructorName.value,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 18,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18),
                 ),
                 const SizedBox(height: 6),
                 Text(

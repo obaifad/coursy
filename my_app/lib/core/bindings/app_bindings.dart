@@ -16,7 +16,6 @@ import '../data/repositories/enrollment_repository.dart';
 import '../data/repositories/home_repository.dart';
 import '../data/repositories/instructor_repository.dart';
 import '../data/repositories/institute_repository.dart';
-import '../storage/favorites_storage.dart';
 import '../storage/notification_delivery_store.dart';
 import '../storage/recent_search_storage.dart';
 import '../data/repositories/notification_repository.dart';
@@ -42,9 +41,6 @@ class AppBindings extends Bindings {
     }
     if (!Get.isRegistered<LocaleRequestGuard>()) {
       Get.put(LocaleRequestGuard(), permanent: true);
-    }
-    if (!Get.isRegistered<FavoritesStorage>()) {
-      Get.put(FavoritesStorage(), permanent: true);
     }
     if (!Get.isRegistered<RecentSearchStorage>()) {
       Get.put(RecentSearchStorage(), permanent: true);

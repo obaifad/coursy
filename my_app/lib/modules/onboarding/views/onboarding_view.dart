@@ -19,23 +19,11 @@ class _OnboardingViewState extends State<OnboardingView> {
   final controller = PageController();
   int index = 0;
 
-  static const _pageIcons = [
-    Icons.apartment_rounded,
-    Icons.search_rounded,
-    Icons.rocket_launch_rounded,
-  ];
+  static const _pageIcons = [Icons.apartment_rounded, Icons.search_rounded, Icons.rocket_launch_rounded];
 
-  static const _pageTitleKeys = [
-    'onboarding_title_1',
-    'onboarding_title_2',
-    'onboarding_title_3',
-  ];
+  static const _pageTitleKeys = ['onboarding_title_1', 'onboarding_title_2', 'onboarding_title_3'];
 
-  static const _pageSubtitleKeys = [
-    'onboarding_subtitle_1',
-    'onboarding_subtitle_2',
-    'onboarding_subtitle_3',
-  ];
+  static const _pageSubtitleKeys = ['onboarding_subtitle_1', 'onboarding_subtitle_2', 'onboarding_subtitle_3'];
 
   void _finish() {
     if (AppFlags.requireLogin) {
@@ -84,11 +72,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                                   BoxShadow(color: AppColors.shadowPurple, blurRadius: 24, offset: Offset(0, 14)),
                                 ],
                               ),
-                              child: Icon(
-                                _pageIcons[i],
-                                size: 100,
-                                color: Colors.white.withValues(alpha: 0.95),
-                              ),
+                              child: Icon(_pageIcons[i], size: 100, color: Colors.white.withValues(alpha: 0.95)),
                             ),
                             const SizedBox(height: 32),
                             Text(

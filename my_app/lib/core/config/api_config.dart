@@ -14,8 +14,7 @@ abstract final class ApiConfig {
   static const String _apiBaseUrlOverride = String.fromEnvironment('API_BASE_URL');
 
   /// على الويب في وضع التطوير نستخدم بروكسي محلياً لتجاوز CORS (localhost → coursy.sy).
-  static bool get usesWebDevProxy =>
-      kIsWeb && kDebugMode && _apiBaseUrlOverride.isEmpty;
+  static bool get usesWebDevProxy => kIsWeb && kDebugMode && _apiBaseUrlOverride.isEmpty;
 
   static String get baseUrl {
     if (_apiBaseUrlOverride.isNotEmpty) return _apiBaseUrlOverride;

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../theme/app_fonts.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
@@ -34,10 +34,7 @@ class CategoryCoursesView extends GetView<CategoryCoursesController> {
                 child: CustomScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
-                    _CategoryHeroHeader(
-                      title: title,
-                      coursesCount: controller.courses.length,
-                    ),
+                    _CategoryHeroHeader(title: title, coursesCount: controller.courses.length),
                     if (!isLoading && controller.courses.isNotEmpty)
                       SliverToBoxAdapter(
                         child: Padding(
@@ -57,21 +54,13 @@ class CategoryCoursesView extends GetView<CategoryCoursesController> {
                           icon: Icons.category_outlined,
                           action: SizedBox(
                             width: 200,
-                            child: RegisterGradientButton(
-                              label: 'browse_courses'.tr,
-                              onPressed: () => Get.back(),
-                            ),
+                            child: RegisterGradientButton(label: 'browse_courses'.tr, onPressed: () => Get.back()),
                           ),
                         ),
                       )
                     else
                       SliverPadding(
-                        padding: EdgeInsets.fromLTRB(
-                          hPad,
-                          16,
-                          hPad,
-                          0,
-                        ),
+                        padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
                         sliver: SliverGrid(
                           gridDelegate: AppGridLayouts.courseGridFor(context),
                           delegate: SliverChildBuilderDelegate(
@@ -99,11 +88,7 @@ class CategoryCoursesView extends GetView<CategoryCoursesController> {
                                   padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
                                 ),
                                 icon: loadingMore
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: AppInlineLoader(),
-                                      )
+                                    ? const SizedBox(width: 18, height: 18, child: AppInlineLoader())
                                     : const Icon(Icons.expand_more_rounded, size: 20),
                                 label: Text('load_more'.tr, style: AppTypography.actionLabel()),
                               );
@@ -111,9 +96,7 @@ class CategoryCoursesView extends GetView<CategoryCoursesController> {
                           ),
                         ),
                       ),
-                    SliverToBoxAdapter(
-                      child: SizedBox(height: AppLayout.scrollBottomInset(context)),
-                    ),
+                    SliverToBoxAdapter(child: SizedBox(height: AppLayout.scrollBottomInset(context))),
                   ],
                 ),
               ),
@@ -147,10 +130,7 @@ class _CategoryHeroHeader extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.05),
-                      Colors.black.withValues(alpha: 0.38),
-                    ],
+                    colors: [Colors.black.withValues(alpha: 0.05), Colors.black.withValues(alpha: 0.38)],
                   ),
                 ),
               ),
@@ -168,10 +148,7 @@ class _CategoryHeroHeader extends StatelessWidget {
                         constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                         icon: Container(
                           padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
-                          ),
+                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
                           child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
                         ),
                       ),
@@ -185,11 +162,7 @@ class _CategoryHeroHeader extends StatelessWidget {
                         ),
                         child: Text(
                           'category_courses_count'.trParams({'count': '$coursesCount'}),
-                          style: GoogleFonts.tajawal(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
-                          ),
+                          style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -197,7 +170,7 @@ class _CategoryHeroHeader extends StatelessWidget {
                         title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.tajawal(
+                        style: AppFonts.tajawal(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
                           fontSize: titleSize,
@@ -210,7 +183,7 @@ class _CategoryHeroHeader extends StatelessWidget {
                           'category_page_subtitle'.tr,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.tajawal(
+                          style: AppFonts.tajawal(
                             color: Colors.white.withValues(alpha: 0.88),
                             fontSize: 13,
                             fontWeight: FontWeight.w500,

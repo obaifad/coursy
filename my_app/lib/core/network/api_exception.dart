@@ -1,3 +1,5 @@
+import 'package:get/get.dart';
+
 class ApiException implements Exception {
   ApiException(this.message, {this.statusCode, this.fieldErrors});
 
@@ -13,3 +15,7 @@ class ApiException implements Exception {
 class ApiCancelledException implements Exception {
   const ApiCancelledException();
 }
+
+/// نص خطأ مناسب للعرض: رسالة الخادم لـ [ApiException]، ونص عام مترجم لغيرها
+/// (بدل `e.toString()` الذي كان يعرض تفاصيل تقنية مثل TypeError للمستخدم).
+String userErrorMessage(Object error) => error is ApiException ? error.message : 'error_unexpected'.tr;

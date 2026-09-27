@@ -75,11 +75,7 @@ class InstructorDetailsController extends GetxController {
     isLoading.value = !hasSeed;
 
     try {
-      await Future.wait<void>([
-        _refreshInstructor(),
-        _loadCourses(reset: true),
-        _loadReviews(),
-      ]);
+      await Future.wait<void>([_refreshInstructor(), _loadCourses(reset: true), _loadReviews()]);
     } finally {
       isLoading.value = false;
     }

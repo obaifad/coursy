@@ -16,10 +16,7 @@ class AuthGuard {
         content: Text(message ?? 'login_required_default'.tr),
         actions: [
           TextButton(onPressed: () => Get.back(result: false), child: Text('cancel'.tr)),
-          FilledButton(
-            onPressed: () => Get.back(result: true),
-            child: Text('login'.tr),
-          ),
+          FilledButton(onPressed: () => Get.back(result: true), child: Text('login'.tr)),
         ],
       ),
     );

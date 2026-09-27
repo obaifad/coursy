@@ -74,10 +74,7 @@ abstract final class JsonHelpers {
     if (stats is Map) {
       final statsMap = Map<String, dynamic>.from(stats);
       final fromStats = parseDoubleOrNull(
-        statsMap['average_rating'] ??
-            statsMap['rating'] ??
-            statsMap['avg_rating'] ??
-            statsMap['reviews_average'],
+        statsMap['average_rating'] ?? statsMap['rating'] ?? statsMap['avg_rating'] ?? statsMap['reviews_average'],
       );
       if (fromStats != null && fromStats > 0) return fromStats;
     }
@@ -110,7 +107,18 @@ abstract final class JsonHelpers {
     final priceNum = parseDouble(price);
     final value = discountNum > 0 ? discountNum : priceNum;
     if (value <= 0) return '—';
-    return '${value.toStringAsFixed(0)} ${'currency_syp'.tr}';
+    return '${groupThousands(value.round())} ${'currency_syp'.tr}';
+  }
+
+  /// 1500000 → 1,500,000
+  static String groupThousands(int value) {
+    final digits = value.abs().toString();
+    final buffer = StringBuffer(value < 0 ? '-' : '');
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(digits[i]);
+    }
+    return buffer.toString();
   }
 
   static String levelLabel(String? level) {

@@ -1,9 +1,9 @@
+import '../../../theme/app_fonts.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../widgets/design_system.dart';
@@ -16,7 +16,7 @@ class LoginHeroHeader extends StatelessWidget {
   final LoginPageMetrics metrics;
 
   static const _headerGradient = LinearGradient(
-    colors: [Color(0xFFF8F6FF), Color(0xFFEFEAFF), Color(0xFFE4DCFF)],
+    colors: [AppColors.surfaceSoft, Color(0xFFEFEAFF), Color(0xFFE4DCFF)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
@@ -42,7 +42,7 @@ class LoginHeroHeader extends StatelessWidget {
                 Text(
                   'login_welcome_back'.tr,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.tajawal(
+                  style: AppFonts.tajawal(
                     fontSize: metrics.welcomeTitleSize,
                     fontWeight: FontWeight.w800,
                     color: AppColors.authHeroTitle,
@@ -53,7 +53,7 @@ class LoginHeroHeader extends StatelessWidget {
                 Text(
                   'app_tagline'.tr,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.tajawal(
+                  style: AppFonts.tajawal(
                     fontSize: metrics.welcomeSubtitleSize,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textSecondary,
@@ -135,7 +135,7 @@ class _LoginWelcomeCopy extends StatelessWidget {
       children: [
         Text(
           'login_welcome_back'.tr,
-          style: GoogleFonts.tajawal(
+          style: AppFonts.tajawal(
             fontSize: metrics.welcomeTitleSize,
             fontWeight: FontWeight.w800,
             color: AppColors.authHeroTitle,
@@ -145,7 +145,7 @@ class _LoginWelcomeCopy extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'app_tagline'.tr,
-          style: GoogleFonts.tajawal(
+          style: AppFonts.tajawal(
             fontSize: metrics.welcomeSubtitleSize,
             fontWeight: FontWeight.w500,
             color: AppColors.textSecondary,
@@ -168,9 +168,7 @@ class AuthSecurityIllustration extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: CustomPaint(
-        painter: _SecurityIllustrationPainter(),
-      ),
+      child: CustomPaint(painter: _SecurityIllustrationPainter()),
     );
   }
 }
@@ -203,22 +201,14 @@ class _SecurityIllustrationPainter extends CustomPainter {
     canvas.drawOval(
       Rect.fromCenter(center: center.translate(0, 38 * scale), width: 72 * scale, height: 16 * scale),
       Paint()
-        ..shader = ui.Gradient.radial(
-          center.translate(0, 38 * scale),
-          36 * scale,
-          [
-            AppColors.primary.withValues(alpha: 0.22),
-            AppColors.primary.withValues(alpha: 0.0),
-          ],
-        ),
+        ..shader = ui.Gradient.radial(center.translate(0, 38 * scale), 36 * scale, [
+          AppColors.primary.withValues(alpha: 0.22),
+          AppColors.primary.withValues(alpha: 0.0),
+        ]),
     );
 
     final lockRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(
-        center: center.translate(0, 6 * scale),
-        width: 60 * scale,
-        height: 68 * scale,
-      ),
+      Rect.fromCenter(center: center.translate(0, 6 * scale), width: 60 * scale, height: 68 * scale),
       Radius.circular(20 * scale),
     );
     _drawLockBody(canvas, lockRect, scale);
@@ -268,11 +258,11 @@ class _SecurityIllustrationPainter extends CustomPainter {
     canvas.drawRRect(
       body,
       Paint()
-        ..shader = _linear3(
-          body.outerRect.topLeft,
-          body.outerRect.bottomRight,
-          const [Color(0xFFB8AEFF), Color(0xFF7B72FF), Color(0xFF5548CC)],
-        ),
+        ..shader = _linear3(body.outerRect.topLeft, body.outerRect.bottomRight, const [
+          Color(0xFFB8AEFF),
+          Color(0xFF7B72FF),
+          AppColors.primaryDark,
+        ]),
     );
 
     canvas.drawRRect(
@@ -289,11 +279,10 @@ class _SecurityIllustrationPainter extends CustomPainter {
         Radius.circular(14 * scale),
       ),
       Paint()
-        ..shader = ui.Gradient.linear(
-          body.outerRect.topLeft,
-          Offset(body.right, body.top + 20 * scale),
-          [Colors.white.withValues(alpha: 0.50), Colors.white.withValues(alpha: 0.0)],
-        ),
+        ..shader = ui.Gradient.linear(body.outerRect.topLeft, Offset(body.right, body.top + 20 * scale), [
+          Colors.white.withValues(alpha: 0.50),
+          Colors.white.withValues(alpha: 0.0),
+        ]),
     );
 
     final shackleCenter = Offset(body.center.dx, body.top - 6 * scale);
@@ -307,11 +296,10 @@ class _SecurityIllustrationPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 9 * scale
         ..strokeCap = StrokeCap.round
-        ..shader = ui.Gradient.linear(
-          shackleRect.topLeft,
-          shackleRect.bottomRight,
-          const [Color(0xFFD4CCFF), Color(0xFF7B72FF)],
-        ),
+        ..shader = ui.Gradient.linear(shackleRect.topLeft, shackleRect.bottomRight, const [
+          Color(0xFFD4CCFF),
+          Color(0xFF7B72FF),
+        ]),
     );
 
     final keyholePaint = Paint()
@@ -351,11 +339,10 @@ class _SecurityIllustrationPainter extends CustomPainter {
     canvas.drawPath(
       path,
       Paint()
-        ..shader = ui.Gradient.linear(
-          Offset(cx, cy - 26 * scale),
-          Offset(cx, cy + 36 * scale),
-          [const Color(0xFFFFFFFF), const Color(0xFFE8E2FF)],
-        ),
+        ..shader = ui.Gradient.linear(Offset(cx, cy - 26 * scale), Offset(cx, cy + 36 * scale), [
+          const Color(0xFFFFFFFF),
+          const Color(0xFFE8E2FF),
+        ]),
     );
 
     canvas.drawPath(
