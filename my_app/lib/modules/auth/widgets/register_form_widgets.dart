@@ -11,6 +11,7 @@ import '../../../widgets/app_loading.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/interest_picker_sheet.dart';
 import 'login_page_metrics.dart';
+import '../../../theme/app_motion.dart';
 
 /// خلفية ناعمة متدرجة لشاشة التسجيل.
 abstract final class RegisterDecor {
@@ -62,7 +63,7 @@ abstract final class RegisterDecor {
       filled: true,
       fillColor: focused ? AppColors.primary.withValues(alpha: 0.04) : Colors.white,
       labelStyle: AppFonts.tajawal(
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         color: focused ? AppColors.primary : AppColors.textSecondary,
       ),
       floatingLabelStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, color: AppColors.primary),
@@ -76,11 +77,11 @@ abstract final class RegisterDecor {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.red.shade400),
+        borderSide: BorderSide(color: AppColors.danger),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.red.shade400, width: 2),
+        borderSide: BorderSide(color: AppColors.danger, width: 2),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
     );
@@ -158,7 +159,7 @@ class RegisterSegmentedProgress extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsetsDirectional.only(start: i == 0 ? 0 : 4, end: i == 2 ? 0 : 4),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 350),
+                  duration: AppMotion.normal,
                   curve: Curves.easeOutCubic,
                   height: 6,
                   decoration: BoxDecoration(
@@ -184,7 +185,7 @@ class RegisterSegmentedProgress extends StatelessWidget {
               child: Column(
                 children: [
                   AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
+                    duration: AppMotion.normal,
                     width: 28,
                     height: 28,
                     decoration: BoxDecoration(
@@ -213,7 +214,7 @@ class RegisterSegmentedProgress extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: AppFonts.tajawal(
                       fontSize: 11,
-                      fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                      fontWeight: active ? FontWeight.w800 : FontWeight.w700,
                       color: active ? AppColors.primary : AppColors.textSecondary,
                       height: 1.2,
                     ),
@@ -292,7 +293,7 @@ class _RegisterFloatingFieldState extends State<RegisterFloatingField> {
       textInputAction: widget.textInputAction,
       onChanged: widget.onChanged,
       readOnly: widget.readOnly,
-      style: AppFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 15),
+      style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 15),
       decoration: RegisterDecor.fieldDecoration(
         label: widget.label,
         hint: widget.hint,
@@ -326,7 +327,7 @@ class RegisterGradientButton extends StatelessWidget {
     final enabled = onPressed != null && !loading && !success;
     return AnimatedOpacity(
       opacity: enabled || loading || success ? 1 : 0.65,
-      duration: const Duration(milliseconds: 200),
+      duration: AppMotion.fast,
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: (enabled || loading || success)
@@ -349,9 +350,15 @@ class RegisterGradientButton extends StatelessWidget {
                     ? const SizedBox(width: 22, height: 22, child: AppInlineLoader(color: Colors.white))
                     : success
                     ? const Icon(Icons.check_rounded, color: Colors.white, size: 28)
-                    : Text(
-                        label,
-                        style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+                    // FittedBox: نص طويل + تكبير خط الجهاز على شاشة ضيقة قد لا يتسع بسطر واحد
+                    // ضمن الارتفاع الثابت (52) — نصغّره بدل قصّه على سطرين.
+                    : FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+                        ),
                       ),
               ),
             ),
@@ -400,7 +407,7 @@ class RegisterChoiceChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
+      duration: AppMotion.fast,
       curve: Curves.easeOut,
       child: Material(
         color: selected ? AppColors.primary : AppColors.indicatorFill,
@@ -466,7 +473,7 @@ Future<void> showCityPickerSheet({
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.location_city_outlined, color: AppColors.primary),
-                        title: Text(city.name, style: AppFonts.tajawal(fontWeight: FontWeight.w600)),
+                        title: Text(city.name, style: AppFonts.tajawal(fontWeight: FontWeight.w700)),
                         trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
                         onTap: () {
                           onPick(city.id);
@@ -561,7 +568,7 @@ class RegisterCityPicker extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AppFonts.tajawal(
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
                 color: selected == null ? AppColors.textSecondary : AppColors.textPrimary,
               ),
             ),
@@ -622,7 +629,7 @@ class RegisterInterestPicker extends StatelessWidget {
                   summary,
                   style: AppFonts.tajawal(
                     color: selectedIds.isEmpty ? AppColors.textSecondary : AppColors.textPrimary,
-                    fontWeight: selectedIds.isEmpty ? FontWeight.w400 : FontWeight.w600,
+                    fontWeight: selectedIds.isEmpty ? FontWeight.w400 : FontWeight.w700,
                   ),
                 ),
               ),
@@ -661,7 +668,7 @@ class RegisterInterestPicker extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppFonts.tajawal(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: selectedIds.isEmpty ? AppColors.textSecondary : AppColors.textPrimary,
                   ),
                 ),
@@ -752,7 +759,7 @@ class RegisterDateField extends StatelessWidget {
             child: Text(
               value ?? 'pick_date'.tr,
               style: AppFonts.tajawal(
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
                 color: value == null ? AppColors.textSecondary : AppColors.textPrimary,
               ),
             ),

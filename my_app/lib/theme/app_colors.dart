@@ -43,6 +43,19 @@ abstract final class AppColors {
   static const Color warningBorder = Color(0xFFFFD8A8);
   static const Color warningText = Color(0xFF9C4A00);
 
+  static const Color textHint = Color(0xFF9CA3AF);
+  static const Color borderStrong = Color(0xFFD1D5DB);
+  static const Color success = Color(0xFF16A34A);
+  static const Color successSoft = Color(0xFFDCFCE7);
+  static const Color successText = Color(0xFF166534);
+  static const Color successStrong = Color(0xFF059669);
+  static const Color successFill = Color(0xFFD1FAE5);
+  static const Color warning = Color(0xFFD97706);
+  static const Color warningFill = Color(0xFFFEF3C7);
+  static const Color warningSoft = Color(0xFFFFF4E5);
+  static const Color warningStrong = Color(0xFFE67700);
+  static const Color info = Color(0xFF2563EB);
+
   // الظلال.
   static const Color shadowPrimary = Color(0x336C63FF);
   static const Color shadowPrimaryStrong = Color(0x446C63FF);

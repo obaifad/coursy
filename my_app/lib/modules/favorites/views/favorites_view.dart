@@ -13,6 +13,8 @@ import '../../../widgets/guest_access.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../modules/auth/widgets/register_form_widgets.dart';
 import '../controllers/favorites_controller.dart';
+import '../../../core/locale/plural.dart';
+import '../../../theme/app_motion.dart';
 
 class FavoritesView extends GetView<FavoritesController> {
   const FavoritesView({super.key});
@@ -62,7 +64,7 @@ class FavoritesTabView extends GetView<FavoritesController> {
                   IconButton(
                     onPressed: controller.loadFavorites,
                     icon: const Icon(Icons.refresh_rounded),
-                    tooltip: 'retry'.tr,
+                    tooltip: 'refresh'.tr,
                   ),
                   TextButton(
                     onPressed: () => Get.toNamed(AppRoutes.favorites),
@@ -100,7 +102,7 @@ class _FavoritesAppBar extends StatelessWidget implements PreferredSizeWidget {
           : null,
       title: const AppLogo(height: 60),
       actions: [
-        IconButton(onPressed: onRefresh, icon: const Icon(Icons.refresh_rounded), tooltip: 'retry'.tr),
+        IconButton(onPressed: onRefresh, icon: const Icon(Icons.refresh_rounded), tooltip: 'refresh'.tr),
         const SizedBox(width: 4),
       ],
     );
@@ -126,7 +128,7 @@ class _FavoritesBody extends StatelessWidget {
           onRefresh: controller.loadFavorites,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: AppLayout.readableInset(context, min: 20)),
             children: [
               SizedBox(height: MediaQuery.sizeOf(context).height * 0.12),
               AppEmptyState(
@@ -155,7 +157,12 @@ class _FavoritesBody extends StatelessWidget {
         onRefresh: controller.loadFavorites,
         child: ListView.separated(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(20, compactTop ? 8 : 16, 20, 24),
+          padding: EdgeInsets.fromLTRB(
+            AppLayout.readableInset(context, min: 20),
+            compactTop ? 8 : 16,
+            AppLayout.readableInset(context, min: 20),
+            24,
+          ),
           itemCount: controller.courses.length,
           separatorBuilder: (_, __) => const SizedBox(height: 16),
           itemBuilder: (_, i) {
@@ -185,12 +192,7 @@ class _FavoriteCourseCardState extends State<_FavoriteCourseCard> with SingleTic
   @override
   void initState() {
     super.initState();
-    _heartController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 280),
-      lowerBound: 0.85,
-      upperBound: 1.15,
-    );
+    _heartController = AnimationController(vsync: this, duration: AppMotion.normal, lowerBound: 0.85, upperBound: 1.15);
     _heartScale = CurvedAnimation(parent: _heartController, curve: Curves.elasticOut);
     _heartController.value = 1;
   }
@@ -262,7 +264,7 @@ class _FavoriteCourseCardState extends State<_FavoriteCourseCard> with SingleTic
                           if (course.durationHours != null && course.durationHours! > 0)
                             _FavoriteMetaChip(
                               icon: Icons.schedule_rounded,
-                              label: 'hours_unit'.trParams({'n': '${course.durationHours}'}),
+                              label: pluralTr('hours_unit', course.durationHours!),
                             ),
                           _FavoriteMetaChip(icon: Icons.bar_chart_rounded, label: course.level),
                         ],
@@ -279,7 +281,7 @@ class _FavoriteCourseCardState extends State<_FavoriteCourseCard> with SingleTic
                             style: AppFonts.tajawal(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF92400E),
+                              color: AppColors.warningText,
                             ),
                           ),
                           const Spacer(),
@@ -357,7 +359,7 @@ class _FavoriteCardImage extends StatelessWidget {
                           ? const SizedBox(width: 18, height: 18, child: AppInlineLoader())
                           : ScaleTransition(
                               scale: heartScale,
-                              child: const Icon(Icons.favorite_rounded, color: Colors.redAccent, size: 22),
+                              child: const Icon(Icons.favorite_rounded, color: AppColors.danger, size: 22),
                             ),
                     ),
                   ),
@@ -389,7 +391,7 @@ class _FavoriteMetaChip extends StatelessWidget {
           const SizedBox(width: 5),
           Text(
             label,
-            style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textBody),
+            style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textBody),
           ),
         ],
       ),

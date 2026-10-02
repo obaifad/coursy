@@ -5,6 +5,7 @@ import '../core/models/app_models.dart';
 import '../theme/app_colors.dart';
 import 'app_widgets.dart';
 import 'design_system.dart';
+import '../theme/app_motion.dart';
 
 class CourseFiltersPanel extends StatelessWidget {
   const CourseFiltersPanel({
@@ -198,7 +199,7 @@ class _SubjectFilterChip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: AppMotion.fast,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: selected ? AppColors.primary : AppColors.surfaceSoft,
@@ -241,8 +242,6 @@ class CourseSortDropdown extends StatelessWidget {
   final CourseSortOption selected;
   final ValueChanged<CourseSortOption> onSelected;
 
-  static const _options = CourseSortOption.values;
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -253,56 +252,92 @@ class CourseSortDropdown extends StatelessWidget {
         const SizedBox(width: 6),
         Text('sort_by'.tr, style: AppTypography.filterSectionLabel()),
         const SizedBox(width: 10),
-        PopupMenuButton<CourseSortOption>(
-          initialValue: selected,
-          onSelected: onSelected,
-          offset: const Offset(0, 40),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          itemBuilder: (context) => [
-            for (final option in _options)
-              PopupMenuItem(
-                value: option,
-                child: Row(
-                  children: [
-                    if (option == selected)
-                      const Icon(Icons.check_rounded, size: 18, color: AppColors.primary)
-                    else
-                      const SizedBox(width: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      option.labelKey.tr,
-                      style: TextStyle(
-                        fontWeight: option == selected ? FontWeight.w800 : FontWeight.w600,
-                        color: option == selected ? AppColors.primary : AppColors.textBody,
-                      ),
-                    ),
-                  ],
-                ),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () => showCourseSortSheet(context: context, selected: selected, onSelected: onSelected),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSoft,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
               ),
-          ],
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceSoft,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  selected.labelKey.tr,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textBody),
-                ),
-                const SizedBox(width: 4),
-                Icon(Icons.expand_more_rounded, size: 20, color: AppColors.primary.withValues(alpha: 0.85)),
-              ],
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    selected.labelKey.tr,
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textBody),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.expand_more_rounded, size: 20, color: AppColors.primary.withValues(alpha: 0.85)),
+                ],
+              ),
             ),
           ),
         ),
       ],
     );
   }
+}
+
+/// Bottom sheet لاختيار ترتيب الدورات.
+Future<void> showCourseSortSheet({
+  required BuildContext context,
+  required CourseSortOption selected,
+  required ValueChanged<CourseSortOption> onSelected,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    useSafeArea: true,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    builder: (sheetContext) => SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'sort_by_title'.tr,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textBody),
+            ),
+            const SizedBox(height: 8),
+            for (final option in CourseSortOption.values)
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  if (option != selected) onSelected(option);
+                },
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 48),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          option.labelKey.tr,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: option == selected ? FontWeight.w800 : FontWeight.w700,
+                            color: option == selected ? AppColors.primary : AppColors.textBody,
+                          ),
+                        ),
+                      ),
+                      if (option == selected) const Icon(Icons.check_rounded, size: 22, color: AppColors.primary),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class HorizontalCityFilters extends StatelessWidget {
@@ -314,7 +349,8 @@ class HorizontalCityFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (cities.isEmpty) return const SizedBox.shrink();
+    // مدينة واحدة فقط → الفلتر بلا فائدة.
+    if (cities.length < 2) return const SizedBox.shrink();
     return AppHorizontalScrollRow(
       height: 44,
       separatorWidth: 8,
@@ -341,7 +377,7 @@ class _FilterChip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: AppMotion.fast,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: selected ? AppColors.primary : AppColors.surfaceSoft,

@@ -364,7 +364,7 @@ class _SecurityIllustrationPainter extends CustomPainter {
         ..strokeWidth = 3.4
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
-        ..color = const Color(0xFF16A34A),
+        ..color = AppColors.success,
     );
   }
 

@@ -2,8 +2,9 @@ import 'package:get/get.dart';
 
 import '../../../core/data/repositories/instructor_repository.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/locale/locale_request_guard.dart';
 
-class InstructorCoursesController extends GetxController {
+class InstructorCoursesController extends GetxController with InitialLoadState {
   final InstructorRepository _repository = Get.find();
 
   final isLoading = true.obs;
@@ -55,7 +56,7 @@ class InstructorCoursesController extends GetxController {
       hasMore.value = false;
       return;
     }
-    isLoading.value = true;
+    isLoading.value = isInitialLoad;
     _page = 1;
     try {
       final result = await _repository.fetchInstructorCoursesPage(
@@ -66,6 +67,7 @@ class InstructorCoursesController extends GetxController {
       courses.assignAll(result.items);
       hasMore.value = result.hasMore;
       totalCourses.value = result.total;
+      markLoaded();
     } finally {
       isLoading.value = false;
     }

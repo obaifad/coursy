@@ -76,7 +76,8 @@ class AuthSplitHeroPanel extends StatelessWidget {
       return DecoratedBox(
         decoration: const BoxDecoration(gradient: _heroGradient),
         child: Center(
-          child: Padding(
+          // قابلة للتمرير عند ضيق الارتفاع (الوضع الأفقي + تكبير الخط) بدل أن تفيض.
+          child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: metrics.splitPanelPadding),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -100,7 +101,7 @@ class AuthSplitHeroPanel extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: AppFonts.tajawal(
                     fontSize: metrics.welcomeSubtitleSize,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.primary,
                     height: 1.4,
                   ),

@@ -42,7 +42,7 @@ class _StickyEnrollBar extends StatelessWidget {
                 final fav = Get.find<FavoritesService>();
                 final isFav = fav.isCourseFavorite(item.id);
                 return Material(
-                  color: isFav ? Colors.redAccent.withValues(alpha: 0.12) : AppColors.indicatorFill,
+                  color: isFav ? AppColors.danger.withValues(alpha: 0.12) : AppColors.indicatorFill,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   child: InkWell(
                     onTap: onFavorite,
@@ -52,7 +52,7 @@ class _StickyEnrollBar extends StatelessWidget {
                       height: 52,
                       child: Icon(
                         isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        color: isFav ? Colors.redAccent : AppColors.primary,
+                        color: isFav ? AppColors.danger : AppColors.primary,
                       ),
                     ),
                   ),
@@ -67,7 +67,7 @@ class _StickyEnrollBar extends StatelessWidget {
                           minimumSize: const Size.fromHeight(52),
                           foregroundColor: AppColors.warningText,
                           side: const BorderSide(color: AppColors.warningBorder),
-                          backgroundColor: const Color(0xFFFFF8F0),
+                          backgroundColor: AppColors.warningSoft,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
                         child: Text(
@@ -99,7 +99,7 @@ class _StickyStrikethroughPrice extends StatelessWidget {
       label,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600, height: 1.2),
+      style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, height: 1.2),
     );
 
     return Stack(

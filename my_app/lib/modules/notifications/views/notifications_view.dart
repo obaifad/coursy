@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../theme/app_colors.dart';
+
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/navigation/push_navigation.dart';
 import '../../../core/responsive/responsive.dart';
@@ -72,7 +74,7 @@ class NotificationsView extends GetView<NotificationsController> {
               onRefresh: controller.loadNotifications,
               child: ListView.separated(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
                 itemBuilder: (_, i) {
                   if (i == controller.items.length) {
                     if (!controller.hasMore.value) return const SizedBox.shrink();
@@ -95,7 +97,7 @@ class NotificationsView extends GetView<NotificationsController> {
                         color: Colors.redAccent.shade100,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                      child: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
                     ),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(20),

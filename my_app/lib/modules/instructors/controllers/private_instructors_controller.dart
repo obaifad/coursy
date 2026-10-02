@@ -5,7 +5,7 @@ import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/network/api_exception.dart';
 
-class PrivateInstructorsController extends GetxController with LatestLoadGuard {
+class PrivateInstructorsController extends GetxController with LatestLoadGuard, InitialLoadState {
   PrivateInstructorsController(this._repository);
 
   final InstructorRepository _repository;
@@ -60,12 +60,13 @@ class PrivateInstructorsController extends GetxController with LatestLoadGuard {
   void selectSubject(String? key) {
     if (selectedSubjectKey.value == key) return;
     selectedSubjectKey.value = key;
+    resetInitialLoad();
     loadInstructors();
   }
 
   Future<void> loadInstructors() async {
     final session = beginLoad();
-    isLoading.value = true;
+    isLoading.value = isInitialLoad;
     errorMessage.value = null;
     _page = 1;
     try {
@@ -79,6 +80,7 @@ class PrivateInstructorsController extends GetxController with LatestLoadGuard {
       applyIfCurrent(session, () {
         instructors.assignAll(result.items);
         hasMore.value = result.hasMore;
+        markLoaded();
       });
     } on ApiCancelledException {
       return;

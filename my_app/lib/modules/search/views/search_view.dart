@@ -10,13 +10,14 @@ import '../../../theme/app_colors.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../controllers/search_controller.dart';
+import '../../../core/locale/plural.dart';
 
 class SearchView extends GetView<SearchPageController> {
   const SearchView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final hPad = AppLayout.horizontalPage(context);
+    final hPad = AppLayout.readableInset(context);
     final bottomPad = AppLayout.scrollBottomInset(context);
 
     return Obx(() {
@@ -151,7 +152,7 @@ class SearchView extends GetView<SearchPageController> {
               .map(
                 (q) => ActionChip(
                   avatar: const Icon(Icons.history_rounded, size: 16, color: AppColors.primary),
-                  label: Text(q, style: AppFonts.tajawal(fontWeight: FontWeight.w600)),
+                  label: Text(q, style: AppFonts.tajawal(fontWeight: FontWeight.w700)),
                   onPressed: () {
                     controller.queryController.text = q;
                     controller.queryText.value = q;
@@ -204,7 +205,7 @@ class _IntegratedSearchBox extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _SearchScopeSelector(controller: controller, scope: scope),
-                  const VerticalDivider(width: 1, thickness: 1, color: Color(0xFFE8E6F8)),
+                  const VerticalDivider(width: 1, thickness: 1, color: AppColors.borderSoft),
                   const Padding(
                     padding: EdgeInsetsDirectional.only(start: 10),
                     child: Icon(Icons.search_rounded, color: AppColors.primary, size: 22),
@@ -247,7 +248,7 @@ class _IntegratedSearchBox extends StatelessWidget {
             scope.descriptionKey.tr,
             style: AppFonts.tajawal(
               fontSize: 12,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
               color: AppColors.textSecondary,
               height: 1.35,
             ),
@@ -393,7 +394,7 @@ class _SectionHeader extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(20)),
           child: Text(
-            'search_results_count'.trParams({'n': '$count'}),
+            pluralTr('search_results_count', count),
             style: AppFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary),
           ),
         ),
@@ -496,15 +497,9 @@ class _CourseSearchTile extends StatelessWidget {
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: Text(
-                              course.price,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppFonts.tajawal(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.primary,
-                              ),
+                            child: Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: CoursePriceText(price: course.price, amountSize: 12, currencySize: 10),
                             ),
                           ),
                         ],

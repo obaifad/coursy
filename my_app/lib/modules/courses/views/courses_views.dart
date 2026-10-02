@@ -9,6 +9,7 @@ import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/filter_chips.dart';
 import '../controllers/courses_controller.dart';
+import '../../../core/locale/plural.dart';
 
 class CoursesView extends GetView<CoursesController> {
   const CoursesView({super.key});
@@ -121,7 +122,7 @@ class _AllCoursesHeroHeader extends StatelessWidget {
                       border: Border.all(color: Colors.white24),
                     ),
                     child: Text(
-                      'category_courses_count'.trParams({'count': '$coursesCount'}),
+                      pluralTr('category_courses_count', coursesCount),
                       style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
                     ),
                   ),

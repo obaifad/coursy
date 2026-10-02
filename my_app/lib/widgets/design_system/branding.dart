@@ -263,7 +263,7 @@ class CategoryHeaderBanner extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    'category_courses_count'.trParams({'count': '$count'}),
+                    pluralTr('category_courses_count', count),
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
                   ),
                 ),

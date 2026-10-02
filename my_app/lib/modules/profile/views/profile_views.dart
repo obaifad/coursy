@@ -104,7 +104,7 @@ class ProfileView extends StatelessWidget {
                   const SizedBox(height: 18),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    padding: EdgeInsets.symmetric(horizontal: AppLayout.readableInset(context), vertical: 16),
                     decoration: const BoxDecoration(
                       color: AppColors.card,
                       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -139,7 +139,7 @@ class ProfileView extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.symmetric(horizontal: AppLayout.readableInset(context), vertical: 16),
             child: Obx(() {
               final storage = Get.find<TokenStorage>();
               if (!storage.isLoggedIn) {
@@ -180,7 +180,7 @@ class ProfileView extends StatelessWidget {
               );
             }),
           ),
-          SizedBox(height: AppLayout.rootNavReserve(context) + 12),
+          SizedBox(height: AppLayout.scrollBottomInset(context, rootTab: true)),
         ],
       );
     });
@@ -194,7 +194,11 @@ Future<void> _confirmAndLogout(BuildContext context) async {
       content: Text('logout_confirm_message'.tr),
       actions: [
         TextButton(onPressed: () => Get.back(result: false), child: Text('cancel'.tr)),
-        FilledButton(onPressed: () => Get.back(result: true), child: Text('confirm'.tr)),
+        FilledButton(
+          style: FilledButton.styleFrom(minimumSize: const Size(96, 46)),
+          onPressed: () => Get.back(result: true),
+          child: Text('confirm'.tr),
+        ),
       ],
     ),
     barrierDismissible: false,
@@ -430,7 +434,7 @@ class _EditProfileAvatar extends GetView<ProfileController> {
             const SizedBox(height: 10),
             Text(
               'tap_to_change_photo'.tr,
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600),
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w700),
             ),
           ],
         ),
@@ -539,7 +543,7 @@ class SettingsView extends GetView<LocaleController> {
                     return SwitchListTile(
                       value: false,
                       onChanged: null,
-                      title: Text('notifications_setting'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      title: Text('notifications_setting'.tr, style: const TextStyle(fontWeight: FontWeight.w700)),
                       subtitle: Text('notifications_web_unavailable'.tr),
                     );
                   }
@@ -557,7 +561,7 @@ class SettingsView extends GetView<LocaleController> {
                   return SwitchListTile(
                     value: enabled && permitted,
                     onChanged: push.isToggling.value ? null : push.setNotificationsEnabled,
-                    title: Text('notifications_setting'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    title: Text('notifications_setting'.tr, style: const TextStyle(fontWeight: FontWeight.w700)),
                     subtitle: Text(subtitle),
                   );
                 }),
@@ -569,7 +573,7 @@ class SettingsView extends GetView<LocaleController> {
                     Obx(
                       () => ListTile(
                         leading: const Icon(Icons.language_rounded, color: AppColors.primary),
-                        title: Text('language'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        title: Text('language'.tr, style: const TextStyle(fontWeight: FontWeight.w700)),
                         trailing: Text(
                           controller.languageLabel,
                           style: const TextStyle(color: AppColors.textSecondary),
@@ -580,7 +584,7 @@ class SettingsView extends GetView<LocaleController> {
                     const Divider(height: 1),
                     ListTile(
                       leading: const Icon(Icons.privacy_tip_outlined, color: AppColors.primary),
-                      title: Text('privacy_policy'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      title: Text('privacy_policy'.tr, style: const TextStyle(fontWeight: FontWeight.w700)),
                       onTap: () => Get.to(
                         () => _SettingsDocumentView(title: 'privacy_policy'.tr, body: 'privacy_policy_body'.tr),
                       ),
@@ -588,7 +592,7 @@ class SettingsView extends GetView<LocaleController> {
                     const Divider(height: 1),
                     ListTile(
                       leading: const Icon(Icons.info_outline_rounded, color: AppColors.primary),
-                      title: Text('about_app'.tr, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      title: Text('about_app'.tr, style: const TextStyle(fontWeight: FontWeight.w700)),
                       onTap: () =>
                           Get.to(() => _SettingsDocumentView(title: 'about_app'.tr, body: 'about_app_body'.tr)),
                     ),

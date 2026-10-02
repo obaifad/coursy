@@ -15,6 +15,7 @@ import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/storage/token_storage.dart';
 import '../controllers/root_controller.dart';
+import '../../../theme/app_motion.dart';
 
 class RootView extends GetView<RootController> {
   const RootView({super.key});
@@ -52,7 +53,7 @@ class RootView extends GetView<RootController> {
 class _RootBottomNav extends StatelessWidget {
   const _RootBottomNav({required this.currentIndex, required this.onChanged});
 
-  static const double _centerSlotWidth = 58;
+  static const double _centerSlotWidth = 64;
 
   final int currentIndex;
   final ValueChanged<int> onChanged;
@@ -91,7 +92,12 @@ class _RootBottomNav extends StatelessWidget {
       ];
 
       return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          0,
+          16,
+          MediaQuery.viewPaddingOf(context).bottom > 12 ? MediaQuery.viewPaddingOf(context).bottom : 12,
+        ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
           child: BackdropFilter(
@@ -99,22 +105,21 @@ class _RootBottomNav extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.9),
+                color: Colors.white.withValues(alpha: 0.97),
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.65)),
                 boxShadow: const [
-                  BoxShadow(color: Color(0x266C63FF), blurRadius: 28, offset: Offset(0, 12)),
+                  BoxShadow(color: AppColors.shadowPurple, blurRadius: 28, offset: Offset(0, 12)),
                   BoxShadow(color: AppColors.shadowNeutralSoft, blurRadius: 8, offset: Offset(0, 2)),
                 ],
               ),
               child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.topCenter,
+                alignment: Alignment.center,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(top: 6),
+                    padding: EdgeInsets.zero,
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Expanded(
                           child: _SideNavButton(
@@ -184,7 +189,7 @@ class _CenterNavButton extends StatelessWidget {
         onTap: onTap,
         customBorder: const CircleBorder(),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
+          duration: AppMotion.fast,
           curve: Curves.easeOutCubic,
           width: _size,
           height: _size,
@@ -229,7 +234,7 @@ class _SideNavButton extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
+                duration: AppMotion.fast,
                 curve: Curves.easeOutCubic,
                 width: 36,
                 height: 36,
@@ -248,8 +253,8 @@ class _SideNavButton extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: AppFonts.tajawal(
-                  fontSize: 11,
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  fontSize: 12,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
                   color: selected ? AppColors.primary : AppColors.textSecondary,
                 ),
               ),

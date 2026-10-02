@@ -28,14 +28,14 @@ class _ReviewsTab extends GetView<CourseDetailsController> {
                         children: List.generate(5, (i) {
                           return Icon(
                             i < average.round() ? Icons.star_rounded : Icons.star_border_rounded,
-                            color: Colors.amber,
+                            color: AppColors.ratingStar,
                             size: 18,
                           );
                         }),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'reviews_total'.trParams({'count': '${reviews.length}'}),
+                        pluralTr('reviews_total', reviews.length),
                         style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
                       ),
                     ],
@@ -67,7 +67,7 @@ class _ReviewsTab extends GetView<CourseDetailsController> {
                                       value: ratio,
                                       minHeight: 6,
                                       backgroundColor: AppColors.indicatorFill,
-                                      color: Colors.amber,
+                                      color: AppColors.ratingStar,
                                     ),
                                   ),
                                 ),
@@ -141,7 +141,7 @@ class _ReviewCard extends StatelessWidget {
                       children: List.generate(5, (i) {
                         return Icon(
                           i < review.rating ? Icons.star_rounded : Icons.star_border_rounded,
-                          color: Colors.amber,
+                          color: AppColors.ratingStar,
                           size: 14,
                         );
                       }),
@@ -265,7 +265,7 @@ class _RatingRow extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+          child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
         ),
         Obx(
           () => Row(
@@ -273,11 +273,11 @@ class _RatingRow extends StatelessWidget {
               final star = i + 1;
               return IconButton(
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                 onPressed: () => rating.value = star,
                 icon: Icon(
                   star <= rating.value ? Icons.star_rounded : Icons.star_border_rounded,
-                  color: Colors.amber,
+                  color: AppColors.ratingStar,
                   size: 22,
                 ),
               );

@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../locale/locale_controller.dart';
+import '../locale/plural.dart';
 
 /// مساعدات تحويل JSON مشتركة (مطابقة لـ Laravel API).
 abstract final class JsonHelpers {
@@ -148,8 +149,8 @@ abstract final class JsonHelpers {
   }
 
   static String durationLabel({int? hours, int? sessions}) {
-    if (hours != null && hours > 0) return 'hours_unit'.trParams({'n': '$hours'});
-    if (sessions != null && sessions > 0) return 'sessions_unit'.trParams({'n': '$sessions'});
+    if (hours != null && hours > 0) return pluralTr('hours_unit', hours);
+    if (sessions != null && sessions > 0) return pluralTr('sessions_unit', sessions);
     return '—';
   }
 

@@ -74,14 +74,14 @@ class RegistrationClosedDialog extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF4E5),
+                      color: AppColors.warningSoft,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppColors.warningBorder),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFFE67700)),
+                        const Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.warningStrong),
                         const SizedBox(width: 8),
                         Flexible(
                           child: Text(
@@ -157,7 +157,7 @@ class RegistrationClosedDialog extends StatelessWidget {
                                           style: const TextStyle(
                                             fontSize: 11,
                                             color: AppColors.textSecondary,
-                                            fontWeight: FontWeight.w600,
+                                            fontWeight: FontWeight.w700,
                                           ),
                                         ),
                                         const SizedBox(height: 2),

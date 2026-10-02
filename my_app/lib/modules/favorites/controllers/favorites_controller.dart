@@ -5,8 +5,9 @@ import 'package:get/get.dart';
 import '../../../core/data/repositories/course_repository.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/services/favorites_service.dart';
+import '../../../core/locale/locale_request_guard.dart';
 
-class FavoritesController extends GetxController {
+class FavoritesController extends GetxController with InitialLoadState {
   final FavoritesService _favoritesService = Get.find();
   final CourseRepository _courseRepository = Get.find();
 
@@ -46,7 +47,7 @@ class FavoritesController extends GetxController {
   Future<void> loadFavorites() => reloadFromService(forceSync: true);
 
   Future<void> reloadFromService({bool forceSync = true}) async {
-    isLoading.value = true;
+    isLoading.value = isInitialLoad;
     _syncing = true;
     try {
       if (forceSync) {
@@ -57,6 +58,7 @@ class FavoritesController extends GetxController {
     }
     try {
       await _hydrateCoursesFromService(refreshAll: true);
+      markLoaded();
     } finally {
       isLoading.value = false;
     }
@@ -110,6 +112,7 @@ class FavoritesController extends GetxController {
   }
 
   void clearForLogout() {
+    resetInitialLoad();
     courses.clear();
     removingIds.clear();
     isLoading.value = false;

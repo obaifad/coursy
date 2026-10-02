@@ -9,6 +9,7 @@ import '../../../theme/app_colors.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/design_system.dart';
+import '../../../theme/app_fonts.dart';
 import '../controllers/home_controller.dart';
 
 class HomeView extends GetView<HomeController> {
@@ -64,22 +65,43 @@ class HomeView extends GetView<HomeController> {
               if (controller.errorMessage.value != null) ...[
                 Padding(
                   padding: _sectionPad(context),
-                  child: Material(
-                    color: Colors.orange.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.cloud_off_outlined, color: Colors.orange),
-                          const SizedBox(width: 10),
-                          Expanded(child: Text(controller.errorMessage.value!, style: const TextStyle(fontSize: 13))),
-                          TextButton(
-                            onPressed: () => controller.loadHome(forceRefresh: true, refreshStatic: true),
-                            child: Text('retry'.tr),
+                  child: Container(
+                    padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 10, 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.cloud_off_outlined, color: AppColors.primary, size: 22),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            controller.errorMessage.value!,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textBody,
+                            ),
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 8),
+                        OutlinedButton(
+                          onPressed: () => controller.loadHome(forceRefresh: true, refreshStatic: true),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+                            minimumSize: const Size(0, 40),
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text(
+                            'retry_action'.tr,
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -181,7 +203,8 @@ class HomeView extends GetView<HomeController> {
                 const SizedBox(height: 10),
                 AppHorizontalListView(
                   resetToken: scrollReset,
-                  height: 120,
+                  // ارتفاع ثابت للبطاقة × تكبير الخط — وإلا يفيض اسم المدرّب عند تكبير الخط.
+                  height: 120 * CourseCardMetrics.textScaleOf(context),
                   bottomInset: AppHorizontalListView.cardShadowBottomInset,
                   itemCount: privateInstructors.length,
                   itemBuilder: (_, i) {
@@ -628,10 +651,10 @@ class _HomeHeroBanner extends StatelessWidget {
                           side: BorderSide(color: Colors.white.withValues(alpha: 0.75)),
                           backgroundColor: Colors.white.withValues(alpha: 0.12),
                           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-                          minimumSize: const Size(0, 42),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          minimumSize: const Size(0, 44),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                          // textStyle يستبدل نمط الزر بالكامل — لذا الخط صريح وإلا يظهر بخط النظام.
+                          textStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13),
                         ),
                         child: Text('hero_cta'.tr),
                       ),

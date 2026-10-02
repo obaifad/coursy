@@ -14,6 +14,7 @@ import '../widgets/auth_split_layout.dart';
 import '../widgets/login_page_metrics.dart';
 import '../widgets/register_form_widgets.dart';
 import '../../../widgets/design_system.dart';
+import '../../../theme/app_motion.dart';
 
 final List<TextInputFormatter> _phoneInputFormatters = [
   FilteringTextInputFormatter.digitsOnly,
@@ -102,7 +103,7 @@ class _RegisterViewState extends State<RegisterView> {
                 RegisterFloatingCard(
                   elevated: !metrics.useSplitLayout,
                   child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 320),
+                    duration: AppMotion.normal,
                     switchInCurve: Curves.easeOutCubic,
                     switchOutCurve: Curves.easeInCubic,
                     transitionBuilder: (child, animation) {
@@ -215,14 +216,13 @@ class _SignInLink extends StatelessWidget {
       children: [
         Text(
           'have_account_prefix'.tr,
-          style: AppFonts.tajawal(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+          style: AppFonts.tajawal(color: AppColors.textSecondary, fontWeight: FontWeight.w700),
         ),
         TextButton(
           onPressed: () => Get.offNamed(AppRoutes.login),
           style: TextButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 6),
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            minimumSize: const Size(48, 44),
           ),
           child: Text(
             'sign_in'.tr,
@@ -246,19 +246,19 @@ class _ErrorBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.red.withValues(alpha: 0.08),
+      color: AppColors.danger.withValues(alpha: 0.08),
       borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.error_outline_rounded, color: Colors.red.shade700, size: 20),
+            Icon(Icons.error_outline_rounded, color: AppColors.dangerText, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 message,
-                style: AppFonts.tajawal(color: Colors.red.shade700, fontWeight: FontWeight.w600, height: 1.35),
+                style: AppFonts.tajawal(color: AppColors.dangerText, fontWeight: FontWeight.w700, height: 1.35),
               ),
             ),
           ],
@@ -384,7 +384,7 @@ class _RegisterStepBody extends GetView<AuthController> {
             ),
             if (_fieldError('gender') != null) ...[
               const SizedBox(height: 6),
-              Text(_fieldError('gender')!, style: AppFonts.tajawal(color: Colors.red.shade700, fontSize: 12)),
+              Text(_fieldError('gender')!, style: AppFonts.tajawal(color: AppColors.dangerText, fontSize: 12)),
             ],
             const SizedBox(height: 16),
             Obx(
@@ -441,7 +441,7 @@ class _RegisterStepBody extends GetView<AuthController> {
                   children: [
                     Text(
                       controller.citiesError.value ?? 'connection_error'.tr,
-                      style: AppFonts.tajawal(color: Colors.red.shade700, height: 1.4),
+                      style: AppFonts.tajawal(color: AppColors.dangerText, height: 1.4),
                     ),
                     const SizedBox(height: 8),
                     RegisterGhostButton(label: 'reload_cities'.tr, onPressed: () => controller.loadCities(force: true)),

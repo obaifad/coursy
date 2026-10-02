@@ -32,7 +32,7 @@ class CityDetailsView extends GetView<CityDetailsController> {
                   onRefresh: controller.load,
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
                     children: [
                       SoftCard(
                         child: Row(

@@ -42,7 +42,7 @@ class AppTheme {
         indicatorColor: AppColors.primary,
         indicatorSize: TabBarIndicatorSize.tab,
         labelStyle: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 14),
-        unselectedLabelStyle: AppFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 14),
+        unselectedLabelStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 14),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.transparent,
@@ -50,7 +50,7 @@ class AppTheme {
         labelTextStyle: WidgetStateProperty.resolveWith((s) {
           final selected = s.contains(WidgetState.selected);
           return AppFonts.tajawal(
-            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
             fontSize: 12,
             color: selected ? AppColors.primary : AppColors.textSecondary,
           );
@@ -77,6 +77,34 @@ class AppTheme {
           minimumSize: const Size.fromHeight(50),
         ),
       ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          minimumSize: const Size(48, 48),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          textStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 14),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.card,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        titleTextStyle: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textPrimary),
+        contentTextStyle: AppFonts.tajawal(fontSize: 14, height: 1.5, color: AppColors.textSecondary),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.textPrimary,
+        contentTextStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 14, color: Colors.white),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.card,
+        surfaceTintColor: Colors.transparent,
+        showDragHandle: true,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(color: AppColors.primary),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.card.withValues(alpha: 0.95),

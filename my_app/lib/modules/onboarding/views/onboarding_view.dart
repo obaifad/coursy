@@ -7,6 +7,7 @@ import '../../../core/navigation/app_navigation.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/design_system.dart';
+import '../../../theme/app_motion.dart';
 
 class OnboardingView extends StatefulWidget {
   const OnboardingView({super.key});
@@ -97,7 +98,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                   children: List.generate(
                     _pageIcons.length,
                     (dot) => AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
+                      duration: AppMotion.fast,
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       width: dot == index ? 22 : 8,
                       height: 8,
@@ -117,7 +118,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                         _finish();
                         return;
                       }
-                      controller.nextPage(duration: const Duration(milliseconds: 320), curve: Curves.easeOutCubic);
+                      controller.nextPage(duration: AppMotion.normal, curve: Curves.easeOutCubic);
                     },
                     child: Text(index == _pageIcons.length - 1 ? 'onboarding_start'.tr : 'next'.tr),
                   ),

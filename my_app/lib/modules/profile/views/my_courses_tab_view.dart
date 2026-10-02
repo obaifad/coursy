@@ -91,7 +91,7 @@ class _MyCoursesShellState extends State<_MyCoursesShell> with SingleTickerProvi
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                physics: const BouncingScrollPhysics(),
+                physics: const ClampingScrollPhysics(),
                 children: const [
                   _EnrollmentList(status: _EnrollmentListStatus.pending),
                   _EnrollmentList(status: _EnrollmentListStatus.confirmed),
@@ -280,7 +280,11 @@ class _EnrollmentCard extends StatelessWidget {
         content: Text('cancel_booking_confirm'.tr),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text('cancel'.tr)),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text('confirm'.tr)),
+          FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(96, 46)),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('confirm'.tr),
+          ),
         ],
       ),
     );
@@ -362,7 +366,7 @@ class _MetaChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textBody),
+            style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textBody),
           ),
         ],
       ),
@@ -417,20 +421,20 @@ class _EnrollmentStatusTheme {
   final IconData icon;
 
   static const pending = _EnrollmentStatusTheme(
-    backgroundColor: Color(0xFFFEF3C7),
-    foregroundColor: Color(0xFFD97706),
+    backgroundColor: AppColors.warningFill,
+    foregroundColor: AppColors.warning,
     icon: Icons.hourglass_top_rounded,
   );
 
   static const confirmed = _EnrollmentStatusTheme(
-    backgroundColor: Color(0xFFD1FAE5),
-    foregroundColor: Color(0xFF059669),
+    backgroundColor: AppColors.successFill,
+    foregroundColor: AppColors.successStrong,
     icon: Icons.check_circle_outline_rounded,
   );
 
   static const completed = _EnrollmentStatusTheme(
     backgroundColor: AppColors.infoSoft,
-    foregroundColor: Color(0xFF2563EB),
+    foregroundColor: AppColors.info,
     icon: Icons.school_outlined,
   );
 
@@ -470,6 +474,12 @@ class _MyCoursesEmptyState extends StatelessWidget {
       _EnrollmentListStatus.completed => _EnrollmentStatusTheme.completed,
       _EnrollmentListStatus.cancelled => _EnrollmentStatusTheme.cancelled,
     };
+    final title = switch (status) {
+      _EnrollmentListStatus.pending => 'my_courses_empty_title_pending'.tr,
+      _EnrollmentListStatus.confirmed => 'my_courses_empty_title_confirmed'.tr,
+      _EnrollmentListStatus.completed => 'my_courses_empty_title_completed'.tr,
+      _EnrollmentListStatus.cancelled => 'my_courses_empty_title_cancelled'.tr,
+    };
     final message = switch (status) {
       _EnrollmentListStatus.pending => 'my_courses_empty_pending'.tr,
       _EnrollmentListStatus.confirmed => 'my_courses_empty_confirmed'.tr,
@@ -479,11 +489,11 @@ class _MyCoursesEmptyState extends StatelessWidget {
     final showBrowse = status == _EnrollmentListStatus.pending;
 
     return AppEmptyState(
-      message: 'my_courses_empty_title'.tr,
+      message: title,
       subtitle: message,
       icon: theme.icon,
-      iconColor: theme.foregroundColor,
-      iconBackgroundColor: theme.backgroundColor,
+      iconColor: AppColors.primary,
+      iconBackgroundColor: AppColors.primary.withValues(alpha: 0.1),
       action: showBrowse
           ? SizedBox(
               width: 220,

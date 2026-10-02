@@ -10,6 +10,7 @@ import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../controllers/instructor_details_controller.dart';
+import '../../../core/locale/plural.dart';
 
 class InstructorDetailsView extends GetView<InstructorDetailsController> {
   const InstructorDetailsView({super.key});
@@ -40,7 +41,7 @@ class InstructorDetailsView extends GetView<InstructorDetailsController> {
                       onPressed: controller.toggleFavorite,
                       icon: Icon(
                         controller.isFavorite.value ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        color: controller.isFavorite.value ? Colors.redAccent : AppColors.textSecondary,
+                        color: controller.isFavorite.value ? AppColors.danger : AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -130,7 +131,7 @@ class _InstructorInfoTab extends StatelessWidget {
     }
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
       children: [
         SoftCard(
           child: Column(
@@ -160,14 +161,13 @@ class _InstructorInfoTab extends StatelessWidget {
                 instructor!.specialization ?? 'instructor_default'.tr,
                 style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'instructor_years'.trParams({
-                  'role': instructor!.specialization ?? 'instructor_default'.tr,
-                  'years': '${instructor!.experienceYears}',
-                }),
-                style: const TextStyle(color: AppColors.textSecondary),
-              ),
+              if (instructor!.experienceYears > 0) ...[
+                const SizedBox(height: 4),
+                Text(
+                  pluralTr('instructor_experience', instructor!.experienceYears),
+                  style: const TextStyle(color: AppColors.textSecondary),
+                ),
+              ],
             ],
           ),
         ),
@@ -195,7 +195,7 @@ class _InstructorInfoTab extends StatelessWidget {
             Expanded(
               child: _StatChip(
                 label: 'stat_experience'.tr,
-                value: 'instructor_years_short'.trParams({'years': '${instructor!.experienceYears}'}),
+                value: pluralTr('instructor_years_short', instructor!.experienceYears),
               ),
             ),
           ],
@@ -299,7 +299,7 @@ class _InstructorCoursesTab extends StatelessWidget {
       return CustomScrollView(
         slivers: [
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: EdgeInsets.fromLTRB(16, 12, 16, AppLayout.scrollBottomInset(context)),
             sliver: SliverGrid.builder(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
@@ -353,7 +353,7 @@ class _InstructorInstitutesTab extends StatelessWidget {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
       itemCount: institutes.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (_, i) {
@@ -415,7 +415,7 @@ class _InstructorInstitutesTab extends StatelessWidget {
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                            const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 16),
                             const SizedBox(width: 4),
                             Text('${linked.rating}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                           ],

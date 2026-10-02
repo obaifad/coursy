@@ -10,6 +10,10 @@ abstract final class CourseCardMetrics {
   static const double gridBodyPadding = 12;
   static const double cardRadius = 18;
 
+  /// معامل تكبير الخط الفعلي (إعداد الجهاز محصور بين 1.0 و1.3 في app.dart).
+  /// ارتفاعات أسطر النص في البطاقة تُضرب به — وإلا تتداخل النصوص عند تكبير الخط.
+  static double textScaleOf(BuildContext context) => MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.3);
+
   static double featuredCardWidth(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
     final inset = AppLayout.horizontalPage(context);
@@ -22,9 +26,13 @@ abstract final class CourseCardMetrics {
   static double featuredCardHeight(BuildContext context) {
     final w = featuredCardWidth(context);
     final imageH = (w / 1.65).clamp(88.0, 112.0);
-    const contentH = 8 + 32 + 6 + 16 + 8 + 20 + 8 + 30 + 10 + 32 + 14;
-    return imageH + contentH;
+    // العنوان سطران بخط 14 يحتاج 36 (كان 32 فيُقصّ السطر الثاني).
+    const contentH = 8 + featuredTitleHeight + 6 + 16 + 8 + 20 + 8 + 30 + 10 + 32 + 14;
+    return imageH + contentH * textScaleOf(context);
   }
+
+  /// ارتفاع عنوان البطاقة المميزة (سطران) عند حجم الخط الافتراضي.
+  static const double featuredTitleHeight = 36;
 
   static double featuredListHeight(BuildContext context) => featuredCardHeight(context);
 
@@ -35,19 +43,20 @@ abstract final class CourseCardMetrics {
     return !includeButton && width >= 220;
   }
 
-  static _CourseCardSizeSpec _specFor(double width, {required bool includeButton}) {
+  static _CourseCardSizeSpec _specFor(double width, {required bool includeButton, double textScale = 1}) {
+    final s = textScale;
     if (isFeaturedTile(width, includeButton: includeButton)) {
       final imageHeight = (width / 1.65).clamp(88.0, 112.0);
       return _CourseCardSizeSpec(
         imageHeight: imageHeight,
         padding: 12,
-        titleHeight: 32,
-        summaryHeight: 16,
+        titleHeight: 36 * s,
+        summaryHeight: 16 * s,
         titleSize: 13,
-        chipsHeight: 20,
-        statsHeight: 18,
-        priceHeight: 30,
-        buttonHeight: 32,
+        chipsHeight: 20 * s,
+        statsHeight: 18 * s,
+        priceHeight: 30 * s,
+        buttonHeight: 32 * s + 14 * (s - 1),
         sectionGap: 6,
         includeButton: false,
         compact: true,
@@ -57,13 +66,14 @@ abstract final class CourseCardMetrics {
       return _CourseCardSizeSpec(
         imageHeight: 84,
         padding: 10,
-        titleHeight: 34,
-        summaryHeight: 14,
+        titleHeight: 34 * s,
+        summaryHeight: 14 * s,
         titleSize: 12.5,
-        chipsHeight: 20,
-        statsHeight: 16,
-        priceHeight: 30,
-        buttonHeight: 30,
+        chipsHeight: 20 * s,
+        statsHeight: 16 * s,
+        // السعر القديم فوق الحالي في البطاقة الضيقة (بدل قصّهما بـ "…").
+        priceHeight: 36 * s,
+        buttonHeight: 30 * s + 14 * (s - 1),
         sectionGap: 5,
         includeButton: includeButton,
         compact: true,
@@ -72,13 +82,13 @@ abstract final class CourseCardMetrics {
     return _CourseCardSizeSpec(
       imageHeight: gridImageHeight,
       padding: gridBodyPadding,
-      titleHeight: 38,
-      summaryHeight: 16,
+      titleHeight: 38 * s,
+      summaryHeight: 16 * s,
       titleSize: 14,
-      chipsHeight: 22,
-      statsHeight: 18,
-      priceHeight: 32,
-      buttonHeight: 34,
+      chipsHeight: 22 * s,
+      statsHeight: 18 * s,
+      priceHeight: 32 * s,
+      buttonHeight: 34 * s + 14 * (s - 1),
       sectionGap: 6,
       includeButton: includeButton,
       compact: false,
@@ -108,16 +118,16 @@ abstract final class CourseCardMetrics {
   }
 
   static double gridTileHeight(BuildContext context) {
-    return gridCardHeightForWidth(courseGridTileWidth(context));
+    return gridCardHeightForWidth(courseGridTileWidth(context), textScale: textScaleOf(context));
   }
 
-  static double gridCardHeightForWidth(double width, {bool? compact, bool includeButton = true}) {
-    return _specFor(width, includeButton: includeButton).totalHeight;
+  static double gridCardHeightForWidth(double width, {bool? compact, bool includeButton = true, double textScale = 1}) {
+    return _specFor(width, includeButton: includeButton, textScale: textScale).totalHeight;
   }
 
-  static CourseCardLayout layoutFor(BoxConstraints constraints, {bool showActionButton = true}) {
+  static CourseCardLayout layoutFor(BoxConstraints constraints, {bool showActionButton = true, double textScale = 1}) {
     final w = constraints.maxWidth;
-    final spec = _specFor(w, includeButton: showActionButton);
+    final spec = _specFor(w, includeButton: showActionButton, textScale: textScale);
     return CourseCardLayout(
       cardHeight: constraints.maxHeight.isFinite ? constraints.maxHeight : spec.totalHeight,
       padding: spec.padding,
@@ -224,7 +234,10 @@ abstract final class AppGridLayouts {
     final tileWidth = CourseCardMetrics.courseGridTileWidth(context);
     return SliverGridDelegateWithFixedCrossAxisCount(
       crossAxisCount: crossAxisCount,
-      mainAxisExtent: CourseCardMetrics.gridCardHeightForWidth(tileWidth),
+      mainAxisExtent: CourseCardMetrics.gridCardHeightForWidth(
+        tileWidth,
+        textScale: CourseCardMetrics.textScaleOf(context),
+      ),
       crossAxisSpacing: CourseCardMetrics.gridSpacing,
       mainAxisSpacing: CourseCardMetrics.gridSpacing,
     );

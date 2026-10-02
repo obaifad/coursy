@@ -134,14 +134,13 @@ class _InstructorTab extends StatelessWidget {
                 instructor.specialization ?? 'instructor_default'.tr,
                 style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'instructor_years'.trParams({
-                  'role': instructor.specialization ?? 'instructor_default'.tr,
-                  'years': '${instructor.experienceYears}',
-                }),
-                style: const TextStyle(color: AppColors.textSecondary),
-              ),
+              if (instructor.experienceYears > 0) ...[
+                const SizedBox(height: 4),
+                Text(
+                  pluralTr('instructor_experience', instructor.experienceYears),
+                  style: const TextStyle(color: AppColors.textSecondary),
+                ),
+              ],
               if (instructor.bio != null && instructor.bio!.trim().isNotEmpty) ...[
                 const SizedBox(height: 16),
                 Text(instructor.bio!, textAlign: TextAlign.center, style: const TextStyle(height: 1.55)),

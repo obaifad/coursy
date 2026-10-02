@@ -7,6 +7,7 @@ import '../../../theme/app_colors.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/design_system.dart';
 import '../controllers/instructor_subject_instructors_controller.dart';
+import '../../../core/locale/plural.dart';
 
 class InstructorSubjectInstructorsView extends GetView<InstructorSubjectInstructorsController> {
   const InstructorSubjectInstructorsView({super.key});
@@ -158,7 +159,7 @@ class _SubjectHeroHeader extends StatelessWidget {
                           border: Border.all(color: Colors.white24),
                         ),
                         child: Text(
-                          'instructor_subject_count'.trParams({'count': '$instructorsCount'}),
+                          pluralTr('instructor_subject_count', instructorsCount),
                           style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
                         ),
                       ),

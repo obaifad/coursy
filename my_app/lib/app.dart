@@ -9,6 +9,7 @@ import 'core/navigation/home_scroll_reset.dart';
 import 'routes/app_pages.dart';
 import 'routes/app_routes.dart';
 import 'theme/app_theme.dart';
+import 'theme/app_motion.dart';
 
 class SyrianEducationApp extends StatelessWidget {
   const SyrianEducationApp({super.key});
@@ -39,7 +40,7 @@ class SyrianEducationApp extends StatelessWidget {
         },
         defaultTransition: Transition.fadeIn,
         customTransition: AppFadeScaleTransition(),
-        transitionDuration: const Duration(milliseconds: 280),
+        transitionDuration: AppMotion.normal,
         builder: (context, child) {
           return Directionality(
             textDirection: locale.isRtl ? TextDirection.rtl : TextDirection.ltr,

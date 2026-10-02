@@ -16,6 +16,8 @@ import '../../../modules/auth/widgets/register_form_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/registration_closed_dialog.dart';
 import '../controllers/course_details_controller.dart';
+import '../../../core/locale/plural.dart';
+import '../../../theme/app_motion.dart';
 
 part 'course_details/header_widgets.dart';
 part 'course_details/info_tabs.dart';
@@ -110,6 +112,7 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
       final _ = localeRebuildToken;
       return Scaffold(
         backgroundColor: AppColors.surface,
+        resizeToAvoidBottomInset: false,
         body: NestedScrollView(
           controller: _scrollController,
           physics: const ClampingScrollPhysics(),
@@ -120,6 +123,7 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
               sliver: SliverMainAxisGroup(
                 slivers: [
                   _buildCourseHeroSliver(
+                    context: context,
                     item: item,
                     showTitleInBar: innerBoxIsScrolled,
                     onFavorite: controller.toggleFavorite,
@@ -191,19 +195,23 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
 
 /// يجب إرجاع [SliverAppBar] مباشرة داخل [headerSliverBuilder] وليس داخل Widget عادي.
 SliverAppBar _buildCourseHeroSliver({
+  required BuildContext context,
   required CourseModel item,
   required bool showTitleInBar,
   required VoidCallback onFavorite,
 }) {
+  // ارتفاع الغلاف يكبر مع تكبير الخط (إعدادات الجهاز، حتى 1.3×) — وإلا يفيض عنوان
+  // من ثلاثة أسطر + اسم المعهد + صف التقييم عن الارتفاع الثابت.
+  final expandedHeight = 320 * CourseCardMetrics.textScaleOf(context);
   return SliverAppBar(
-    expandedHeight: 320,
+    expandedHeight: expandedHeight,
     pinned: true,
     backgroundColor: AppColors.surface,
     surfaceTintColor: Colors.transparent,
     forceElevated: showTitleInBar,
     title: AnimatedOpacity(
       opacity: showTitleInBar ? 1 : 0,
-      duration: const Duration(milliseconds: 200),
+      duration: AppMotion.fast,
       child: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
     ),
     actions: [
@@ -214,7 +222,7 @@ SliverAppBar _buildCourseHeroSliver({
           onPressed: onFavorite,
           icon: Icon(
             isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-            color: isFav ? Colors.redAccent : null,
+            color: isFav ? AppColors.danger : null,
           ),
         );
       }),
@@ -240,24 +248,35 @@ SliverAppBar _buildCourseHeroSliver({
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (item.isFeatured)
-                  _HeroBadge(icon: Icons.star_rounded, label: 'featured_course'.tr, color: Colors.amber),
+                  _HeroBadge(icon: Icons.star_rounded, label: 'featured_course'.tr, color: AppColors.ratingStar),
                 const Spacer(),
-                Text(
-                  item.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    height: 1.2,
-                    shadows: [Shadow(color: Colors.black45, blurRadius: 8)],
+                // ارتفاع الغلاف ثابت (320): العنوان محدود بثلاثة أسطر وأصغر على الهواتف،
+                // وإلا دفع العنوان الطويل اسم المعهد والتقييم خارج الغلاف.
+                Builder(
+                  builder: (context) => Text(
+                    item.title,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: MediaQuery.sizeOf(context).width < 480 ? 22 : 26,
+                      fontWeight: FontWeight.w800,
+                      height: 1.2,
+                      shadows: const [Shadow(color: Colors.black45, blurRadius: 8)],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(item.institute, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                Text(
+                  item.institute,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                ),
                 const SizedBox(height: 14),
                 Row(
                   children: [
-                    const Icon(Icons.star_rounded, color: Colors.amber, size: 20),
+                    const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 20),
                     const SizedBox(width: 4),
                     Text(
                       item.rating.toStringAsFixed(1),
@@ -269,7 +288,9 @@ SliverAppBar _buildCourseHeroSliver({
                     Expanded(
                       child: Text(
                         item.seatsLabel,
-                        style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w700),
                       ),
                     ),
                   ],
@@ -302,7 +323,12 @@ class _CourseTabPage extends StatelessWidget {
             slivers: [
               SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                padding: EdgeInsets.fromLTRB(
+                  AppLayout.readableInset(context),
+                  12,
+                  AppLayout.readableInset(context),
+                  24,
+                ),
                 sliver: SliverToBoxAdapter(child: child),
               ),
             ],

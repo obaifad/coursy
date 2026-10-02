@@ -10,7 +10,7 @@ import '../../../core/session/enrollment_status_coordinator.dart';
 import '../../../core/session/session_refresh.dart';
 import '../../../core/storage/token_storage.dart';
 
-class MyCoursesController extends GetxController with LatestLoadGuard {
+class MyCoursesController extends GetxController with LatestLoadGuard, InitialLoadState {
   final EnrollmentRepository _repository = Get.find();
 
   final isLoading = true.obs;
@@ -32,11 +32,14 @@ class MyCoursesController extends GetxController with LatestLoadGuard {
       return;
     }
     final session = beginLoad();
-    isLoading.value = true;
+    isLoading.value = isInitialLoad;
     errorMessage.value = null;
     try {
       final result = await _repository.fetchEnrollmentsPage(perPage: 50);
-      applyIfCurrent(session, () => enrollments.assignAll(result.items));
+      applyIfCurrent(session, () {
+        enrollments.assignAll(result.items);
+        markLoaded();
+      });
       if (Get.isRegistered<EnrollmentStatusCoordinator>()) {
         unawaited(Get.find<EnrollmentStatusCoordinator>().trackFromEnrollments(result.items));
       }
@@ -101,6 +104,7 @@ class MyCoursesController extends GetxController with LatestLoadGuard {
   }
 
   void clearForLogout() {
+    resetInitialLoad();
     enrollments.clear();
     cancellingIds.clear();
     errorMessage.value = null;

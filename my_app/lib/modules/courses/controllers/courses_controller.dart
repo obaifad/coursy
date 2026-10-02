@@ -7,7 +7,7 @@ import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/network/api_exception.dart';
 
-class CoursesController extends GetxController with LatestLoadGuard {
+class CoursesController extends GetxController with LatestLoadGuard, InitialLoadState {
   final CourseRepository _repository = Get.find();
   final CategoryRepository _categoryRepository = Get.find();
 
@@ -92,6 +92,7 @@ class CoursesController extends GetxController with LatestLoadGuard {
 
   void selectCategory(int? id) {
     selectedCategoryId.value = id;
+    resetInitialLoad();
     loadCourses();
   }
 
@@ -103,7 +104,7 @@ class CoursesController extends GetxController with LatestLoadGuard {
 
   Future<void> loadCourses() async {
     final session = beginLoad();
-    isLoading.value = true;
+    isLoading.value = isInitialLoad;
     errorMessage.value = null;
     _page = 1;
     try {
@@ -116,6 +117,7 @@ class CoursesController extends GetxController with LatestLoadGuard {
         courses.assignAll(result.items);
         totalCount.value = result.total;
         hasMore.value = result.hasMore;
+        markLoaded();
       });
     } on ApiCancelledException {
       return;

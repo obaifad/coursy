@@ -116,9 +116,9 @@ class _QuickStatsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final stats = <_StatItem>[
       if (item.durationHours != null && item.durationHours! > 0)
-        _StatItem(Icons.schedule_rounded, 'hours_unit'.trParams({'n': '${item.durationHours}'})),
+        _StatItem(Icons.schedule_rounded, pluralTr('hours_unit', item.durationHours!)),
       if (item.sessionsCount != null && item.sessionsCount! > 0)
-        _StatItem(Icons.event_note_rounded, 'sessions_unit'.trParams({'n': '${item.sessionsCount}'})),
+        _StatItem(Icons.event_note_rounded, pluralTr('sessions_unit', item.sessionsCount!)),
       _StatItem(Icons.bar_chart_rounded, item.level),
       if (item.language != null && item.language!.isNotEmpty) _StatItem(Icons.translate_rounded, item.language!),
       if (item.studyType != null) _StatItem(Icons.laptop_mac_rounded, item.studyType!),
@@ -138,11 +138,13 @@ class _QuickStatsGrid extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: stats.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               mainAxisSpacing: 6,
               crossAxisSpacing: 6,
-              childAspectRatio: 4.2,
+              // خانات أطول عند تكبير الخط — نص إنجليزي طويل ("28 / 30 students") يحتاج
+              // سطرين ولا يتسع بالنسبة الثابتة على الأعمدة الضيقة.
+              childAspectRatio: 4.2 / (CourseCardMetrics.textScaleOf(context) * 1.2),
             ),
             itemBuilder: (_, i) => _StatTile(stat: stats[i]),
           ),
@@ -207,7 +209,7 @@ class _SeatsProgressCard extends StatelessWidget {
               Text('course_capacity'.tr, style: AppTypography.sectionTitle()),
               const Spacer(),
               Text(
-                'seats_available'.trParams({'n': '$remaining'}),
+                pluralTr('seats_available', remaining),
                 style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 12),
               ),
             ],
@@ -228,7 +230,7 @@ class _SeatsProgressCard extends StatelessWidget {
                 value: value,
                 minHeight: 10,
                 backgroundColor: AppColors.indicatorFill,
-                color: value > 0.85 ? Colors.orange : AppColors.primary,
+                color: value > 0.85 ? AppColors.warning : AppColors.primary,
               ),
             ),
           ),

@@ -66,7 +66,7 @@ abstract final class AppTypography {
       AppFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w500, color: AppColors.textPrimary, height: 1.25);
 
   static TextStyle filterSectionLabel() =>
-      AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textBody);
+      AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textBody);
 
   static TextStyle sectionTitle() =>
       AppFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary);
@@ -78,7 +78,7 @@ abstract final class AppTypography {
       AppFonts.tajawal(fontSize: size, fontWeight: FontWeight.w500, height: 1.35, color: AppColors.textSecondary);
 
   static TextStyle meta({Color? color}) =>
-      AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: color ?? AppColors.textSecondary);
+      AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: color ?? AppColors.textSecondary);
 
   static TextStyle actionLabel() =>
       AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary);
@@ -89,10 +89,14 @@ abstract final class AppLayout {
   AppLayout._();
 
   /// ارتفاع شريط التنقل السفلي العائم في [RootView] (extendBody: true).
-  static const double rootNavBarHeight = 92;
+  /// ارتفاع جسم الشريط نفسه (بدون الحشوة السفلية) — تطابق [_RootBottomNav].
+  static const double rootNavBarHeight = 82;
 
+  /// المساحة التي يغطيها الشريط العائم من أسفل الشاشة: جسمه + حشوته السفلية
+  /// (الأكبر بين 12 وحافة النظام السفلية) — نفس منطق [_RootBottomNav].
   static double rootNavReserve(BuildContext context) {
-    return rootNavBarHeight + MediaQuery.viewPaddingOf(context).bottom;
+    final inset = MediaQuery.viewPaddingOf(context).bottom;
+    return rootNavBarHeight + (inset > 12 ? inset : 12);
   }
 
   static double horizontalPage(BuildContext context) {
@@ -109,6 +113,15 @@ abstract final class AppLayout {
     return w;
   }
 
+  /// حشوة جانبية تحصر المحتوى بعرض قابل للقراءة ([contentMaxWidth]) على اللوحي، مع إبقاء
+  /// منطقة التمرير بكامل العرض. على الهاتف تساوي [horizontalPage] (أو [min]).
+  static double readableInset(BuildContext context, {double? min}) {
+    final w = MediaQuery.sizeOf(context).width;
+    final base = min ?? horizontalPage(context);
+    final centered = (w - contentMaxWidth(context)) / 2;
+    return centered > base ? centered : base;
+  }
+
   static double scrollBottomInset(BuildContext context, {bool rootTab = false}) {
     if (rootTab) return rootNavReserve(context) + 12;
     return MediaQuery.viewPaddingOf(context).bottom + 24;
@@ -120,7 +133,7 @@ abstract final class AppLayout {
     double top = 0,
     double extraBottom = 0,
   }) {
-    final h = horizontalPage(context);
+    final h = readableInset(context);
     return EdgeInsetsDirectional.fromSTEB(h, top, h, scrollBottomInset(context, rootTab: rootTab) + extraBottom);
   }
 
@@ -133,3 +146,47 @@ abstract final class AppLayout {
 
 /// هل الواجهة عربية/RTL؟
 bool appIsRtl(BuildContext context) => Directionality.of(context) == TextDirection.rtl;
+
+/// اتجاه النص حسب أول حرف قوي فيه (عربي → RTL، لاتيني → LTR)، أو null إن لم يوجد.
+TextDirection? detectTextDirection(String text) {
+  for (final rune in text.runes) {
+    final isRtl =
+        (rune >= 0x0590 && rune <= 0x08FF) || (rune >= 0xFB1D && rune <= 0xFDFF) || (rune >= 0xFE70 && rune <= 0xFEFF);
+    if (isRtl) return TextDirection.rtl;
+    final isLatin =
+        (rune >= 0x41 && rune <= 0x5A) ||
+        (rune >= 0x61 && rune <= 0x7A) ||
+        (rune >= 0xC0 && rune <= 0x24F) ||
+        (rune >= 0x370 && rune <= 0x58F);
+    if (isLatin) return TextDirection.ltr;
+  }
+  return null;
+}
+
+/// نص يضبط اتجاهه حسب محتواه: الأسماء اللاتينية داخل واجهة RTL تُقتطع (…) من نهايتها
+/// وتبقى محاذاتها على جهة بداية الواجهة.
+class BidiText extends StatelessWidget {
+  const BidiText(this.data, {super.key, this.style, this.maxLines, this.overflow, this.textAlign});
+
+  final String data;
+  final TextStyle? style;
+  final int? maxLines;
+  final TextOverflow? overflow;
+  final TextAlign? textAlign;
+
+  @override
+  Widget build(BuildContext context) {
+    final ambientRtl = appIsRtl(context);
+    final direction = detectTextDirection(data) ?? Directionality.of(context);
+    return Text(
+      data,
+      style: style,
+      maxLines: maxLines,
+      overflow: overflow,
+      textDirection: direction,
+      textAlign: textAlign == null || textAlign == TextAlign.start
+          ? (ambientRtl ? TextAlign.right : TextAlign.left)
+          : textAlign,
+    );
+  }
+}

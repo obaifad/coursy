@@ -58,3 +58,17 @@ mixin LatestLoadGuard on GetxController {
     if (_isLatest(session)) resetLoading();
   }
 }
+
+/// الهيكل (Skeleton) يُعرض في أول تحميل فقط. التحديث بالسحب أو تحميل الخلفية لاحقاً
+/// يُبقي الواجهة الحالية (قائمة أو حالة فارغة) كما هي بدل استبدالها بهياكل ثم إرجاعها.
+mixin InitialLoadState on GetxController {
+  bool _loadedOnce = false;
+
+  /// قيمة تُسند إلى `isLoading` عند بدء التحميل: true فقط قبل نجاح أول تحميل.
+  bool get isInitialLoad => !_loadedOnce;
+
+  void markLoaded() => _loadedOnce = true;
+
+  /// عند تغيّر الفلتر أو تسجيل الخروج: البيانات الحالية لم تعد صالحة فنعرض الهيكل من جديد.
+  void resetInitialLoad() => _loadedOnce = false;
+}

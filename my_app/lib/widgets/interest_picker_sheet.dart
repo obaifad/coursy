@@ -7,6 +7,7 @@ import '../core/models/app_models.dart';
 import '../core/responsive/responsive.dart';
 import '../theme/app_colors.dart';
 import 'app_widgets.dart';
+import '../core/locale/plural.dart';
 
 /// Bottom sheet لاختيار الاهتمامات — يدعم القوائم الطويلة والبحث.
 Future<void> showInterestPickerSheet({
@@ -120,7 +121,7 @@ class _InterestPickerSheetBodyState extends State<_InterestPickerSheetBody> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Text(
-                      'interests_selected_count'.trParams({'count': '${_selected.length}'}),
+                      pluralTr('interests_selected_count', _selected.length),
                       style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.primary),
                     ),
                   ),
@@ -146,7 +147,7 @@ class _InterestPickerSheetBodyState extends State<_InterestPickerSheetBody> {
                                 size: 36,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              title: Text(category.name, style: AppFonts.tajawal(fontWeight: FontWeight.w600)),
+                              title: Text(category.name, style: AppFonts.tajawal(fontWeight: FontWeight.w700)),
                               onChanged: (_) {
                                 setState(() {
                                   if (selected) {
@@ -185,7 +186,7 @@ String interestSelectionSummary(List<CategoryModel> categories, List<int> select
   if (selectedIds.isEmpty) return 'pick_interests'.tr;
   if (selectedIds.length == 1) {
     final match = categories.where((c) => c.id == selectedIds.first).firstOrNull;
-    return match?.name ?? 'interests_selected_count'.trParams({'count': '1'});
+    return match?.name ?? pluralTr('interests_selected_count', 1);
   }
-  return 'interests_selected_count'.trParams({'count': '${selectedIds.length}'});
+  return pluralTr('interests_selected_count', selectedIds.length);
 }

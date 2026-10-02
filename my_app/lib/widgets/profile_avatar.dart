@@ -31,7 +31,7 @@ class ProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final avatar = Stack(
       clipBehavior: Clip.none,
-      alignment: Alignment.bottomRight,
+      alignment: AlignmentDirectional.bottomEnd,
       children: [
         Container(
           padding: const EdgeInsets.all(4),
@@ -71,7 +71,13 @@ class ProfileAvatar extends StatelessWidget {
     );
 
     if (onTap == null) return avatar;
-    return GestureDetector(onTap: onTap, child: avatar);
+    return InkResponse(
+      onTap: onTap,
+      customBorder: const CircleBorder(),
+      containedInkWell: false,
+      radius: size / 2 + 12,
+      child: avatar,
+    );
   }
 }
 

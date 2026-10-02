@@ -5,7 +5,7 @@ import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/network/api_exception.dart';
 
-class NotificationsController extends GetxController with LatestLoadGuard {
+class NotificationsController extends GetxController with LatestLoadGuard, InitialLoadState {
   final NotificationRepository _repository = Get.find();
 
   final isLoading = true.obs;
@@ -24,7 +24,7 @@ class NotificationsController extends GetxController with LatestLoadGuard {
 
   Future<void> loadNotifications() async {
     final session = beginLoad();
-    isLoading.value = true;
+    isLoading.value = isInitialLoad;
     errorMessage.value = null;
     _page = 1;
     try {
@@ -32,6 +32,7 @@ class NotificationsController extends GetxController with LatestLoadGuard {
       applyIfCurrent(session, () {
         items.assignAll(result.items);
         hasMore.value = result.hasMore;
+        markLoaded();
       });
     } on ApiCancelledException {
       return;
@@ -59,6 +60,7 @@ class NotificationsController extends GetxController with LatestLoadGuard {
   }
 
   void clearForLogout() {
+    resetInitialLoad();
     items.clear();
     hasMore.value = true;
     errorMessage.value = null;

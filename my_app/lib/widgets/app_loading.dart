@@ -166,7 +166,7 @@ class _AppPageLoaderState extends State<AppPageLoader> with SingleTickerProvider
             style: TextStyle(
               color: widget.light ? Colors.white70 : AppColors.textSecondary,
               fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
               height: 1.4,
             ),
           ),

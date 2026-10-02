@@ -12,9 +12,9 @@ import '../../../core/storage/token_storage.dart';
 import '../../../routes/app_routes.dart';
 import '../../../widgets/design_system.dart';
 
-/// مدة أنيميشن الشعار — 2 ثانية كحد أقصى.
-const _kSplashAnimationDuration = Duration(milliseconds: 2000);
-const _kPostAnimationHold = Duration(milliseconds: 320);
+/// مدة أنيميشن الشعار.
+const _kSplashAnimationDuration = Duration(milliseconds: 1300);
+const _kPostAnimationHold = Duration(milliseconds: 150);
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -123,7 +123,7 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
                           style: AppFonts.tajawal(
                             color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                             height: 1.4,
                           ),
                         ),

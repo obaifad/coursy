@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../widgets/design_system.dart';
+import '../../../widgets/app_widgets.dart';
 import '../controllers/booking_controller.dart';
 
 class CourseBookingView extends GetView<BookingController> {
@@ -14,7 +15,7 @@ class CourseBookingView extends GetView<BookingController> {
     return Scaffold(
       appBar: AppBar(title: Text('booking_confirm_title'.tr)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
         children: [
           SoftCard(
             child: Column(
@@ -34,10 +35,7 @@ class CourseBookingView extends GetView<BookingController> {
                   ],
                 ),
                 const SizedBox(height: 14),
-                Text(
-                  c.price,
-                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900, fontSize: 22),
-                ),
+                CoursePriceText(price: c.price, amountSize: 22, currencySize: 13),
               ],
             ),
           ),
@@ -82,7 +80,7 @@ class _InfoChip extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: AppColors.primary),
           const SizedBox(width: 6),
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
         ],
       ),
     );

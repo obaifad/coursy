@@ -2,8 +2,9 @@ import 'package:get/get.dart';
 
 import '../../../core/data/repositories/course_repository.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/locale/locale_request_guard.dart';
 
-class CategoryCoursesController extends GetxController {
+class CategoryCoursesController extends GetxController with InitialLoadState {
   final CourseRepository _repository = Get.find();
 
   final isLoading = true.obs;
@@ -39,7 +40,7 @@ class CategoryCoursesController extends GetxController {
   }
 
   Future<void> loadCourses() async {
-    isLoading.value = true;
+    isLoading.value = isInitialLoad;
     _page = 1;
     try {
       final result = await _repository.fetchCoursesPage(
@@ -49,6 +50,7 @@ class CategoryCoursesController extends GetxController {
       );
       courses.assignAll(result.items);
       hasMore.value = result.hasMore;
+      markLoaded();
     } finally {
       isLoading.value = false;
     }

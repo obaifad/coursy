@@ -75,7 +75,7 @@ String _courseSummaryLine(CourseModel course) {
 ({Color bg, Color fg}) _levelBadgeColors(String level) {
   final l = level.toLowerCase();
   if (l.contains('مبتد') || l.contains('beginner')) {
-    return (bg: const Color(0xFFDCFCE7), fg: const Color(0xFF166534));
+    return (bg: AppColors.successSoft, fg: AppColors.successText);
   }
   if (l.contains('متوسط') || l.contains('intermediate')) {
     return (bg: AppColors.infoSoft, fg: AppColors.infoText);

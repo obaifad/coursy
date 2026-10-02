@@ -177,7 +177,7 @@ class CourseModel {
     if (max != null && max > 0) {
       return 'course_seats'.trParams({'current': '$current', 'max': '$max'});
     }
-    return 'students_count'.trParams({'n': '$current'});
+    return pluralTr('students_count', current);
   }
 
   static int? _parseConfirmedStudents(Map<String, dynamic> json) {

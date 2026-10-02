@@ -39,7 +39,7 @@ class InstituteMiniCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    BidiText(
                       institute.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -48,7 +48,7 @@ class InstituteMiniCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                        const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 16),
                         const SizedBox(width: 4),
                         Text('${institute.rating}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                       ],
@@ -88,7 +88,7 @@ class PrivateInstructorListCard extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
+                        child: BidiText(
                           instructor.name,
                           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                           maxLines: 1,
@@ -110,22 +110,22 @@ class PrivateInstructorListCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
+                  BidiText(
                     instructor.specialization ?? 'instructor_default'.tr,
-                    style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                    style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 13),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'instructor_years'.trParams({
-                      'role': instructor.specialization ?? 'instructor_default'.tr,
-                      'years': '${instructor.experienceYears}',
-                    }),
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  // التخصص معروض في السطر السابق — هنا الخبرة فقط، وتُخفى إن لم تُعرف.
+                  if (instructor.experienceYears > 0) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      pluralTr('instructor_experience', instructor.experienceYears),
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                   if (instructor.hourlyPrice != null) ...[
                     const SizedBox(height: 6),
                     Text(
@@ -140,7 +140,7 @@ class PrivateInstructorListCard extends StatelessWidget {
                         const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
                         const SizedBox(width: 4),
                         Expanded(
-                          child: Text(
+                          child: BidiText(
                             instructor.address!,
                             style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
                             maxLines: 1,
@@ -192,7 +192,7 @@ class PrivateInstructorMiniCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    BidiText(
                       instructor.name,
                       style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, height: 1.2),
                       maxLines: 2,
@@ -200,21 +200,22 @@ class PrivateInstructorMiniCard extends StatelessWidget {
                       textAlign: TextAlign.start,
                     ),
                     const SizedBox(height: 4),
-                    Text(
+                    BidiText(
                       instructor.specialization ?? 'instructor_default'.tr,
-                      style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 11),
+                      style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 11),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.start,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'instructor_years_short'.trParams({'years': '${instructor.experienceYears}'}),
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.start,
-                    ),
+                    if (instructor.experienceYears > 0) const SizedBox(height: 4),
+                    if (instructor.experienceYears > 0)
+                      Text(
+                        pluralTr('instructor_experience', instructor.experienceYears),
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.start,
+                      ),
                     if (instructor.hourlyPrice != null) ...[
                       const SizedBox(height: 6),
                       Align(
@@ -398,7 +399,7 @@ class InstituteListCard extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
+                        child: BidiText(
                           institute.name,
                           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                           maxLines: 1,
@@ -414,7 +415,7 @@ class InstituteListCard extends StatelessWidget {
                       const Icon(Icons.location_on_outlined, size: 16, color: AppColors.textSecondary),
                       const SizedBox(width: 4),
                       Flexible(
-                        child: Text(
+                        child: BidiText(
                           institute.city,
                           style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
                           maxLines: 1,
@@ -426,14 +427,18 @@ class InstituteListCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
+                      const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 18),
                       const SizedBox(width: 4),
                       Text('${institute.rating}', style: const TextStyle(fontWeight: FontWeight.w700)),
                       const SizedBox(width: 12),
                       Flexible(
                         child: Text(
-                          'category_courses_count'.trParams({'count': '${institute.coursesCount}'}),
-                          style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                          pluralTr('category_courses_count', institute.coursesCount),
+                          style: TextStyle(
+                            color: institute.coursesCount > 0 ? AppColors.primary : AppColors.textSecondary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -443,7 +448,10 @@ class InstituteListCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_left_rounded, color: AppColors.textSecondary),
+            Icon(
+              appIsRtl(context) ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+              color: AppColors.textSecondary,
+            ),
           ],
         ),
       ),
@@ -473,7 +481,7 @@ class ProfileMenuTile extends StatelessWidget {
             decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: AppColors.primary, size: 22),
           ),
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
           trailing: trailing ?? const Icon(Icons.chevron_left_rounded, color: AppColors.textSecondary),
           onTap: onTap,
         ),

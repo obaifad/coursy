@@ -331,11 +331,11 @@ class _SkeletonCourseCard extends StatelessWidget {
                         child: Stack(
                           children: [
                             const Align(
-                              alignment: Alignment.centerLeft,
+                              alignment: AlignmentDirectional.centerStart,
                               child: Text('350000', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900)),
                             ),
                             Align(
-                              alignment: Alignment.centerRight,
+                              alignment: AlignmentDirectional.centerEnd,
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: const [

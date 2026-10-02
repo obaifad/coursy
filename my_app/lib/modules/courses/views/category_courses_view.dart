@@ -11,6 +11,7 @@ import '../../../widgets/design_system.dart';
 import '../../../widgets/filter_chips.dart';
 import '../../../modules/auth/widgets/register_form_widgets.dart';
 import '../controllers/category_courses_controller.dart';
+import '../../../core/locale/plural.dart';
 
 class CategoryCoursesView extends GetView<CategoryCoursesController> {
   const CategoryCoursesView({super.key});
@@ -145,7 +146,7 @@ class _CategoryHeroHeader extends StatelessWidget {
                       IconButton(
                         onPressed: Get.back,
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                         icon: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
@@ -161,7 +162,7 @@ class _CategoryHeroHeader extends StatelessWidget {
                           border: Border.all(color: Colors.white24),
                         ),
                         child: Text(
-                          'category_courses_count'.trParams({'count': '$coursesCount'}),
+                          pluralTr('category_courses_count', coursesCount),
                           style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
                         ),
                       ),

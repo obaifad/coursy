@@ -40,59 +40,88 @@ class LoginView extends GetView<AuthController> {
         child: Scaffold(
           backgroundColor: const Color(0xFFF3F1FF),
           resizeToAvoidBottomInset: true,
-          body: SafeArea(
-            child: Builder(
-              builder: (context) {
-                final metrics = LoginPageMetrics.of(context);
-                final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-                final bottomPad = keyboardInset > 0 ? keyboardInset + 12 : 32.0;
+          body: Stack(
+            children: [
+              SafeArea(
+                child: Builder(
+                  builder: (context) {
+                    final metrics = LoginPageMetrics.of(context);
+                    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+                    final bottomPad = keyboardInset > 0 ? keyboardInset + 12 : 32.0;
 
-                if (metrics.useSplitLayout) {
-                  return AuthSplitLayout(
-                    metrics: metrics,
-                    heroVariant: AuthSplitHeroVariant.login,
-                    bottomInset: keyboardInset,
-                    form: _LoginSplitFormBody(metrics: metrics),
-                  );
-                }
+                    if (metrics.useSplitLayout) {
+                      return AuthSplitLayout(
+                        metrics: metrics,
+                        heroVariant: AuthSplitHeroVariant.login,
+                        bottomInset: keyboardInset,
+                        form: _LoginSplitFormBody(metrics: metrics),
+                      );
+                    }
 
-                return LayoutBuilder(
-                  builder: (context, viewport) {
-                    return SingleChildScrollView(
-                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: EdgeInsets.only(bottom: bottomPad),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(minHeight: viewport.maxHeight),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            LoginHeroHeader(metrics: metrics),
-                            Center(
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(maxWidth: metrics.maxContentWidth),
-                                child: Container(
-                                  width: double.infinity,
-                                  decoration: const BoxDecoration(gradient: RegisterDecor.background),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: metrics.horizontalPadding,
-                                    vertical: metrics.formVerticalPadding,
+                    return LayoutBuilder(
+                      builder: (context, viewport) {
+                        return SingleChildScrollView(
+                          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                          padding: EdgeInsets.only(bottom: bottomPad),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(minHeight: viewport.maxHeight),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                LoginHeroHeader(metrics: metrics),
+                                Center(
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(maxWidth: metrics.maxContentWidth),
+                                    child: Container(
+                                      width: double.infinity,
+                                      decoration: const BoxDecoration(gradient: RegisterDecor.background),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: metrics.horizontalPadding,
+                                        vertical: metrics.formVerticalPadding,
+                                      ),
+                                      child: _LoginFormBody(metrics: metrics),
+                                    ),
                                   ),
-                                  child: _LoginFormBody(metrics: metrics),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
+              ),
+              const _AuthBackButton(),
+            ],
           ),
         ),
       );
     });
+  }
+}
+
+/// زر رجوع يظهر فقط عندما تُفتح الشاشة فوق شاشة أخرى (الضيف يضغط "دخول" من داخل التطبيق).
+class _AuthBackButton extends StatelessWidget {
+  const _AuthBackButton();
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Navigator.canPop(context)) return const SizedBox.shrink();
+    return PositionedDirectional(
+      top: MediaQuery.paddingOf(context).top + 4,
+      start: 8,
+      child: IconButton(
+        onPressed: Get.back,
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+        icon: const Icon(Icons.arrow_back_rounded),
+        style: IconButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: AppColors.textPrimary,
+          minimumSize: const Size(44, 44),
+        ),
+      ),
+    );
   }
 }
 
@@ -211,8 +240,7 @@ class _LoginForgotPasswordLink extends StatelessWidget {
         onPressed: () => Get.toNamed(AppRoutes.forgotPassword),
         style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          minimumSize: Size.zero,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          minimumSize: const Size(48, 44),
         ),
         child: Text(
           'forgot_password'.tr,
@@ -253,19 +281,19 @@ class _LoginErrorBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.red.withValues(alpha: 0.08),
+      color: AppColors.danger.withValues(alpha: 0.08),
       borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.error_outline_rounded, color: Colors.red.shade700, size: 20),
+            Icon(Icons.error_outline_rounded, color: AppColors.dangerText, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 message,
-                style: AppFonts.tajawal(color: Colors.red.shade700, fontWeight: FontWeight.w600, height: 1.35),
+                style: AppFonts.tajawal(color: AppColors.dangerText, fontWeight: FontWeight.w700, height: 1.35),
               ),
             ),
           ],
@@ -281,14 +309,14 @@ class _WebLoginHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.amber.withValues(alpha: 0.2),
+      color: AppColors.ratingStar.withValues(alpha: 0.2),
       borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.info_outline, color: Colors.amber, size: 22),
+            const Icon(Icons.info_outline, color: AppColors.ratingStar, size: 22),
             const SizedBox(width: 10),
             Expanded(child: Text('web_cors_hint'.tr, style: AppFonts.tajawal(fontSize: 13, height: 1.4))),
           ],

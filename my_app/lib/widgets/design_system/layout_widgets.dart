@@ -142,12 +142,12 @@ class AppSegmentedTabBar extends StatelessWidget {
               indicator: BoxDecoration(
                 color: AppColors.card,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: const [BoxShadow(color: Color(0x226C63FF), blurRadius: 10, offset: Offset(0, 3))],
+                boxShadow: const [BoxShadow(color: AppColors.shadowPurple, blurRadius: 10, offset: Offset(0, 3))],
               ),
               labelColor: AppColors.primary,
               unselectedLabelColor: AppColors.textSecondary,
               labelStyle: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 13),
-              unselectedLabelStyle: AppFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 13),
+              unselectedLabelStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13),
               tabs: tabs,
             );
           },
@@ -288,11 +288,7 @@ class AppSectionHeader extends StatelessWidget {
         if (actionLabel != null && onAction != null)
           TextButton(
             onPressed: onAction,
-            style: TextButton.styleFrom(
-              padding: EdgeInsetsDirectional.zero,
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
+            style: TextButton.styleFrom(padding: EdgeInsetsDirectional.zero, minimumSize: const Size(48, 44)),
             child: Text(actionLabel!, style: AppTypography.actionLabel()),
           ),
       ],

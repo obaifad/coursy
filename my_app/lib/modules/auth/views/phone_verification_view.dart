@@ -147,7 +147,7 @@ class _VerifyStep extends StatelessWidget {
             child: Text(
               hint,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.w600),
+              style: TextStyle(color: AppColors.successText, fontWeight: FontWeight.w700),
             ),
           );
         }),

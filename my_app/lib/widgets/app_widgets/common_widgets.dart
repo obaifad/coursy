@@ -14,6 +14,16 @@ class CoursePriceText extends StatelessWidget {
     final amount = parts.isNotEmpty ? parts.first : price;
     final currency = parts.length > 1 ? parts.sublist(1).join(' ') : '';
 
+    // سعر غير محدد من الخادم ('—') → نص واضح بدل شرطة معزولة.
+    if (amount == '—') {
+      return Text(
+        'price_on_request'.tr,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w700, fontSize: currencySize + 2),
+      );
+    }
+
     return Text.rich(
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -82,7 +92,7 @@ class AppNetworkImage extends StatelessWidget {
         height: hasExplicitSize ? h : null,
         fit: fit,
         memCacheWidth: hasExplicitSize ? (w * pixelRatio).round() : null,
-        fadeInDuration: const Duration(milliseconds: 150),
+        fadeInDuration: AppMotion.fast,
         errorWidget: (_, __, ___) => fallback,
       );
     }
@@ -248,7 +258,7 @@ class CourseMetaChip extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: AppFonts.tajawal(
                 fontSize: compact ? 10 : 11,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
                 color: AppColors.textMuted,
               ),
             ),

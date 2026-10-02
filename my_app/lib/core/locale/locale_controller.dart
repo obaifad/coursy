@@ -115,9 +115,9 @@ class _LanguageTile extends StatelessWidget {
       final selected = locale.code.value == code;
       return ListTile(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        tileColor: selected ? const Color(0x146C63FF) : null,
+        tileColor: selected ? AppColors.indicatorFill : null,
         leading: Text(flag, style: const TextStyle(fontSize: 28)),
-        title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.w800 : FontWeight.w600)),
+        title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.w800 : FontWeight.w700)),
         trailing: selected ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
         onTap: () async {
           Get.back();

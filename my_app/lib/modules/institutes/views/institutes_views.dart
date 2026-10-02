@@ -177,7 +177,7 @@ class _InfoTab extends StatelessWidget {
       final showAddress = address != null && address.isNotEmpty && !JsonHelpers.looksLikeCoordinates(address);
 
       return ListView(
-        padding: const EdgeInsets.all(16),
+        padding: AppLayout.scrollPadding(context, top: 16),
         children: [
           SoftCard(
             child: Column(
@@ -199,7 +199,7 @@ class _InfoTab extends StatelessWidget {
                     const Icon(Icons.location_on_rounded, color: AppColors.primary),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(institute?.city ?? '—', style: const TextStyle(fontWeight: FontWeight.w600)),
+                      child: Text(institute?.city ?? '—', style: const TextStyle(fontWeight: FontWeight.w700)),
                     ),
                   ],
                 ),
@@ -243,7 +243,7 @@ class _CoursesTab extends StatelessWidget {
         );
       }
       return ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: AppLayout.scrollPadding(context, top: 16),
         itemCount: controller.courses.length,
         itemBuilder: (_, i) {
           final c = controller.courses[i];
@@ -287,7 +287,7 @@ class _InstructorsTab extends StatelessWidget {
         );
       }
       return ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: AppLayout.scrollPadding(context, top: 16),
         itemCount: controller.instructors.length,
         itemBuilder: (_, i) {
           final ins = controller.instructors[i];
