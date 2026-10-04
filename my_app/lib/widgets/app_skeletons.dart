@@ -191,6 +191,7 @@ class CourseDetailsSkeleton extends StatelessWidget {
                   child: SoftCard(
                     child: GridView.count(
                       shrinkWrap: true,
+                      padding: EdgeInsets.zero,
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisCount: 2,
                       mainAxisSpacing: 10,

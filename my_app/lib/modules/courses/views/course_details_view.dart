@@ -32,6 +32,19 @@ class CourseDetailsView extends GetView<CourseDetailsController> {
     return Obx(() {
       final item = controller.course.value;
       if (item == null) {
+        if (controller.loadFailed.value) {
+          return Scaffold(
+            backgroundColor: AppColors.surface,
+            appBar: AppBar(backgroundColor: AppColors.surface, surfaceTintColor: Colors.transparent),
+            body: AppEmptyState(
+              message: 'course_load_failed'.tr,
+              icon: Icons.cloud_off_outlined,
+              action: controller.isLoading.value
+                  ? const CircularProgressIndicator()
+                  : OutlinedButton(onPressed: controller.retryLoad, child: Text('retry_action'.tr)),
+            ),
+          );
+        }
         return const Scaffold(body: CourseDetailsSkeleton());
       }
       return _CourseDetailsShell(key: ValueKey(item.id), item: item, detailsController: controller);
@@ -53,6 +66,7 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
   late final TabController _tabController;
   late final ScrollController _scrollController;
   int _lastTabIndex = 0;
+  bool _showTitleInBar = false;
 
   CourseModel get item => widget.item;
   CourseDetailsController get controller => widget.detailsController;
@@ -61,7 +75,7 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _scrollController = ScrollController();
+    _scrollController = ScrollController()..addListener(_onScroll);
     _lastTabIndex = _tabController.index;
     _tabController.addListener(_handleTabSelection);
   }
@@ -70,8 +84,26 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
   void dispose() {
     _tabController.removeListener(_handleTabSelection);
     _tabController.dispose();
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final threshold = 320 * CourseCardMetrics.textScaleOf(context) - kToolbarHeight - 24;
+    final show = _scrollController.offset > threshold;
+    if (show != _showTitleInBar) setState(() => _showTitleInBar = show);
+  }
+
+  /// سحب أفقي للتنقل بين التبويبات (يراعي اتجاه RTL: السحب لليمين = التبويب التالي).
+  void _onHorizontalSwipe(DragEndDetails details) {
+    final v = details.primaryVelocity ?? 0;
+    if (v.abs() < 300) return;
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final forward = rtl ? v > 0 : v < 0;
+    final target = (_tabController.index + (forward ? 1 : -1)).clamp(0, _tabController.length - 1);
+    if (target != _tabController.index) _tabController.animateTo(target);
   }
 
   void _handleTabSelection() {
@@ -113,66 +145,54 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
       return Scaffold(
         backgroundColor: AppColors.surface,
         resizeToAvoidBottomInset: false,
-        body: NestedScrollView(
-          controller: _scrollController,
-          physics: const ClampingScrollPhysics(),
-          floatHeaderSlivers: true,
-          headerSliverBuilder: (context, innerBoxIsScrolled) => [
-            SliverOverlapAbsorber(
-              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-              sliver: SliverMainAxisGroup(
-                slivers: [
-                  _buildCourseHeroSliver(
-                    context: context,
-                    item: item,
-                    showTitleInBar: innerBoxIsScrolled,
-                    onFavorite: controller.toggleFavorite,
-                  ),
-                  SliverPersistentHeader(
-                    pinned: true,
-                    delegate: _CourseTabBarHeaderDelegate(tabController: _tabController),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          body: TabBarView(
-            controller: _tabController,
+        // CustomScrollView واحد بدل NestedScrollView+TabBarView: نهاية التمرير = نهاية المحتوى الفعلي،
+        // فلا يبقى فراغ كبير ولا يتمرّر المحتوى القصير "زيادة" بعد انطواء الغلاف.
+        body: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onHorizontalDragEnd: _onHorizontalSwipe,
+          child: CustomScrollView(
+            controller: _scrollController,
             physics: const ClampingScrollPhysics(),
-            children: [
-              _CourseTabPage(
-                storageKey: 'course_overview_${item.id}',
-                child: Obx(
-                  () => Skeletonizer(
-                    enabled: controller.isLoading.value,
-                    child: _OverviewTab(item: item),
-                  ),
-                ),
+            slivers: [
+              _buildCourseHeroSliver(
+                context: context,
+                item: item,
+                showTitleInBar: _showTitleInBar,
+                onFavorite: controller.toggleFavorite,
               ),
-              _CourseTabPage(
-                storageKey: 'course_schedule_${item.id}',
-                child: Obx(
-                  () => Skeletonizer(
-                    enabled: controller.isLoading.value,
-                    child: _ScheduleTab(item: item),
-                  ),
-                ),
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _CourseTabBarHeaderDelegate(tabController: _tabController),
               ),
-              _CourseTabPage(
-                storageKey: 'course_instructor_${item.id}',
-                child: Obx(
-                  () => Skeletonizer(
-                    enabled: controller.isLoading.value,
-                    child: _InstructorTab(item: item),
-                  ),
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  AppLayout.readableInset(context),
+                  12,
+                  AppLayout.readableInset(context),
+                  24,
                 ),
-              ),
-              _CourseTabPage(
-                storageKey: 'course_reviews_${item.id}',
-                child: Obx(
-                  () => Skeletonizer(
-                    enabled: controller.isLoading.value,
-                    child: _ReviewsTab(item: item),
+                sliver: SliverToBoxAdapter(
+                  child: ListenableBuilder(
+                    listenable: _tabController,
+                    builder: (context, _) => AnimatedSwitcher(
+                      duration: AppMotion.fast,
+                      layoutBuilder: (current, previous) =>
+                          Stack(alignment: Alignment.topCenter, children: [...previous, if (current != null) current]),
+                      child: KeyedSubtree(
+                        key: ValueKey<int>(_tabController.index),
+                        child: Obx(
+                          () => Skeletonizer(
+                            enabled: controller.isLoading.value,
+                            child: switch (_tabController.index) {
+                              0 => _OverviewTab(item: item),
+                              1 => _ScheduleTab(item: item),
+                              2 => _InstructorTab(item: item),
+                              _ => _ReviewsTab(item: item),
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -183,6 +203,7 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
           () => _StickyEnrollBar(
             item: item,
             hasRegisteredEnrollment: controller.hasCourseEnrollment.value,
+            enrollmentResolved: controller.enrollmentResolved.value,
             onBook: _openBooking,
             onRegistrationClosed: _onRegistrationClosedTap,
             onFavorite: controller.toggleFavorite,
@@ -302,41 +323,6 @@ SliverAppBar _buildCourseHeroSliver({
       ),
     ),
   );
-}
-
-class _CourseTabPage extends StatelessWidget {
-  const _CourseTabPage({required this.storageKey, required this.child});
-
-  final String storageKey;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      bottom: false,
-      child: Builder(
-        builder: (context) {
-          return CustomScrollView(
-            key: PageStorageKey<String>(storageKey),
-            physics: const ClampingScrollPhysics(),
-            slivers: [
-              SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(
-                  AppLayout.readableInset(context),
-                  12,
-                  AppLayout.readableInset(context),
-                  24,
-                ),
-                sliver: SliverToBoxAdapter(child: child),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
 }
 
 class _CourseTabBarHeaderDelegate extends SliverPersistentHeaderDelegate {

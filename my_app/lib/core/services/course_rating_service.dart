@@ -4,6 +4,7 @@ import '../models/app_models.dart';
 import '../models/paginated_result.dart';
 import '../network/api_client.dart';
 import '../network/api_endpoints.dart';
+import '../network/json_parser.dart';
 
 /// يكمّل تقييم الدورات (من تقييم المعهد) وبيانات المعاهد الناقصة من كاش قائمة المعاهد.
 class CourseRatingService extends GetxService {
@@ -20,6 +21,8 @@ class CourseRatingService extends GetxService {
   Map<int, double>? _instituteRatings;
   Map<int, int>? _instituteCoursesCounts;
   Map<int, InstituteModel>? _instituteProfiles;
+  Map<int, CityModel>? _cities;
+  Map<int, CategoryModel>? _categories;
   Future<void>? _loading;
   DateTime? _loadedAt;
 
@@ -27,6 +30,8 @@ class CourseRatingService extends GetxService {
     _instituteRatings = null;
     _instituteCoursesCounts = null;
     _instituteProfiles = null;
+    _cities = null;
+    _categories = null;
     _loading = null;
     _loadedAt = null;
   }
@@ -48,8 +53,28 @@ class CourseRatingService extends GetxService {
     final instituteStats = await _fetchInstituteStats();
     _instituteRatings = instituteStats.ratings;
     _instituteCoursesCounts = instituteStats.coursesCounts;
-    _instituteProfiles = instituteStats.profiles;
+    _cities = await _fetchMap<CityModel>(ApiEndpoints.cities, CityModel.fromJson, (c) => c.id);
+    _categories = await _fetchMap<CategoryModel>(ApiEndpoints.categories, CategoryModel.fromJson, (c) => c.id);
+    _instituteProfiles = {for (final entry in instituteStats.profiles.entries) entry.key: _withCity(entry.value)};
     _loadedAt = DateTime.now();
+  }
+
+  /// قوائم مرجعية صغيرة (مدن/تصنيفات) — فشلها لا يمنع باقي الكاش.
+  Future<Map<int, T>> _fetchMap<T>(String path, T Function(Map<String, dynamic>) parse, int Function(T) idOf) async {
+    try {
+      final items = await _client.handle(() => _client.get(path), (data) => extractListMap(data).map(parse).toList());
+      return {for (final item in items) idOf(item): item};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// الخادم يعيد city_id فقط في قائمة المعاهد — نحوّله إلى اسم المدينة.
+  InstituteModel _withCity(InstituteModel institute) {
+    if (institute.cityAr.isNotEmpty || institute.cityEn.isNotEmpty) return institute;
+    final city = _cities?[institute.cityId];
+    if (city == null) return institute;
+    return institute.copyWith(cityAr: city.nameAr, cityEn: city.nameEn);
   }
 
   Future<({Map<int, double> ratings, Map<int, int> coursesCounts, Map<int, InstituteModel> profiles})>
@@ -110,7 +135,20 @@ class CourseRatingService extends GetxService {
     return courses
         .map((course) {
           final rating = resolve(course);
-          return rating > 0 && rating != course.rating ? course.copyWith(rating: rating) : course;
+          var updated = rating > 0 && rating != course.rating ? course.copyWith(rating: rating) : course;
+          final institute = _instituteProfiles?[updated.instituteId];
+          if (institute != null) {
+            updated = updated.copyWith(
+              instituteAr: updated.instituteAr.isEmpty ? institute.nameAr : null,
+              instituteEn: updated.instituteEn.isEmpty ? institute.nameEn : null,
+              instituteCity: (updated.instituteCity ?? '').isEmpty && institute.city.isNotEmpty ? institute.city : null,
+            );
+          }
+          final category = _categories?[updated.categoryId];
+          if (category != null && (updated.categoryName ?? '').isEmpty) {
+            updated = updated.copyWith(categoryName: category.name);
+          }
+          return updated;
         })
         .toList(growable: false);
   }
@@ -153,7 +191,7 @@ class CourseRatingService extends GetxService {
 
     return institutes
         .map((institute) {
-          var updated = _mergeInstituteFromCache(institute);
+          var updated = _withCity(_mergeInstituteFromCache(institute));
           final rating = resolveInstituteRating(updated);
           if (rating > 0 && rating != updated.rating) {
             updated = updated.copyWith(rating: rating);

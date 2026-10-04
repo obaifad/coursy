@@ -1,5 +1,4 @@
 import '../../../theme/app_fonts.dart';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -34,7 +33,7 @@ class RootView extends GetView<RootController> {
           }
         },
         child: Scaffold(
-          extendBody: true,
+          extendBody: false,
           backgroundColor: AppColors.surface,
           body: PageStorage(
             bucket: controller.pageStorageBucket,
@@ -53,7 +52,7 @@ class RootView extends GetView<RootController> {
 class _RootBottomNav extends StatelessWidget {
   const _RootBottomNav({required this.currentIndex, required this.onChanged});
 
-  static const double _centerSlotWidth = 64;
+  static const double _centerSlotWidth = 52;
 
   final int currentIndex;
   final ValueChanged<int> onChanged;
@@ -91,78 +90,83 @@ class _RootBottomNav extends StatelessWidget {
         _NavItem(icon: profileIcon, activeIcon: profileActiveIcon, label: profileLabel, index: 4),
       ];
 
-      return Padding(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          0,
-          16,
-          MediaQuery.viewPaddingOf(context).bottom > 12 ? MediaQuery.viewPaddingOf(context).bottom : 12,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.97),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.65)),
-                boxShadow: const [
-                  BoxShadow(color: AppColors.shadowPurple, blurRadius: 28, offset: Offset(0, 12)),
-                  BoxShadow(color: AppColors.shadowNeutralSoft, blurRadius: 8, offset: Offset(0, 2)),
-                ],
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.zero,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+      // شريط سفلي صلب بحدود واضحة — المحتوى ينتهي فوقه (extendBody: false) ولا يمرّ خلفه.
+      return ColoredBox(
+        color: AppColors.surface,
+        child: SafeArea(
+          top: false,
+          child: Align(
+            heightFactor: 1,
+            alignment: Alignment.bottomCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.06)),
+                    boxShadow: const [
+                      BoxShadow(color: AppColors.shadowPrimary, blurRadius: 24, offset: Offset(0, 8)),
+                      BoxShadow(color: AppColors.shadowNeutralSoft, blurRadius: 4, offset: Offset(0, 1)),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    child: Stack(
+                      alignment: Alignment.center,
                       children: [
-                        Expanded(
-                          child: _SideNavButton(
-                            selected: currentIndex == items[0].index,
-                            icon: currentIndex == items[0].index ? items[0].activeIcon : items[0].icon,
-                            label: items[0].label,
-                            onTap: () => onChanged(items[0].index),
+                        Padding(
+                          padding: EdgeInsets.zero,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: _SideNavButton(
+                                  selected: currentIndex == items[0].index,
+                                  icon: currentIndex == items[0].index ? items[0].activeIcon : items[0].icon,
+                                  label: items[0].label,
+                                  onTap: () => onChanged(items[0].index),
+                                ),
+                              ),
+                              Expanded(
+                                child: _SideNavButton(
+                                  selected: currentIndex == items[1].index,
+                                  icon: currentIndex == items[1].index ? items[1].activeIcon : items[1].icon,
+                                  label: items[1].label,
+                                  onTap: () => onChanged(items[1].index),
+                                ),
+                              ),
+                              const SizedBox(width: _RootBottomNav._centerSlotWidth),
+                              Expanded(
+                                child: _SideNavButton(
+                                  selected: currentIndex == items[3].index,
+                                  icon: currentIndex == items[3].index ? items[3].activeIcon : items[3].icon,
+                                  label: items[3].label,
+                                  onTap: () => onChanged(items[3].index),
+                                ),
+                              ),
+                              Expanded(
+                                child: _SideNavButton(
+                                  selected: currentIndex == items[4].index,
+                                  icon: currentIndex == items[4].index ? items[4].activeIcon : items[4].icon,
+                                  label: items[4].label,
+                                  onTap: () => onChanged(items[4].index),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        Expanded(
-                          child: _SideNavButton(
-                            selected: currentIndex == items[1].index,
-                            icon: currentIndex == items[1].index ? items[1].activeIcon : items[1].icon,
-                            label: items[1].label,
-                            onTap: () => onChanged(items[1].index),
-                          ),
-                        ),
-                        const SizedBox(width: _RootBottomNav._centerSlotWidth),
-                        Expanded(
-                          child: _SideNavButton(
-                            selected: currentIndex == items[3].index,
-                            icon: currentIndex == items[3].index ? items[3].activeIcon : items[3].icon,
-                            label: items[3].label,
-                            onTap: () => onChanged(items[3].index),
-                          ),
-                        ),
-                        Expanded(
-                          child: _SideNavButton(
-                            selected: currentIndex == items[4].index,
-                            icon: currentIndex == items[4].index ? items[4].activeIcon : items[4].icon,
-                            label: items[4].label,
-                            onTap: () => onChanged(items[4].index),
-                          ),
+                        _CenterNavButton(
+                          selected: currentIndex == items[2].index,
+                          icon: items[2].activeIcon,
+                          onTap: () => onChanged(items[2].index),
                         ),
                       ],
                     ),
                   ),
-                  _CenterNavButton(
-                    selected: currentIndex == items[2].index,
-                    icon: items[2].activeIcon,
-                    onTap: () => onChanged(items[2].index),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -175,7 +179,7 @@ class _RootBottomNav extends StatelessWidget {
 class _CenterNavButton extends StatelessWidget {
   const _CenterNavButton({required this.selected, required this.icon, required this.onTap});
 
-  static const double _size = 52;
+  static const double _size = 46;
 
   final bool selected;
   final IconData icon;
@@ -206,7 +210,7 @@ class _CenterNavButton extends StatelessWidget {
               ),
             ],
           ),
-          child: Icon(icon, color: selected ? Colors.white : AppColors.primary, size: 24),
+          child: Icon(icon, color: selected ? Colors.white : AppColors.primary, size: 22),
         ),
       ),
     );
@@ -229,24 +233,24 @@ class _SideNavButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               AnimatedContainer(
                 duration: AppMotion.fast,
                 curve: Curves.easeOutCubic,
-                width: 36,
-                height: 36,
+                width: 40,
+                height: 28,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   gradient: selected ? AppGradients.primary : null,
                   color: selected ? null : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: selected ? Colors.white : AppColors.textSecondary, size: 20),
+                child: Icon(icon, color: selected ? Colors.white : AppColors.textSecondary, size: 19),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 label,
                 maxLines: 1,

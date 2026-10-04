@@ -48,7 +48,7 @@ class _ScheduleTab extends GetView<CourseDetailsController> {
           if (schedules.isEmpty)
             _SectionCard(
               title: 'schedule_title'.tr,
-              child: Text('no_description'.tr, style: const TextStyle(color: AppColors.textSecondary)),
+              child: Text('no_schedule_yet'.tr, style: const TextStyle(color: AppColors.textSecondary)),
             )
           else
             _SectionCard(
@@ -114,7 +114,7 @@ class _InstructorTab extends StatelessWidget {
         children: [
           _SectionCard(
             title: 'tab_instructor'.tr,
-            child: Text('no_description'.tr, style: const TextStyle(color: AppColors.textSecondary)),
+            child: Text('no_instructor_info'.tr, style: const TextStyle(color: AppColors.textSecondary)),
           ),
         ],
       );

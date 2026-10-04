@@ -48,6 +48,10 @@ class BookingController extends GetxController {
       }
       unawaited(EnrollmentWatchScheduler.scheduleAfterEnrollment(enrollment.id));
       AppNavigation.goToRoot(tab: 3);
+      // بعد التسجيل فقط يُعرض عنوان شام كاش (التحويل قبل التسجيل يُرفض من الخادم).
+      if (course.requiresAdvancePayment || enrollment.canPay) {
+        unawaited(Get.toNamed(AppRoutes.payment, arguments: enrollment));
+      }
     } on ApiException catch (e) {
       Get.snackbar('booking_failed_title'.tr, e.message);
     } catch (_) {

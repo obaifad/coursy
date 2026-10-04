@@ -221,6 +221,18 @@ class _EnrollmentCard extends StatelessWidget {
                 children: [for (final m in meta.rows) _MetaChip(icon: m.icon, label: m.label)],
               ),
             ],
+            if (enrollment.canPay) ...[
+              const SizedBox(height: 14),
+              FilledButton.icon(
+                onPressed: () => Get.toNamed(AppRoutes.payment, arguments: enrollment),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(46),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.account_balance_wallet_rounded, size: 20),
+                label: Text('payment_pay_now'.tr),
+              ),
+            ],
             const SizedBox(height: 16),
             Row(
               children: [

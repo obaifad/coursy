@@ -18,6 +18,7 @@ class InstituteModel {
     this.isVerified = false,
     this.logoUrl,
     this.coverImageUrl,
+    this.cityId,
   }) : nameAr = nameAr ?? name ?? '',
        nameEn = nameEn ?? name ?? '',
        cityAr = cityAr ?? city ?? '',
@@ -37,6 +38,7 @@ class InstituteModel {
   final bool isVerified;
   final String? logoUrl;
   final String? coverImageUrl;
+  final int? cityId;
 
   String get name => JsonHelpers.pickLocalized(ar: nameAr, en: nameEn);
 
@@ -81,6 +83,7 @@ class InstituteModel {
       isVerified: isVerified ?? this.isVerified,
       logoUrl: logoUrl ?? this.logoUrl,
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
+      cityId: cityId,
     );
   }
 
@@ -92,6 +95,15 @@ class InstituteModel {
       final cityNames = JsonHelpers.bilingualText(cityObj);
       cityAr = cityNames.ar;
       cityEn = cityNames.en;
+    } else if (cityObj is String && cityObj.trim().isNotEmpty) {
+      cityAr = cityObj.trim();
+      cityEn = cityObj.trim();
+    } else {
+      // بعض استجابات القوائم تُرجع اسم المدينة كحقل مسطّح.
+      final flatAr = (json['city_name_ar'] ?? json['city_ar'] ?? json['city_name'])?.toString().trim() ?? '';
+      final flatEn = (json['city_name_en'] ?? json['city_en'] ?? json['city_name'])?.toString().trim() ?? '';
+      cityAr = flatAr;
+      cityEn = flatEn.isEmpty ? flatAr : flatEn;
     }
 
     final names = JsonHelpers.bilingualText(json);
@@ -114,6 +126,9 @@ class InstituteModel {
       isVerified: JsonHelpers.parseBool(json['is_verified']),
       logoUrl: _extractLogoPath(json),
       coverImageUrl: _extractCoverImagePath(json),
+      cityId:
+          JsonHelpers.parseIntOrNull(json['city_id']) ??
+          (cityObj is Map ? JsonHelpers.parseIntOrNull(cityObj['id']) : null),
     );
   }
 

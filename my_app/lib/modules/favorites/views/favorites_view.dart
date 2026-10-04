@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-import '../../../theme/app_fonts.dart';
 import '../../../core/locale/locale_rebuild.dart';
+import '../../../core/locale/plural.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/navigation/app_navigation.dart';
+import '../../../core/services/favorites_service.dart';
+import '../../../modules/auth/widgets/register_form_widgets.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
-import '../../../widgets/app_widgets.dart';
 import '../../../widgets/app_skeletons.dart';
+import '../../../widgets/app_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/guest_access.dart';
-import '../../../core/navigation/app_navigation.dart';
-import '../../../modules/auth/widgets/register_form_widgets.dart';
 import '../controllers/favorites_controller.dart';
-import '../../../core/locale/plural.dart';
-import '../../../theme/app_motion.dart';
 
+/// صفحة المفضلة: هيدر بنفسجي موحّد + شبكة بطاقات الدورات نفسها المستخدمة في التطبيق.
 class FavoritesView extends GetView<FavoritesController> {
   const FavoritesView({super.key});
 
@@ -23,131 +24,87 @@ class FavoritesView extends GetView<FavoritesController> {
   Widget build(BuildContext context) {
     return Obx(() {
       final _ = localeRebuildToken;
+      final count = controller.courses.length;
       return Scaffold(
         backgroundColor: AppColors.surface,
-        appBar: _FavoritesAppBar(onRefresh: controller.loadFavorites),
-        body: GuestGate(
-          message: 'guest_favorites_hint'.tr,
-          exploreCta: 'favorites_explore'.tr,
-          onExplore: () {
-            AppNavigation.switchToTab(0);
-            Get.back();
-          },
-          child: _FavoritesBody(controller: controller),
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AppHeroHeader(
+              title: 'favorites_title'.tr,
+              subtitle: 'favorites_subtitle'.tr,
+              badge: count > 0 ? pluralTr('category_courses_count', count) : null,
+              onBack: Navigator.canPop(context) ? Get.back : null,
+            ),
+            Expanded(
+              child: GuestGate(
+                message: 'guest_favorites_hint'.tr,
+                exploreCta: 'favorites_explore'.tr,
+                onExplore: () {
+                  AppNavigation.switchToTab(0);
+                  Get.back();
+                },
+                child: _FavoritesBody(controller: controller),
+              ),
+            ),
+          ],
         ),
       );
     });
   }
 }
 
-class FavoritesTabView extends GetView<FavoritesController> {
-  const FavoritesTabView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    FavoritesController.ensureRegistered();
-    return ColoredBox(
-      color: AppColors.surface,
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AppScreenHeader(
-              title: 'favorites_title'.tr,
-              subtitle: 'favorites_subtitle'.tr,
-              logoInline: true,
-              logoHeight: 44,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    onPressed: controller.loadFavorites,
-                    icon: const Icon(Icons.refresh_rounded),
-                    tooltip: 'refresh'.tr,
-                  ),
-                  TextButton(
-                    onPressed: () => Get.toNamed(AppRoutes.favorites),
-                    child: Text('view_all'.tr, style: AppFonts.tajawal(fontWeight: FontWeight.w700)),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(child: _FavoritesBody(controller: controller, compactTop: true)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FavoritesAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const _FavoritesAppBar({required this.onRefresh});
-
-  final VoidCallback onRefresh;
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
-
-  @override
-  Widget build(BuildContext context) {
-    return AppBar(
-      centerTitle: true,
-      elevation: 0,
-      scrolledUnderElevation: 0.5,
-      backgroundColor: AppColors.surface,
-      surfaceTintColor: Colors.transparent,
-      leading: Navigator.canPop(context)
-          ? IconButton(onPressed: Get.back, icon: const Icon(Icons.arrow_back_rounded))
-          : null,
-      title: const AppLogo(height: 60),
-      actions: [
-        IconButton(onPressed: onRefresh, icon: const Icon(Icons.refresh_rounded), tooltip: 'refresh'.tr),
-        const SizedBox(width: 4),
-      ],
-    );
-  }
-}
-
 class _FavoritesBody extends StatelessWidget {
-  const _FavoritesBody({required this.controller, this.compactTop = false});
+  const _FavoritesBody({required this.controller});
 
   final FavoritesController controller;
-  final bool compactTop;
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final hPad = AppLayout.horizontalPage(context);
+
       if (controller.isLoading.value) {
-        return const AppListSkeleton(itemCount: 4);
+        return AppGridSkeleton(padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 8));
       }
 
       if (controller.courses.isEmpty) {
         return RefreshIndicator(
           color: AppColors.primary,
           onRefresh: controller.loadFavorites,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.symmetric(horizontal: AppLayout.readableInset(context, min: 20)),
-            children: [
-              SizedBox(height: MediaQuery.sizeOf(context).height * 0.12),
-              AppEmptyState(
-                message: 'favorites_empty'.tr,
-                icon: Icons.favorite_border_rounded,
-                iconSize: 56,
-                circleSize: 120,
-                action: SizedBox(
-                  width: 220,
-                  child: RegisterGradientButton(
-                    label: 'favorites_explore'.tr,
-                    onPressed: () {
-                      AppNavigation.switchToTab(0);
-                      if (Get.currentRoute == AppRoutes.favorites) Get.back();
-                    },
+          child: LayoutBuilder(
+            builder: (context, constraints) => ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              children: [
+                SizedBox(
+                  height: constraints.maxHeight,
+                  child: Center(
+                    child: SingleChildScrollView(
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: EdgeInsets.symmetric(horizontal: AppLayout.readableInset(context, min: 24)),
+                      child: AppEmptyState(
+                        message: 'favorites_empty_title'.tr,
+                        subtitle: 'favorites_empty'.tr,
+                        icon: Icons.favorite_border_rounded,
+                        iconSize: 52,
+                        circleSize: 112,
+                        action: SizedBox(
+                          width: 220,
+                          child: RegisterGradientButton(
+                            label: 'favorites_explore'.tr,
+                            onPressed: () {
+                              AppNavigation.switchToTab(0);
+                              if (Get.currentRoute == AppRoutes.favorites) Get.back();
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       }
@@ -155,19 +112,14 @@ class _FavoritesBody extends StatelessWidget {
       return RefreshIndicator(
         color: AppColors.primary,
         onRefresh: controller.loadFavorites,
-        child: ListView.separated(
+        child: GridView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(
-            AppLayout.readableInset(context, min: 20),
-            compactTop ? 8 : 16,
-            AppLayout.readableInset(context, min: 20),
-            24,
-          ),
+          padding: EdgeInsets.fromLTRB(hPad, 16, hPad, AppLayout.scrollBottomInset(context)),
           itemCount: controller.courses.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 16),
+          gridDelegate: AppGridLayouts.courseGridFor(context),
           itemBuilder: (_, i) {
             final course = controller.courses[i];
-            return _FavoriteCourseCard(course: course, controller: controller);
+            return _FavoriteGridItem(key: ValueKey(course.id), course: course, controller: controller);
           },
         ),
       );
@@ -175,225 +127,84 @@ class _FavoritesBody extends StatelessWidget {
   }
 }
 
-class _FavoriteCourseCard extends StatefulWidget {
-  const _FavoriteCourseCard({required this.course, required this.controller});
+/// بطاقة الدورة الموحّدة + زر قلب دائري فوق الغلاف لإزالتها (مع تلاشٍ وتراجع).
+class _FavoriteGridItem extends StatefulWidget {
+  const _FavoriteGridItem({super.key, required this.course, required this.controller});
 
   final CourseModel course;
   final FavoritesController controller;
 
   @override
-  State<_FavoriteCourseCard> createState() => _FavoriteCourseCardState();
+  State<_FavoriteGridItem> createState() => _FavoriteGridItemState();
 }
 
-class _FavoriteCourseCardState extends State<_FavoriteCourseCard> with SingleTickerProviderStateMixin {
-  late final AnimationController _heartController;
-  late final Animation<double> _heartScale;
+class _FavoriteGridItemState extends State<_FavoriteGridItem> {
+  bool _leaving = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _heartController = AnimationController(vsync: this, duration: AppMotion.normal, lowerBound: 0.85, upperBound: 1.15);
-    _heartScale = CurvedAnimation(parent: _heartController, curve: Curves.elasticOut);
-    _heartController.value = 1;
-  }
-
-  @override
-  void dispose() {
-    _heartController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _removeFavorite() async {
-    _heartController.forward(from: 0.85).then((_) => _heartController.reverse());
-    await widget.controller.removeCourse(widget.course);
+  Future<void> _remove() async {
+    if (_leaving) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    HapticFeedback.selectionClick();
+    setState(() => _leaving = true);
+    // ندع التلاشي يظهر قبل حذف العنصر من القائمة.
+    await Future<void>.delayed(const Duration(milliseconds: 240));
+    final course = widget.course;
+    await widget.controller.removeCourse(course);
+    messenger
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
+          content: Text('favorite_removed'.tr),
+          action: SnackBarAction(
+            label: 'undo'.tr,
+            onPressed: () => Get.find<FavoritesService>().toggleCourse(course.id),
+          ),
+        ),
+      );
   }
 
   @override
   Widget build(BuildContext context) {
     final course = widget.course;
-    final removing = widget.controller.removingIds.contains(course.id);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
-        borderRadius: BorderRadius.circular(CourseCardMetrics.cardRadius),
-        splashColor: AppColors.primary.withValues(alpha: 0.08),
-        highlightColor: AppColors.primary.withValues(alpha: 0.04),
-        child: Ink(
-          decoration: BoxDecoration(
-            color: AppColors.card,
-            borderRadius: BorderRadius.circular(CourseCardMetrics.cardRadius),
-            boxShadow: AppShadows.card,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _FavoriteCardImage(
-                course: course,
-                removing: removing,
-                heartScale: _heartScale,
-                onRemove: removing ? null : _removeFavorite,
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      course.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.cardTitle(size: 16),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      course.institute,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.cardSubtitle(size: 14),
-                    ),
-                    if (course.studyType != null || course.durationHours != null) ...[
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          if (course.studyType != null)
-                            _FavoriteMetaChip(icon: Icons.cast_for_education_outlined, label: course.studyType!),
-                          if (course.durationHours != null && course.durationHours! > 0)
-                            _FavoriteMetaChip(
-                              icon: Icons.schedule_rounded,
-                              label: pluralTr('hours_unit', course.durationHours!),
-                            ),
-                          _FavoriteMetaChip(icon: Icons.bar_chart_rounded, label: course.level),
-                        ],
-                      ),
-                    ],
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        if (course.rating > 0) ...[
-                          const Icon(Icons.star_rounded, size: 18, color: AppColors.ratingStar),
-                          const SizedBox(width: 4),
-                          Text(
-                            course.rating.toStringAsFixed(1),
-                            style: AppFonts.tajawal(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.warningText,
-                            ),
-                          ),
-                          const Spacer(),
-                        ] else
-                          const Spacer(),
-                        CoursePriceText(price: course.price, amountSize: 16, currencySize: 11),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FavoriteCardImage extends StatelessWidget {
-  const _FavoriteCardImage({
-    required this.course,
-    required this.removing,
-    required this.heartScale,
-    required this.onRemove,
-  });
-
-  final CourseModel course;
-  final bool removing;
-  final Animation<double> heartScale;
-  final VoidCallback? onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final url = course.resolvedImageUrl;
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      child: SizedBox(
-        height: 140,
+    return AnimatedOpacity(
+      opacity: _leaving ? 0 : 1,
+      duration: const Duration(milliseconds: 220),
+      child: AnimatedScale(
+        scale: _leaving ? 0.92 : 1,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeIn,
         child: Stack(
-          fit: StackFit.expand,
           children: [
-            if (url != null)
-              AppNetworkImage(url: url, width: double.infinity, height: 140, fit: BoxFit.cover, ignorePointer: true)
-            else
-              const DecoratedBox(
-                decoration: BoxDecoration(gradient: AppGradients.cardPlaceholder),
-                child: Center(child: Icon(Icons.school_rounded, color: Colors.white70, size: 44)),
-              ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withValues(alpha: 0.28)],
-                ),
+            Positioned.fill(
+              child: CourseCard(
+                course: course,
+                showActionButton: false,
+                onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
               ),
             ),
             PositionedDirectional(
-              top: 12,
-              end: 12,
+              top: 8,
+              end: 8,
               child: Material(
-                color: Colors.white,
-                elevation: 4,
-                shadowColor: AppColors.primary.withValues(alpha: 0.25),
+                color: Colors.white.withValues(alpha: 0.94),
                 shape: const CircleBorder(),
+                elevation: 2,
+                shadowColor: Colors.black26,
                 child: InkWell(
-                  onTap: onRemove,
                   customBorder: const CircleBorder(),
-                  child: SizedBox(
-                    width: 42,
-                    height: 42,
-                    child: Center(
-                      child: removing
-                          ? const SizedBox(width: 18, height: 18, child: AppInlineLoader())
-                          : ScaleTransition(
-                              scale: heartScale,
-                              child: const Icon(Icons.favorite_rounded, color: AppColors.danger, size: 22),
-                            ),
-                    ),
+                  onTap: _leaving ? null : _remove,
+                  child: const SizedBox(
+                    width: 36,
+                    height: 36,
+                    child: Icon(Icons.favorite_rounded, color: AppColors.danger, size: 20),
                   ),
                 ),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _FavoriteMetaChip extends StatelessWidget {
-  const _FavoriteMetaChip({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: AppColors.primary),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textBody),
-          ),
-        ],
       ),
     );
   }

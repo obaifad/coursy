@@ -204,8 +204,11 @@ abstract final class JsonHelpers {
       case 'paid':
       case 'completed':
         return 'payment_status_paid'.tr;
-      case 'pending':
+      case 'partial':
+        return 'payment_status_partial'.tr;
       case 'unpaid':
+        return 'payment_status_unpaid'.tr;
+      case 'pending':
         return 'payment_status_pending'.tr;
       case 'failed':
         return 'payment_status_failed'.tr;

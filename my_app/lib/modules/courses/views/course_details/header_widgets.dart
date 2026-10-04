@@ -136,6 +136,7 @@ class _QuickStatsGrid extends StatelessWidget {
           const SizedBox(height: 8),
           GridView.builder(
             shrinkWrap: true,
+            padding: EdgeInsets.zero, // الافتراضي يضيف حشوة شريط الحالة العلوية فيظهر فراغ كبير تحت العنوان
             physics: const NeverScrollableScrollPhysics(),
             itemCount: stats.length,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -144,7 +145,7 @@ class _QuickStatsGrid extends StatelessWidget {
               crossAxisSpacing: 6,
               // خانات أطول عند تكبير الخط — نص إنجليزي طويل ("28 / 30 students") يحتاج
               // سطرين ولا يتسع بالنسبة الثابتة على الأعمدة الضيقة.
-              childAspectRatio: 4.2 / (CourseCardMetrics.textScaleOf(context) * 1.2),
+              mainAxisExtent: 48 * CourseCardMetrics.textScaleOf(context),
             ),
             itemBuilder: (_, i) => _StatTile(stat: stats[i]),
           ),
@@ -167,6 +168,7 @@ class _StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      alignment: AlignmentDirectional.centerStart,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(10)),
       child: Row(

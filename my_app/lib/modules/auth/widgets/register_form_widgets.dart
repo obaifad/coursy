@@ -6,6 +6,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../theme/app_fonts.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
+import '../../../widgets/app_selection_sheet.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/app_loading.dart';
 import '../../../widgets/app_widgets.dart';
@@ -444,51 +445,16 @@ Future<void> showCityPickerSheet({
   required int? initialSelected,
   required ValueChanged<int> onPick,
 }) {
-  return showModalBottomSheet<void>(
+  return showAppSelectionSheet<int>(
     context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    useSafeArea: true,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-    builder: (context) {
-      return LocaleRebuild(
-        builder: (context) {
-          var selected = initialSelected;
-          return Padding(
-            padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('pick_city'.tr, style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 18)),
-                const SizedBox(height: 12),
-                Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: cities.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.neutralFill),
-                    itemBuilder: (_, i) {
-                      final city = cities[i];
-                      final isSelected = selected == city.id;
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.location_city_outlined, color: AppColors.primary),
-                        title: Text(city.name, style: AppFonts.tajawal(fontWeight: FontWeight.w700)),
-                        trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
-                        onTap: () {
-                          onPick(city.id);
-                          Navigator.of(context).pop();
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-    },
+    title: 'pick_city'.tr,
+    titleIcon: Icons.location_city_outlined,
+    selected: initialSelected,
+    onSelected: onPick,
+    options: [
+      for (final city in cities)
+        AppSheetOption<int>(value: city.id, label: city.name, icon: Icons.location_city_rounded),
+    ],
   );
 }
 

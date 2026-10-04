@@ -165,7 +165,34 @@ class HomeController extends GetxController with LatestLoadGuard {
 
   void _replaceIfNotEmpty<T>(RxList<T> target, List<T> source, LoadSession session) {
     if (!shouldApply(session) || source.isEmpty) return;
-    target.value = List<T>.from(source);
+    _setIfChanged(target, source);
+  }
+
+  /// بصمة حقول العرض فقط — لمنع إعادة بناء القوائم والصور عندما تأتي نفس البيانات من إعادة التحميل.
+  String _sig(Object? o) => switch (o) {
+    CourseModel c =>
+      '${c.id}|${c.title}|${c.imageUrl}|${c.price}|${c.rating}|${c.studentsCount}|${c.isRegistrationClosed}',
+    InstituteModel i => '${i.id}|${i.name}|${i.logoUrl}|${i.coursesCount}|${i.rating}|${i.city}',
+    CategoryModel c => '${c.id}|${c.name}|${c.icon}|${c.coursesCount}',
+    CityModel c => '${c.id}|${c.name}|${c.institutesCount}|${c.coursesCount}',
+    InstructorModel i => '${i.id}|${i.name}|${i.imageUrl}',
+    InstructorSubjectModel s => '${s.key}|${s.name}|${s.instructorsCount}',
+    _ => '${o.hashCode}',
+  };
+
+  /// يستبدل القائمة فقط إن تغيّر محتواها (لا وميض صور عند تحديث بنفس البيانات).
+  void _setIfChanged<T>(RxList<T> target, List<T> fresh) {
+    if (target.length == fresh.length) {
+      var same = true;
+      for (var i = 0; i < fresh.length; i++) {
+        if (_sig(target[i]) != _sig(fresh[i])) {
+          same = false;
+          break;
+        }
+      }
+      if (same) return;
+    }
+    target.assignAll(fresh);
   }
 
   Future<void> _fetchCategories(List<String> errors, LoadSession session, {bool force = false}) async {
@@ -175,7 +202,7 @@ class HomeController extends GetxController with LatestLoadGuard {
       final fresh = await _categoryRepository.fetchCategories();
       applyIfCurrent(session, () {
         if (fresh.isNotEmpty) {
-          categories.value = List<CategoryModel>.from(fresh);
+          _setIfChanged(categories, fresh);
         }
       });
     } on ApiCancelledException {
@@ -194,7 +221,7 @@ class HomeController extends GetxController with LatestLoadGuard {
       if (!shouldApply(session)) return;
       if (fresh.isNotEmpty) {
         final enriched = await _ratingService.enrich(fresh);
-        applyIfCurrent(session, () => courses.assignAll(enriched));
+        applyIfCurrent(session, () => _setIfChanged(courses, enriched));
       }
     } on ApiCancelledException {
       return;
@@ -210,7 +237,7 @@ class HomeController extends GetxController with LatestLoadGuard {
       if (isLoggedIn) {
         final personalized = await _courseRepository.fetchSuggestedCourses(limit: _suggestedLimit);
         if (!shouldApply(session)) return;
-        suggestedCourses.assignAll(personalized);
+        _setIfChanged(suggestedCourses, personalized);
         if (personalized.isNotEmpty) return;
       } else if (!force && suggestedCourses.isNotEmpty) {
         return;
@@ -219,7 +246,7 @@ class HomeController extends GetxController with LatestLoadGuard {
       final fallback = _buildSuggestedFallback();
       applyIfCurrent(session, () {
         if (fallback.isNotEmpty) {
-          suggestedCourses.value = List<CourseModel>.from(fallback);
+          _setIfChanged(suggestedCourses, fallback);
         }
       });
     } on ApiCancelledException {
@@ -252,7 +279,7 @@ class HomeController extends GetxController with LatestLoadGuard {
     if (suggestedCourses.isNotEmpty) return;
     final fallback = _buildSuggestedFallback();
     if (fallback.isNotEmpty) {
-      suggestedCourses.value = List<CourseModel>.from(fallback);
+      _setIfChanged(suggestedCourses, fallback);
     }
   }
 
@@ -276,7 +303,7 @@ class HomeController extends GetxController with LatestLoadGuard {
       final result = await _instructorRepository.fetchInstructorsPage(page: 1, perPage: 12, isPrivate: true);
       applyIfCurrent(session, () {
         if (result.items.isNotEmpty) {
-          privateInstructors.value = List<InstructorModel>.from(result.items);
+          _setIfChanged(privateInstructors, result.items);
         }
       });
     } on ApiCancelledException {
@@ -294,7 +321,7 @@ class HomeController extends GetxController with LatestLoadGuard {
       final fresh = await _instructorRepository.fetchInstructorSubjectFilters();
       applyIfCurrent(session, () {
         if (fresh.isNotEmpty) {
-          instructorSubjects.value = List<InstructorSubjectModel>.from(fresh);
+          _setIfChanged(instructorSubjects, fresh);
         }
       });
     } on ApiCancelledException {

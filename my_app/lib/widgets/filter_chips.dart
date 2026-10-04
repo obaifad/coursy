@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../core/models/app_models.dart';
 import '../theme/app_colors.dart';
+import 'app_selection_sheet.dart';
 import 'app_widgets.dart';
 import 'design_system.dart';
 import '../theme/app_motion.dart';
@@ -283,60 +284,28 @@ class CourseSortDropdown extends StatelessWidget {
   }
 }
 
-/// Bottom sheet لاختيار ترتيب الدورات.
+/// ورقة اختيار ترتيب الدورات (عائمة، بأيقونات، بأنيميشن متتابع).
 Future<void> showCourseSortSheet({
   required BuildContext context,
   required CourseSortOption selected,
   required ValueChanged<CourseSortOption> onSelected,
 }) {
-  return showModalBottomSheet<void>(
+  IconData iconFor(CourseSortOption option) => switch (option) {
+    CourseSortOption.newest => Icons.schedule_rounded,
+    CourseSortOption.ratingHigh => Icons.star_rounded,
+    CourseSortOption.priceLow => Icons.trending_down_rounded,
+    CourseSortOption.priceHigh => Icons.trending_up_rounded,
+  };
+  return showAppSelectionSheet<CourseSortOption>(
     context: context,
-    showDragHandle: true,
-    useSafeArea: true,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-    builder: (sheetContext) => SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'sort_by_title'.tr,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textBody),
-            ),
-            const SizedBox(height: 8),
-            for (final option in CourseSortOption.values)
-              InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  if (option != selected) onSelected(option);
-                },
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 48),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          option.labelKey.tr,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: option == selected ? FontWeight.w800 : FontWeight.w700,
-                            color: option == selected ? AppColors.primary : AppColors.textBody,
-                          ),
-                        ),
-                      ),
-                      if (option == selected) const Icon(Icons.check_rounded, size: 22, color: AppColors.primary),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    ),
+    title: 'sort_by_title'.tr,
+    titleIcon: Icons.swap_vert_rounded,
+    selected: selected,
+    onSelected: onSelected,
+    options: [
+      for (final option in CourseSortOption.values)
+        AppSheetOption<CourseSortOption>(value: option, label: option.labelKey.tr, icon: iconFor(option)),
+    ],
   );
 }
 

@@ -18,16 +18,18 @@ class RootController extends GetxController {
       Get.toNamed(AppRoutes.login);
       return;
     }
+    final alreadyHere = currentIndex.value == index;
     currentIndex.value = index;
-    refreshTabData(index);
+    // العودة للرئيسية من تبويب آخر تحفظ موضع التمرير؛ الضغط على "الرئيسية" وأنت فيها يعيدها للأعلى.
+    refreshTabData(index, scrollHomeToTop: alreadyHere);
   }
 
-  void refreshTabData(int index) {
+  void refreshTabData(int index, {bool scrollHomeToTop = true}) {
     if (index == 2) {
-      HomeScrollReset.notifyIfHomeVisible();
+      HomeScrollReset.notifyIfHomeVisible(scrollToTop: scrollHomeToTop);
     }
     if ((index == 3 || index == 4) && Get.isRegistered<MyCoursesController>()) {
-      Get.find<MyCoursesController>().load();
+      Get.find<MyCoursesController>().loadIfStale();
     }
     if (Get.find<TokenStorage>().isLoggedIn && Get.isRegistered<EnrollmentSyncService>()) {
       unawaited(Get.find<EnrollmentSyncService>().checkForStatusChanges());

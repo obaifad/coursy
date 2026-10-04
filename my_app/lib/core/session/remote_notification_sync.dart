@@ -22,6 +22,7 @@ abstract final class RemoteNotificationSync {
     'rejected',
     'cancelled',
     'booking',
+    'payment',
   ];
 
   static const _enrollmentScreens = ['enrollment', 'enrollments', 'my_courses', 'my-courses', 'booking'];

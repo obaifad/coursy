@@ -26,9 +26,11 @@ abstract final class CourseCardMetrics {
   static double featuredCardHeight(BuildContext context) {
     final w = featuredCardWidth(context);
     final imageH = (w / 1.65).clamp(88.0, 112.0);
-    // العنوان سطران بخط 14 يحتاج 36 (كان 32 فيُقصّ السطر الثاني).
-    const contentH = 8 + featuredTitleHeight + 6 + 16 + 8 + 20 + 8 + 30 + 10 + 32 + 14;
-    return imageH + contentH * textScaleOf(context);
+    // المحتوى الفعلي للبطاقة المميزة (بدون زر): مسافات ثابتة + عناصر نصية تكبر مع الخط.
+    // العنوان سطران بخط 14 يحتاج 36. هامش 8 صغير فوق القياس الفعلي ليبقى بلا overflow.
+    const fixedH = 10 + 6 + 8 + 8 + 8 + 18; // coverGap + فواصل + bottomPad
+    const scaledH = featuredTitleHeight + 14 + 20 + 18 + 26 + 8;
+    return imageH + fixedH + scaledH * textScaleOf(context);
   }
 
   /// ارتفاع عنوان البطاقة المميزة (سطران) عند حجم الخط الافتراضي.

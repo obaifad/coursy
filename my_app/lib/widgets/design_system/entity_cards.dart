@@ -39,11 +39,18 @@ class InstituteMiniCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    BidiText(
-                      institute.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                    // سطران بارتفاع ثابت: الأسماء الطويلة تتسع بدل أن تُقتطع بعد سطر واحد، وتتساوى البطاقات.
+                    SizedBox(
+                      height: 38 * CourseCardMetrics.textScaleOf(context),
+                      child: Align(
+                        alignment: AlignmentDirectional.topStart,
+                        child: BidiText(
+                          institute.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, height: 1.25),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Row(
@@ -409,21 +416,23 @@ class InstituteListCard extends StatelessWidget {
                       if (institute.isVerified) const Icon(Icons.verified_rounded, color: AppColors.primary, size: 18),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on_outlined, size: 16, color: AppColors.textSecondary),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: BidiText(
-                          institute.city,
-                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                  if (institute.city.trim().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined, size: 16, color: AppColors.textSecondary),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: BidiText(
+                            institute.city,
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 6),
                   Row(
                     children: [

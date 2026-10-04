@@ -14,6 +14,8 @@ import 'package:my_app/modules/institutes/controllers/institutes_controller.dart
 import 'package:my_app/modules/institutes/views/institutes_views.dart';
 import 'package:my_app/modules/notifications/controllers/notifications_controller.dart';
 import 'package:my_app/modules/notifications/views/notifications_view.dart';
+import 'package:my_app/modules/payment/controllers/payment_controller.dart';
+import 'package:my_app/modules/payment/views/payment_view.dart';
 import 'package:my_app/modules/profile/controllers/my_courses_controller.dart';
 import 'package:my_app/modules/root/controllers/root_controller.dart';
 import 'package:my_app/modules/root/views/root_view.dart';
@@ -155,6 +157,71 @@ void main() {
   // إزالة الحزمة بالكامل — كل نص يستخدم Tajawal المضمّن عبر AppFonts/الثيم، بلا استثناء ممكن).
   // اختبار آلي لهذا كان يفتح/يغلق Dialog عبر عشرات التشكيلات بسرعة، والـ Overlay العام لـ GetX
   // لا يتحمّل ذلك التكرار بثبات (استثناءات توقيت من إطار الاختبار نفسه، لا من التطبيق) — أُزيل.
+
+  const shamcash = {
+    'available': true,
+    'account_name': 'معهد مسار للتدريب والتطوير المهني',
+    'address': 'SC-ADDRESS-123456789ABCDEF',
+    'qr_payload': 'shamcash://pay/SC-ADDRESS-123456789ABCDEF',
+  };
+  const base = {
+    'enrollment_id': 42,
+    'payment_status': 'unpaid',
+    'currency': 'SYP',
+    'amount_due': 1250000,
+    'advance_amount': 300000,
+    'amount_paid': 0,
+    'amount_remaining': 1250000,
+    'advance_remaining': 300000,
+    'shamcash': shamcash,
+    'payments': [],
+  };
+  final paymentScenes = <String, Map<String, dynamic>>{
+    'payment-unpaid': base,
+    'payment-partial': {
+      ...base,
+      'payment_status': 'partial',
+      'amount_paid': 300000,
+      'amount_remaining': 950000,
+      'advance_remaining': 0,
+      'payments': [
+        {
+          'id': 7,
+          'transaction_id': '555123456789',
+          'amount': '300000.00',
+          'currency': 'SYP',
+          'occurred_at': '2026-10-03T06:15:00.000000Z',
+        },
+      ],
+    },
+    'payment-paid': {
+      ...base,
+      'payment_status': 'paid',
+      'amount_paid': 1250000,
+      'amount_remaining': 0,
+      'advance_remaining': 0,
+    },
+    'payment-unavailable': {
+      ...base,
+      'shamcash': {'available': false},
+    },
+  };
+  for (final scene in paymentScenes.entries) {
+    testWidgets(scene.key, (tester) async {
+      allIssues.addAll(
+        await auditScene(
+          tester,
+          scene.key,
+          () => const PaymentView(),
+          beforeEach: () async {
+            await registerFakes(loggedIn: true, locale: Get.locale?.languageCode ?? locale);
+            fakePaymentJson = scene.value;
+            Get.put(PaymentController(enrollmentId: 42));
+          },
+        ),
+      );
+    });
+  }
 
   testWidgets('login', (tester) async {
     allIssues.addAll(

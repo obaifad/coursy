@@ -13,6 +13,7 @@ import '../data/repositories/interest_repository.dart';
 import '../data/repositories/city_repository.dart';
 import '../data/repositories/course_repository.dart';
 import '../data/repositories/enrollment_repository.dart';
+import '../data/repositories/payment_repository.dart';
 import '../data/repositories/home_repository.dart';
 import '../data/repositories/instructor_repository.dart';
 import '../data/repositories/institute_repository.dart';
@@ -64,6 +65,7 @@ class AppBindings extends Bindings {
     Get.lazyPut(() => CityRepository(Get.find()), fenix: true);
     Get.lazyPut(() => ReviewRepository(Get.find(), Get.find()), fenix: true);
     Get.lazyPut(() => EnrollmentRepository(Get.find(), Get.find()), fenix: true);
+    Get.lazyPut(() => PaymentRepository(Get.find()), fenix: true);
     Get.lazyPut(() => InstructorRepository(Get.find(), Get.find()), fenix: true);
     Get.lazyPut(() => FavoritesRepository(Get.find(), Get.find()), fenix: true);
     Get.lazyPut(() => DeviceRepository(Get.find()), fenix: true);

@@ -31,6 +31,8 @@ import '../modules/profile/controllers/profile_controller.dart';
 import '../modules/profile/views/profile_views.dart';
 import '../core/bindings/root_binding.dart';
 import '../modules/root/views/root_view.dart';
+import '../modules/payment/controllers/payment_controller.dart';
+import '../modules/payment/views/payment_view.dart';
 import '../modules/search/controllers/search_controller.dart';
 import '../modules/search/views/search_view.dart';
 import '../modules/favorites/controllers/favorites_controller.dart';
@@ -145,6 +147,11 @@ class AppPages {
       name: AppRoutes.cityDetails,
       page: () => const CityDetailsView(),
       binding: BindingsBuilder(() => Get.lazyPut<CityDetailsController>(() => CityDetailsController())),
+    ),
+    GetPage(
+      name: AppRoutes.payment,
+      page: () => const PaymentView(),
+      binding: BindingsBuilder(() => Get.lazyPut<PaymentController>(() => PaymentController())),
     ),
     GetPage(name: AppRoutes.settings, page: () => const SettingsView()),
     GetPage(

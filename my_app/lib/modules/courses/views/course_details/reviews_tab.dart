@@ -97,7 +97,7 @@ class _ReviewsTab extends GetView<CourseDetailsController> {
           ] else
             _SectionCard(
               title: 'student_reviews'.tr,
-              child: Text('no_description'.tr, style: const TextStyle(color: AppColors.textSecondary)),
+              child: Text('no_reviews_yet'.tr, style: const TextStyle(color: AppColors.textSecondary)),
             ),
           const SizedBox(height: 16),
           _ReviewFormSection(item: item),

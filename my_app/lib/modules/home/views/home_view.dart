@@ -34,10 +34,12 @@ class HomeView extends GetView<HomeController> {
         final instructorSubjects = controller.instructorSubjects.toList(growable: false);
         final scrollReset = controller.horizontalScrollReset.value;
         return RefreshIndicator(
+          color: AppColors.primary,
           onRefresh: () => controller.loadHome(forceRefresh: true, refreshStatic: true),
           child: ListView(
             controller: controller.scrollController,
             primary: false,
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsetsDirectional.only(top: 4, bottom: AppLayout.scrollBottomInset(context, rootTab: true)),
             children: [
               Padding(
@@ -51,7 +53,7 @@ class HomeView extends GetView<HomeController> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const AppHomeBrandLogo(height: 80),
+                          const AppHomeBrandLogo(height: 56),
                           _HomeSettingsButton(onTap: () => Get.toNamed(AppRoutes.settings)),
                         ],
                       ),
@@ -245,7 +247,7 @@ class HomeView extends GetView<HomeController> {
               else
                 AppHorizontalListView(
                   resetToken: scrollReset,
-                  height: 200,
+                  height: 190 + 38 * CourseCardMetrics.textScaleOf(context),
                   bottomInset: AppHorizontalListView.cardShadowBottomInset,
                   itemCount: institutes.length,
                   itemBuilder: (_, i) {
@@ -529,21 +531,23 @@ class _HomeSettingsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: Ink(
-          width: _size,
-          height: _size,
-          decoration: const BoxDecoration(
-            gradient: AppGradients.primary,
-            shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 16, offset: Offset(0, 8))],
-          ),
-          child: const Icon(Icons.settings_rounded, color: Colors.white, size: 22),
+    // الظل على Container خارجي (دائري) والتأثير على Material مقصوص بدائرة — بلا خلفية مربعة حول الزر.
+    return Container(
+      width: _size,
+      height: _size,
+      decoration: const BoxDecoration(
+        gradient: AppGradients.primary,
+        shape: BoxShape.circle,
+        boxShadow: [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 16, offset: Offset(0, 8))],
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: const Center(child: Icon(Icons.settings_rounded, color: Colors.white, size: 22)),
         ),
       ),
     );

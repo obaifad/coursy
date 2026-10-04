@@ -4,6 +4,7 @@ class _StickyEnrollBar extends StatelessWidget {
   const _StickyEnrollBar({
     required this.item,
     required this.hasRegisteredEnrollment,
+    required this.enrollmentResolved,
     required this.onBook,
     required this.onRegistrationClosed,
     required this.onFavorite,
@@ -11,6 +12,7 @@ class _StickyEnrollBar extends StatelessWidget {
 
   final CourseModel item;
   final bool hasRegisteredEnrollment;
+  final bool enrollmentResolved;
   final VoidCallback onBook;
   final VoidCallback onRegistrationClosed;
   final VoidCallback onFavorite;
@@ -77,7 +79,9 @@ class _StickyEnrollBar extends StatelessWidget {
                       )
                     : RegisterGradientButton(
                         label: alreadyRegistered ? 'enrollment_registered'.tr : 'book_now'.tr,
-                        onPressed: alreadyRegistered ? null : onBook,
+                        // الحالة غير معروفة بعد → زر بمؤشر تحميل بدل عرض حالة مؤقتة ثم تبديلها.
+                        loading: !enrollmentResolved,
+                        onPressed: alreadyRegistered || !enrollmentResolved ? null : onBook,
                       ),
               ),
             ],

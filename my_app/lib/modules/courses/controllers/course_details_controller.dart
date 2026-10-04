@@ -14,6 +14,7 @@ import '../../../core/services/student_id_resolver.dart';
 import '../../../core/session/course_catalog_sync.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/utils/auth_guard.dart';
+import '../../profile/controllers/my_courses_controller.dart';
 
 class CourseDetailsController extends GetxController {
   final CourseRepository _courseRepository = Get.find();
@@ -25,11 +26,18 @@ class CourseDetailsController extends GetxController {
   final CourseRatingService _ratingService = Get.find();
 
   final isLoading = false.obs;
+
+  /// true عند فشل جلب الدورة ولا توجد بيانات أولية لعرضها (فتح من إشعار/معرّف فقط).
+  final loadFailed = false.obs;
+  int? _requestedId;
   final course = Rxn<CourseModel>();
   final schedules = <ScheduleModel>[].obs;
   final reviews = <ReviewModel>[].obs;
   final isEnrolled = false.obs;
   final hasCourseEnrollment = false.obs;
+
+  /// false حتى تُعرف حالة التسجيل (من الذاكرة المؤقتة أو الخادم) — الزر لا يعرض حالة مؤقتة خاطئة.
+  final enrollmentResolved = false.obs;
   final hasSubmittedReview = false.obs;
   final isCheckingEnrollment = false.obs;
   final isSubmittingReview = false.obs;
@@ -44,16 +52,27 @@ class CourseDetailsController extends GetxController {
     super.onInit();
     final arg = Get.arguments;
     if (arg is CourseModel) {
+      _seedEnrollmentFromCache(arg.id);
       course.value = arg;
       schedules.assignAll(arg.schedules);
       _loadDetails(arg.id, hadSeed: true);
     } else if (arg is int) {
+      _seedEnrollmentFromCache(arg);
       _loadDetails(arg);
+    } else {
+      loadFailed.value = true;
     }
     if (_tokenStorage.isLoggedIn) {
       // مع مدة الصلاحية (دقيقتان) بدل فرض المزامنة عند كل فتح لصفحة دورة.
       unawaited(_favoritesService.syncFromApi());
     }
+  }
+
+  /// إعادة محاولة جلب الدورة بعد فشل التحميل.
+  Future<void> retryLoad() async {
+    final id = _requestedId;
+    if (id == null) return;
+    await _loadDetails(id);
   }
 
   bool get isLoggedIn => _tokenStorage.isLoggedIn;
@@ -95,7 +114,12 @@ class CourseDetailsController extends GetxController {
   }
 
   Future<void> _loadDetails(int id, {bool hadSeed = false}) async {
-    if (id <= 0) return;
+    if (id <= 0) {
+      loadFailed.value = true;
+      return;
+    }
+    _requestedId = id;
+    loadFailed.value = false;
     if (!hadSeed) isLoading.value = true;
     try {
       final previous = course.value;
@@ -119,7 +143,8 @@ class CourseDetailsController extends GetxController {
         }
       }
     } catch (_) {
-      // الإبقاء على بيانات القائمة
+      // الإبقاء على بيانات القائمة؛ بدونها نعرض حالة فشل مع إعادة محاولة.
+      if (course.value == null) loadFailed.value = true;
     } finally {
       isLoading.value = false;
     }
@@ -153,10 +178,26 @@ class CourseDetailsController extends GetxController {
     }
   }
 
+  /// يملأ حالة الزر فوراً من قائمة "دوراتي" المحمّلة سابقاً، فلا يظهر وميض قبل رد الخادم.
+  void _seedEnrollmentFromCache(int courseId) {
+    if (!_tokenStorage.isLoggedIn) {
+      enrollmentResolved.value = true;
+      return;
+    }
+    if (!Get.isRegistered<MyCoursesController>()) return;
+    final mine = Get.find<MyCoursesController>();
+    if (mine.isInitialLoad) return;
+    hasCourseEnrollment.value = mine.enrollments.any(
+      (e) => e.courseId == courseId && !{'cancelled', 'rejected'}.contains(e.status.toLowerCase()),
+    );
+    enrollmentResolved.value = true;
+  }
+
   Future<void> _checkEnrollment(int courseId) async {
     if (!_tokenStorage.isLoggedIn) {
       isEnrolled.value = false;
       hasCourseEnrollment.value = false;
+      enrollmentResolved.value = true;
       return;
     }
     isCheckingEnrollment.value = true;
@@ -173,9 +214,13 @@ class CourseDetailsController extends GetxController {
       hasCourseEnrollment.value = enrolled;
       isEnrolled.value = canReview;
     } catch (_) {
-      isEnrolled.value = false;
-      hasCourseEnrollment.value = false;
+      // نُبقي آخر حالة معروفة بدل تصفيرها (تفادياً لوميض زر "احجز الآن").
+      if (!enrollmentResolved.value) {
+        isEnrolled.value = false;
+        hasCourseEnrollment.value = false;
+      }
     } finally {
+      enrollmentResolved.value = true;
       isCheckingEnrollment.value = false;
     }
   }

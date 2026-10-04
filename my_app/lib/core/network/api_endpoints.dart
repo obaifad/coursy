@@ -9,6 +9,8 @@ abstract final class ApiEndpoints {
   static const studentEnrollments = '/student/enrollments';
   static String studentEnrollCourse(int courseId) => '/student/courses/$courseId/enroll';
   static String studentCancelEnrollment(int enrollmentId) => '/student/enrollments/$enrollmentId/cancel';
+  static String studentEnrollmentPayment(int enrollmentId) => '/student/enrollments/$enrollmentId/payment';
+  static String studentEnrollmentShamCash(int enrollmentId) => '/student/enrollments/$enrollmentId/payment/shamcash';
   static String courseFavorite(int courseId) => '/courses/$courseId/favorite';
   static String studentCourseFavorite(int courseId) => '/student/courses/$courseId/favorite';
   static String studentCourseReviews(int courseId) => '/student/courses/$courseId/reviews';

@@ -35,7 +35,7 @@ class SyrianEducationApp extends StatelessWidget {
         getPages: AppPages.pages,
         routingCallback: (routing) {
           if (routing?.isBack == true && Get.currentRoute == AppRoutes.root) {
-            HomeScrollReset.notifyIfHomeVisible();
+            HomeScrollReset.notifyIfHomeVisible(scrollToTop: false);
           }
         },
         defaultTransition: Transition.fadeIn,

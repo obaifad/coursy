@@ -89,16 +89,6 @@ abstract final class AppLayout {
   AppLayout._();
 
   /// ارتفاع شريط التنقل السفلي العائم في [RootView] (extendBody: true).
-  /// ارتفاع جسم الشريط نفسه (بدون الحشوة السفلية) — تطابق [_RootBottomNav].
-  static const double rootNavBarHeight = 82;
-
-  /// المساحة التي يغطيها الشريط العائم من أسفل الشاشة: جسمه + حشوته السفلية
-  /// (الأكبر بين 12 وحافة النظام السفلية) — نفس منطق [_RootBottomNav].
-  static double rootNavReserve(BuildContext context) {
-    final inset = MediaQuery.viewPaddingOf(context).bottom;
-    return rootNavBarHeight + (inset > 12 ? inset : 12);
-  }
-
   static double horizontalPage(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
     if (w >= 900) return 32;
@@ -123,7 +113,8 @@ abstract final class AppLayout {
   }
 
   static double scrollBottomInset(BuildContext context, {bool rootTab = false}) {
-    if (rootTab) return rootNavReserve(context) + 12;
+    // الشريط السفلي صلب وخارج منطقة المحتوى (extendBody: false) — لا حاجة لحجز مساحته.
+    if (rootTab) return 16;
     return MediaQuery.viewPaddingOf(context).bottom + 24;
   }
 

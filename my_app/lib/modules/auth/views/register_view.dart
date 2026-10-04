@@ -13,6 +13,8 @@ import '../controllers/auth_controller.dart';
 import '../widgets/auth_split_layout.dart';
 import '../widgets/login_page_metrics.dart';
 import '../widgets/register_form_widgets.dart';
+import '../../../widgets/app_select_field.dart';
+import '../../../widgets/app_selection_sheet.dart';
 import '../../../widgets/design_system.dart';
 import '../../../theme/app_motion.dart';
 
@@ -276,14 +278,6 @@ class _RegisterStepBody extends GetView<AuthController> {
 
   String? _fieldError(String key) => controller.registerFieldErrors[key];
 
-  InputDecoration _dropdownDecoration({required String label, String? errorText, IconData? icon}) {
-    return RegisterDecor.fieldDecoration(
-      label: label,
-      errorText: errorText,
-      prefixIcon: icon == null ? null : Icon(icon, color: AppColors.primary),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     switch (step) {
@@ -450,38 +444,31 @@ class _RegisterStepBody extends GetView<AuthController> {
               }
               final selectedId = controller.selectedCityId.value;
               final cityValue = controller.cities.any((c) => c.id == selectedId) ? selectedId : null;
-              return DropdownButtonFormField<int>(
+              return AppSelectField<int>(
                 value: cityValue,
-                isExpanded: true,
-                decoration: _dropdownDecoration(
-                  label: '${'city'.tr} *',
-                  errorText: controller.citiesError.value ?? controller.registerFieldErrors['city'],
-                  icon: Icons.location_city_outlined,
-                ),
-                hint: Text('pick_city'.tr, style: AppFonts.tajawal()),
-                items: controller.cities
-                    .map(
-                      (c) => DropdownMenuItem(
-                        value: c.id,
-                        child: Text(c.name, style: AppFonts.tajawal(), maxLines: 1, overflow: TextOverflow.ellipsis),
-                      ),
-                    )
+                label: '${'city'.tr} *',
+                hint: 'pick_city'.tr,
+                icon: Icons.location_city_outlined,
+                errorText: controller.citiesError.value ?? controller.registerFieldErrors['city'],
+                options: controller.cities
+                    .map((c) => AppSheetOption<int>(value: c.id, label: c.name, icon: Icons.location_city_rounded))
                     .toList(),
                 onChanged: (v) => controller.selectedCityId.value = v,
               );
             }),
             const SizedBox(height: 14),
             Obx(
-              () => DropdownButtonFormField<String>(
+              () => AppSelectField<String>(
                 value: controller.selectedEducationLevel.value,
-                isExpanded: true,
-                decoration: _dropdownDecoration(label: 'education_level_optional'.tr, icon: Icons.school_outlined),
-                hint: Text('education_level_hint'.tr, style: AppFonts.tajawal()),
-                items: AuthController.educationLevels
+                label: 'education_level_optional'.tr,
+                hint: 'education_level_hint'.tr,
+                icon: Icons.school_outlined,
+                options: AuthController.educationLevels
                     .map(
-                      (e) => DropdownMenuItem(
+                      (e) => AppSheetOption<String>(
                         value: e,
-                        child: Text(controller.educationLevelLabel(e), style: AppFonts.tajawal()),
+                        label: controller.educationLevelLabel(e),
+                        icon: Icons.school_outlined,
                       ),
                     )
                     .toList(),
@@ -508,26 +495,15 @@ class _RegisterStepBody extends GetView<AuthController> {
                       ),
                     )
                   else
-                    DropdownButtonFormField<int>(
+                    AppSelectField<int>(
                       value: controller.selectedUniversityId.value,
-                      isExpanded: true,
-                      decoration: _dropdownDecoration(
-                        label: 'university_optional'.tr,
-                        errorText: controller.registerFieldErrors['university'],
-                        icon: Icons.account_balance_rounded,
-                      ),
-                      hint: Text('pick_university'.tr, style: AppFonts.tajawal()),
-                      items: controller.universities
+                      label: 'university_optional'.tr,
+                      hint: 'pick_university'.tr,
+                      icon: Icons.account_balance_rounded,
+                      errorText: controller.registerFieldErrors['university'],
+                      options: controller.universities
                           .map(
-                            (u) => DropdownMenuItem(
-                              value: u.id,
-                              child: Text(
-                                u.name,
-                                style: AppFonts.tajawal(),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
+                            (u) => AppSheetOption<int>(value: u.id, label: u.name, icon: Icons.account_balance_rounded),
                           )
                           .toList(),
                       onChanged: (v) => controller.selectedUniversityId.value = v,
@@ -545,26 +521,16 @@ class _RegisterStepBody extends GetView<AuthController> {
                       ),
                     )
                   else
-                    DropdownButtonFormField<int>(
+                    AppSelectField<int>(
                       value: controller.selectedSpecializationId.value,
-                      isExpanded: true,
-                      decoration: _dropdownDecoration(
-                        label: 'specialization_optional'.tr,
-                        errorText: controller.registerFieldErrors['specialization'],
-                        icon: Icons.workspace_premium_outlined,
-                      ),
-                      hint: Text('pick_specialization'.tr, style: AppFonts.tajawal()),
-                      items: controller.specializations
+                      label: 'specialization_optional'.tr,
+                      hint: 'pick_specialization'.tr,
+                      icon: Icons.workspace_premium_outlined,
+                      errorText: controller.registerFieldErrors['specialization'],
+                      options: controller.specializations
                           .map(
-                            (s) => DropdownMenuItem(
-                              value: s.id,
-                              child: Text(
-                                s.name,
-                                style: AppFonts.tajawal(),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
+                            (s) =>
+                                AppSheetOption<int>(value: s.id, label: s.name, icon: Icons.workspace_premium_outlined),
                           )
                           .toList(),
                       onChanged: (v) => controller.selectedSpecializationId.value = v,

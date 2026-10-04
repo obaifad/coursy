@@ -26,11 +26,22 @@ class MyCoursesController extends GetxController with LatestLoadGuard, InitialLo
     load();
   }
 
+  DateTime? _lastLoadedAt;
+  static const _staleAfter = Duration(minutes: 2);
+
+  /// يعيد التحميل فقط إن مضت [_staleAfter] على آخر تحميل (تبديل التبويبات المتكرر لا يكرّر الطلب).
+  Future<void> loadIfStale() {
+    final last = _lastLoadedAt;
+    if (last != null && DateTime.now().difference(last) < _staleAfter) return Future<void>.value();
+    return load();
+  }
+
   Future<void> load() async {
     if (!isLoggedIn) {
       clearForLogout();
       return;
     }
+    _lastLoadedAt = DateTime.now();
     final session = beginLoad();
     isLoading.value = isInitialLoad;
     errorMessage.value = null;

@@ -18,6 +18,8 @@ import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 
 import '../../../modules/auth/widgets/register_form_widgets.dart';
+import '../../../widgets/app_select_field.dart';
+import '../../../widgets/app_selection_sheet.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/profile_avatar.dart';
 import '../controllers/profile_controller.dart';
@@ -309,8 +311,14 @@ class EditProfileView extends GetView<ProfileController> {
                             icon: Icons.location_city_rounded,
                             value: controller.selectedCityId.value,
                             hint: 'pick_city'.tr,
-                            items: controller.cities
-                                .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+                            options: controller.cities
+                                .map(
+                                  (c) => AppSheetOption<int>(
+                                    value: c.id,
+                                    label: c.name,
+                                    icon: Icons.location_city_rounded,
+                                  ),
+                                )
                                 .toList(),
                             onChanged: (v) => controller.selectedCityId.value = v,
                           ),
@@ -331,8 +339,14 @@ class EditProfileView extends GetView<ProfileController> {
                             icon: Icons.school_outlined,
                             value: controller.selectedEducationLevel.value,
                             hint: 'education_level_hint'.tr,
-                            items: ProfileController.educationLevels
-                                .map((e) => DropdownMenuItem(value: e, child: Text(controller.educationLevelLabel(e))))
+                            options: ProfileController.educationLevels
+                                .map(
+                                  (e) => AppSheetOption<String>(
+                                    value: e,
+                                    label: controller.educationLevelLabel(e),
+                                    icon: Icons.school_outlined,
+                                  ),
+                                )
                                 .toList(),
                             onChanged: controller.setEducationLevel,
                           ),
@@ -347,8 +361,14 @@ class EditProfileView extends GetView<ProfileController> {
                                 icon: Icons.account_balance_rounded,
                                 value: controller.selectedUniversityId.value,
                                 hint: 'pick_university'.tr,
-                                items: controller.universities
-                                    .map((u) => DropdownMenuItem(value: u.id, child: Text(u.name)))
+                                options: controller.universities
+                                    .map(
+                                      (u) => AppSheetOption<int>(
+                                        value: u.id,
+                                        label: u.name,
+                                        icon: Icons.account_balance_rounded,
+                                      ),
+                                    )
                                     .toList(),
                                 onChanged: (v) => controller.selectedUniversityId.value = v,
                               ),
@@ -358,8 +378,14 @@ class EditProfileView extends GetView<ProfileController> {
                                 icon: Icons.workspace_premium_outlined,
                                 value: controller.selectedSpecializationId.value,
                                 hint: 'pick_specialization'.tr,
-                                items: controller.specializations
-                                    .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name)))
+                                options: controller.specializations
+                                    .map(
+                                      (s) => AppSheetOption<int>(
+                                        value: s.id,
+                                        label: s.name,
+                                        icon: Icons.workspace_premium_outlined,
+                                      ),
+                                    )
                                     .toList(),
                                 onChanged: (v) => controller.selectedSpecializationId.value = v,
                               ),
@@ -473,7 +499,7 @@ class _ProfileDropdown<T> extends StatelessWidget {
     required this.icon,
     required this.value,
     required this.hint,
-    required this.items,
+    required this.options,
     required this.onChanged,
   });
 
@@ -481,21 +507,19 @@ class _ProfileDropdown<T> extends StatelessWidget {
   final IconData icon;
   final T? value;
   final String hint;
-  final List<DropdownMenuItem<T>> items;
-  final ValueChanged<T?>? onChanged;
+  final List<AppSheetOption<T>> options;
+  final ValueChanged<T>? onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<T>(
+    return AppSelectField<T>(
+      label: label,
+      icon: icon,
+      hint: hint,
       value: value,
-      isExpanded: true,
-      decoration: RegisterDecor.fieldDecoration(
-        label: label,
-        prefixIcon: Icon(icon, color: AppColors.primary),
-      ),
-      hint: Text(hint, style: AppFonts.tajawal()),
-      items: items,
-      onChanged: onChanged,
+      options: options,
+      enabled: onChanged != null,
+      onChanged: (v) => onChanged?.call(v),
     );
   }
 }

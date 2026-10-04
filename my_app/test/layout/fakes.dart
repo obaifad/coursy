@@ -13,6 +13,7 @@ import 'package:my_app/core/data/repositories/institute_repository.dart';
 import 'package:my_app/core/data/repositories/instructor_repository.dart';
 import 'package:my_app/core/data/repositories/interest_repository.dart';
 import 'package:my_app/core/data/repositories/notification_repository.dart';
+import 'package:my_app/core/data/repositories/payment_repository.dart';
 import 'package:my_app/core/data/repositories/profile_repository.dart';
 import 'package:my_app/core/data/repositories/reference_repository.dart';
 import 'package:my_app/core/data/repositories/review_repository.dart';
@@ -158,6 +159,15 @@ class _Enrollments extends EnrollmentRepository {
   Future<List<EnrollmentModel>> fetchEnrollments() async => sampleEnrollments();
 }
 
+/// تفاصيل الدفع التي يرجعها المزيّف — يضبطها كل مشهد قبل الرسم.
+Map<String, dynamic> fakePaymentJson = {};
+
+class _Payments extends PaymentRepository {
+  _Payments(super.client);
+  @override
+  Future<PaymentDetailsModel> fetchDetails(int enrollmentId) async => PaymentDetailsModel.fromJson(fakePaymentJson);
+}
+
 class _Notifications extends NotificationRepository {
   _Notifications(super.client);
   @override
@@ -267,6 +277,7 @@ Future<TokenStorage> registerFakes({required bool loggedIn, required String loca
   Get.put<HomeRepository>(_Home(client));
   Get.put<EnrollmentRepository>(_Enrollments(client, resolver));
   Get.put<NotificationRepository>(_Notifications(client));
+  Get.put<PaymentRepository>(_Payments(client));
   Get.put<ReviewRepository>(_Reviews(client, resolver));
   Get.put<SearchRepository>(_Search(client, rating));
   Get.put<AuthRepository>(AuthRepository(client, tokens));

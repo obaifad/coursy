@@ -8,6 +8,8 @@ import '../../../core/models/app_models.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/app_widgets.dart';
+import '../../../widgets/app_select_field.dart';
+import '../../../widgets/app_selection_sheet.dart';
 import '../../../widgets/design_system.dart';
 import '../controllers/search_controller.dart';
 import '../../../core/locale/plural.dart';
@@ -173,12 +175,8 @@ class SearchView extends GetView<SearchPageController> {
   }
 
   void _openFilters(BuildContext context) {
-    showModalBottomSheet<void>(
+    showAppFloatingSheet(
       context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
       builder: (_) => _FilterSheet(controller: controller),
     );
   }
@@ -266,23 +264,31 @@ class _SearchScopeSelector extends StatelessWidget {
   final SearchPageController controller;
   final SearchScope scope;
 
+  void _showScopeSheet(BuildContext context) {
+    showAppSelectionSheet<SearchScope>(
+      context: context,
+      title: 'search_scope_label'.tr,
+      titleIcon: Icons.tune_rounded,
+      selected: scope,
+      onSelected: controller.setScope,
+      options: [
+        for (final item in SearchScope.values)
+          AppSheetOption<SearchScope>(
+            value: item,
+            label: item.labelKey.tr,
+            icon: item.icon,
+            subtitle: item.descriptionKey.tr,
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<SearchScope>(
-      tooltip: 'search_scope_label'.tr,
-      initialValue: scope,
-      onSelected: controller.setScope,
-      offset: const Offset(0, 48),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      itemBuilder: (context) => SearchScope.values
-          .map(
-            (item) => PopupMenuItem<SearchScope>(
-              value: item,
-              child: _SearchScopeMenuTile(scope: item, selected: item == scope),
-            ),
-          )
-          .toList(),
+    return Tooltip(
+      message: 'search_scope_label'.tr,
       child: InkWell(
+        onTap: () => _showScopeSheet(context),
         borderRadius: const BorderRadiusDirectional.horizontal(
           start: Radius.circular(20),
         ).resolve(Directionality.of(context)),
@@ -318,60 +324,6 @@ class _SearchScopeSelector extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _SearchScopeMenuTile extends StatelessWidget {
-  const _SearchScopeMenuTile({required this.scope, required this.selected});
-
-  final SearchScope scope;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 260,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: selected ? AppColors.primary.withValues(alpha: 0.12) : AppColors.surfaceSoft,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(scope.icon, size: 18, color: AppColors.primary),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  scope.labelKey.tr,
-                  style: AppFonts.tajawal(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                    color: selected ? AppColors.primary : AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  scope.descriptionKey.tr,
-                  style: AppFonts.tajawal(fontSize: 12, color: AppColors.textSecondary, height: 1.35),
-                ),
-              ],
-            ),
-          ),
-          if (selected)
-            const Padding(
-              padding: EdgeInsets.only(top: 4),
-              child: Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 18),
-            ),
-        ],
       ),
     );
   }
@@ -607,98 +559,115 @@ class _FilterSheetState extends State<_FilterSheet> {
   @override
   Widget build(BuildContext context) {
     final c = widget.controller;
-    final sheetWidth = MediaQuery.sizeOf(context).width;
 
-    return SafeArea(
+    return AppFloatingSheetFrame(
+      title: 'search_filter_title'.tr,
+      titleIcon: Icons.tune_rounded,
       child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(16, 8, 16, 24 + MediaQuery.of(context).viewInsets.bottom),
-        child: SizedBox(
-          width: sheetWidth - 32,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('search_filter_title'.tr, style: AppTypography.sectionTitle(), textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              if (c.categories.isNotEmpty)
-                DropdownButtonFormField<int?>(
-                  value: categoryId,
-                  isExpanded: true,
-                  decoration: InputDecoration(labelText: 'search_category_filter'.tr),
-                  items: [
-                    DropdownMenuItem(value: null, child: Text('filter_all'.tr)),
-                    ...c.categories.map((cat) => DropdownMenuItem(value: cat.id, child: Text(cat.name))),
-                  ],
-                  onChanged: (v) => setState(() => categoryId = v),
-                ),
-              if (c.categories.isNotEmpty) const SizedBox(height: 12),
-              if (c.cities.isNotEmpty)
-                DropdownButtonFormField<int?>(
-                  value: cityId,
-                  isExpanded: true,
-                  decoration: InputDecoration(labelText: 'search_city_filter'.tr),
-                  items: [
-                    DropdownMenuItem(value: null, child: Text('filter_all_cities'.tr)),
-                    ...c.cities.map((city) => DropdownMenuItem(value: city.id, child: Text(city.name))),
-                  ],
-                  onChanged: (v) => setState(() => cityId = v),
-                ),
-              if (c.cities.isNotEmpty) const SizedBox(height: 12),
-              DropdownButtonFormField<String?>(
-                value: level,
-                isExpanded: true,
-                decoration: InputDecoration(labelText: 'search_level_filter'.tr),
-                items: [
-                  DropdownMenuItem(value: null, child: Text('filter_all'.tr)),
-                  DropdownMenuItem(value: 'beginner', child: Text('level_beginner'.tr)),
-                  DropdownMenuItem(value: 'intermediate', child: Text('level_intermediate'.tr)),
-                  DropdownMenuItem(value: 'advanced', child: Text('level_advanced'.tr)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (c.categories.isNotEmpty) ...[
+              AppSelectField<int?>(
+                value: categoryId,
+                label: 'search_category_filter'.tr,
+                hint: 'filter_all'.tr,
+                icon: Icons.category_outlined,
+                options: [
+                  AppSheetOption<int?>(value: null, label: 'filter_all'.tr, icon: Icons.apps_rounded),
+                  ...c.categories.map(
+                    (cat) => AppSheetOption<int?>(value: cat.id, label: cat.name, icon: Icons.category_outlined),
+                  ),
                 ],
-                onChanged: (v) => setState(() => level = v),
+                onChanged: (v) => setState(() => categoryId = v),
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String?>(
-                value: studyType,
-                isExpanded: true,
-                decoration: InputDecoration(labelText: 'search_study_type_filter'.tr),
-                items: [
-                  DropdownMenuItem(value: null, child: Text('filter_all'.tr)),
-                  DropdownMenuItem(value: 'online', child: Text('study_online'.tr)),
-                  DropdownMenuItem(value: 'offline', child: Text('study_offline'.tr)),
-                  DropdownMenuItem(value: 'hybrid', child: Text('study_hybrid'.tr)),
-                ],
-                onChanged: (v) => setState(() => studyType = v),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        setState(() {
-                          cityId = null;
-                          categoryId = null;
-                          level = null;
-                          studyType = null;
-                        });
-                      },
-                      child: Text('search_reset_filters'.tr),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () {
-                        c.applyFilters(cityId: cityId, categoryId: categoryId, level: level, studyType: studyType);
-                        Navigator.pop(context);
-                      },
-                      child: Text('search_apply_filters'.tr),
-                    ),
-                  ),
-                ],
-              ),
             ],
-          ),
+            if (c.cities.isNotEmpty) ...[
+              AppSelectField<int?>(
+                value: cityId,
+                label: 'search_city_filter'.tr,
+                hint: 'filter_all_cities'.tr,
+                icon: Icons.location_city_outlined,
+                options: [
+                  AppSheetOption<int?>(value: null, label: 'filter_all_cities'.tr, icon: Icons.public_rounded),
+                  ...c.cities.map(
+                    (city) => AppSheetOption<int?>(value: city.id, label: city.name, icon: Icons.location_city_rounded),
+                  ),
+                ],
+                onChanged: (v) => setState(() => cityId = v),
+              ),
+              const SizedBox(height: 12),
+            ],
+            AppSelectField<String?>(
+              value: level,
+              label: 'search_level_filter'.tr,
+              hint: 'filter_all'.tr,
+              icon: Icons.bar_chart_rounded,
+              options: [
+                AppSheetOption<String?>(value: null, label: 'filter_all'.tr, icon: Icons.apps_rounded),
+                AppSheetOption<String?>(
+                  value: 'beginner',
+                  label: 'level_beginner'.tr,
+                  icon: Icons.signal_cellular_alt_1_bar_rounded,
+                ),
+                AppSheetOption<String?>(
+                  value: 'intermediate',
+                  label: 'level_intermediate'.tr,
+                  icon: Icons.signal_cellular_alt_2_bar_rounded,
+                ),
+                AppSheetOption<String?>(
+                  value: 'advanced',
+                  label: 'level_advanced'.tr,
+                  icon: Icons.signal_cellular_alt_rounded,
+                ),
+              ],
+              onChanged: (v) => setState(() => level = v),
+            ),
+            const SizedBox(height: 12),
+            AppSelectField<String?>(
+              value: studyType,
+              label: 'search_study_type_filter'.tr,
+              hint: 'filter_all'.tr,
+              icon: Icons.laptop_mac_rounded,
+              options: [
+                AppSheetOption<String?>(value: null, label: 'filter_all'.tr, icon: Icons.apps_rounded),
+                AppSheetOption<String?>(value: 'online', label: 'study_online'.tr, icon: Icons.language_rounded),
+                AppSheetOption<String?>(value: 'offline', label: 'study_offline'.tr, icon: Icons.apartment_rounded),
+                AppSheetOption<String?>(value: 'hybrid', label: 'study_hybrid'.tr, icon: Icons.swap_horiz_rounded),
+              ],
+              onChanged: (v) => setState(() => studyType = v),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      setState(() {
+                        cityId = null;
+                        categoryId = null;
+                        level = null;
+                        studyType = null;
+                      });
+                    },
+                    child: Text('search_reset_filters'.tr),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () {
+                      c.applyFilters(cityId: cityId, categoryId: categoryId, level: level, studyType: studyType);
+                      Navigator.pop(context);
+                    },
+                    child: Text('search_apply_filters'.tr),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

@@ -9,6 +9,7 @@ import '../network/api_client.dart';
 import 'locale_refresh.dart';
 import 'locale_request_guard.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/syrian_flag.dart';
 
 /// إدارة لغة التطبيق (عربي / إنجليزي) + RTL/LTR + Accept-Language للـ API.
 class LocaleController extends GetxService {
@@ -89,9 +90,13 @@ class LocaleController extends GetxService {
             children: [
               Text('choose_language'.tr, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
               const SizedBox(height: 16),
-              _LanguageTile(code: 'ar', label: 'lang_arabic'.tr, flag: '🇸🇾'),
+              _LanguageTile(code: 'ar', label: 'lang_arabic'.tr, flag: const SyrianFlag(width: 40)),
               const SizedBox(height: 8),
-              _LanguageTile(code: 'en', label: 'lang_english'.tr, flag: '🇬🇧'),
+              _LanguageTile(
+                code: 'en',
+                label: 'lang_english'.tr,
+                flag: const Text('🇬🇧', style: TextStyle(fontSize: 28)),
+              ),
             ],
           ),
         ),
@@ -106,7 +111,7 @@ class _LanguageTile extends StatelessWidget {
 
   final String code;
   final String label;
-  final String flag;
+  final Widget flag;
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +121,7 @@ class _LanguageTile extends StatelessWidget {
       return ListTile(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         tileColor: selected ? AppColors.indicatorFill : null,
-        leading: Text(flag, style: const TextStyle(fontSize: 28)),
+        leading: SizedBox(width: 40, child: Center(child: flag)),
         title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.w800 : FontWeight.w700)),
         trailing: selected ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
         onTap: () async {

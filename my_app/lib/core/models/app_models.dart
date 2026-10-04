@@ -11,3 +11,4 @@ part 'app_models/instructor_models.dart';
 part 'app_models/course_models.dart';
 part 'app_models/institute_model.dart';
 part 'app_models/student_models.dart';
+part 'app_models/payment_models.dart';

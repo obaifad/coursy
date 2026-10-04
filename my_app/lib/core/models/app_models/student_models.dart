@@ -115,6 +115,20 @@ class EnrollmentModel {
 
   bool get canCancel => status.toLowerCase() == 'pending';
 
+  /// الدفع الإلكتروني مطلوب فقط للدورات ذات الدفعة المقدّمة، ولا يُقبل لتسجيل مرفوض أو ملغى أو مدفوع بالكامل.
+  bool get canPay {
+    if (course?.requiresAdvancePayment != true) return false;
+    if (paymentStatus.toLowerCase() == 'paid') return false;
+    switch (status.toLowerCase()) {
+      case 'pending':
+      case 'approved':
+      case 'confirmed':
+        return true;
+      default:
+        return false;
+    }
+  }
+
   bool get allowsReview => status.toLowerCase() == 'completed';
 
   /// يُحسب ضمن سعة الدورة (مؤكّد/معتمد/مكتمل — بدون المعلق).
