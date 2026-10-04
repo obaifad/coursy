@@ -10,6 +10,7 @@ import '../../../widgets/app_widgets.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/design_system.dart';
 import '../../../theme/app_fonts.dart';
+import '../../../core/locale/plural.dart';
 import '../controllers/home_controller.dart';
 
 class HomeView extends GetView<HomeController> {
@@ -218,15 +219,6 @@ class HomeView extends GetView<HomeController> {
                   },
                 ),
               ],
-              if (cities.isNotEmpty) ...[
-                const SizedBox(height: 22),
-                Padding(
-                  padding: _sectionPad(context),
-                  child: AppSectionHeader(title: 'section_cities'.tr),
-                ),
-                const SizedBox(height: 10),
-                _CitiesRow(cities: cities, scrollReset: scrollReset),
-              ],
               const SizedBox(height: 22),
               Padding(
                 padding: _sectionPad(context),
@@ -258,6 +250,16 @@ class HomeView extends GetView<HomeController> {
                     );
                   },
                 ),
+              // محافظة واحدة فقط: القسم بلا فائدة تصفّحية فنخفيه.
+              if (cities.length >= 2) ...[
+                const SizedBox(height: 22),
+                Padding(
+                  padding: _sectionPad(context),
+                  child: AppSectionHeader(title: 'section_cities'.tr, subtitle: 'section_cities_subtitle'.tr),
+                ),
+                const SizedBox(height: 12),
+                _CitiesRow(cities: cities, scrollReset: scrollReset),
+              ],
             ],
           ),
         );
@@ -283,22 +285,154 @@ class _CategoriesRow extends StatelessWidget {
     }
     return AppHorizontalListView(
       resetToken: scrollReset,
-      height: _CategoryChip.height,
-      bottomInset: 12,
-      separatorWidth: 10,
+      height: _CategoryTile.heightFor(context),
+      bottomInset: 4,
+      separatorWidth: 12,
       itemCount: categories.length,
       itemBuilder: (_, i) {
         final cat = categories[i];
-        return _CategoryChip(
-          label: cat.name,
-          category: cat,
-          count: cat.coursesCount,
-          onTap: () => Get.toNamed(
-            AppRoutes.categoryCourses,
-            arguments: {'id': cat.id, 'name': cat.name, 'icon': cat.icon, 'coursesCount': cat.coursesCount},
+        return _EntranceFade(
+          index: i,
+          child: _CategoryTile(
+            category: cat,
+            onTap: () => Get.toNamed(
+              AppRoutes.categoryCourses,
+              arguments: {'id': cat.id, 'name': cat.name, 'icon': cat.icon, 'coursesCount': cat.coursesCount},
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+/// لوحة ألوان هادئة متناسقة مع الهوية — يُسند لون ثابت لكل تصنيف/محافظة حسب المعرّف.
+const _kAccentPalette = <Color>[
+  Color(0xFF6C63FF),
+  Color(0xFF2F80ED),
+  Color(0xFF14B8A6),
+  Color(0xFFEC4899),
+  Color(0xFFF59E0B),
+  Color(0xFF8B5CF6),
+  Color(0xFF10B981),
+  Color(0xFFEF6C57),
+];
+
+Color _accentFor(int id) => _kAccentPalette[id.abs() % _kAccentPalette.length];
+
+/// ظهور تدريجي (تلاشٍ + انزلاق صغير) — مدة أطول لكل عنصر لاحق فيتتابعون بصرياً.
+class _EntranceFade extends StatelessWidget {
+  const _EntranceFade({required this.index, required this.child});
+
+  final int index;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 240 + (index.clamp(0, 8)) * 45),
+      curve: Curves.easeOutCubic,
+      builder: (context, t, child) => Opacity(
+        opacity: t,
+        child: Transform.translate(offset: Offset(0, 10 * (1 - t)), child: child),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// تصنيف كبطاقة مربعة: مربع أيقونة ملوّن + الاسم + عدد الدورات كنص ثانوي.
+class _CategoryTile extends StatefulWidget {
+  const _CategoryTile({required this.category, this.onTap});
+
+  static const double width = 84;
+  static const double _iconBox = 58;
+
+  /// الارتفاع يتبع تكبير الخط (اسم بسطرين + عدد).
+  static double heightFor(BuildContext context) => 88 + 40 * CourseCardMetrics.textScaleOf(context);
+
+  final CategoryModel category;
+  final VoidCallback? onTap;
+
+  @override
+  State<_CategoryTile> createState() => _CategoryTileState();
+}
+
+class _CategoryTileState extends State<_CategoryTile> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final cat = widget.category;
+    final accent = _accentFor(cat.id);
+    return Semantics(
+      button: true,
+      label: cat.coursesCount > 0 ? '${cat.name}، ${pluralTr('category_courses_count', cat.coursesCount)}' : cat.name,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedScale(
+          scale: _pressed ? 0.95 : 1,
+          duration: const Duration(milliseconds: 110),
+          child: SizedBox(
+            width: _CategoryTile.width,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: _CategoryTile._iconBox,
+                  height: _CategoryTile._iconBox,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    gradient: LinearGradient(
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [accent.withValues(alpha: 0.20), accent.withValues(alpha: 0.08)],
+                    ),
+                    border: Border.all(color: accent.withValues(alpha: 0.22)),
+                    boxShadow: [
+                      BoxShadow(color: accent.withValues(alpha: 0.12), blurRadius: 10, offset: const Offset(0, 4)),
+                    ],
+                  ),
+                  alignment: Alignment.center,
+                  child: CategoryIcon(
+                    category: cat,
+                    size: 38,
+                    borderRadius: BorderRadius.circular(12),
+                    iconColor: accent,
+                    backgroundColor: Colors.transparent,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  cat.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 12, height: 1.25),
+                ),
+                if (cat.coursesCount > 0) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    pluralTr('category_courses_count', cat.coursesCount),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.tajawal(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -312,16 +446,145 @@ class _CitiesRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppHorizontalListView(
       resetToken: scrollReset,
-      height: _CityChip.height,
-      separatorWidth: 10,
+      height: _CityCard.heightFor(context),
+      bottomInset: 4,
+      separatorWidth: 12,
       itemCount: cities.length,
       itemBuilder: (_, i) {
         final city = cities[i];
-        return _CityChip(
-          label: city.name,
-          onTap: () => Get.toNamed(AppRoutes.cityDetails, arguments: {'id': city.id, 'name': city.name}),
+        return _EntranceFade(
+          index: i,
+          child: _CityCard(
+            city: city,
+            onTap: () => Get.toNamed(AppRoutes.cityDetails, arguments: {'id': city.id, 'name': city.name}),
+          ),
         );
       },
+    );
+  }
+}
+
+/// محافظة كبطاقة متدرّجة: اسم عريض + إحصاءات (معاهد · دورات) + علامة موقع كبيرة شبه شفافة.
+class _CityCard extends StatefulWidget {
+  const _CityCard({required this.city, this.onTap});
+
+  static const double width = 158;
+
+  static double heightFor(BuildContext context) => 70 + 28 * CourseCardMetrics.textScaleOf(context);
+
+  final CityModel city;
+  final VoidCallback? onTap;
+
+  @override
+  State<_CityCard> createState() => _CityCardState();
+}
+
+class _CityCardState extends State<_CityCard> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final city = widget.city;
+    final accent = _accentFor(city.id);
+    final stats = <String>[
+      if (city.institutesCount > 0) pluralTr('city_institutes_count', city.institutesCount),
+      if (city.coursesCount > 0) pluralTr('category_courses_count', city.coursesCount),
+    ].join(' · ');
+
+    return Semantics(
+      button: true,
+      label: stats.isEmpty ? city.name : '${city.name}، $stats',
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _pressed ? 0.96 : 1,
+          duration: const Duration(milliseconds: 110),
+          child: Container(
+            width: _CityCard.width,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [accent, Color.lerp(accent, Colors.black, 0.28)!],
+              ),
+              boxShadow: [BoxShadow(color: accent.withValues(alpha: 0.28), blurRadius: 14, offset: const Offset(0, 6))],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              children: [
+                PositionedDirectional(
+                  end: -10,
+                  bottom: -14,
+                  child: Icon(Icons.location_on_rounded, size: 84, color: Colors.white.withValues(alpha: 0.16)),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        city.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppFonts.tajawal(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                          height: 1.2,
+                        ),
+                      ),
+                      if (stats.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          stats,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppFonts.tajawal(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11.5,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+const double _kSubjectChipHeight = 44;
+
+class _CategoryCountBadge extends StatelessWidget {
+  const _CategoryCountBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 20,
+      constraints: const BoxConstraints(minWidth: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 7),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '$count',
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary, height: 1),
+      ),
     );
   }
 }
@@ -335,7 +598,7 @@ class _InstructorSubjectsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppHorizontalListView(
       resetToken: scrollReset,
-      height: _CategoryChip.height,
+      height: _kSubjectChipHeight,
       separatorWidth: 10,
       itemCount: subjects.length,
       itemBuilder: (_, i) {
@@ -363,7 +626,7 @@ class _InstructorSubjectChip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        height: _CategoryChip.height,
+        height: _kSubjectChipHeight,
         padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 14, 0),
         decoration: BoxDecoration(
           color: AppColors.surfaceSoft,
@@ -391,132 +654,6 @@ class _InstructorSubjectChip extends StatelessWidget {
             ],
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _CityChip extends StatelessWidget {
-  const _CityChip({required this.label, this.onTap});
-
-  static const double height = 44;
-  static const EdgeInsetsDirectional _padding = EdgeInsetsDirectional.fromSTEB(12, 0, 14, 0);
-
-  final String label;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        height: height,
-        padding: _padding,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceSoft,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [BoxShadow(color: AppColors.shadowSoft, blurRadius: 8, offset: Offset(0, 4))],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              alignment: Alignment.center,
-              child: const Icon(Icons.location_on_outlined, size: 15, color: AppColors.primary),
-            ),
-            const SizedBox(width: 8),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 120),
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({required this.label, required this.category, this.count = 0, this.onTap});
-
-  static const double height = 44;
-  static const double _iconSize = 26;
-  static const EdgeInsetsDirectional _padding = EdgeInsetsDirectional.fromSTEB(12, 0, 14, 0);
-
-  final String label;
-  final CategoryModel category;
-  final int count;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        height: height,
-        padding: _padding,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceSoft,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [BoxShadow(color: AppColors.shadowSoft, blurRadius: 8, offset: Offset(0, 4))],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            CategoryIcon(category: category, size: _iconSize),
-            const SizedBox(width: 8),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 120),
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.start,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, height: 1.2),
-              ),
-            ),
-            if (count > 0) ...[const SizedBox(width: 6), _CategoryCountBadge(count: count)],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryCountBadge extends StatelessWidget {
-  const _CategoryCountBadge({required this.count});
-
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 20,
-      constraints: const BoxConstraints(minWidth: 20),
-      padding: const EdgeInsets.symmetric(horizontal: 7),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        '$count',
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary, height: 1),
       ),
     );
   }
