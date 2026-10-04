@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -8,7 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../network/api_client.dart';
 import 'locale_refresh.dart';
 import 'locale_request_guard.dart';
-import '../../theme/app_colors.dart';
+import '../../widgets/app_selection_sheet.dart';
 import '../../widgets/syrian_flag.dart';
 
 /// إدارة لغة التطبيق (عربي / إنجليزي) + RTL/LTR + Accept-Language للـ API.
@@ -75,33 +77,28 @@ class LocaleController extends GetxService {
     }
   }
 
-  void showLanguagePicker() {
-    Get.bottomSheet(
-      SafeArea(
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('choose_language'.tr, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 16),
-              _LanguageTile(code: 'ar', label: 'lang_arabic'.tr, flag: const SyrianFlag(width: 40)),
-              const SizedBox(height: 8),
-              _LanguageTile(
-                code: 'en',
-                label: 'lang_english'.tr,
-                flag: const Text('🇬🇧', style: TextStyle(fontSize: 28)),
-              ),
-            ],
-          ),
+  /// ورقة اختيار اللغة بنفس النمط العائم الموحّد لباقي أوراق التطبيق.
+  void showLanguagePicker([BuildContext? context]) {
+    final ctx = context ?? Get.context;
+    if (ctx == null) return;
+    showAppFloatingSheet(
+      context: ctx,
+      builder: (_) => AppFloatingSheetFrame(
+        title: 'choose_language'.tr,
+        titleIcon: Icons.language_rounded,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _LanguageTile(code: 'ar', label: 'lang_arabic'.tr, flag: const SyrianFlag(width: 36)),
+            _LanguageTile(
+              code: 'en',
+              label: 'lang_english'.tr,
+              flag: const Text('🇬🇧', style: TextStyle(fontSize: 26)),
+            ),
+          ],
         ),
       ),
-      isScrollControlled: true,
     );
   }
 }
@@ -118,15 +115,14 @@ class _LanguageTile extends StatelessWidget {
     final locale = Get.find<LocaleController>();
     return Obx(() {
       final selected = locale.code.value == code;
-      return ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        tileColor: selected ? AppColors.indicatorFill : null,
-        leading: SizedBox(width: 40, child: Center(child: flag)),
-        title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.w800 : FontWeight.w700)),
-        trailing: selected ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
+      return AppSelectableTile(
+        label: label,
+        selected: selected,
+        leading: SizedBox(width: 40, height: 38, child: Center(child: flag)),
         onTap: () async {
-          Get.back();
-          await locale.setLocale(code);
+          HapticFeedback.selectionClick();
+          Navigator.of(context).pop();
+          if (!selected) await locale.setLocale(code);
         },
       );
     });

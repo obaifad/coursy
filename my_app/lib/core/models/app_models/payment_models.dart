@@ -92,6 +92,18 @@ class PaymentDetailsModel {
   /// المبلغ المطلوب إرساله الآن: المتبقي من الدفعة المقدمة، وإلا كامل المتبقي.
   double get amountToSendNow => advanceRemaining > 0 ? advanceRemaining : amountRemaining;
 
+  /// دفعة مقدّمة لم تُسدَّد بعد.
+  bool get hasPendingAdvance => advanceRemaining > 0;
+
+  /// ما سيبقى للدفع في المعهد بعد تسديد الدفعة المقدّمة (الإجمالي المتبقي − المطلوب الآن).
+  double get remainingAtInstitute {
+    final value = amountRemaining - advanceRemaining;
+    return value > 0 ? value : 0;
+  }
+
+  /// الدورة تتطلب دفعة مقدّمة (حسب الخادم) لكن الدفع الإلكتروني غير مفعّل للمعهد حالياً.
+  bool get advanceRequiredButUnavailable => advanceAmount > 0 && !shamcash.canPay && !isPaid;
+
   factory PaymentDetailsModel.fromJson(Map<String, dynamic> json) {
     final shamcash = json['shamcash'];
     final payments = json['payments'];

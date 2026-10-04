@@ -221,52 +221,12 @@ class _EnrollmentCard extends StatelessWidget {
                 children: [for (final m in meta.rows) _MetaChip(icon: m.icon, label: m.label)],
               ),
             ],
-            if (enrollment.canPay) ...[
-              const SizedBox(height: 14),
-              FilledButton.icon(
-                onPressed: () => Get.toNamed(AppRoutes.payment, arguments: enrollment),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(46),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                icon: const Icon(Icons.account_balance_wallet_rounded, size: 20),
-                label: Text('payment_pay_now'.tr),
-              ),
-            ],
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                if (enrollment.canCancel) ...[
-                  Expanded(
-                    child: Obx(() {
-                      controller.cancellingIds.length;
-                      final isCancelling = controller.cancellingIds.contains(enrollment.id);
-                      return OutlinedButton.icon(
-                        onPressed: isCancelling ? null : () => _confirmCancel(context, enrollment),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.danger,
-                          side: BorderSide(color: AppColors.danger.withValues(alpha: 0.35)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        icon: isCancelling ? const AppInlineLoader() : const Icon(Icons.close_rounded, size: 18),
-                        label: Text(
-                          isCancelling ? 'saving'.tr : 'cancel_booking'.tr,
-                          style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13),
-                        ),
-                      );
-                    }),
-                  ),
-                  const SizedBox(width: 10),
-                ],
-                Expanded(
-                  flex: enrollment.canCancel ? 1 : 2,
-                  child: RegisterGradientButton(
-                    label: 'view_details'.tr,
-                    onPressed: () => _openCourseDetails(enrollment),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 14),
+            _BookingActions(
+              enrollment: enrollment,
+              controller: controller,
+              onDetails: () => _openCourseDetails(enrollment),
+              onCancel: () => _confirmCancel(context, enrollment),
             ),
           ],
         ),
@@ -422,6 +382,103 @@ class _EnrollmentMeta {
         ),
     ];
     return _EnrollmentMeta(rows);
+  }
+}
+
+/// أزرار بطاقة الحجز في صف واحد مضغوط:
+/// الإجراء الأساسي (ادفع الآن إن أمكن، وإلا عرض التفاصيل) ممتلئ بالبنفسجي،
+/// والثانوي (عرض التفاصيل) بحد خفيف، وإلغاء الحجز زر صغير بحد أحمر خفيف.
+class _BookingActions extends StatelessWidget {
+  const _BookingActions({
+    required this.enrollment,
+    required this.controller,
+    required this.onDetails,
+    required this.onCancel,
+  });
+
+  final EnrollmentModel enrollment;
+  final MyCoursesController controller;
+  final VoidCallback onDetails;
+  final VoidCallback onCancel;
+
+  static const double _height = 44;
+
+  ButtonStyle _outlined(Color color) => OutlinedButton.styleFrom(
+    foregroundColor: color,
+    side: BorderSide(color: color.withValues(alpha: 0.4)),
+    minimumSize: const Size(0, _height),
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final canCancel = enrollment.canCancel;
+    final label = AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 13);
+
+    return Obx(() {
+      // «ادفع الآن» فقط إذا كان الدفع الإلكتروني متاحاً فعلاً؛ وإلا «عرض التفاصيل» هو الإجراء الأساسي.
+      controller.paymentAvailable.length;
+      final canPay = controller.showPayButton(enrollment);
+      return _buildRow(canPay, canCancel, label);
+    });
+  }
+
+  Widget _buildRow(bool canPay, bool canCancel, TextStyle label) {
+    final details = canPay
+        ? OutlinedButton(
+            onPressed: onDetails,
+            style: _outlined(AppColors.primary),
+            child: Text('view_details'.tr, style: label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          )
+        : SizedBox(
+            height: _height,
+            child: RegisterGradientButton(label: 'view_details'.tr, onPressed: onDetails),
+          );
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        if (canPay)
+          Expanded(
+            flex: 3,
+            child: SizedBox(
+              height: _height,
+              child: ElevatedButton.icon(
+                onPressed: () => Get.toNamed(AppRoutes.payment, arguments: enrollment),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.account_balance_wallet_rounded, size: 18),
+                label: Text('payment_pay_now'.tr, style: label, maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+            ),
+          ),
+        if (canPay) const SizedBox(width: 8),
+        Expanded(flex: canPay ? 2 : 3, child: details),
+        if (canCancel) ...[
+          const SizedBox(width: 8),
+          Obx(() {
+            controller.cancellingIds.length;
+            final cancelling = controller.cancellingIds.contains(enrollment.id);
+            return Tooltip(
+              message: 'cancel_booking'.tr,
+              child: OutlinedButton(
+                onPressed: cancelling ? null : onCancel,
+                style: _outlined(AppColors.danger).copyWith(
+                  minimumSize: const WidgetStatePropertyAll(Size(_height, _height)),
+                  padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+                ),
+                child: cancelling ? const AppInlineLoader() : const Icon(Icons.close_rounded, size: 20),
+              ),
+            );
+          }),
+        ],
+      ],
+    );
   }
 }
 

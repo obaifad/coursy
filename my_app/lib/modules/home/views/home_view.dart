@@ -342,11 +342,13 @@ class _EntranceFade extends StatelessWidget {
   }
 }
 
-/// تصنيف كبطاقة مربعة: مربع أيقونة ملوّن + الاسم + عدد الدورات كنص ثانوي.
+/// تصنيف كبطاقة مربعة بأسلوب Outline نظيف: مربع أبيض بحد بنفسجي خفيف وأيقونة بنفسجية،
+/// وعند التحديد (selected) يمتلئ بالبنفسجي الصلب وتصبح الأيقونة بيضاء والاسم بنفسجياً.
 class _CategoryTile extends StatefulWidget {
-  const _CategoryTile({required this.category, this.onTap});
+  // ignore: unused_element_parameter
+  const _CategoryTile({required this.category, this.onTap, this.selected = false});
 
-  static const double width = 84;
+  static const double width = 92;
   static const double _iconBox = 58;
 
   /// الارتفاع يتبع تكبير الخط (اسم بسطرين + عدد).
@@ -354,6 +356,7 @@ class _CategoryTile extends StatefulWidget {
 
   final CategoryModel category;
   final VoidCallback? onTap;
+  final bool selected;
 
   @override
   State<_CategoryTile> createState() => _CategoryTileState();
@@ -365,9 +368,10 @@ class _CategoryTileState extends State<_CategoryTile> {
   @override
   Widget build(BuildContext context) {
     final cat = widget.category;
-    final accent = _accentFor(cat.id);
+    final selected = widget.selected;
     return Semantics(
       button: true,
+      selected: selected,
       label: cat.coursesCount > 0 ? '${cat.name}، ${pluralTr('category_courses_count', cat.coursesCount)}' : cat.name,
       child: GestureDetector(
         onTapDown: (_) => setState(() => _pressed = true),
@@ -383,27 +387,34 @@ class _CategoryTileState extends State<_CategoryTile> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
                   width: _CategoryTile._iconBox,
                   height: _CategoryTile._iconBox,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(18),
-                    gradient: LinearGradient(
-                      begin: Alignment.topRight,
-                      end: Alignment.bottomLeft,
-                      colors: [accent.withValues(alpha: 0.20), accent.withValues(alpha: 0.08)],
+                    color: selected ? AppColors.primary : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: selected ? AppColors.primary : AppColors.primary.withValues(alpha: 0.3),
+                      width: selected ? 1.5 : 1.2,
                     ),
-                    border: Border.all(color: accent.withValues(alpha: 0.22)),
-                    boxShadow: [
-                      BoxShadow(color: accent.withValues(alpha: 0.12), blurRadius: 10, offset: const Offset(0, 4)),
-                    ],
+                    boxShadow: selected
+                        ? [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.28),
+                              blurRadius: 12,
+                              offset: const Offset(0, 5),
+                            ),
+                          ]
+                        : const [],
                   ),
                   alignment: Alignment.center,
                   child: CategoryIcon(
                     category: cat,
                     size: 38,
                     borderRadius: BorderRadius.circular(12),
-                    iconColor: accent,
+                    iconColor: selected ? Colors.white : AppColors.primary,
                     backgroundColor: Colors.transparent,
                   ),
                 ),
@@ -413,7 +424,12 @@ class _CategoryTileState extends State<_CategoryTile> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
-                  style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 12, height: 1.25),
+                  style: AppFonts.tajawal(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11.5,
+                    height: 1.25,
+                    color: selected ? AppColors.primary : AppColors.textPrimary,
+                  ),
                 ),
                 if (cat.coursesCount > 0) ...[
                   const SizedBox(height: 2),

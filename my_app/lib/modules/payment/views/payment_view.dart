@@ -7,6 +7,7 @@ import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/models/json_helpers.dart';
 import '../../../core/responsive/responsive.dart';
+import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_fonts.dart';
 import '../../../widgets/app_skeletons.dart';
@@ -51,8 +52,9 @@ class PaymentView extends GetView<PaymentController> {
                         const SizedBox(height: 16),
                         const _SubmitCard(),
                       ] else
-                        const _UnavailableCard(),
+                        _UnavailableCard(advanceRequired: data.advanceRequiredButUnavailable),
                       if (data.payments.isNotEmpty) ...[const SizedBox(height: 16), _HistoryCard(data: data)],
+                      const _BottomAction(),
                     ],
                   ),
                 ),
@@ -90,33 +92,148 @@ class _SummaryCard extends StatelessWidget {
     final (label, bg, fg) = switch (data.paymentStatus) {
       'paid' => ('payment_status_paid'.tr, AppColors.successSoft, AppColors.successText),
       'partial' => ('payment_status_partial'.tr, AppColors.warningFill, AppColors.warning),
-      _ => ('payment_status_unpaid'.tr, AppColors.neutralFill, AppColors.textMuted),
+      _ => ('payment_status_unpaid'.tr, AppColors.dangerSoft, AppColors.dangerText),
     };
-    return SoftCard(
-      padding: const EdgeInsets.all(16),
+    return _PayCard(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.receipt_long_rounded, size: 20, color: AppColors.primary),
+              ),
+              const SizedBox(width: 10),
               Expanded(child: Text('payment_summary'.tr, style: AppTypography.sectionTitle())),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-                child: Text(
-                  label,
-                  style: AppFonts.tajawal(color: fg, fontWeight: FontWeight.w800, fontSize: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      style: AppFonts.tajawal(color: fg, fontWeight: FontWeight.w800, fontSize: 12),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           _AmountRow(label: 'payment_amount_due'.tr, value: _money(data.amountDue, data.currency)),
           if (data.advanceAmount > 0)
             _AmountRow(label: 'payment_advance'.tr, value: _money(data.advanceAmount, data.currency)),
           _AmountRow(label: 'payment_paid'.tr, value: _money(data.amountPaid, data.currency)),
-          const Divider(height: 20),
-          _AmountRow(label: 'payment_remaining'.tr, value: _money(data.amountRemaining, data.currency), bold: true),
+          if (data.hasPendingAdvance && !data.isPaid)
+            _AmountRow(
+              label: 'payment_remaining_at_institute'.tr,
+              value: _money(data.remainingAtInstitute, data.currency),
+            ),
+          const SizedBox(height: 10),
+          // المبلغ الأهم الآن: المطلوب الآن (الدفعة المقدّمة) إن وُجدت، وإلا المتبقي.
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.07),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.14)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    (data.hasPendingAdvance ? 'payment_required_now' : 'payment_remaining').tr,
+                    style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.textBody),
+                  ),
+                ),
+                Text(
+                  _money(data.amountToSendNow, data.currency),
+                  style: AppFonts.tajawal(fontWeight: FontWeight.w900, fontSize: 20, color: AppColors.primary),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// بطاقة موحّدة لصفحة الدفع: خلفية بيضاء، حد خفيف، ظل ناعم، زوايا 20.
+class _PayCard extends StatelessWidget {
+  const _PayCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.07)),
+        boxShadow: const [
+          BoxShadow(color: AppColors.shadowPrimary, blurRadius: 20, offset: Offset(0, 8)),
+          BoxShadow(color: AppColors.shadowNeutralSoft, blurRadius: 4, offset: Offset(0, 1)),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+/// صندوق معلومات: خلفية مصبوغة خفيفة، أيقونة، عنوان ونص.
+class _InfoBanner extends StatelessWidget {
+  const _InfoBanner({required this.icon, required this.title, required this.body});
+
+  final IconData icon;
+  final String title;
+  final String body;
+  static const Color tint = AppColors.primary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: tint.withValues(alpha: 0.16)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(color: tint.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(12)),
+            child: Icon(icon, size: 22, color: tint),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 14.5, height: 1.3)),
+                const SizedBox(height: 4),
+                Text(body, style: AppFonts.tajawal(fontSize: 13, color: AppColors.textSecondary, height: 1.5)),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -124,23 +241,21 @@ class _SummaryCard extends StatelessWidget {
 }
 
 class _AmountRow extends StatelessWidget {
-  const _AmountRow({required this.label, required this.value, this.bold = false});
+  const _AmountRow({required this.label, required this.value});
 
   final String label;
   final String value;
-  final bool bold;
 
   @override
   Widget build(BuildContext context) {
-    final weight = bold ? FontWeight.w800 : FontWeight.w700;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           Expanded(
             child: Text(
               label,
-              style: AppFonts.tajawal(color: AppColors.textSecondary, fontWeight: weight, fontSize: 14),
+              style: AppFonts.tajawal(color: AppColors.textSecondary, fontWeight: FontWeight.w600, fontSize: 14),
             ),
           ),
           const SizedBox(width: 12),
@@ -148,11 +263,7 @@ class _AmountRow extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: AppFonts.tajawal(
-                color: bold ? AppColors.primary : AppColors.textPrimary,
-                fontWeight: weight,
-                fontSize: bold ? 16 : 14,
-              ),
+              style: AppFonts.tajawal(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 14),
             ),
           ),
         ],
@@ -170,8 +281,7 @@ class _TransferCard extends GetView<PaymentController> {
   Widget build(BuildContext context) {
     final shamcash = data.shamcash;
     final qr = shamcash.qrPayload;
-    return SoftCard(
-      padding: const EdgeInsets.all(16),
+    return _PayCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -266,8 +376,7 @@ class _SubmitCard extends GetView<PaymentController> {
 
   @override
   Widget build(BuildContext context) {
-    return SoftCard(
-      padding: const EdgeInsets.all(16),
+    return _PayCard(
       child: Obx(() {
         final waiting = controller.cooldown.value;
         return Column(
@@ -322,15 +431,42 @@ class _PaidCard extends StatelessWidget {
 }
 
 class _UnavailableCard extends StatelessWidget {
-  const _UnavailableCard();
+  const _UnavailableCard({required this.advanceRequired});
+
+  /// الدورة تتطلب دفعة مقدّمة لكن حساب شام كاش غير مفعّل لدى المعهد.
+  final bool advanceRequired;
 
   @override
   Widget build(BuildContext context) {
-    return AppEmptyState(
-      compact: true,
-      message: 'payment_unavailable'.tr,
-      subtitle: 'payment_unavailable_hint'.tr,
-      icon: Icons.storefront_rounded,
+    return _InfoBanner(
+      icon: advanceRequired ? Icons.link_off_rounded : Icons.storefront_rounded,
+      title: (advanceRequired ? 'payment_shamcash_not_connected' : 'payment_unavailable').tr,
+      body: (advanceRequired ? 'payment_shamcash_not_connected_hint' : 'payment_unavailable_hint').tr,
+    );
+  }
+}
+
+/// إجراء سفلي يُكمل الرحلة: العودة إلى تفاصيل الدورة (بحد خفيف حتى لا ينافس الإجراء الأساسي).
+class _BottomAction extends GetView<PaymentController> {
+  const _BottomAction();
+
+  @override
+  Widget build(BuildContext context) {
+    final courseId = controller.courseId;
+    if (courseId == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: OutlinedButton.icon(
+        onPressed: () => Get.toNamed(AppRoutes.courseDetails, arguments: courseId),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(48),
+          foregroundColor: AppColors.primary,
+          side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+        icon: const Icon(Icons.menu_book_outlined, size: 20),
+        label: Text('view_details'.tr, style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 14)),
+      ),
     );
   }
 }
@@ -342,8 +478,7 @@ class _HistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SoftCard(
-      padding: const EdgeInsets.all(16),
+    return _PayCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

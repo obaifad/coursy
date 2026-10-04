@@ -93,4 +93,52 @@ void main() {
     expect(e('rejected', 'unpaid', true).canPay, isFalse);
     expect(e('pending', 'unpaid', false).canPay, isFalse);
   });
+
+  test('advance breakdown: due now = advance, rest is paid at the institute', () {
+    final d = PaymentDetailsModel.fromJson({
+      'enrollment_id': 1,
+      'payment_status': 'unpaid',
+      'currency': 'SYP',
+      'amount_due': 15000,
+      'advance_amount': 12000,
+      'amount_paid': 0,
+      'amount_remaining': 15000,
+      'advance_remaining': 12000,
+      'shamcash': {'available': true, 'address': 'abc'},
+    });
+    expect(d.hasPendingAdvance, isTrue);
+    expect(d.amountToSendNow, 12000);
+    expect(d.remainingAtInstitute, 3000);
+    expect(d.advanceRequiredButUnavailable, isFalse);
+  });
+
+  test('advance required but ShamCash not connected is flagged', () {
+    final d = PaymentDetailsModel.fromJson({
+      'enrollment_id': 1,
+      'payment_status': 'unpaid',
+      'amount_due': 15000,
+      'advance_amount': 12000,
+      'amount_remaining': 15000,
+      'advance_remaining': 12000,
+      'shamcash': {'available': false},
+    });
+    expect(d.shamcash.canPay, isFalse);
+    expect(d.advanceRequiredButUnavailable, isTrue);
+  });
+
+  test('after the advance is paid only the institute remainder is left', () {
+    final d = PaymentDetailsModel.fromJson({
+      'enrollment_id': 1,
+      'payment_status': 'partial',
+      'amount_due': 15000,
+      'advance_amount': 12000,
+      'amount_paid': 12000,
+      'amount_remaining': 3000,
+      'advance_remaining': 0,
+      'shamcash': {'available': true, 'address': 'abc'},
+    });
+    expect(d.hasPendingAdvance, isFalse);
+    expect(d.amountToSendNow, 3000);
+    expect(d.remainingAtInstitute, 3000);
+  });
 }

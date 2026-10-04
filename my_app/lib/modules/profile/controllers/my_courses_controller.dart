@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:get/get.dart';
 
 import '../../../core/data/repositories/enrollment_repository.dart';
+import '../../../core/data/repositories/payment_repository.dart';
 import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/network/api_exception.dart';
@@ -17,6 +18,10 @@ class MyCoursesController extends GetxController with LatestLoadGuard, InitialLo
   final cancellingIds = <int>{}.obs;
   final errorMessage = RxnString();
   final enrollments = <EnrollmentModel>[].obs;
+
+  /// هل الدفع (دفعة مقدّمة) ممكن لهذا الحجز؟ يُجلب لحجوزات الدفعة المقدّمة فقط.
+  /// غير موجود = لم يُعرف بعد (نعرض زر الدفع كما أرسل الخادم)، false = لا دفعة مقدّمة فنخفي الزر.
+  final paymentAvailable = <int, bool>{}.obs;
 
   bool get isLoggedIn => Get.find<TokenStorage>().isLoggedIn;
 
@@ -54,6 +59,7 @@ class MyCoursesController extends GetxController with LatestLoadGuard, InitialLo
       if (Get.isRegistered<EnrollmentStatusCoordinator>()) {
         unawaited(Get.find<EnrollmentStatusCoordinator>().trackFromEnrollments(result.items));
       }
+      unawaited(_refreshPaymentAvailability(result.items));
     } on ApiCancelledException {
       return;
     } catch (e) {
@@ -62,6 +68,28 @@ class MyCoursesController extends GetxController with LatestLoadGuard, InitialLo
       applyIfCurrent(session, () => isLoading.value = false);
     }
   }
+
+  /// يتحقق من توفّر شام كاش لكل حجز يتطلب دفعة مقدّمة، كي لا يظهر زر «ادفع الآن» لدفع غير متاح.
+  Future<void> _refreshPaymentAvailability(List<EnrollmentModel> items) async {
+    if (!Get.isRegistered<PaymentRepository>()) return;
+    final repo = Get.find<PaymentRepository>();
+    final candidates = items.where((e) => e.canPay).toList();
+    await Future.wait(
+      candidates.map((e) async {
+        try {
+          final details = await repo.fetchDetails(e.id);
+          // الدفعة المقدّمة ممكنة ما دامت مطلوبة ولم تُسدَّد بالكامل (حتى لو لم يربط المعهد شام كاش بعد:
+          // صفحة الدفع تشرح ذلك). يُخفى الزر فقط إن لم تكن هناك دفعة مقدّمة ولا شام كاش.
+          paymentAvailable[e.id] = !details.isPaid && (details.advanceAmount > 0 || details.shamcash.canPay);
+        } catch (_) {
+          // نُبقي الحالة غير معروفة (يظهر الزر كما أرسل الخادم).
+        }
+      }),
+    );
+  }
+
+  /// هل نعرض «ادفع الآن»؟ مطلوب من الخادم + لم يثبت أن الدفع الإلكتروني غير متاح.
+  bool showPayButton(EnrollmentModel e) => e.canPay && paymentAvailable[e.id] != false;
 
   /// يدمج نتيجة الفحص الدوري مع القائمة الحالية بدون حذف عناصر غير موجودة في الصفحة المُرجعة
   /// (الفحص الدوري قد يُرجع الصفحة الأولى فقط من الخادم).

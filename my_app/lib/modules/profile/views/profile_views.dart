@@ -602,7 +602,7 @@ class SettingsView extends GetView<LocaleController> {
                           controller.languageLabel,
                           style: const TextStyle(color: AppColors.textSecondary),
                         ),
-                        onTap: controller.showLanguagePicker,
+                        onTap: () => controller.showLanguagePicker(context),
                       ),
                     ),
                     const Divider(height: 1),
