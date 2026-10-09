@@ -33,13 +33,23 @@ class AppTranslations extends Translations {
     'language': 'اللغة',
     'privacy_policy': 'سياسة الخصوصية',
     'about_app': 'عن التطبيق',
+    'contact_us': 'تواصل معنا',
+    'institute_contact_title': 'تواصل مع المعهد',
+    'contact_call': 'اتصال',
+    'contact_whatsapp': 'واتساب',
+    'contact_website': 'الموقع',
+    'contact_facebook': 'فيسبوك',
+    'contact_instagram': 'إنستغرام',
+    'open_link_failed': 'تعذّر فتح الرابط',
     'privacy_policy_body':
         'آخر تحديث: يونيو 2026\n\n'
         'مرحباً بك في تطبيق Coursy. نحن نحترم خصوصيتك ونلتزم بحماية بياناتك الشخصية وفقاً للقوانين المعمول بها في الجمهورية العربية السورية.\n\n'
         '1) البيانات التي نجمعها\n'
         '• بيانات التسجيل: الاسم، البريد الإلكتروني، رقم الهاتف، المدينة، ومعلومات أكاديمية اختيارية.\n'
         '• بيانات الاستخدام: الدورات التي تتصفحها، التسجيلات، المفضلة، والتقييمات.\n'
-        '• بيانات تقنية: نوع الجهاز وإصدار التطبيق لتحسين الأداء والأمان.\n\n'
+        '• صورة الملف الشخصي إن اخترت إضافتها.\n'
+        '• بيانات الدفع: رقم عملية شام كاش والمبلغ المحوَّل للمعهد. لا نطّلع على محفظتك ولا نحتفظ بأموالك؛ يُدفع المبلغ مباشرة للمعهد.\n'
+        '• بيانات تقنية: نوع الجهاز وإصدار التطبيق، ومعرّف الجهاز لإرسال الإشعارات، وتقارير الأعطال (عبر Firebase من Google) لإصلاح المشاكل.\n\n'
         '2) كيف نستخدم بياناتك\n'
         '• إنشاء حسابك وإدارة تسجيلك في الدورات والمعاهد.\n'
         '• إرسال إشعارات متعلقة بالدورات والتسجيل (يمكنك التحكم بها من الإعدادات).\n'
@@ -51,7 +61,7 @@ class AppTranslations extends Translations {
         '5) حقوقك\n'
         'يمكنك طلب الاطلاع على بياناتك أو تصحيحها أو حذف حسابك عبر التواصل معنا من داخل التطبيق أو عبر قنوات الدعم الرسمية.\n\n'
         '6) التواصل\n'
-        'لأي استفسار حول الخصوصية، راسلنا عبر قنوات الدعم المعتمدة في التطبيق.',
+        'لأي استفسار حول الخصوصية، تواصل معنا عبر صفحة «تواصل معنا» في الإعدادات أو على coursy.sy/contact.',
     'about_app_body':
         'Coursy — منصة تعليمية سورية\n\n'
         'Coursy منصة رقمية تجمع الدورات التدريبية والمعاهد والمدرّبين في مكان واحد، لتسهيل البحث والتسجيل والمتابعة داخل سوريا.\n\n'
@@ -83,7 +93,7 @@ class AppTranslations extends Translations {
     'search_title': 'البحث',
     'search_hint': 'ابحث: برمجة، فلاتر، تطبيقات، تصميم...',
     'search_scope_label': 'نوع البحث',
-    'search_hint_all': 'ابحث في الدورات والمعاهد والمدرّبين...',
+    'search_hint_all': 'ابحث عن دورة أو معهد أو مدرّب',
     'search_hint_courses': 'ابحث عن دورة: برمجة، فلاتر...',
     'search_hint_institutes': 'ابحث عن معهد أو مركز تدريب...',
     'search_hint_instructors': 'ابحث عن مدرّس أو تخصص...',
@@ -180,7 +190,6 @@ class AppTranslations extends Translations {
     'no_instructors_for_institute': 'لا يوجد مدرسون مسجلون حالياً',
     'view_instructor_profile': 'الملف الكامل للمدرّب',
     'instructor_invalid_data': 'بيانات المدرّب غير صالحة',
-    'view_all': 'الكل',
     'show_all': 'عرض الكل',
     'more': 'المزيد',
     'no_courses_now': 'لا توجد دورات حالياً',
@@ -190,6 +199,12 @@ class AppTranslations extends Translations {
     'retry_action': 'إعادة المحاولة',
     'course_load_failed': 'تعذر تحميل الدورة',
     'refresh': 'تحديث',
+    'back': 'رجوع',
+    'toggle_password_visibility': 'إظهار أو إخفاء كلمة المرور',
+    'favorite_add': 'إضافة إلى المفضلة',
+    'favorite_remove': 'إزالة من المفضلة',
+    'rate_n_of_5': 'تقييم @n من 5',
+    'clear_search': 'مسح البحث',
     'price_on_request': 'السعر قريباً',
     'payment_title': 'الدفع',
     'payment_summary': 'ملخص الدفع',
@@ -206,7 +221,6 @@ class AppTranslations extends Translations {
     'payment_pay_now': 'ادفع الآن',
     'payment_shamcash_title': 'الدفع عبر شام كاش',
     'payment_steps': 'أرسل المبلغ من محفظتك في تطبيق شام كاش إلى العنوان أدناه، ثم أدخل رقم العملية الظاهر في التطبيق.',
-    'payment_send_now': 'المبلغ المطلوب إرساله الآن',
     'payment_account_name': 'اسم الحساب',
     'payment_address': 'عنوان شام كاش',
     'payment_copy': 'نسخ',
@@ -680,13 +694,23 @@ class AppTranslations extends Translations {
     'language': 'Language',
     'privacy_policy': 'Privacy policy',
     'about_app': 'About',
+    'contact_us': 'Contact us',
+    'institute_contact_title': 'Contact the institute',
+    'contact_call': 'Call',
+    'contact_whatsapp': 'WhatsApp',
+    'contact_website': 'Website',
+    'contact_facebook': 'Facebook',
+    'contact_instagram': 'Instagram',
+    'open_link_failed': 'Could not open the link',
     'privacy_policy_body':
         'Last updated: June 2026\n\n'
         'Welcome to Coursy. We respect your privacy and are committed to protecting your personal data in line with applicable regulations in the Syrian Arab Republic.\n\n'
         '1) Data we collect\n'
         '• Registration data: name, email, phone number, city, and optional academic details.\n'
         '• Usage data: courses you browse, enrollments, favorites, and reviews.\n'
-        '• Technical data: device type and app version to improve performance and security.\n\n'
+        '• Profile picture, if you choose to add one.\n'
+        '• Payment data: the ShamCash transaction ID and the amount sent to the institute. We never access your wallet or hold your money; you pay the institute directly.\n'
+        '• Technical data: device type, app version, a device token for push notifications, and crash reports (via Google Firebase) used to fix problems.\n\n'
         '2) How we use your data\n'
         '• To create your account and manage course enrollments.\n'
         '• To send course- and enrollment-related notifications (you can control these in Settings).\n'
@@ -698,7 +722,7 @@ class AppTranslations extends Translations {
         '5) Your rights\n'
         'You may request access, correction, or deletion of your account by contacting us through in-app or official support channels.\n\n'
         '6) Contact\n'
-        'For privacy questions, reach us through the approved support channels in the app.',
+        'For privacy questions, use Contact us in Settings or visit coursy.sy/contact.',
     'about_app_body':
         'Coursy — Syrian learning platform\n\n'
         'Coursy is a digital platform that brings together training courses, institutes, and instructors in one place, making it easier to discover, enroll, and follow up across Syria.\n\n'
@@ -730,7 +754,7 @@ class AppTranslations extends Translations {
     'search_title': 'Search',
     'search_hint': 'Search: programming, Flutter, apps, design...',
     'search_scope_label': 'Search in',
-    'search_hint_all': 'Search courses, institutes, and instructors...',
+    'search_hint_all': 'Search courses, institutes, instructors',
     'search_hint_courses': 'Find a course: programming, Flutter...',
     'search_hint_institutes': 'Find an institute or training center...',
     'search_hint_instructors': 'Find a tutor or subject...',
@@ -818,7 +842,6 @@ class AppTranslations extends Translations {
     'no_instructors_for_institute': 'No instructors registered yet',
     'view_instructor_profile': 'Full instructor profile',
     'instructor_invalid_data': 'Invalid instructor data',
-    'view_all': 'All',
     'show_all': 'View all',
     'more': 'More',
     'no_courses_now': 'No courses available',
@@ -828,6 +851,12 @@ class AppTranslations extends Translations {
     'retry_action': 'Try again',
     'course_load_failed': 'Could not load the course',
     'refresh': 'Refresh',
+    'back': 'Back',
+    'toggle_password_visibility': 'Show or hide password',
+    'favorite_add': 'Add to favorites',
+    'favorite_remove': 'Remove from favorites',
+    'rate_n_of_5': 'Rate @n of 5',
+    'clear_search': 'Clear search',
     'price_on_request': 'Price coming soon',
     'payment_title': 'Payment',
     'payment_summary': 'Payment summary',
@@ -846,7 +875,6 @@ class AppTranslations extends Translations {
     'payment_shamcash_title': 'Pay with ShamCash',
     'payment_steps':
         'Send the amount from your wallet in the ShamCash app to the address below, then enter the transaction ID shown in the app.',
-    'payment_send_now': 'Amount to send now',
     'payment_account_name': 'Account name',
     'payment_address': 'ShamCash address',
     'payment_copy': 'Copy',

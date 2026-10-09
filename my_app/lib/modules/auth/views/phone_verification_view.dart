@@ -6,6 +6,7 @@ import '../../../core/responsive/responsive.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/design_system.dart';
 import '../controllers/phone_verification_controller.dart';
+import '../widgets/register_form_widgets.dart';
 
 class PhoneVerificationView extends GetView<PhoneVerificationController> {
   const PhoneVerificationView({super.key});
@@ -104,9 +105,10 @@ class _SendStep extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         Obx(
-          () => FilledButton(
+          () => RegisterGradientButton(
+            label: 'send_otp'.tr,
+            loading: controller.isSending.value,
             onPressed: controller.isSending.value ? null : controller.sendCode,
-            child: Text(controller.isSending.value ? 'sending_otp'.tr : 'send_otp'.tr),
           ),
         ),
       ],
@@ -153,9 +155,10 @@ class _VerifyStep extends StatelessWidget {
         }),
         const SizedBox(height: 12),
         Obx(
-          () => FilledButton(
+          () => RegisterGradientButton(
+            label: 'confirm_code'.tr,
+            loading: controller.isLoading.value,
             onPressed: controller.isLoading.value ? null : controller.verifyCode,
-            child: Text(controller.isLoading.value ? 'verifying'.tr : 'confirm_code'.tr),
           ),
         ),
         const SizedBox(height: 8),

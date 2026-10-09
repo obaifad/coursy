@@ -177,6 +177,11 @@ class CourseRatingService extends GetxService {
       isVerified: institute.isVerified || cached.isVerified,
       logoUrl: institute.logoUrl ?? cached.logoUrl,
       coverImageUrl: institute.coverImageUrl ?? cached.coverImageUrl,
+      phone: institute.phone ?? cached.phone,
+      whatsapp: institute.whatsapp ?? cached.whatsapp,
+      website: institute.website ?? cached.website,
+      facebook: institute.facebook ?? cached.facebook,
+      instagram: institute.instagram ?? cached.instagram,
     );
   }
 

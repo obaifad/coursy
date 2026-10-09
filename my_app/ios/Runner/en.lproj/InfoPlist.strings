@@ -1,0 +1,4 @@
+/* Permission prompts and app name shown by iOS. */
+"CFBundleDisplayName" = "Coursy";
+"NSPhotoLibraryUsageDescription" = "Coursy needs access to your photos so you can choose a profile picture.";
+"NSCameraUsageDescription" = "Coursy needs camera access so you can take a profile picture.";

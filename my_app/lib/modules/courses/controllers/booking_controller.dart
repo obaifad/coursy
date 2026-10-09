@@ -9,6 +9,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/session/enrollment_status_coordinator.dart';
 import '../../../core/services/enrollment_sync_service.dart';
 import '../../../core/services/enrollment_watch_scheduler.dart';
+import '../../../core/services/push_notification_service.dart';
 import '../../../core/session/session_refresh.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/utils/course_registration_guard.dart';
@@ -47,6 +48,9 @@ class BookingController extends GetxController {
         unawaited(Get.find<EnrollmentSyncService>().checkForStatusChanges());
       }
       unawaited(EnrollmentWatchScheduler.scheduleAfterEnrollment(enrollment.id));
+      if (Get.isRegistered<PushNotificationService>()) {
+        unawaited(Get.find<PushNotificationService>().requestPermissionAfterBooking());
+      }
       AppNavigation.goToRoot(tab: 3);
       // بعد التسجيل فقط يُعرض عنوان شام كاش (التحويل قبل التسجيل يُرفض من الخادم).
       if (course.requiresAdvancePayment || enrollment.canPay) {

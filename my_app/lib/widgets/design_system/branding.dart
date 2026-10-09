@@ -120,67 +120,6 @@ class AppHomeSearchBar extends StatelessWidget {
   }
 }
 
-/// عنوان صفحة رئيسي + وصف فرعي (دوراتي، المفضلة، إلخ).
-class AppScreenHeader extends StatelessWidget {
-  const AppScreenHeader({
-    super.key,
-    required this.title,
-    this.subtitle,
-    this.trailing,
-    this.showLogo = false,
-    this.logoInline = false,
-    this.logoHeight = 40,
-  });
-
-  final String title;
-  final String? subtitle;
-  final Widget? trailing;
-  final bool showLogo;
-  final bool logoInline;
-  final double logoHeight;
-
-  @override
-  Widget build(BuildContext context) {
-    final hPad = AppLayout.horizontalPage(context);
-    final titleBlock = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: logoInline ? AppTypography.tabScreenTitle() : AppTypography.pageTitle()),
-        if (subtitle != null) ...[const SizedBox(height: 4), Text(subtitle!, style: AppTypography.pageSubtitle())],
-      ],
-    );
-
-    return Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(hPad, 12, hPad, 4),
-      child: logoInline
-          ? Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                AppLogo(height: logoHeight),
-                SizedBox(width: logoHeight * 0.32),
-                Expanded(child: titleBlock),
-                if (trailing != null) trailing!,
-              ],
-            )
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (showLogo) ...[AppLogo(height: logoHeight), const SizedBox(height: 10)],
-                      titleBlock,
-                    ],
-                  ),
-                ),
-                if (trailing != null) trailing!,
-              ],
-            ),
-    );
-  }
-}
-
 /// نمط هندسي خفيف للبانرات
 class BrandBannerPattern extends StatelessWidget {
   const BrandBannerPattern({super.key});

@@ -144,6 +144,7 @@ class _CategoryHeroHeader extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
+                        tooltip: 'back'.tr,
                         onPressed: Get.back,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(minWidth: 44, minHeight: 44),

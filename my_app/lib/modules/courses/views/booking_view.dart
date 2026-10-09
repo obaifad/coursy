@@ -5,6 +5,7 @@ import '../../../theme/app_colors.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/app_widgets.dart';
 import '../controllers/booking_controller.dart';
+import '../../auth/widgets/register_form_widgets.dart';
 
 class CourseBookingView extends GetView<BookingController> {
   const CourseBookingView({super.key});
@@ -54,9 +55,10 @@ class CourseBookingView extends GetView<BookingController> {
           ),
           const SizedBox(height: 24),
           Obx(
-            () => FilledButton(
+            () => RegisterGradientButton(
+              label: 'confirm_booking'.tr,
+              loading: controller.isSubmitting.value,
               onPressed: controller.isSubmitting.value ? null : controller.confirmBooking,
-              child: Text(controller.isSubmitting.value ? 'submitting_review'.tr : 'confirm_booking'.tr),
             ),
           ),
         ],

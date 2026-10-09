@@ -9,6 +9,7 @@ import '../theme/app_colors.dart';
 import 'app_selection_sheet.dart';
 import 'app_widgets.dart';
 import '../core/locale/plural.dart';
+import '../modules/auth/widgets/register_form_widgets.dart';
 
 /// ورقة عائمة لاختيار الاهتمامات (اختيار متعدد) — تدعم القوائم الطويلة والبحث.
 Future<void> showInterestPickerSheet({
@@ -149,16 +150,12 @@ class _InterestPickerSheetBodyState extends State<_InterestPickerSheetBody> {
                   ),
           ),
           const SizedBox(height: 8),
-          FilledButton(
+          RegisterGradientButton(
+            label: 'done'.tr,
             onPressed: () {
               widget.onApply(_selected);
               Navigator.of(context).pop();
             },
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
-            child: Text('done'.tr),
           ),
         ],
       ),

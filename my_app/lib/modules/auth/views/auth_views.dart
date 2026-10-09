@@ -199,6 +199,7 @@ class _LoginFormBody extends GetView<AuthController> {
                   textInputAction: TextInputAction.done,
                   prefixIcon: Icons.lock_outline_rounded,
                   suffixIcon: IconButton(
+                    tooltip: 'toggle_password_visibility'.tr,
                     onPressed: () => controller.hidePassword.toggle(),
                     icon: Icon(
                       controller.hidePassword.value ? Icons.visibility_off_rounded : Icons.visibility_rounded,

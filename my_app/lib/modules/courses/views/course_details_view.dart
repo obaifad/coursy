@@ -240,6 +240,7 @@ SliverAppBar _buildCourseHeroSliver({
         final fav = Get.find<FavoritesService>();
         final isFav = fav.isCourseFavorite(item.id);
         return IconButton(
+          tooltip: isFav ? 'favorite_remove'.tr : 'favorite_add'.tr,
           onPressed: onFavorite,
           icon: Icon(
             isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,

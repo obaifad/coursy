@@ -231,15 +231,21 @@ class CourseCardLayout {
 }
 
 abstract final class AppGridLayouts {
-  static SliverGridDelegateWithFixedCrossAxisCount courseGridFor(BuildContext context) {
+  /// [includeButton] = false للبطاقات بلا زر (المفضلة) — وإلا يبقى فراغ بارتفاع الزر أسفل البطاقة.
+  static SliverGridDelegateWithFixedCrossAxisCount courseGridFor(BuildContext context, {bool includeButton = true}) {
     final crossAxisCount = CourseCardMetrics.courseGridCrossAxisCount(context);
     final tileWidth = CourseCardMetrics.courseGridTileWidth(context);
     return SliverGridDelegateWithFixedCrossAxisCount(
       crossAxisCount: crossAxisCount,
-      mainAxisExtent: CourseCardMetrics.gridCardHeightForWidth(
-        tileWidth,
-        textScale: CourseCardMetrics.textScaleOf(context),
-      ),
+      // البطاقة بلا زر ترسم ارتفاعها الطبيعي، وقد يزيد عن التقدير بكسور بكسل بحسب مقاييس الخط —
+      // هامش 4 يمنع الفيض دون فراغ ملحوظ.
+      mainAxisExtent:
+          CourseCardMetrics.gridCardHeightForWidth(
+            tileWidth,
+            includeButton: includeButton,
+            textScale: CourseCardMetrics.textScaleOf(context),
+          ) +
+          (includeButton ? 0 : 4),
       crossAxisSpacing: CourseCardMetrics.gridSpacing,
       mainAxisSpacing: CourseCardMetrics.gridSpacing,
     );

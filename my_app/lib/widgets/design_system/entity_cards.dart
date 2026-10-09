@@ -470,12 +470,22 @@ class InstituteListCard extends StatelessWidget {
 
 /// صف قائمة للملف الشخصي
 class ProfileMenuTile extends StatelessWidget {
-  const ProfileMenuTile({super.key, required this.title, required this.icon, this.onTap, this.trailing});
+  const ProfileMenuTile({
+    super.key,
+    required this.title,
+    required this.icon,
+    this.onTap,
+    this.trailing,
+    this.destructive = false,
+  });
 
   final String title;
   final IconData icon;
   final VoidCallback? onTap;
   final Widget? trailing;
+
+  /// إجراء خطِر (تسجيل الخروج): أحمر ليتميّز عن باقي العناصر.
+  final bool destructive;
 
   @override
   Widget build(BuildContext context) {
@@ -487,10 +497,16 @@ class ProfileMenuTile extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           leading: Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
-            child: Icon(icon, color: AppColors.primary, size: 22),
+            decoration: BoxDecoration(
+              color: destructive ? AppColors.dangerSoft : AppColors.indicatorFill,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: destructive ? AppColors.danger : AppColors.primary, size: 22),
           ),
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+          title: Text(
+            title,
+            style: TextStyle(fontWeight: FontWeight.w700, color: destructive ? AppColors.danger : null),
+          ),
           trailing: trailing ?? const Icon(Icons.chevron_left_rounded, color: AppColors.textSecondary),
           onTap: onTap,
         ),

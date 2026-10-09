@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'app.dart';
@@ -18,6 +19,7 @@ import 'core/storage/recent_search_storage.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _lockPhonesToPortrait();
   await bootstrapFirebase();
   await EnrollmentWatchScheduler.init();
   await GetStorage.init();
@@ -31,6 +33,15 @@ Future<void> main() async {
 
   runApp(const SyrianEducationApp());
   unawaited(_postLaunchSync());
+}
+
+/// الهواتف بالوضع العمودي فقط (التخطيط مصمَّم له)؛ التابلت (أقصر ضلع ≥ 600) يدور بحرية.
+Future<void> _lockPhonesToPortrait() async {
+  final displays = WidgetsBinding.instance.platformDispatcher.displays;
+  if (displays.isEmpty) return;
+  final display = displays.first;
+  if (display.size.shortestSide / display.devicePixelRatio >= 600) return;
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 }
 
 /// مزامنة بعد فتح الواجهة — لا نحجب runApp بانتظار الشبكة.

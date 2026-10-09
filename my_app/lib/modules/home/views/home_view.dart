@@ -116,7 +116,7 @@ class HomeView extends GetView<HomeController> {
                 padding: _sectionPad(context),
                 child: AppSectionHeader(
                   title: 'section_categories'.tr,
-                  actionLabel: 'view_all'.tr,
+                  actionLabel: 'show_all'.tr,
                   onAction: () => AppNavigation.switchToTab(0),
                 ),
               ),

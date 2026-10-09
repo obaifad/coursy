@@ -8,6 +8,9 @@ abstract final class ApiConfig {
   /// الموقع والداشبورد (الدومين الرئيسي).
   static const String siteUrl = 'https://coursy.sy';
 
+  /// صفحة التواصل والدعم على الموقع.
+  static const String contactUrl = '$siteUrl/contact';
+
   /// منفذ بروكسي التطوير — يجب أن يطابق `tool/dev_cors_proxy.dart`.
   static const int webDevProxyPort = 5478;
 

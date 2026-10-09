@@ -53,7 +53,13 @@ class NotificationsView extends GetView<NotificationsController> {
       return Scaffold(
         appBar: AppBar(
           title: Text('notifications'.tr),
-          actions: [IconButton(onPressed: controller.loadNotifications, icon: const Icon(Icons.refresh_rounded))],
+          actions: [
+            IconButton(
+              tooltip: 'refresh'.tr,
+              onPressed: controller.loadNotifications,
+              icon: const Icon(Icons.refresh_rounded),
+            ),
+          ],
         ),
         body: Obx(() {
           if (controller.isLoading.value) {

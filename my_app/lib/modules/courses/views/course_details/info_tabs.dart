@@ -13,26 +13,27 @@ class _OverviewTab extends StatelessWidget {
         _QuickStatsGrid(item: item),
         const SizedBox(height: 14),
         _SeatsProgressCard(item: item),
-        const SizedBox(height: 16),
-        _SectionCard(
-          title: 'about_course'.tr,
-          child: Text(item.description ?? 'no_description'.tr, style: const TextStyle(height: 1.55, fontSize: 15)),
-        ),
-        const SizedBox(height: 16),
-        _SectionCard(
-          title: 'course_requirements'.tr,
-          child: Text(
-            (item.requirements != null && item.requirements!.trim().isNotEmpty)
-                ? item.requirements!
-                : 'no_requirements'.tr,
-            style: const TextStyle(height: 1.55, fontSize: 15),
+        if (_hasText(item.description)) ...[
+          const SizedBox(height: 16),
+          _SectionCard(
+            title: 'about_course'.tr,
+            child: Text(item.description!.trim(), style: const TextStyle(height: 1.55, fontSize: 15)),
           ),
-        ),
+        ],
+        if (_hasText(item.requirements)) ...[
+          const SizedBox(height: 16),
+          _SectionCard(
+            title: 'course_requirements'.tr,
+            child: Text(item.requirements!.trim(), style: const TextStyle(height: 1.55, fontSize: 15)),
+          ),
+        ],
         if (item.institute.isNotEmpty) ...[const SizedBox(height: 16), _InstituteCard(item: item)],
       ],
     );
   }
 }
+
+bool _hasText(String? value) => value != null && value.trim().isNotEmpty;
 
 class _ScheduleTab extends GetView<CourseDetailsController> {
   const _ScheduleTab({required this.item});

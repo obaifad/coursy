@@ -19,6 +19,11 @@ class InstituteModel {
     this.logoUrl,
     this.coverImageUrl,
     this.cityId,
+    this.phone,
+    this.whatsapp,
+    this.website,
+    this.facebook,
+    this.instagram,
   }) : nameAr = nameAr ?? name ?? '',
        nameEn = nameEn ?? name ?? '',
        cityAr = cityAr ?? city ?? '',
@@ -39,6 +44,15 @@ class InstituteModel {
   final String? logoUrl;
   final String? coverImageUrl;
   final int? cityId;
+
+  // وسائل تواصل المعهد كما يرسلها الخادم (قد تكون فارغة).
+  final String? phone;
+  final String? whatsapp;
+  final String? website;
+  final String? facebook;
+  final String? instagram;
+
+  bool get hasContact => [phone, whatsapp, website, facebook, instagram].any((v) => v != null);
 
   String get name => JsonHelpers.pickLocalized(ar: nameAr, en: nameEn);
 
@@ -67,6 +81,11 @@ class InstituteModel {
     bool? isVerified,
     String? logoUrl,
     String? coverImageUrl,
+    String? phone,
+    String? whatsapp,
+    String? website,
+    String? facebook,
+    String? instagram,
   }) {
     return InstituteModel(
       id: id,
@@ -84,6 +103,11 @@ class InstituteModel {
       logoUrl: logoUrl ?? this.logoUrl,
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
       cityId: cityId,
+      phone: phone ?? this.phone,
+      whatsapp: whatsapp ?? this.whatsapp,
+      website: website ?? this.website,
+      facebook: facebook ?? this.facebook,
+      instagram: instagram ?? this.instagram,
     );
   }
 
@@ -129,7 +153,17 @@ class InstituteModel {
       cityId:
           JsonHelpers.parseIntOrNull(json['city_id']) ??
           (cityObj is Map ? JsonHelpers.parseIntOrNull(cityObj['id']) : null),
+      phone: _contact(json['phone']),
+      whatsapp: _contact(json['whatsapp']),
+      website: _contact(json['website']),
+      facebook: _contact(json['facebook']),
+      instagram: _contact(json['instagram']),
     );
+  }
+
+  static String? _contact(dynamic value) {
+    final text = value?.toString().trim();
+    return text == null || text.isEmpty ? null : text;
   }
 
   static String? _extractMediaPath(Map<String, dynamic> json, List<String> keys) {

@@ -116,7 +116,7 @@ class _FavoritesBody extends StatelessWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.fromLTRB(hPad, 16, hPad, AppLayout.scrollBottomInset(context)),
           itemCount: controller.courses.length,
-          gridDelegate: AppGridLayouts.courseGridFor(context),
+          gridDelegate: AppGridLayouts.courseGridFor(context, includeButton: false),
           itemBuilder: (_, i) {
             final course = controller.courses[i];
             return _FavoriteGridItem(key: ValueKey(course.id), course: course, controller: controller);

@@ -13,6 +13,7 @@ import '../../../widgets/app_selection_sheet.dart';
 import '../../../widgets/design_system.dart';
 import '../controllers/search_controller.dart';
 import '../../../core/locale/plural.dart';
+import '../../auth/widgets/register_form_widgets.dart';
 
 class SearchView extends GetView<SearchPageController> {
   const SearchView({super.key});
@@ -230,6 +231,7 @@ class _IntegratedSearchBox extends StatelessWidget {
                     )
                   else if (hasText)
                     IconButton(
+                      tooltip: 'clear_search'.tr,
                       onPressed: () {
                         controller.queryController.clear();
                         controller.queryText.value = '';
@@ -657,12 +659,12 @@ class _FilterSheetState extends State<_FilterSheet> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: FilledButton(
+                  child: RegisterGradientButton(
+                    label: 'search_apply_filters'.tr,
                     onPressed: () {
                       c.applyFilters(cityId: cityId, categoryId: categoryId, level: level, studyType: studyType);
                       Navigator.pop(context);
                     },
-                    child: Text('search_apply_filters'.tr),
                   ),
                 ),
               ],

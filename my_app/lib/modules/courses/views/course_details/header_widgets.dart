@@ -56,7 +56,6 @@ class _AttributeBadges extends StatelessWidget {
         label: item.certificateAvailable ? 'course_certificate_yes'.tr : 'course_certificate_no'.tr,
         highlighted: item.certificateAvailable,
       ),
-      if (item.isFeatured) _DetailBadge(icon: Icons.star_rounded, label: 'featured_course'.tr, highlighted: true),
       if (item.requiresAdvancePayment) _DetailBadge(icon: Icons.payments_outlined, label: 'course_advance_payment'.tr),
     ];
 
@@ -367,9 +366,19 @@ class _CourseHeroImage extends StatelessWidget {
   }
 
   Widget _fallback() {
-    return Container(
+    return DecoratedBox(
       decoration: const BoxDecoration(gradient: AppGradients.category),
-      child: const Center(child: Icon(Icons.school_rounded, color: Colors.white, size: 64)),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const BrandBannerPattern(),
+          // في الثلث العلوي: العنوان واسم المعهد والتقييم تُكتب في النصف السفلي من الغلاف.
+          Align(
+            alignment: const Alignment(0, -0.45),
+            child: Icon(Icons.school_rounded, color: Colors.white.withValues(alpha: 0.35), size: 56),
+          ),
+        ],
+      ),
     );
   }
 }

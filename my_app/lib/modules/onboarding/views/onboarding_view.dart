@@ -8,6 +8,7 @@ import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/design_system.dart';
 import '../../../theme/app_motion.dart';
+import '../../auth/widgets/register_form_widgets.dart';
 
 class OnboardingView extends StatefulWidget {
   const OnboardingView({super.key});
@@ -112,7 +113,8 @@ class _OnboardingViewState extends State<OnboardingView> {
                 const SizedBox(height: 18),
                 Padding(
                   padding: const EdgeInsets.all(16),
-                  child: FilledButton(
+                  child: RegisterGradientButton(
+                    label: index == _pageIcons.length - 1 ? 'onboarding_start'.tr : 'next'.tr,
                     onPressed: () {
                       if (index == _pageIcons.length - 1) {
                         _finish();
@@ -120,7 +122,6 @@ class _OnboardingViewState extends State<OnboardingView> {
                       }
                       controller.nextPage(duration: AppMotion.normal, curve: Curves.easeOutCubic);
                     },
-                    child: Text(index == _pageIcons.length - 1 ? 'onboarding_start'.tr : 'next'.tr),
                   ),
                 ),
               ],

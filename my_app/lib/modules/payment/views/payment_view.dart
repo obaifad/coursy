@@ -288,25 +288,6 @@ class _TransferCard extends GetView<PaymentController> {
           Text('payment_shamcash_title'.tr, style: AppTypography.sectionTitle()),
           const SizedBox(height: 4),
           Text('payment_steps'.tr, style: AppTypography.cardSubtitle(size: 13).copyWith(height: 1.5)),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(16)),
-            child: Column(
-              children: [
-                Text(
-                  'payment_send_now'.tr,
-                  style: AppFonts.tajawal(color: AppColors.textSecondary, fontWeight: FontWeight.w700, fontSize: 13),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _money(data.amountToSendNow, data.currency),
-                  textAlign: TextAlign.center,
-                  style: AppFonts.tajawal(color: AppColors.primary, fontWeight: FontWeight.w900, fontSize: 22),
-                ),
-              ],
-            ),
-          ),
           if (shamcash.accountName != null) ...[
             const SizedBox(height: 14),
             Text(

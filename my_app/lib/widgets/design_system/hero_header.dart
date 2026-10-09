@@ -19,85 +19,93 @@ class AppHeroHeader extends StatelessWidget {
     final hPad = AppLayout.horizontalPage(context);
     final compact = MediaQuery.sizeOf(context).height < 700;
 
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
-      child: DecoratedBox(
-        decoration: const BoxDecoration(gradient: AppGradients.heroBanner),
-        child: Stack(
-          children: [
-            const Positioned.fill(child: BrandBannerPattern()),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.black.withValues(alpha: 0.05), Colors.black.withValues(alpha: 0.38)],
+    // بعرض الشاشة دائماً، حتى داخل Column محاذاته للبداية (crossAxisAlignment.start).
+    return SizedBox(
+      width: double.infinity,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+        child: DecoratedBox(
+          decoration: const BoxDecoration(gradient: AppGradients.heroBanner),
+          child: Stack(
+            children: [
+              const Positioned.fill(child: BrandBannerPattern()),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.black.withValues(alpha: 0.05), Colors.black.withValues(alpha: 0.38)],
+                    ),
                   ),
                 ),
               ),
-            ),
-            SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(hPad, onBack != null ? 4 : 14, hPad, compact ? 16 : 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (onBack != null) ...[
-                      IconButton(
-                        onPressed: onBack,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                        icon: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-                          child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+              SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: EdgeInsetsDirectional.fromSTEB(hPad, onBack != null ? 4 : 14, hPad, compact ? 16 : 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (onBack != null) ...[
+                        IconButton(
+                          tooltip: 'back'.tr,
+                          onPressed: onBack,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                          icon: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+                          ),
                         ),
-                      ),
-                      SizedBox(height: compact ? 4 : 8),
-                    ],
-                    if (badge != null) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white24),
+                        SizedBox(height: compact ? 4 : 8),
+                      ],
+                      if (badge != null) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: Text(
+                            badge!,
+                            style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
+                          ),
                         ),
-                        child: Text(
-                          badge!,
-                          style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    Text(
-                      title,
-                      style: AppFonts.tajawal(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: compact ? 22 : 24,
-                        height: 1.2,
-                      ),
-                    ),
-                    if (subtitle != null && !compact) ...[
-                      const SizedBox(height: 4),
+                        const SizedBox(height: 8),
+                      ],
                       Text(
-                        subtitle!,
+                        title,
                         style: AppFonts.tajawal(
-                          color: Colors.white.withValues(alpha: 0.88),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: compact ? 22 : 24,
+                          height: 1.2,
                         ),
                       ),
+                      if (subtitle != null && !compact) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle!,
+                          style: AppFonts.tajawal(
+                            color: Colors.white.withValues(alpha: 0.88),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -73,12 +73,8 @@ class _MyCoursesShellState extends State<_MyCoursesShell> with SingleTickerProvi
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AppScreenHeader(
-              title: 'my_courses'.tr,
-              subtitle: 'my_courses_subtitle'.tr,
-              logoInline: true,
-              logoHeight: 44,
-            ),
+            AppHeroHeader(title: 'my_courses'.tr, subtitle: 'my_courses_subtitle'.tr),
+            const SizedBox(height: 10),
             AppTabBarSection(
               controller: _tabController,
               tabs: [
@@ -355,6 +351,13 @@ class _MetaRow {
 class _EnrollmentMeta {
   const _EnrollmentMeta(this.rows);
 
+  /// الدورات التي تُدفع حضورياً في المعهد: «غير مدفوع» تقلق الطالب بلا داعٍ، فلا تظهر إلا إن وُجد دفع.
+  static bool _showsPaymentStatus(EnrollmentModel e) {
+    final status = e.paymentStatus.toLowerCase();
+    if (status.isEmpty) return false;
+    return e.course?.requiresAdvancePayment == true || status == 'paid' || status == 'partial';
+  }
+
   final List<_MetaRow> rows;
 
   bool get isNotEmpty => rows.isNotEmpty;
@@ -363,7 +366,7 @@ class _EnrollmentMeta {
     final course = enrollment.course;
     final rows = <_MetaRow>[
       _MetaRow(icon: Icons.confirmation_number_outlined, label: '${'booking_id'.tr} #${enrollment.id}'),
-      if (enrollment.paymentStatus.isNotEmpty)
+      if (_showsPaymentStatus(enrollment))
         _MetaRow(
           icon: Icons.payments_outlined,
           label: '${'payment_status'.tr}: ${JsonHelpers.paymentStatusLabel(enrollment.paymentStatus)}',

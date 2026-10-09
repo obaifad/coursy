@@ -51,16 +51,22 @@ class PushNotificationService extends GetxService {
     _listenOpenedFromBackground();
     await _handleInitialMessage();
 
+    // لا نطلب الإذن عند الإقلاع (إرشادات Apple وGoogle): يُطلب بعد أول حجز، حيث للإشعارات سبب واضح
+    // (قبول التسجيل وتأكيد الدفع)، أو من الإعدادات. هنا نقرأ الحالة ونسجّل التوكن فقط.
     if (notificationsEnabled.value) {
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-        // Android 13+: طلب الإذن بعد ظهور الواجهة لضمان ظهور نافذة النظام.
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          unawaited(ensurePermissionsAndSyncToken());
-        });
-      } else {
-        await ensurePermissionsAndSyncToken();
-      }
+      unawaited(ensurePermissionsAndSyncToken(requestPermission: false));
     }
+  }
+
+  /// بعد حجز ناجح: يطلب الإذن مرة واحدة إن لم يكن ممنوحاً (نافذة النظام لا تظهر إن رُفض نهائياً).
+  Future<void> requestPermissionAfterBooking() async {
+    if (kIsWeb || !notificationsEnabled.value) return;
+    if (await _hasPermission()) return;
+    // بعد ظهور الإطار التالي: نافذة النظام على Android لا تظهر أثناء انتقال الصفحات.
+    final shown = Completer<void>();
+    WidgetsBinding.instance.addPostFrameCallback((_) => shown.complete());
+    await shown.future;
+    await ensurePermissionsAndSyncToken();
   }
 
   /// يطلب إذن الإشعارات (Android 13+) ثم يسجّل توكن FCM.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/locale/locale_rebuild.dart';
+import '../../../core/models/app_models.dart';
 import '../../../core/models/json_helpers.dart';
 import '../../../core/utils/external_launcher.dart';
 import '../../../routes/app_routes.dart';
@@ -22,12 +23,7 @@ class InstitutesView extends GetView<InstitutesController> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AppScreenHeader(
-              title: 'institutes_title'.tr,
-              subtitle: 'institutes_subtitle'.tr,
-              logoInline: true,
-              logoHeight: 44,
-            ),
+            AppHeroHeader(title: 'institutes_title'.tr, subtitle: 'institutes_subtitle'.tr),
             const SizedBox(height: 10),
             Obx(
               () => HorizontalCityFilters(
@@ -221,9 +217,77 @@ class _InfoTab extends StatelessWidget {
               ],
             ),
           ),
+          if (institute != null && institute.hasContact) ...[
+            const SizedBox(height: 14),
+            _InstituteContactCard(institute: institute),
+          ],
         ],
       );
     });
+  }
+}
+
+class _InstituteContactCard extends StatelessWidget {
+  const _InstituteContactCard({required this.institute});
+
+  final InstituteModel institute;
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = <({IconData icon, String label, VoidCallback onTap})>[
+      if (institute.phone != null)
+        (icon: Icons.call_rounded, label: 'contact_call'.tr, onTap: () => ExternalLauncher.openPhone(institute.phone!)),
+      if (institute.whatsapp != null)
+        (
+          icon: Icons.chat_rounded,
+          label: 'contact_whatsapp'.tr,
+          onTap: () => ExternalLauncher.openWhatsApp(institute.whatsapp!),
+        ),
+      if (institute.website != null)
+        (
+          icon: Icons.language_rounded,
+          label: 'contact_website'.tr,
+          onTap: () => ExternalLauncher.openWebPage(institute.website!),
+        ),
+      if (institute.facebook != null)
+        (
+          icon: Icons.facebook_rounded,
+          label: 'contact_facebook'.tr,
+          onTap: () => ExternalLauncher.openWebPage(institute.facebook!),
+        ),
+      if (institute.instagram != null)
+        (
+          icon: Icons.photo_camera_outlined,
+          label: 'contact_instagram'.tr,
+          onTap: () => ExternalLauncher.openWebPage(institute.instagram!),
+        ),
+    ];
+    return SoftCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('institute_contact_title'.tr, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final a in actions)
+                OutlinedButton.icon(
+                  onPressed: a.onTap,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  icon: Icon(a.icon, size: 18),
+                  label: Text(a.label),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

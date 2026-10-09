@@ -1,0 +1,4 @@
+/* نصوص نوافذ الأذونات واسم التطبيق كما يعرضها iOS. */
+"CFBundleDisplayName" = "Coursy";
+"NSPhotoLibraryUsageDescription" = "يحتاج Coursy إلى الوصول إلى صورك لتختار صورة لملفك الشخصي.";
+"NSCameraUsageDescription" = "يحتاج Coursy إلى الكاميرا لتلتقط صورة لملفك الشخصي.";

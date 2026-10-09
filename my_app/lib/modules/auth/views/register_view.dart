@@ -6,9 +6,9 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../theme/app_fonts.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/responsive/responsive.dart';
+import '../../../core/navigation/app_navigation.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
-import '../../../widgets/guest_access.dart';
 import '../controllers/auth_controller.dart';
 import '../widgets/auth_split_layout.dart';
 import '../widgets/login_page_metrics.dart';
@@ -71,6 +71,7 @@ class _RegisterViewState extends State<RegisterView> {
                 Row(
                   children: [
                     IconButton(
+                      tooltip: 'back'.tr,
                       onPressed: controller.previousRegisterStep,
                       icon: const Icon(Icons.arrow_back_rounded),
                       style: IconButton.styleFrom(
@@ -164,7 +165,11 @@ class _RegisterViewState extends State<RegisterView> {
                 SizedBox(height: metrics.fieldGap),
                 Center(child: _SignInLink()),
                 const SizedBox(height: 8),
-                Center(child: GuestContinueButton()),
+                RegisterGhostButton(
+                  label: 'continue_as_guest'.tr,
+                  primaryText: true,
+                  onPressed: AppNavigation.enterAsGuest,
+                ),
               ],
             );
 
@@ -324,6 +329,7 @@ class _RegisterStepBody extends GetView<AuthController> {
                 prefixIcon: Icons.lock_outline_rounded,
                 errorText: _fieldError('password'),
                 suffixIcon: IconButton(
+                  tooltip: 'toggle_password_visibility'.tr,
                   onPressed: () => controller.hideRegisterPassword.toggle(),
                   icon: Icon(
                     controller.hideRegisterPassword.value ? Icons.visibility_off_rounded : Icons.visibility_rounded,
@@ -347,6 +353,7 @@ class _RegisterStepBody extends GetView<AuthController> {
                 prefixIcon: Icons.lock_reset_rounded,
                 errorText: _fieldError('confirmPassword'),
                 suffixIcon: IconButton(
+                  tooltip: 'toggle_password_visibility'.tr,
                   onPressed: () => controller.hideConfirmPassword.toggle(),
                   icon: Icon(
                     controller.hideConfirmPassword.value ? Icons.visibility_off_rounded : Icons.visibility_rounded,

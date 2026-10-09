@@ -12,6 +12,8 @@ import '../../../core/storage/token_storage.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/session/session_refresh.dart';
 import '../../../core/bindings/root_binding.dart';
+import '../../../core/config/api_config.dart';
+import '../../../core/utils/external_launcher.dart';
 import '../controllers/my_courses_controller.dart';
 import 'my_courses_tab_view.dart';
 import '../../../routes/app_routes.dart';
@@ -116,13 +118,9 @@ class ProfileView extends StatelessWidget {
                       if (!Get.find<TokenStorage>().isLoggedIn) {
                         return SizedBox(
                           width: double.infinity,
-                          child: FilledButton(
+                          child: RegisterGradientButton(
+                            label: 'login'.tr,
                             onPressed: () => Get.toNamed(AppRoutes.login),
-                            style: FilledButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                            ),
-                            child: Text('login'.tr),
                           ),
                         );
                       }
@@ -144,8 +142,22 @@ class ProfileView extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: AppLayout.readableInset(context), vertical: 16),
             child: Obx(() {
               final storage = Get.find<TokenStorage>();
+              final settings = ProfileMenuTile(
+                title: 'settings'.tr,
+                icon: Icons.settings_outlined,
+                onTap: () => Get.toNamed(AppRoutes.settings),
+              );
               if (!storage.isLoggedIn) {
-                return const SizedBox.shrink();
+                return Column(
+                  children: [
+                    ProfileMenuTile(
+                      title: 'register'.tr,
+                      icon: Icons.person_add_alt_1_outlined,
+                      onTap: () => Get.toNamed(AppRoutes.register),
+                    ),
+                    settings,
+                  ],
+                );
               }
               // يظهر فقط إن أكّد الخادم أن الرقم غير مُتحقَّق منه (null = غير معروف → لا نزعج المستخدم).
               final needsPhoneVerification = storage.phoneVerified.value == false;
@@ -172,9 +184,11 @@ class ProfileView extends StatelessWidget {
                     icon: Icons.menu_book_outlined,
                     onTap: () => AppNavigation.switchToTab(3),
                   ),
+                  settings,
                   ProfileMenuTile(
                     title: 'logout'.tr,
                     icon: Icons.logout_rounded,
+                    destructive: true,
                     trailing: const SizedBox.shrink(),
                     onTap: () => _confirmAndLogout(context),
                   ),
@@ -612,6 +626,13 @@ class SettingsView extends GetView<LocaleController> {
                       onTap: () => Get.to(
                         () => _SettingsDocumentView(title: 'privacy_policy'.tr, body: 'privacy_policy_body'.tr),
                       ),
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.support_agent_rounded, color: AppColors.primary),
+                      title: Text('contact_us'.tr, style: const TextStyle(fontWeight: FontWeight.w700)),
+                      trailing: const Icon(Icons.open_in_new_rounded, size: 18, color: AppColors.textSecondary),
+                      onTap: () => ExternalLauncher.openWebPage(ApiConfig.contactUrl),
                     ),
                     const Divider(height: 1),
                     ListTile(

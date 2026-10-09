@@ -38,6 +38,7 @@ class InstructorDetailsView extends GetView<InstructorDetailsController> {
                 actions: [
                   Obx(
                     () => IconButton(
+                      tooltip: controller.isFavorite.value ? 'favorite_remove'.tr : 'favorite_add'.tr,
                       onPressed: controller.toggleFavorite,
                       icon: Icon(
                         controller.isFavorite.value ? Icons.favorite_rounded : Icons.favorite_border_rounded,

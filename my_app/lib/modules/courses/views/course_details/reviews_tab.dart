@@ -243,9 +243,10 @@ class _ReviewFormSection extends GetView<CourseDetailsController> {
           Obx(
             () => SizedBox(
               width: double.infinity,
-              child: FilledButton(
+              child: RegisterGradientButton(
+                label: 'submit_review'.tr,
+                loading: controller.isSubmittingReview.value,
                 onPressed: controller.isSubmittingReview.value ? null : controller.submitReviews,
-                child: Text(controller.isSubmittingReview.value ? 'submitting_review'.tr : 'submit_review'.tr),
               ),
             ),
           ),
@@ -272,6 +273,7 @@ class _RatingRow extends StatelessWidget {
             children: List.generate(5, (i) {
               final star = i + 1;
               return IconButton(
+                tooltip: 'rate_n_of_5'.trParams({'n': '$star'}),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                 onPressed: () => rating.value = star,
