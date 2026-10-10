@@ -148,8 +148,8 @@ class InstructorModel {
     this.imageUrl,
     this.isPrivate = false,
     this.mobile,
-    this.sessionPrice,
-    this.hourlyPrice,
+    this.sessionPriceValue,
+    this.hourlyPriceValue,
     this.address,
     this.institutes = const [],
   }) : nameAr = nameAr ?? name ?? '',
@@ -167,8 +167,13 @@ class InstructorModel {
   final String? imageUrl;
   final bool isPrivate;
   final String? mobile;
-  final String? sessionPrice;
-  final String? hourlyPrice;
+  /// الأسعار كأرقام؛ النص («75,000 ل.س») يُبنى عند العرض بلغة الواجهة الحالية.
+  final double? sessionPriceValue;
+  final double? hourlyPriceValue;
+
+  String? get sessionPrice => sessionPriceValue == null ? null : JsonHelpers.formatSyrianPrice(sessionPriceValue);
+
+  String? get hourlyPrice => hourlyPriceValue == null ? null : JsonHelpers.formatSyrianPrice(hourlyPriceValue);
   final String? address;
   final List<InstructorInstituteLink> institutes;
 
@@ -227,17 +232,16 @@ class InstructorModel {
       imageUrl: json['image']?.toString(),
       isPrivate: JsonHelpers.parseBool(json['is_private']),
       mobile: json['mobile']?.toString(),
-      sessionPrice: _instructorPriceLabel(json['session_price']),
-      hourlyPrice: _instructorPriceLabel(json['hourly_price']),
+      sessionPriceValue: _positivePrice(json['session_price']),
+      hourlyPriceValue: _positivePrice(json['hourly_price']),
       address: address.isNotEmpty ? address : json['address']?.toString(),
       institutes: institutes,
     );
   }
 
-  static String? _instructorPriceLabel(dynamic raw) {
+  static double? _positivePrice(dynamic raw) {
     if (raw == null) return null;
     final value = JsonHelpers.parseDouble(raw);
-    if (value <= 0) return null;
-    return JsonHelpers.formatSyrianPrice(value);
+    return value > 0 ? value : null;
   }
 }
