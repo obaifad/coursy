@@ -39,6 +39,16 @@ class BookingController extends GetxController {
     isSubmitting.value = true;
     try {
       final enrollment = await _enrollmentRepository.enrollInCourse(course.id);
+      // إعادة الحجز بعد الإلغاء/الرفض: الخادم يُرجع السجل القديم بحالته (200) ولا ينشئ طلباً جديداً.
+      final status = enrollment.status.toLowerCase();
+      if (status == 'cancelled' || status == 'rejected') {
+        Get.snackbar(
+          'booking_failed_title'.tr,
+          status == 'cancelled' ? 'booking_previously_cancelled'.tr : 'booking_previously_rejected'.tr,
+          duration: const Duration(seconds: 5),
+        );
+        return;
+      }
       if (Get.isRegistered<EnrollmentStatusCoordinator>()) {
         Get.find<EnrollmentStatusCoordinator>().markPending(enrollment);
       }

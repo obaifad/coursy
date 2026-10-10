@@ -8,7 +8,6 @@ import 'package:my_app/core/data/repositories/auth_repository.dart';
 import 'package:my_app/core/data/repositories/review_repository.dart';
 import 'package:my_app/core/models/app_models.dart';
 import 'package:my_app/core/network/api_client.dart';
-import 'package:my_app/core/services/student_id_resolver.dart';
 import 'package:my_app/core/storage/token_storage.dart';
 
 import 'layout/fakes.dart';
@@ -83,7 +82,7 @@ void main() {
       };
     });
     client.dio.httpClientAdapter = adapter;
-    final repo = ReviewRepository(client, Get.find<StudentIdResolver>());
+    final repo = ReviewRepository(client);
 
     final reviews = await repo.fetchReviews(instructorId: 7);
 

@@ -171,14 +171,6 @@ class _ReviewFormSection extends GetView<CourseDetailsController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _RatingRow(label: 'rate_course'.tr, rating: controller.courseRating),
-          if (item.instituteId != null) ...[
-            const SizedBox(height: 8),
-            _RatingRow(label: 'rate_institute'.tr, rating: controller.instituteRating),
-          ],
-          if (item.instructor != null) ...[
-            const SizedBox(height: 8),
-            _RatingRow(label: 'rate_instructor'.tr, rating: controller.instructorRating),
-          ],
           const SizedBox(height: 12),
           TextField(
             controller: controller.reviewCommentController,

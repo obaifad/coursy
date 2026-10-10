@@ -43,8 +43,6 @@ class CourseDetailsController extends GetxController {
   final isSubmittingReview = false.obs;
 
   final courseRating = 5.obs;
-  final instituteRating = 5.obs;
-  final instructorRating = 5.obs;
   final reviewCommentController = TextEditingController();
 
   @override
@@ -257,26 +255,6 @@ class CourseDetailsController extends GetxController {
         rating: courseRating.value,
         comment: reviewCommentController.text,
       );
-
-      if (item.instituteId != null) {
-        try {
-          await _reviewRepository.submitReview(
-            instituteId: item.instituteId,
-            rating: instituteRating.value,
-            comment: reviewCommentController.text,
-          );
-        } catch (_) {}
-      }
-
-      if (item.instructor != null) {
-        try {
-          await _reviewRepository.submitReview(
-            instructorId: item.instructor!.id,
-            rating: instructorRating.value,
-            comment: reviewCommentController.text,
-          );
-        } catch (_) {}
-      }
 
       reviews.assignAll(await _reviewRepository.fetchReviews(courseId: item.id));
       _ratingService.invalidateCache();

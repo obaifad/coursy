@@ -5,15 +5,12 @@ import '../../models/app_models.dart';
 import '../../models/paginated_result.dart';
 import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
-import '../../network/api_fallback.dart';
 import '../../network/json_parser.dart';
-import '../../services/student_id_resolver.dart';
 
 class ReviewRepository extends GetxService {
-  ReviewRepository(this._client, this._studentIdResolver);
+  ReviewRepository(this._client);
 
   final ApiClient _client;
-  final StudentIdResolver _studentIdResolver;
 
   void _log(String action, dynamic body, {String? path}) {
     if (path != null) AppDebugLog.repo('Reviews', '$action $path');
@@ -52,56 +49,21 @@ class ReviewRepository extends GetxService {
   /// حدّ أمان لعدد الصفحات (التقييمات تُعرض كلها في تبويب واحد).
   static const _maxPages = 10;
 
-  Future<ReviewModel> submitReview({
-    required int rating,
-    required String comment,
-    int? courseId,
-    int? instituteId,
-    int? instructorId,
-  }) async {
+  /// تقييم الدورة فقط: الخادم لا يوفّر نقطة لإضافة تقييم المعهد أو المدرّس (القراءة فقط).
+  Future<ReviewModel> submitReview({required int courseId, required int rating, required String comment}) {
     final safeRating = rating.clamp(1, 5);
-
-    if (courseId != null) {
-      final path = '${ApiEndpoints.courseReviews(courseId)}?rating=$safeRating';
-      return _client.handle(
-        () =>
-            _client.post(path, data: comment.trim().isEmpty ? const <String, dynamic>{} : {'comment': comment.trim()}),
-        (raw) {
-          final body = normalizeApiBody(raw);
-          _log('SUBMIT', body, path: path);
-          final map = extractObjectMap(body) ?? (body is Map<String, dynamic> ? body : <String, dynamic>{});
-          if (map.isEmpty) {
-            return ReviewModel(id: 0, rating: safeRating, comment: comment.trim(), studentName: 'review_you'.tr);
-          }
-          return ReviewModel.fromJson(map);
-        },
-      );
-    }
-
-    final data = <String, dynamic>{
-      'rating': safeRating,
-      if (instituteId != null) 'institute_id': instituteId,
-      if (instructorId != null) 'instructor_id': instructorId,
-    };
-
-    try {
-      final studentId = await _studentIdResolver.resolve();
-      data['student_id'] = studentId;
-    } catch (_) {}
-
-    final attempts = <ApiPostAttempt>[
-      ApiPostAttempt(path: ApiEndpoints.studentReviews, data: data),
-      ApiPostAttempt(path: ApiEndpoints.reviews, data: data),
-    ];
-
-    return postFirstSuccess(_client, attempts, (raw) {
-      final body = normalizeApiBody(raw);
-      _log('SUBMIT', body);
-      final map = extractObjectMap(body) ?? (body is Map<String, dynamic> ? body : <String, dynamic>{});
-      if (map.isEmpty) {
-        return ReviewModel(id: 0, rating: safeRating, comment: comment.trim(), studentName: 'review_you'.tr);
-      }
-      return ReviewModel.fromJson(map);
-    });
+    final path = '${ApiEndpoints.courseReviews(courseId)}?rating=$safeRating';
+    return _client.handle(
+      () => _client.post(path, data: comment.trim().isEmpty ? const <String, dynamic>{} : {'comment': comment.trim()}),
+      (raw) {
+        final body = normalizeApiBody(raw);
+        _log('SUBMIT', body, path: path);
+        final map = extractObjectMap(body) ?? (body is Map<String, dynamic> ? body : <String, dynamic>{});
+        if (map.isEmpty) {
+          return ReviewModel(id: 0, rating: safeRating, comment: comment.trim(), studentName: 'review_you'.tr);
+        }
+        return ReviewModel.fromJson(map);
+      },
+    );
   }
 }

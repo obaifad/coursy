@@ -187,7 +187,7 @@ class _Favorites extends FavoritesRepository {
 }
 
 class _Reviews extends ReviewRepository {
-  _Reviews(super.client, super.resolver);
+  _Reviews(super.client);
   @override
   Future<List<ReviewModel>> fetchReviews({int? courseId, int? instituteId, int? instructorId}) async => sampleReviews();
 }
@@ -278,7 +278,7 @@ Future<TokenStorage> registerFakes({required bool loggedIn, required String loca
   Get.put<EnrollmentRepository>(_Enrollments(client));
   Get.put<NotificationRepository>(_Notifications(client));
   Get.put<PaymentRepository>(_Payments(client));
-  Get.put<ReviewRepository>(_Reviews(client, resolver));
+  Get.put<ReviewRepository>(_Reviews(client));
   Get.put<SearchRepository>(_Search(client, rating));
   Get.put<AuthRepository>(AuthRepository(client, tokens));
   final favoritesRepo = Get.put<FavoritesRepository>(_Favorites(client, resolver));

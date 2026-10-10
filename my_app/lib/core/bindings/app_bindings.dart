@@ -67,7 +67,7 @@ class AppBindings extends Bindings {
     Get.lazyPut(() => StudentIdResolver(Get.find(), Get.find()), fenix: true);
     Get.lazyPut(() => SearchRepository(Get.find(), Get.find()), fenix: true);
     Get.lazyPut(() => CityRepository(Get.find()), fenix: true);
-    Get.lazyPut(() => ReviewRepository(Get.find(), Get.find()), fenix: true);
+    Get.lazyPut(() => ReviewRepository(Get.find()), fenix: true);
     Get.lazyPut(() => EnrollmentRepository(Get.find()), fenix: true);
     Get.lazyPut(() => PaymentRepository(Get.find()), fenix: true);
     Get.lazyPut(() => InstructorRepository(Get.find(), Get.find()), fenix: true);
