@@ -10,16 +10,12 @@ import '../../../theme/app_fonts.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/design_system.dart';
 
-/// ألوان البانر — بنفسجي داكن مستقل عن بنفسجي واجهة التطبيق الفاتح ليبرز فوق الخلفية.
-abstract final class _BannerPalette {
-  static const gradientStart = Color(0xFF4A154B);
-  static const gradientEnd = Color(0xFF2B0A3D);
-  static const glow = Color(0xFF8E7CFF);
-  static const metaText = Color(0xFFD9CCF5);
-  static const dotActive = Color(0xFFB9A8FF);
-  static const ctaStart = Color(0xFFFFB84D);
-  static const ctaEnd = Color(0xFFFF7A1A);
-}
+/// تدرّج البانر من ألوان الهوية نفسها ([AppColors]): الأغمق عند النص (لتباين الأبيض) والأفتح عند الصورة.
+const _bannerGradient = LinearGradient(
+  colors: [AppColors.primaryDark, AppColors.primary, AppColors.primaryLight],
+  begin: AlignmentDirectional.topStart,
+  end: AlignmentDirectional.bottomEnd,
+);
 
 /// بانر الدورات المميزة في الرئيسية: شرائح أفقية بحواف الجيران ظاهرة، تمرير تلقائي كل [interval]،
 /// يتوقف عند لمس البطاقة ويستأنف بعد رفع الإصبع، ومؤشر نقاط في الأسفل (بلا أسهم).
@@ -199,7 +195,7 @@ class _DotsIndicator extends StatelessWidget {
                 width: i == current ? 22 : 7,
                 height: 7,
                 decoration: BoxDecoration(
-                  color: i == current ? _BannerPalette.dotActive : AppColors.primary.withValues(alpha: 0.2),
+                  color: i == current ? AppColors.primary : AppColors.indicatorFill,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -225,26 +221,14 @@ class _CourseBannerCard extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: radius,
-          boxShadow: [
-            BoxShadow(
-              color: _BannerPalette.gradientEnd.withValues(alpha: 0.35),
-              blurRadius: 16,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          boxShadow: [BoxShadow(color: AppColors.shadowPrimary, blurRadius: 16, offset: Offset(0, 8))],
         ),
         child: ClipRRect(
           borderRadius: radius,
           child: Material(
             color: Colors.transparent,
             child: Ink(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [_BannerPalette.gradientStart, _BannerPalette.gradientEnd],
-                  begin: AlignmentDirectional.topStart,
-                  end: AlignmentDirectional.bottomEnd,
-                ),
-              ),
+              decoration: const BoxDecoration(gradient: _bannerGradient),
               child: InkWell(
                 onTap: onOpen,
                 child: Stack(
@@ -258,7 +242,7 @@ class _CourseBannerCard extends StatelessWidget {
                           gradient: RadialGradient(
                             center: const AlignmentDirectional(-0.75, -0.1),
                             radius: 0.85,
-                            colors: [_BannerPalette.glow.withValues(alpha: 0.42), Colors.transparent],
+                            colors: [Colors.white.withValues(alpha: 0.28), Colors.transparent],
                           ),
                         ),
                       ),
@@ -354,7 +338,7 @@ class _GlassBadge extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.bolt_rounded, color: _BannerPalette.ctaStart, size: 14),
+            const Icon(Icons.bolt_rounded, color: Colors.white, size: 14),
             const SizedBox(width: 4),
             Flexible(
               child: Text(
@@ -383,14 +367,18 @@ class _MetaRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 2),
       child: Row(
         children: [
-          Icon(icon, size: 13, color: _BannerPalette.metaText),
+          Icon(icon, size: 13, color: Colors.white.withValues(alpha: 0.9)),
           const SizedBox(width: 5),
           Expanded(
             child: Text(
               text,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppFonts.tajawal(color: _BannerPalette.metaText, fontWeight: FontWeight.w500, fontSize: 11.5),
+              style: AppFonts.tajawal(
+                color: Colors.white.withValues(alpha: 0.92),
+                fontWeight: FontWeight.w500,
+                fontSize: 11.5,
+              ),
             ),
           ),
         ],
@@ -409,11 +397,9 @@ class _PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [_BannerPalette.ctaStart, _BannerPalette.ctaEnd]),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(color: _BannerPalette.ctaEnd.withValues(alpha: 0.45), blurRadius: 10, offset: const Offset(0, 3)),
-        ],
+        boxShadow: const [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 10, offset: Offset(0, 3))],
       ),
       child: Material(
         color: Colors.transparent,
@@ -430,7 +416,7 @@ class _PrimaryButton extends StatelessWidget {
               child: Text(
                 label,
                 maxLines: 1,
-                style: AppFonts.tajawal(color: _BannerPalette.gradientEnd, fontWeight: FontWeight.w800, fontSize: 12),
+                style: AppFonts.tajawal(color: AppColors.primaryDark, fontWeight: FontWeight.w800, fontSize: 12),
               ),
             ),
           ),
@@ -503,18 +489,16 @@ class _VisualSide extends StatelessWidget {
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFB9A8FF), Color(0xFFE056C9)],
+                  gradient: LinearGradient(
+                    colors: [Colors.white, Colors.white.withValues(alpha: 0.45)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  boxShadow: [
-                    BoxShadow(color: _BannerPalette.glow.withValues(alpha: 0.55), blurRadius: 22, spreadRadius: 1),
-                  ],
+                  boxShadow: [BoxShadow(color: Colors.white.withValues(alpha: 0.35), blurRadius: 22, spreadRadius: 1)],
                 ),
                 child: ClipOval(
                   child: DecoratedBox(
-                    decoration: const BoxDecoration(color: _BannerPalette.gradientEnd),
+                    decoration: const BoxDecoration(color: AppColors.primaryDark),
                     child: imageUrl == null
                         ? const _ImageFallback()
                         : AppNetworkImage(
@@ -575,7 +559,7 @@ class _FloatingIcon extends StatelessWidget {
         shape: BoxShape.circle,
         color: Colors.white.withValues(alpha: 0.16),
         border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-        boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 6, offset: Offset(0, 3))],
+        boxShadow: const [BoxShadow(color: AppColors.shadowPrimary, blurRadius: 6, offset: Offset(0, 3))],
       ),
       child: Icon(icon, color: Colors.white, size: size * 0.55),
     );
@@ -593,16 +577,16 @@ class _DiscountRibbon extends StatelessWidget {
       angle: -0.08,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [_BannerPalette.ctaStart, _BannerPalette.ctaEnd]),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(10),
-          boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 8, offset: Offset(0, 4))],
+          boxShadow: const [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 8, offset: Offset(0, 4))],
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           child: Text(
             'banner_discount'.trParams({'percent': '$percent'}),
             maxLines: 1,
-            style: AppFonts.tajawal(color: _BannerPalette.gradientEnd, fontWeight: FontWeight.w800, fontSize: 12),
+            style: AppFonts.tajawal(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 12),
           ),
         ),
       ),
