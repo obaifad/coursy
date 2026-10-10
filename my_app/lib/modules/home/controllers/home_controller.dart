@@ -46,6 +46,19 @@ class HomeController extends GetxController with LatestLoadGuard {
 
   bool get isLoggedIn => _tokenStorage.isLoggedIn;
 
+  static const int _bannerLimit = 5;
+
+  /// دورات بانر الرئيسية (التسجيل المفتوح فقط): المميزة أولاً ثم ذات الخصم ثم الأعلى تقييماً.
+  /// تُقرأ داخل Obx فتتحدّث مع [courses]. فارغة = تُعرض بطاقة الترحيب الثابتة بدلها.
+  List<CourseModel> get bannerCourses {
+    final open = courses.where((course) => course.isRegistrationOpen).toList();
+    final featured = open.where((course) => course.isFeatured);
+    final discounted = open.where((course) => !course.isFeatured && course.hasDiscount);
+    final rest = open.where((course) => !course.isFeatured && !course.hasDiscount).toList()
+      ..sort((a, b) => b.rating.compareTo(a.rating));
+    return [...featured, ...discounted, ...rest].take(_bannerLimit).toList(growable: false);
+  }
+
   /// يعيد الرئيسية لأعلى الصفحة (عمودي + أفقي).
   void resetScrollPosition() {
     horizontalScrollReset.value++;

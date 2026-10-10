@@ -162,6 +162,16 @@ class CourseModel {
     return discount > 0;
   }
 
+  /// نسبة الخصم من السعر الأصلي (مثلاً 20)، أو null إن لم يوجد خصم فعلي.
+  int? get discountPercent {
+    if (!hasDiscount) return null;
+    final original = JsonHelpers.parseDouble(rawPrice);
+    final discounted = JsonHelpers.parseDouble(discountPrice);
+    if (original <= 0 || discounted >= original) return null;
+    final percent = ((original - discounted) / original * 100).round();
+    return percent > 0 ? percent : null;
+  }
+
   String? get originalPriceLabel {
     if (!hasDiscount) return null;
     return JsonHelpers.formatSyrianPrice(rawPrice);
