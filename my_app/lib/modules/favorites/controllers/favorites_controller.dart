@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../../core/data/repositories/course_repository.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/network/api_exception.dart';
 import '../../../core/services/favorites_service.dart';
 import '../../../core/locale/locale_request_guard.dart';
 
@@ -14,6 +15,9 @@ class FavoritesController extends GetxController with InitialLoadState {
   final isLoading = true.obs;
   final removingIds = <int>{}.obs;
   final courses = <CourseModel>[].obs;
+
+  /// يظهر بدل «لا توجد مفضلة» حين يفشل التحميل (انقطاع الشبكة) والقائمة فارغة.
+  final errorMessage = RxnString();
 
   Worker? _favoritesWorker;
 
@@ -27,7 +31,7 @@ class FavoritesController extends GetxController with InitialLoadState {
     super.onInit();
     _favoritesWorker = ever(_favoritesService.items, (_) {
       if (_syncing) return;
-      unawaited(_hydrateCoursesFromService(refreshAll: false));
+      unawaited(_hydrateCoursesFromService(refreshAll: false).catchError((Object _) {}));
     });
     loadFavorites();
   }
@@ -48,6 +52,7 @@ class FavoritesController extends GetxController with InitialLoadState {
 
   Future<void> reloadFromService({bool forceSync = true}) async {
     isLoading.value = isInitialLoad;
+    errorMessage.value = null;
     _syncing = true;
     try {
       if (forceSync) {
@@ -58,7 +63,11 @@ class FavoritesController extends GetxController with InitialLoadState {
     }
     try {
       await _hydrateCoursesFromService(refreshAll: true);
+      final syncError = _favoritesService.lastSyncError.value;
+      if (courses.isEmpty && syncError != null) errorMessage.value = syncError;
       markLoaded();
+    } catch (e) {
+      if (courses.isEmpty) errorMessage.value = userErrorMessage(e);
     } finally {
       isLoading.value = false;
     }
@@ -92,6 +101,11 @@ class FavoritesController extends GetxController with InitialLoadState {
       for (final course in results) {
         if (course != null) fetched[course.id] = course;
       }
+    }
+
+    // مفضلة موجودة لكن لم تُجلب أي دورة منها: غالباً انقطاع شبكة، لا قائمة فارغة.
+    if (known.isEmpty && missing.isNotEmpty && fetched.isEmpty) {
+      throw ApiException('connection_error'.tr);
     }
 
     final current = _favoritesService.allCourseIds;

@@ -14,6 +14,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     'hasNotification=${message.notification != null} data=${message.data}',
   );
 
+  await PushLocalNotifications.loadUserEnabled();
   await PushLocalNotifications.ensureInitialized();
   await PushLocalNotifications.showRemoteMessageBackground(message);
 }

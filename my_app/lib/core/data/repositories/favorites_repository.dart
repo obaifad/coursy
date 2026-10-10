@@ -2,11 +2,11 @@ import 'package:get/get.dart';
 
 import '../../config/app_debug_log.dart';
 import '../../models/favorite_model.dart';
-import '../../models/paginated_result.dart';
 import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
 import '../../network/api_exception.dart';
 import '../../network/json_parser.dart';
+import '../../network/paginated_fetch.dart';
 import '../../services/student_id_resolver.dart';
 
 class FavoritesRepository extends GetxService {
@@ -20,12 +20,11 @@ class FavoritesRepository extends GetxService {
     AppDebugLog.repo('Favorites', body.toString());
   }
 
+  /// كل الصفحات — الخادم يرقّم 15 عنصراً في الصفحة، فالصفحة الأولى وحدها تُسقط بقية المفضلة.
   Future<List<FavoriteModel>> fetchMine() async {
-    return _client.handle(() => _client.get(ApiEndpoints.studentFavorites), (data) {
-      _log('LIST', data, path: ApiEndpoints.studentFavorites);
-      final page = PaginatedResult<FavoriteModel>.fromBody(data, FavoriteModel.fromJson);
-      return page.items;
-    });
+    final items = await fetchAllPages(_client, ApiEndpoints.studentFavorites, FavoriteModel.fromJson, strict: false);
+    _log('LIST', '${items.length} items', path: ApiEndpoints.studentFavorites);
+    return items;
   }
 
   Future<Map<String, dynamic>> addFavorite({int? courseId, int? instituteId, int? instructorId}) async {

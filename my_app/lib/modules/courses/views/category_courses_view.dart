@@ -46,7 +46,15 @@ class CategoryCoursesView extends GetView<CategoryCoursesController> {
                           ),
                         ),
                       ),
-                    if (courses.isEmpty)
+                    if (courses.isEmpty && controller.errorMessage.value != null)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: AppLoadErrorState(
+                          message: controller.errorMessage.value!,
+                          onRetry: controller.loadCourses,
+                        ),
+                      )
+                    else if (courses.isEmpty)
                       SliverFillRemaining(
                         hasScrollBody: false,
                         child: AppEmptyState(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 
 import '../../modules/auth/controllers/auth_controller.dart';
@@ -59,7 +61,8 @@ abstract final class SessionRefresh {
     await EnrollmentWatchScheduler.startForLoggedInUser();
   }
 
-  /// بعد تسجيل الخروج — مسح الذاكرة المؤقتة في كل المتحكمات النشطة.
+  /// عند تسجيل الخروج — مسح الذاكرة المؤقتة في كل المتحكمات النشطة وإلغاء تسجيل الجهاز (يحتاج التوكن).
+  /// لا يعيد تحميل البيانات العامة: ذلك في [reloadAsGuest] بعد مسح التوكن، حتى لا ينتظره الانتقال.
   static Future<void> onLogout() async {
     if (Get.isRegistered<RecentSearchStorage>()) {
       await Get.find<RecentSearchStorage>().clear();
@@ -87,15 +90,6 @@ abstract final class SessionRefresh {
     } else if (Get.isRegistered<EnrollmentStatusCoordinator>()) {
       Get.find<EnrollmentStatusCoordinator>().reset();
     }
-    if (Get.isRegistered<HomeController>()) {
-      await Get.find<HomeController>().loadHome(forceRefresh: true);
-    }
-    if (Get.isRegistered<CoursesController>()) {
-      await Get.find<CoursesController>().reloadLocalizedData();
-    }
-    if (Get.isRegistered<InstitutesController>()) {
-      await Get.find<InstitutesController>().reloadLocalizedData();
-    }
     if (Get.isRegistered<AuthController>()) {
       Get.find<AuthController>().resetAfterLogout();
     }
@@ -106,6 +100,17 @@ abstract final class SessionRefresh {
       Get.find<AppLifecycleSync>().stopWatching();
     }
     await EnrollmentWatchScheduler.stop();
+  }
+
+  /// بعد مسح التوكن والانتقال: إعادة تحميل الرئيسية والدورات والمعاهد كضيف في الخلفية.
+  static void reloadAsGuest() {
+    unawaited(
+      Future.wait<void>([
+        if (Get.isRegistered<HomeController>()) Get.find<HomeController>().loadHome(forceRefresh: true),
+        if (Get.isRegistered<CoursesController>()) Get.find<CoursesController>().reloadLocalizedData(),
+        if (Get.isRegistered<InstitutesController>()) Get.find<InstitutesController>().reloadLocalizedData(),
+      ]).catchError((_) => const <void>[]),
+    );
   }
 
   /// بعد التسجيل في دورة جديدة أو تغيّر حالة التسجيل (موافقة المعهد، رفض، إلخ).

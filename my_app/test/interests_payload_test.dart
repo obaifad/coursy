@@ -30,8 +30,23 @@ void main() {
   });
 
   test('tag ids from the server or an old cache are not read as categories', () {
-    expect(extractPreferredInterestIds({'preferred_tags': [1, 2]}), isEmpty);
-    expect(extractPreferredInterestIds({'preferred_categories': [4]}), [4]);
-    expect(AcademicProfileCache.fromJson({'preferred_tags': [1, 2]}).preferredCategoryIds, isEmpty);
+    expect(
+      extractPreferredInterestIds({
+        'preferred_tags': [1, 2],
+      }),
+      isEmpty,
+    );
+    expect(
+      extractPreferredInterestIds({
+        'preferred_categories': [4],
+      }),
+      [4],
+    );
+    expect(
+      AcademicProfileCache.fromJson({
+        'preferred_tags': [1, 2],
+      }).preferredCategoryIds,
+      isEmpty,
+    );
   });
 }

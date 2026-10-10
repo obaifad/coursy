@@ -1320,7 +1320,8 @@ class AppTranslations extends Translations {
     'enrollment_rejected_body_generic': 'Your course enrollment was not approved',
     'booking_failed_title': 'Booking failed',
     'booking_failed_generic': 'Could not complete booking',
-    'booking_previously_cancelled': 'You have a cancelled enrollment in this course. Contact the institute to reactivate it.',
+    'booking_previously_cancelled':
+        'You have a cancelled enrollment in this course. Contact the institute to reactivate it.',
     'booking_previously_rejected': 'Your enrollment in this course was rejected. Contact the institute for details.',
     'confirm_booking': 'Confirm booking',
     'cancel_booking': 'Cancel booking',

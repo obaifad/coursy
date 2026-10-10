@@ -447,6 +447,25 @@ class AppHorizontalScrollRow extends StatelessWidget {
   }
 }
 
+/// فشل التحميل (انقطاع الشبكة…) مع زر إعادة — بدل عرض قائمة فارغة توحي بعدم وجود بيانات.
+class AppLoadErrorState extends StatelessWidget {
+  const AppLoadErrorState({super.key, required this.message, required this.onRetry, this.compact = false});
+
+  final String message;
+  final VoidCallback onRetry;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppEmptyState(
+      message: message,
+      icon: Icons.cloud_off_outlined,
+      compact: compact,
+      action: FilledButton(onPressed: onRetry, child: Text('retry'.tr)),
+    );
+  }
+}
+
 /// حالة فارغة موحّدة — نفس المظهر في كل الصفحات.
 class AppEmptyState extends StatelessWidget {
   const AppEmptyState({

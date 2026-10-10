@@ -46,7 +46,15 @@ class CityDetailsView extends GetView<CityDetailsController> {
                       const SizedBox(height: 16),
                       Text('city_institutes_section'.tr, style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: 12),
-                      if (controller.institutes.isEmpty)
+                      if (controller.institutes.isEmpty && controller.errorMessage.value != null)
+                        SoftCard(
+                          child: AppLoadErrorState(
+                            message: controller.errorMessage.value!,
+                            onRetry: controller.load,
+                            compact: true,
+                          ),
+                        )
+                      else if (controller.institutes.isEmpty)
                         SoftCard(
                           child: AppEmptyState.inline(
                             message: 'no_institutes_in_city'.tr,

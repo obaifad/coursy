@@ -159,15 +159,9 @@ class InstituteDetailsController extends GetxController {
   Future<void> _fetchCourses() async {
     var instituteCourses = <CourseModel>[];
     try {
+      // يجرّب `/institutes/{id}/courses` ثم `/courses?institute_id=` بكل الصفحات.
       instituteCourses = await _courseRepository.fetchInstituteCourses(instituteId);
-    } catch (_) {
-      try {
-        final all = await _courseRepository.fetchCourses(query: {'institute_id': instituteId});
-        instituteCourses = all.where((c) => c.instituteId == instituteId).toList();
-      } catch (_) {
-        instituteCourses = [];
-      }
-    }
+    } catch (_) {}
     courses.assignAll(instituteCourses);
     _syncCoursesCount();
   }

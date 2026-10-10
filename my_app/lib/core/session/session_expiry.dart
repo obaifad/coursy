@@ -21,6 +21,7 @@ abstract final class SessionExpiry {
       // التوكن أولاً: الطلبات اللاحقة تُرسل بلا توكن فلا تتكرر 401.
       await storage.clearSession();
       await SessionRefresh.onLogout();
+      SessionRefresh.reloadAsGuest();
       AppNavigation.goToRoot(tab: 2);
       Get.toNamed(AppRoutes.login);
       Get.snackbar('session_expired_title'.tr, 'session_expired_msg'.tr, duration: const Duration(seconds: 4));

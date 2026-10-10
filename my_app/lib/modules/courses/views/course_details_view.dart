@@ -166,11 +166,13 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
                 delegate: _CourseTabBarHeaderDelegate(tabController: _tabController),
               ),
               SliverPadding(
+                // الصفحة لا تتقلّص مع لوحة المفاتيح (resizeToAvoidBottomInset: false)، فنضيف ارتفاعها
+                // أسفل المحتوى ليبقى مربع تعليق التقييم قابلاً للتمرير فوقها.
                 padding: EdgeInsets.fromLTRB(
                   AppLayout.readableInset(context),
                   12,
                   AppLayout.readableInset(context),
-                  24,
+                  24 + MediaQuery.viewInsetsOf(context).bottom,
                 ),
                 sliver: SliverToBoxAdapter(
                   child: ListenableBuilder(

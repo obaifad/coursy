@@ -53,7 +53,8 @@ class BookingController extends GetxController {
         Get.find<EnrollmentStatusCoordinator>().markPending(enrollment);
       }
       Get.snackbar('booking_success_title'.tr, 'booking_success_msg'.tr);
-      await SessionRefresh.afterEnrollment(courseId: course.id);
+      // التحديث في الخلفية: «دوراتي» تُحدَّث وهي ظاهرة بدل انتظار إعادة تحميل كل الشاشات قبل الانتقال.
+      unawaited(SessionRefresh.afterEnrollment(courseId: course.id).catchError((Object _) {}));
       if (Get.isRegistered<EnrollmentSyncService>()) {
         unawaited(Get.find<EnrollmentSyncService>().checkForStatusChanges());
       }

@@ -31,7 +31,15 @@ class InstructorCoursesView extends GetView<InstructorCoursesController> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
                     SliverToBoxAdapter(child: _InstructorHeader(controller: controller)),
-                    if (controller.courses.isEmpty)
+                    if (controller.courses.isEmpty && controller.errorMessage.value != null)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: AppLoadErrorState(
+                          message: controller.errorMessage.value!,
+                          onRetry: controller.loadCourses,
+                        ),
+                      )
+                    else if (controller.courses.isEmpty)
                       SliverFillRemaining(
                         hasScrollBody: false,
                         child: AppEmptyState(message: 'no_courses_for_instructor'.tr, icon: Icons.menu_book_outlined),

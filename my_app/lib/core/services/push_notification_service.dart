@@ -39,6 +39,8 @@ class PushNotificationService extends GetxService {
 
     _prefs = GetStorage();
     notificationsEnabled.value = _prefs.read<bool>(_storageKey) ?? true;
+    // نسخة للـ isolate الخلفي (لمن أوقف الإشعارات في إصدار سابق قبل وجود هذه النسخة).
+    await PushLocalNotifications.saveUserEnabled(notificationsEnabled.value);
 
     await PushLocalNotifications.ensureInitialized(onTap: _openFromPayload);
 
@@ -118,6 +120,7 @@ class PushNotificationService extends GetxService {
           return;
         }
         await _prefs.write(_storageKey, true);
+        await PushLocalNotifications.saveUserEnabled(true);
         notificationsEnabled.value = true;
         notificationsPermissionGranted.value = true;
         clearSyncedToken();
@@ -126,12 +129,18 @@ class PushNotificationService extends GetxService {
         return;
       }
 
-      await _unregisterCurrentToken();
-      await _messaging.deleteToken();
+      // الإيقاف محلياً أولاً: إن فشل إلغاء التسجيل (بلا إنترنت) يبقى المفتاح مطفأً ولا تُعرض إشعارات.
       await _prefs.write(_storageKey, false);
+      await PushLocalNotifications.saveUserEnabled(false);
+      await _unregisterCurrentToken();
       notificationsEnabled.value = false;
       notificationsPermissionGranted.value = false;
       _lastSyncedToken = null;
+      try {
+        await _messaging.deleteToken();
+      } catch (e) {
+        AppDebugLog.fcm('deleteToken failed: $e');
+      }
       Get.snackbar('notifications_setting'.tr, 'notifications_disabled_msg'.tr);
     } catch (e) {
       AppDebugLog.fcm('toggle failed: $e');
@@ -154,9 +163,9 @@ class PushNotificationService extends GetxService {
 
   Future<void> _unregisterCurrentToken() async {
     if (!_tokenStorage.isLoggedIn) return;
-    final token = _lastSyncedToken ?? await _messaging.getToken();
-    if (token == null || token.isEmpty) return;
     try {
+      final token = _lastSyncedToken ?? await _messaging.getToken();
+      if (token == null || token.isEmpty) return;
       await _deviceRepository.unregisterDeviceToken(token);
       AppDebugLog.fcm('device token unregistered');
     } catch (e) {

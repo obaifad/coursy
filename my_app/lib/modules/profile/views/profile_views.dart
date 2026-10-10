@@ -224,6 +224,7 @@ Future<void> _confirmAndLogout(BuildContext context) async {
   await SessionRefresh.onLogout();
   await Get.find<AuthRepository>().logout();
   AppNavigation.enterAsGuest();
+  SessionRefresh.reloadAsGuest();
 }
 
 class EditProfileView extends GetView<ProfileController> {

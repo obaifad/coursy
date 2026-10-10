@@ -1,6 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 typedef PushNotificationTapHandler = void Function(String payload);
 
@@ -11,6 +12,29 @@ abstract final class PushLocalNotifications {
 
   static final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   static bool _initialized = false;
+
+  /// مفتاح الإشعارات في الإعدادات. يُحفظ في [SharedPreferencesAsync] لأن الفحص الخلفي ومعالج FCM
+  /// يعملان في isolate منفصل لا يرى GetStorage.
+  static const userEnabledKey = 'push_notifications_enabled';
+
+  /// false = المستخدم أوقف الإشعارات: لا يُعرض أي إشعار محلي (حالات التسجيل، الفحص الخلفي، FCM).
+  static bool userEnabled = true;
+
+  static Future<void> saveUserEnabled(bool enabled) async {
+    userEnabled = enabled;
+    try {
+      await SharedPreferencesAsync().setBool(userEnabledKey, enabled);
+    } catch (_) {}
+  }
+
+  /// للـ isolate الخلفي: يقرأ المفتاح المحفوظ (الافتراضي مفعّل).
+  static Future<void> loadUserEnabled() async {
+    try {
+      userEnabled = await SharedPreferencesAsync().getBool(userEnabledKey) ?? true;
+    } catch (_) {
+      userEnabled = true;
+    }
+  }
 
   static AndroidFlutterLocalNotificationsPlugin? get _android =>
       _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
@@ -93,6 +117,7 @@ abstract final class PushLocalNotifications {
     String payload = '',
     bool requirePermission = true,
   }) async {
+    if (!userEnabled) return;
     if (title.trim().isEmpty && body.trim().isEmpty) return;
 
     if (requirePermission && !kIsWeb && defaultTargetPlatform == TargetPlatform.android) {

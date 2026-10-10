@@ -7,6 +7,7 @@ import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
 import '../../network/api_exception.dart';
 import '../../network/json_parser.dart';
+import '../../network/paginated_fetch.dart';
 
 class EnrollmentRepository extends GetxService {
   EnrollmentRepository(this._client);
@@ -33,11 +34,9 @@ class EnrollmentRepository extends GetxService {
     );
   }
 
-  Future<List<EnrollmentModel>> fetchEnrollments() async {
-    return _client.handle(
-      () => _client.get(ApiEndpoints.studentEnrollments),
-      (data) => extractListMap(data).map(EnrollmentModel.fromJson).toList(),
-    );
+  /// كل تسجيلات الطالب عبر كل الصفحات (يُستخدم لمعرفة «هل حجزت هذه الدورة؟» ولمتابعة الحالات).
+  Future<List<EnrollmentModel>> fetchEnrollments() {
+    return fetchAllPages(_client, ApiEndpoints.studentEnrollments, EnrollmentModel.fromJson, strict: false);
   }
 
   /// الخادم يأخذ الطالب من التوكن ويحدد حالة التسجيل والدفع بنفسه — لا يُرسل شيء في الجسم.

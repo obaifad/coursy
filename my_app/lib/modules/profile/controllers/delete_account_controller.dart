@@ -38,6 +38,7 @@ class DeleteAccountController extends GetxController {
       // الخادم ألغى كل الجلسات وحذف توكنات الأجهزة؛ هنا ننظّف ما بقي محلياً فقط.
       await SessionRefresh.onLogout();
       AppNavigation.enterAsGuest();
+      SessionRefresh.reloadAsGuest();
       Get.snackbar('account_deleted_title'.tr, 'account_deleted_msg'.tr);
     } on ApiException catch (e) {
       switch (e.statusCode) {

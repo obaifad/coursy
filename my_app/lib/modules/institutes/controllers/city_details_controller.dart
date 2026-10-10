@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import '../../../core/data/repositories/city_repository.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/network/api_exception.dart';
 
 class CityDetailsController extends GetxController {
   final CityRepository _cityRepository = Get.find();
@@ -12,6 +13,7 @@ class CityDetailsController extends GetxController {
   final city = Rxn<CityModel>();
   final institutes = <InstituteModel>[].obs;
   final title = ''.obs;
+  final errorMessage = RxnString();
 
   late final int cityId;
   int _page = 1;
@@ -42,9 +44,12 @@ class CityDetailsController extends GetxController {
 
   Future<void> load() async {
     if (!_hasCityName) isLoading.value = true;
+    errorMessage.value = null;
     _page = 1;
     try {
       await Future.wait<void>([_fetchCityIfNeeded(), _fetchInstitutesPage()]);
+    } catch (e) {
+      if (institutes.isEmpty) errorMessage.value = userErrorMessage(e);
     } finally {
       isLoading.value = false;
     }
@@ -74,6 +79,8 @@ class CityDetailsController extends GetxController {
       institutes.addAll(result.items);
       _page = next;
       hasMore.value = result.hasMore;
+    } catch (e) {
+      Get.snackbar('error'.tr, userErrorMessage(e));
     } finally {
       isLoadingMore.value = false;
     }

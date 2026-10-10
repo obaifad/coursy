@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../core/data/repositories/instructor_repository.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/locale/locale_request_guard.dart';
+import '../../../core/network/api_exception.dart';
 
 class InstructorCoursesController extends GetxController with InitialLoadState {
   final InstructorRepository _repository = Get.find();
@@ -16,6 +17,7 @@ class InstructorCoursesController extends GetxController with InitialLoadState {
   final experienceYears = 0.obs;
   final bio = RxnString();
   final totalCourses = 0.obs;
+  final errorMessage = RxnString();
 
   late final int instructorId;
   int _page = 1;
@@ -57,6 +59,7 @@ class InstructorCoursesController extends GetxController with InitialLoadState {
       return;
     }
     isLoading.value = isInitialLoad;
+    errorMessage.value = null;
     _page = 1;
     try {
       final result = await _repository.fetchInstructorCoursesPage(
@@ -68,6 +71,8 @@ class InstructorCoursesController extends GetxController with InitialLoadState {
       hasMore.value = result.hasMore;
       totalCourses.value = result.total;
       markLoaded();
+    } catch (e) {
+      if (courses.isEmpty) errorMessage.value = userErrorMessage(e);
     } finally {
       isLoading.value = false;
     }
@@ -87,6 +92,8 @@ class InstructorCoursesController extends GetxController with InitialLoadState {
       _page = nextPage;
       hasMore.value = result.hasMore;
       totalCourses.value = result.total;
+    } catch (e) {
+      Get.snackbar('error'.tr, userErrorMessage(e));
     } finally {
       isLoadingMore.value = false;
     }

@@ -33,6 +33,7 @@ abstract final class BackgroundEnrollmentChecker {
 
   static Future<void> run() async {
     // لا نستخدم GetStorage هنا: الكتابة من isolate ثانٍ تمسح بيانات التطبيق الرئيسي.
+    await PushLocalNotifications.loadUserEnabled();
     await PushLocalNotifications.ensureInitialized();
 
     final token = await _secure.read(key: SessionKeys.accessToken);
@@ -50,7 +51,7 @@ abstract final class BackgroundEnrollmentChecker {
       ),
     );
 
-    final response = await dio.get<dynamic>('/student/enrollments');
+    final response = await dio.get<dynamic>('/student/enrollments', queryParameters: {'per_page': 100});
     if (response.statusCode != 200) return;
 
     final enrollments = _extractEnrollments(response.data);
@@ -71,6 +72,9 @@ abstract final class BackgroundEnrollmentChecker {
       final next = row['status']?.toString().toLowerCase() ?? '';
       final previous = statuses[id];
       final courseTitle = _courseTitle(row);
+      final courseId =
+          _parseInt(row['course_id']) ?? (row['course'] is Map ? _parseInt((row['course'] as Map)['id']) : null);
+      final coursePart = courseId == null ? '' : '&course_id=$courseId';
 
       if (previous != null) {
         if (previous == 'pending' && _isApproved(next)) {
@@ -81,7 +85,7 @@ abstract final class BackgroundEnrollmentChecker {
               id: id,
               title: texts['enrollment_approved_title'] ?? '',
               body: text('enrollment_approved', courseTitle),
-              payload: 'type=enrollment_approved&enrollment_id=$id',
+              payload: 'type=enrollment_approved&enrollment_id=$id$coursePart',
               requirePermission: false,
             );
           }
@@ -93,7 +97,7 @@ abstract final class BackgroundEnrollmentChecker {
               id: id + 100000,
               title: texts['enrollment_rejected_title'] ?? '',
               body: text('enrollment_rejected', courseTitle),
-              payload: 'type=enrollment_rejected&enrollment_id=$id',
+              payload: 'type=enrollment_rejected&enrollment_id=$id$coursePart',
               requirePermission: false,
             );
           }

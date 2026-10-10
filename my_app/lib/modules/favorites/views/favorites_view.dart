@@ -68,6 +68,19 @@ class _FavoritesBody extends StatelessWidget {
         return AppGridSkeleton(padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 8));
       }
 
+      if (controller.courses.isEmpty && controller.errorMessage.value != null) {
+        return RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: controller.loadFavorites,
+          child: AppEmptyState.scrollable(
+            context: context,
+            message: controller.errorMessage.value!,
+            icon: Icons.cloud_off_outlined,
+            action: FilledButton(onPressed: controller.loadFavorites, child: Text('retry'.tr)),
+          ),
+        );
+      }
+
       if (controller.courses.isEmpty) {
         return RefreshIndicator(
           color: AppColors.primary,

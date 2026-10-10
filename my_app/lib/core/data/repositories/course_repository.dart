@@ -7,6 +7,7 @@ import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
 import '../../network/api_exception.dart';
 import '../../network/json_parser.dart';
+import '../../network/paginated_fetch.dart';
 import '../../services/course_rating_service.dart';
 
 class CourseRepository extends GetxService {
@@ -45,18 +46,27 @@ class CourseRepository extends GetxService {
   }
 
   Future<List<CourseModel>> fetchInstituteCourses(int instituteId) async {
+    // كل الصفحات: الصفحة الأولى وحدها تُظهر 15 دورة فقط لمعهد عنده أكثر.
     try {
-      final items = await _client.handle(
-        () => _client.get(ApiEndpoints.instituteCourses(instituteId)),
-        (data) => extractListMap(data).map(CourseModel.fromJson).toList(),
+      final items = await fetchAllPages(
+        _client,
+        ApiEndpoints.instituteCourses(instituteId),
+        CourseModel.fromJson,
+        strict: false,
       );
       if (items.isNotEmpty) {
         return _ratingService.enrich(items);
       }
     } catch (_) {}
 
-    final fallback = await fetchCourses(query: {'institute_id': instituteId});
-    return fallback.where((course) => course.instituteId == instituteId).toList();
+    final fallback = await fetchAllPages(
+      _client,
+      ApiEndpoints.courses,
+      CourseModel.fromJson,
+      query: {'institute_id': instituteId},
+      strict: false,
+    );
+    return _ratingService.enrich(fallback.where((course) => course.instituteId == instituteId).toList());
   }
 
   /// عدد دورات المعهد — طلب خفيف واحد (pagination total) بدون جلب كل الدورات.
