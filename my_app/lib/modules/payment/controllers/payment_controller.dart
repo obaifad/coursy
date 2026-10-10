@@ -118,7 +118,7 @@ class PaymentController extends GetxController with InitialLoadState {
   void _handleSubmitError(ApiException e) {
     switch (e.statusCode) {
       case 422:
-        fieldError.value = _translateRejection(e.fieldErrors?['transaction_id'] ?? e.message);
+        fieldError.value = _rejectionMessage(e);
       case 429:
         _startCooldown();
         Get.snackbar('error'.tr, 'payment_error_rate_limit'.tr);
@@ -157,25 +157,23 @@ class PaymentController extends GetxController with InitialLoadState {
     }
   }
 
-  /// رسائل الرفض (422) تأتي بالإنجليزية دائماً — نترجم المعروف منها ونُبقي غيره كما هو.
-  String _translateRejection(String message) {
-    final m = message.toLowerCase();
-    const rules = <String, String>{
-      'already been used': 'payment_err_used',
-      'no transfer with this transaction': 'payment_err_not_found',
-      'must be made in syp': 'payment_err_currency',
-      'before you enrolled': 'payment_err_before_enroll',
-      'already paid': 'payment_err_already_paid',
-      'is free': 'payment_err_free',
-      'not available for this course': 'payment_err_unavailable',
-      'no longer be paid': 'payment_err_closed',
-      'has no amount': 'payment_err_no_amount',
-      'is required': 'payment_txn_invalid',
-      'format is invalid': 'payment_txn_invalid',
+  /// رفض التحويل (422): الخادم يرسل `code` ثابتاً ورسالة بلغة التطبيق. نصوصنا للرموز المعروفة،
+  /// ورسالة الخادم كما هي لغيرها.
+  String _rejectionMessage(ApiException e) {
+    const byCode = <String, String>{
+      'invalid_transaction_id': 'payment_txn_invalid',
+      'enrollment_closed': 'payment_err_closed',
+      'already_paid': 'payment_err_already_paid',
+      'free_course': 'payment_err_free',
+      'shamcash_unavailable': 'payment_err_unavailable',
+      'transaction_already_used': 'payment_err_used',
+      'transfer_not_found': 'payment_err_not_found',
+      'wrong_currency': 'payment_err_currency',
+      'transfer_no_amount': 'payment_err_no_amount',
+      'transfer_before_enrollment': 'payment_err_before_enroll',
     };
-    for (final rule in rules.entries) {
-      if (m.contains(rule.key)) return rule.value.tr;
-    }
-    return message;
+    final key = byCode[e.code];
+    if (key != null) return key.tr;
+    return e.fieldErrors?['transaction_id'] ?? e.message;
   }
 }

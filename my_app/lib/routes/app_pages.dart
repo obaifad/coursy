@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import '../modules/auth/controllers/auth_controller.dart';
+import '../modules/auth/controllers/forgot_password_controller.dart';
 import '../modules/auth/controllers/phone_verification_controller.dart';
 import '../modules/auth/views/auth_views.dart';
 import '../modules/auth/views/register_view.dart';
@@ -27,7 +28,9 @@ import '../modules/institutes/views/institutes_views.dart';
 import '../modules/notifications/controllers/notifications_controller.dart';
 import '../modules/notifications/views/notifications_view.dart';
 import '../modules/onboarding/views/onboarding_view.dart';
+import '../modules/profile/controllers/delete_account_controller.dart';
 import '../modules/profile/controllers/profile_controller.dart';
+import '../modules/profile/views/delete_account_view.dart';
 import '../modules/profile/views/profile_views.dart';
 import '../core/bindings/root_binding.dart';
 import '../modules/root/views/root_view.dart';
@@ -62,7 +65,11 @@ class AppPages {
         }
       }),
     ),
-    GetPage(name: AppRoutes.forgotPassword, page: () => const ForgotPasswordView()),
+    GetPage(
+      name: AppRoutes.forgotPassword,
+      page: () => const ForgotPasswordView(),
+      binding: BindingsBuilder(() => Get.lazyPut<ForgotPasswordController>(() => ForgotPasswordController())),
+    ),
     GetPage(
       name: AppRoutes.phoneVerification,
       page: () => const PhoneVerificationView(),
@@ -152,6 +159,11 @@ class AppPages {
       name: AppRoutes.payment,
       page: () => const PaymentView(),
       binding: BindingsBuilder(() => Get.lazyPut<PaymentController>(() => PaymentController())),
+    ),
+    GetPage(
+      name: AppRoutes.deleteAccount,
+      page: () => const DeleteAccountView(),
+      binding: BindingsBuilder(() => Get.lazyPut<DeleteAccountController>(() => DeleteAccountController())),
     ),
     GetPage(name: AppRoutes.settings, page: () => const SettingsView()),
     GetPage(

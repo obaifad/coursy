@@ -5,7 +5,6 @@ import '../../models/app_models.dart';
 import '../../models/paginated_result.dart';
 import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
-import '../../network/api_exception.dart';
 import '../../network/api_fallback.dart';
 import '../../network/json_parser.dart';
 import '../../services/student_id_resolver.dart';
@@ -21,36 +20,37 @@ class ReviewRepository extends GetxService {
     AppDebugLog.repo('Reviews', body.toString());
   }
 
+  /// تقييمات عامة بلا توكن من النقاط المخصّصة (`/courses|instructors|institutes/{id}/reviews`).
+  /// الرد ترقيم Laravel في المستوى الأعلى (`data`, `current_page`, `last_page`) — نقرأ كل الصفحات.
   Future<List<ReviewModel>> fetchReviews({int? courseId, int? instituteId, int? instructorId}) async {
-    final query = <String, dynamic>{
-      if (courseId != null) 'course_id': courseId,
-      if (instituteId != null) 'institute_id': instituteId,
-      if (instructorId != null) 'instructor_id': instructorId,
-    };
-
-    final paths = [
-      if (courseId != null) ApiEndpoints.courseReviews(courseId),
-      ApiEndpoints.studentReviews,
-      ApiEndpoints.reviews,
-    ];
-    for (final path in paths) {
-      try {
-        return await _client.handle(
-          () => _client.get(path, query: path == ApiEndpoints.courseReviews(courseId ?? 0) ? null : query),
-          (data) {
-            _log('LIST', data, path: path);
-            final page = PaginatedResult<ReviewModel>.fromBody(data, ReviewModel.fromJson);
-            if (page.items.isNotEmpty) return page.items;
-            return extractListMap(data).map(ReviewModel.fromJson).toList();
-          },
-        );
-      } on ApiException catch (e) {
-        if (e.statusCode == 404) continue;
-        rethrow;
-      }
+    final String path;
+    if (courseId != null) {
+      path = ApiEndpoints.courseReviews(courseId);
+    } else if (instructorId != null) {
+      path = ApiEndpoints.instructorReviews(instructorId);
+    } else if (instituteId != null) {
+      path = ApiEndpoints.instituteReviews(instituteId);
+    } else {
+      return const [];
     }
-    return [];
+
+    final all = <ReviewModel>[];
+    for (var page = 1; page <= _maxPages; page++) {
+      final result = await _client.handle(() => _client.get(path, query: {'page': page}), (data) {
+        _log('LIST', data, path: '$path?page=$page');
+        final parsed = PaginatedResult<ReviewModel>.fromBody(data, ReviewModel.fromJson);
+        return parsed;
+      });
+      all.addAll(result.items);
+      // الخادم قد لا يرسل next_page_url؛ current_page/last_page يكفيان.
+      final more = result.hasMore || result.currentPage < result.lastPage;
+      if (!more || result.items.isEmpty) break;
+    }
+    return all;
   }
+
+  /// حدّ أمان لعدد الصفحات (التقييمات تُعرض كلها في تبويب واحد).
+  static const _maxPages = 10;
 
   Future<ReviewModel> submitReview({
     required int rating,

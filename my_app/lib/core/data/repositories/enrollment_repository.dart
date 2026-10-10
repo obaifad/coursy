@@ -6,15 +6,12 @@ import '../../models/paginated_result.dart';
 import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
 import '../../network/api_exception.dart';
-import '../../network/api_fallback.dart';
 import '../../network/json_parser.dart';
-import '../../services/student_id_resolver.dart';
 
 class EnrollmentRepository extends GetxService {
-  EnrollmentRepository(this._client, this._studentIdResolver);
+  EnrollmentRepository(this._client);
 
   final ApiClient _client;
-  final StudentIdResolver _studentIdResolver;
 
   void _log(String action, dynamic body) {
     AppDebugLog.repo('Enroll', '$action ${body.toString()}');
@@ -43,26 +40,13 @@ class EnrollmentRepository extends GetxService {
     );
   }
 
-  Future<EnrollmentModel> enrollInCourse(int courseId) async {
-    final studentId = await _studentIdResolver.resolve();
-    // TODO(backend): حالة التسجيل والدفع يجب أن يحددها الخادم ويتجاهل القيم القادمة من التطبيق.
-    // تبقى هنا لأن الخادم الحالي قد يشترطها في التحقق — احذفها بعد تأكيد مطوّر الخادم.
-    final body = <String, dynamic>{
-      'course_id': courseId,
-      'student_id': studentId,
-      'status': 'pending',
-      'payment_status': 'unpaid',
-    };
-
-    final attempts = [
-      ApiPostAttempt(path: ApiEndpoints.studentEnrollments, data: body),
-      ApiPostAttempt(path: ApiEndpoints.studentEnrollCourse(courseId), data: body),
-      ApiPostAttempt(path: ApiEndpoints.enrollByCourse(courseId), data: body),
-      ApiPostAttempt(path: ApiEndpoints.enrollments, data: body),
-      ApiPostAttempt(path: ApiEndpoints.enrollCourseAlt(courseId), data: body),
-    ];
-
-    return postFirstSuccess(_client, attempts, _parseEnrollment);
+  /// الخادم يأخذ الطالب من التوكن ويحدد حالة التسجيل والدفع بنفسه — لا يُرسل شيء في الجسم.
+  /// 201 لتسجيل جديد، و200 إن كان الطالب مسجلاً من قبل.
+  Future<EnrollmentModel> enrollInCourse(int courseId) {
+    return _client.handle(
+      () => _client.post(ApiEndpoints.enrollByCourse(courseId), data: const <String, dynamic>{}),
+      _parseEnrollment,
+    );
   }
 
   Future<EnrollmentModel> cancelEnrollment(int enrollmentId) async {

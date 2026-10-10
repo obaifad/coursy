@@ -91,7 +91,7 @@ class _ReviewsTab extends GetView<CourseDetailsController> {
                 .map(
                   (r) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: _ReviewCard(review: r),
+                    child: ReviewCard(review: r),
                   ),
                 ),
           ] else
@@ -104,60 +104,6 @@ class _ReviewsTab extends GetView<CourseDetailsController> {
         ],
       );
     });
-  }
-}
-
-class _ReviewCard extends StatelessWidget {
-  const _ReviewCard({required this.review});
-  final ReviewModel review;
-
-  @override
-  Widget build(BuildContext context) {
-    return SoftCard(
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: AppColors.indicatorFill,
-                child: Text(
-                  review.studentName.isNotEmpty ? review.studentName[0].toUpperCase() : '?',
-                  style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.primary),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      review.studentName.trim().isEmpty ? 'student'.tr : review.studentName,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    Row(
-                      children: List.generate(5, (i) {
-                        return Icon(
-                          i < review.rating ? Icons.star_rounded : Icons.star_border_rounded,
-                          color: AppColors.ratingStar,
-                          size: 14,
-                        );
-                      }),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (review.comment.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(review.comment, style: const TextStyle(color: AppColors.textSecondary, height: 1.45)),
-          ],
-        ],
-      ),
-    );
   }
 }
 

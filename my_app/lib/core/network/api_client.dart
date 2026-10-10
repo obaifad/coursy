@@ -15,6 +15,19 @@ class ApiClient extends GetxService {
 
   final TokenStorage _tokenStorage;
   late final Dio dio;
+
+  /// يُستدعى عند 401 على طلب كان يحمل توكن (الجلسة أُلغيت من الخادم). يُضبط في main.
+  static void Function()? onUnauthorized;
+
+  /// مسارات تُرجع 401 كجزء طبيعي من عملها (دخول/خروج/كلمة مرور) فلا تعني انتهاء الجلسة.
+  static const _authFlowPaths = <String>[
+    '/student/login',
+    '/student/register',
+    '/student/logout',
+    '/logout',
+    '/student/password/',
+    '/student/devices',
+  ];
   CancelToken _readCancelToken = CancelToken();
 
   /// يلغي طلبات GET الجارية (مثلاً عند تبديل اللغة) لمنع race condition.
@@ -42,6 +55,14 @@ class ApiClient extends GetxService {
 
     dio.interceptors.add(
       InterceptorsWrapper(
+        onResponse: (response, handler) {
+          if (response.statusCode == 401) _maybeSessionExpired(response.requestOptions);
+          handler.next(response);
+        },
+        onError: (e, handler) {
+          if (e.response?.statusCode == 401) _maybeSessionExpired(e.requestOptions);
+          handler.next(e);
+        },
         onRequest: (options, handler) {
           final lang = Get.isRegistered<LocaleController>() ? Get.find<LocaleController>().code.value : 'ar';
           options.headers['Accept-Language'] = lang;
@@ -110,6 +131,7 @@ class ApiClient extends GetxService {
           messageFromErrorBody(body, fallback: 'error_request_failed'.trParams({'status': '$status'})),
           statusCode: status,
           fieldErrors: fieldErrorsFromBody(body),
+          code: errorCodeFromBody(body),
         );
       }
 
@@ -132,8 +154,16 @@ class ApiClient extends GetxService {
         throw ApiException('error_invalid_server_response'.tr, statusCode: status);
       }
       final msg = messageFromErrorBody(raw, fallback: _dioMessage(e));
-      throw ApiException(msg, statusCode: status, fieldErrors: fieldErrorsFromBody(raw));
+      throw ApiException(msg, statusCode: status, fieldErrors: fieldErrorsFromBody(raw), code: errorCodeFromBody(raw));
     }
+  }
+
+  void _maybeSessionExpired(RequestOptions options) {
+    final hadToken = options.headers['Authorization']?.toString().startsWith('Bearer ') ?? false;
+    if (!hadToken) return;
+    final path = options.path;
+    if (_authFlowPaths.any(path.startsWith)) return;
+    onUnauthorized?.call();
   }
 
   bool _isHostingChallengeHtml(dynamic body) {

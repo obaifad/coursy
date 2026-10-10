@@ -24,8 +24,8 @@ class AuthController extends GetxController {
 
   static const educationLevels = ['High School', 'Diploma', 'Bachelor', 'Master', 'PhD'];
 
-  final loginEmailController = TextEditingController();
-  final loginPhoneController = TextEditingController();
+  /// حقل دخول واحد: بريد إلكتروني أو رقم هاتف.
+  final loginIdController = TextEditingController();
   final passwordController = TextEditingController();
 
   final firstNameController = TextEditingController();
@@ -211,27 +211,22 @@ class AuthController extends GetxController {
   }
 
   Future<void> login() async {
-    final email = loginEmailController.text.trim();
-    final phone = loginPhoneController.text.trim();
+    final loginId = loginIdController.text.trim();
     final pass = passwordController.text;
 
-    if (email.isEmpty || phone.isEmpty || pass.isEmpty) {
-      Get.snackbar('alert'.tr, 'enter_email_phone_password'.tr);
+    if (loginId.isEmpty || pass.isEmpty) {
+      Get.snackbar('alert'.tr, 'enter_login_password'.tr);
       return;
     }
-    if (!email.contains('@')) {
-      Get.snackbar('alert'.tr, 'enter_valid_email'.tr);
-      return;
-    }
-    if (!_isValidSyrianMobile(phone)) {
-      Get.snackbar('alert'.tr, 'enter_valid_phone'.tr);
+    if (loginId.contains('@') ? !_isValidEmail(loginId) : !_looksLikePhone(loginId)) {
+      Get.snackbar('alert'.tr, 'enter_valid_login'.tr);
       return;
     }
 
     isLoading.value = true;
     errorMessage.value = null;
     try {
-      await _authRepository.login(email: email, phone: phone, password: pass);
+      await _authRepository.login(login: loginId, password: pass);
       await _afterAuthSuccess();
     } on ApiException catch (e) {
       errorMessage.value = e.message;
@@ -347,8 +342,8 @@ class AuthController extends GetxController {
       }
 
       Get.offAllNamed(AppRoutes.login);
-      loginEmailController.text = emailController.text.trim();
-      loginPhoneController.text = phone;
+      final registeredEmail = emailController.text.trim();
+      loginIdController.text = registeredEmail.isNotEmpty ? registeredEmail : phone;
       Get.snackbar('register_done'.tr, 'register_login_hint'.tr);
     } on ApiException catch (e) {
       _applyApiRegisterErrors(e);
@@ -558,6 +553,12 @@ class AuthController extends GetxController {
 
   static String formatBirthDate(DateTime d) => EducationLevelUtils.formatApiDate(d);
 
+  /// صيغة هاتف مرنة للدخول: الخادم يقبل 09… و+963… و00963… مع مسافات أو شرطات.
+  bool _looksLikePhone(String value) {
+    final compact = value.replaceAll(RegExp(r'[\s\-()]'), '');
+    return RegExp(r'^\+?\d{9,15}$').hasMatch(compact);
+  }
+
   bool _isValidSyrianMobile(String phone) {
     return RegExp(r'^09\d{8}$').hasMatch(phone);
   }
@@ -579,8 +580,7 @@ class AuthController extends GetxController {
 
   @override
   void onClose() {
-    loginEmailController.dispose();
-    loginPhoneController.dispose();
+    loginIdController.dispose();
     passwordController.dispose();
     firstNameController.dispose();
     lastNameController.dispose();

@@ -43,7 +43,8 @@ class PrivateInstructorsController extends GetxController with LatestLoadGuard, 
   }
 
   Future<void> _loadSubjectFilters() async {
-    final session = beginLoad();
+    // مفتاح مستقل: تحميل قائمة المدرّسين لا يُلغي تحميل المرشّحات.
+    final session = beginLoad('filters');
     isLoadingFilters.value = true;
     try {
       final fresh = await _repository.fetchInstructorSubjectFilters();

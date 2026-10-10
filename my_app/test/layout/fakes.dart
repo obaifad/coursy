@@ -151,7 +151,7 @@ class _Home extends HomeRepository {
 }
 
 class _Enrollments extends EnrollmentRepository {
-  _Enrollments(super.client, super.resolver);
+  _Enrollments(super.client);
   @override
   Future<PaginatedResult<EnrollmentModel>> fetchEnrollmentsPage({int page = 1, int perPage = 15}) async =>
       _page(sampleEnrollments());
@@ -275,7 +275,7 @@ Future<TokenStorage> registerFakes({required bool loggedIn, required String loca
   Get.put<InstituteRepository>(_Institutes(client));
   Get.put<InstructorRepository>(_Instructors(client, reference));
   Get.put<HomeRepository>(_Home(client));
-  Get.put<EnrollmentRepository>(_Enrollments(client, resolver));
+  Get.put<EnrollmentRepository>(_Enrollments(client));
   Get.put<NotificationRepository>(_Notifications(client));
   Get.put<PaymentRepository>(_Payments(client));
   Get.put<ReviewRepository>(_Reviews(client, resolver));

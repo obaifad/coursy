@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../../theme/app_fonts.dart';
 import '../../../core/data/repositories/auth_repository.dart';
+import '../../../core/config/app_flags.dart';
 import '../../../core/locale/locale_controller.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/responsive/responsive.dart';
@@ -160,7 +161,7 @@ class ProfileView extends StatelessWidget {
                 );
               }
               // يظهر فقط إن أكّد الخادم أن الرقم غير مُتحقَّق منه (null = غير معروف → لا نزعج المستخدم).
-              final needsPhoneVerification = storage.phoneVerified.value == false;
+              final needsPhoneVerification = AppFlags.phoneVerificationEnabled && storage.phoneVerified.value == false;
               return Column(
                 children: [
                   if (needsPhoneVerification)
@@ -623,9 +624,15 @@ class SettingsView extends GetView<LocaleController> {
                     ListTile(
                       leading: const Icon(Icons.privacy_tip_outlined, color: AppColors.primary),
                       title: Text('privacy_policy'.tr, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      onTap: () => Get.to(
-                        () => _SettingsDocumentView(title: 'privacy_policy'.tr, body: 'privacy_policy_body'.tr),
-                      ),
+                      trailing: const Icon(Icons.open_in_new_rounded, size: 18, color: AppColors.textSecondary),
+                      onTap: () => ExternalLauncher.openWebPage(ApiConfig.privacyUrl(controller.code.value)),
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.description_outlined, color: AppColors.primary),
+                      title: Text('terms_of_use'.tr, style: const TextStyle(fontWeight: FontWeight.w700)),
+                      trailing: const Icon(Icons.open_in_new_rounded, size: 18, color: AppColors.textSecondary),
+                      onTap: () => ExternalLauncher.openWebPage(ApiConfig.termsUrl(controller.code.value)),
                     ),
                     const Divider(height: 1),
                     ListTile(
@@ -644,6 +651,21 @@ class SettingsView extends GetView<LocaleController> {
                   ],
                 ),
               ),
+              if (Get.find<TokenStorage>().isLoggedIn) ...[
+                const SizedBox(height: 16),
+                SoftCard(
+                  padding: EdgeInsets.zero,
+                  child: ListTile(
+                    leading: const Icon(Icons.delete_forever_rounded, color: AppColors.danger),
+                    title: Text(
+                      'delete_account'.tr,
+                      style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.danger),
+                    ),
+                    trailing: const Icon(Icons.chevron_left_rounded, color: AppColors.textSecondary),
+                    onTap: () => Get.toNamed(AppRoutes.deleteAccount),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

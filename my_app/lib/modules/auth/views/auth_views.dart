@@ -12,15 +12,11 @@ import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/design_system.dart';
 import '../controllers/auth_controller.dart';
+import '../controllers/forgot_password_controller.dart';
 import '../widgets/auth_split_layout.dart';
 import '../widgets/login_hero_header.dart';
 import '../widgets/login_page_metrics.dart';
 import '../widgets/register_form_widgets.dart';
-
-final List<TextInputFormatter> _phoneInputFormatters = [
-  FilteringTextInputFormatter.digitsOnly,
-  LengthLimitingTextInputFormatter(10),
-];
 
 class LoginView extends GetView<AuthController> {
   const LoginView({super.key});
@@ -174,21 +170,12 @@ class _LoginFormBody extends GetView<AuthController> {
           child: Column(
             children: [
               RegisterFloatingField(
-                controller: controller.loginEmailController,
-                label: 'email_required'.tr,
+                controller: controller.loginIdController,
+                label: 'login_identifier'.tr,
+                hint: 'login_identifier_hint'.tr,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
-                prefixIcon: Icons.email_outlined,
-              ),
-              SizedBox(height: metrics.fieldGap),
-              RegisterFloatingField(
-                controller: controller.loginPhoneController,
-                label: 'phone_required'.tr,
-                hint: 'phone_hint'.tr,
-                keyboardType: TextInputType.phone,
-                inputFormatters: _phoneInputFormatters,
-                textInputAction: TextInputAction.next,
-                prefixIcon: Icons.phone_android_rounded,
+                prefixIcon: Icons.person_outline_rounded,
               ),
               SizedBox(height: metrics.fieldGap),
               Obx(
@@ -327,7 +314,7 @@ class _WebLoginHint extends StatelessWidget {
   }
 }
 
-class ForgotPasswordView extends StatelessWidget {
+class ForgotPasswordView extends GetView<ForgotPasswordController> {
   const ForgotPasswordView({super.key});
 
   @override
@@ -339,42 +326,150 @@ class ForgotPasswordView extends StatelessWidget {
         decoration: const BoxDecoration(gradient: AppGradients.screenBg),
         child: AppMaxWidth(
           maxWidth: ResponsiveModals.dialogMaxWidth(context),
-          child: ListView(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + context.keyboardInset),
-            children: [
-              const Icon(Icons.lock_reset_rounded, size: 56, color: AppColors.primary),
-              const SizedBox(height: 12),
-              Text(
-                'forgot_phone_title'.tr,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'forgot_phone_desc'.tr,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.textSecondary, height: 1.5),
-              ),
-              const SizedBox(height: 20),
-              SoftCard(
-                child: Column(
-                  children: [
-                    TextField(
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        labelText: 'phone'.tr,
-                        prefixIcon: const Icon(Icons.phone_android_rounded),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton(onPressed: () => Get.offNamed(AppRoutes.login), child: Text('go_to_login'.tr)),
-                  ],
+          child: Obx(() {
+            final _ = localeRebuildToken;
+            final codeStep = controller.step.value == 1;
+            return ListView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + context.keyboardInset),
+              children: [
+                const Icon(Icons.lock_reset_rounded, size: 56, color: AppColors.primary),
+                const SizedBox(height: 12),
+                Text(
+                  (codeStep ? 'reset_code_heading' : 'forgot_email_heading').tr,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(height: 8),
+                Text(
+                  codeStep
+                      ? 'reset_code_desc'.trParams({'email': controller.emailController.text.trim()})
+                      : 'forgot_email_desc'.tr,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.textSecondary, height: 1.5),
+                ),
+                const SizedBox(height: 20),
+                SoftCard(
+                  child: codeStep ? _ResetStep(controller: controller) : _EmailStep(controller: controller),
+                ),
+              ],
+            );
+          }),
         ),
       ),
+    );
+  }
+}
+
+class _EmailStep extends StatelessWidget {
+  const _EmailStep({required this.controller});
+  final ForgotPasswordController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: controller.emailController,
+          keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.done,
+          textDirection: TextDirection.ltr,
+          autofillHints: const [AutofillHints.email],
+          onChanged: (_) => controller.clearError('email'),
+          onSubmitted: (_) => controller.sendCode(),
+          decoration: RegisterDecor.fieldDecoration(
+            label: 'email'.tr,
+            errorText: controller.errors['email'],
+            prefixIcon: const Icon(Icons.mail_outline_rounded, color: AppColors.primary),
+          ),
+        ),
+        const SizedBox(height: 16),
+        RegisterGradientButton(
+          label: 'send_reset_code'.tr,
+          loading: controller.isSending.value,
+          onPressed: controller.isSending.value ? null : controller.sendCode,
+        ),
+      ],
+    );
+  }
+}
+
+class _ResetStep extends StatelessWidget {
+  const _ResetStep({required this.controller});
+  final ForgotPasswordController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final hidden = controller.hidePassword.value;
+    final waiting = controller.resendIn.value;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: controller.codeController,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.next,
+          textDirection: TextDirection.ltr,
+          autofillHints: const [AutofillHints.oneTimeCode],
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
+          onChanged: (_) => controller.clearError('code'),
+          decoration: RegisterDecor.fieldDecoration(
+            label: 'reset_code_label'.tr,
+            errorText: controller.errors['code'],
+            prefixIcon: const Icon(Icons.pin_outlined, color: AppColors.primary),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: controller.passwordController,
+          obscureText: hidden,
+          textInputAction: TextInputAction.next,
+          autofillHints: const [AutofillHints.newPassword],
+          onChanged: (_) => controller.clearError('password'),
+          decoration: RegisterDecor.fieldDecoration(
+            label: 'new_password_label'.tr,
+            errorText: controller.errors['password'],
+            prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primary),
+            suffixIcon: IconButton(
+              tooltip: 'toggle_password_visibility'.tr,
+              onPressed: controller.hidePassword.toggle,
+              icon: Icon(hidden ? Icons.visibility_off_rounded : Icons.visibility_rounded),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: controller.confirmController,
+          obscureText: hidden,
+          textInputAction: TextInputAction.done,
+          onChanged: (_) => controller.clearError('password_confirmation'),
+          onSubmitted: (_) => controller.resetPassword(),
+          decoration: RegisterDecor.fieldDecoration(
+            label: 'confirm_password'.tr,
+            errorText: controller.errors['password_confirmation'],
+            prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primary),
+          ),
+        ),
+        const SizedBox(height: 16),
+        RegisterGradientButton(
+          label: 'reset_password_button'.tr,
+          loading: controller.isResetting.value,
+          onPressed: controller.isResetting.value ? null : controller.resetPassword,
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            TextButton(onPressed: controller.editEmail, child: Text('change_email'.tr)),
+            TextButton(
+              onPressed: waiting > 0 || controller.isSending.value ? null : controller.sendCode,
+              child: Text(waiting > 0 ? 'resend_after'.trParams({'sec': '$waiting'}) : 'resend_otp'.tr),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

@@ -1,11 +1,14 @@
 import '../../../theme/app_fonts.dart';
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/config/app_flags.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/navigation/app_navigation.dart';
+import '../../../core/services/app_config_service.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../routes/app_routes.dart';
 import '../../../widgets/design_system.dart';
@@ -61,15 +64,14 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
 
   void _navigateAway() {
     if (!mounted) return;
-    if (!AppFlags.requireLogin) {
-      AppNavigation.goToRoot();
-      return;
-    }
-    final storage = Get.find<TokenStorage>();
-    if (storage.isLoggedIn) {
+    if (!AppFlags.requireLogin || Get.find<TokenStorage>().isLoggedIn) {
       AppNavigation.goToRoot();
     } else {
       Get.offAllNamed(AppRoutes.login);
+    }
+    // بعد الانتقال: offAll كان سيُزيل أي حوار يُفتح فوق شاشة البداية.
+    if (Get.isRegistered<AppConfigService>()) {
+      unawaited(Get.find<AppConfigService>().presentIfNeeded());
     }
   }
 

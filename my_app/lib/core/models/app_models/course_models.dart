@@ -62,6 +62,7 @@ class CourseModel {
     this.instructor,
     this.categoryName,
     this.isFeatured = false,
+    this.isFree = false,
     this.rawPrice,
     this.discountPrice,
     this.imageUrl,
@@ -106,6 +107,9 @@ class CourseModel {
   final InstructorModel? instructor;
   final String? categoryName;
   final bool isFeatured;
+
+  /// دورة مجانية فعلاً (من لوحة التحكم) — تختلف عن سعر 0 «لم يُحدد بعد».
+  final bool isFree;
   final String? rawPrice;
   final String? discountPrice;
   final String? imageUrl;
@@ -116,7 +120,7 @@ class CourseModel {
 
   // النصوص المعروضة تُحسب عند القراءة بلغة الواجهة الحالية — لا تُخزَّن مترجمة داخل النموذج
   // حتى لا تبقى بلغة قديمة بعد تغيير اللغة.
-  String get price => JsonHelpers.formatSyrianPrice(rawPrice, discount: discountPrice);
+  String get price => isFree ? 'price_free'.tr : JsonHelpers.formatSyrianPrice(rawPrice, discount: discountPrice);
 
   String get duration => JsonHelpers.durationLabel(hours: durationHours, sessions: sessionsCount);
 
@@ -153,6 +157,7 @@ class CourseModel {
   }
 
   bool get hasDiscount {
+    if (isFree) return false;
     final discount = JsonHelpers.parseDouble(discountPrice);
     return discount > 0;
   }
@@ -253,6 +258,7 @@ class CourseModel {
       instructor: instructor ?? this.instructor,
       categoryName: categoryName ?? this.categoryName,
       isFeatured: isFeatured,
+      isFree: isFree,
       rawPrice: rawPrice,
       discountPrice: discountPrice,
       imageUrl: imageUrl ?? this.imageUrl,
@@ -377,6 +383,7 @@ class CourseModel {
       instructor: instructor,
       categoryName: categoryName,
       isFeatured: JsonHelpers.parseBool(json['is_featured']),
+      isFree: JsonHelpers.parseBool(json['is_free']),
     );
   }
 }

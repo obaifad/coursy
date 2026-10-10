@@ -1,11 +1,14 @@
 import 'package:get/get.dart';
 
 class ApiException implements Exception {
-  ApiException(this.message, {this.statusCode, this.fieldErrors});
+  ApiException(this.message, {this.statusCode, this.fieldErrors, this.code});
 
   final String message;
   final int? statusCode;
   final Map<String, String>? fieldErrors;
+
+  /// رمز خطأ ثابت من الخادم (مثل `transaction_already_used`) — للمطابقة بدل نص الرسالة.
+  final String? code;
 
   @override
   String toString() => message;

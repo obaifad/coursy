@@ -17,6 +17,9 @@ class DeviceRepository extends GetxService {
     return 'unknown';
   }
 
+  /// لغة إشعارات هذا الجهاز (تُرسل أيضاً في Accept-Language).
+  String get _language => Get.locale?.languageCode ?? 'ar';
+
   Future<void> registerDeviceToken(String deviceToken) async {
     final token = deviceToken.trim();
     if (token.isEmpty) return;
@@ -24,14 +27,14 @@ class DeviceRepository extends GetxService {
     // التوكن في جسم الطلب أولاً — الـ query يُحفظ في سجلات الخوادم. query احتياط فقط
     // (Laravel يقرأ الاثنين عبر $request->input).
     try {
-      await _register(data: {'token': token, 'device_token': token, 'platform': _platform});
+      await _register(data: {'token': token, 'device_token': token, 'platform': _platform, 'language': _language});
       return;
     } on ApiException catch (e) {
       if (e.statusCode != 404 && e.statusCode != 405 && e.statusCode != 422) rethrow;
       AppDebugLog.fcm('device register via body failed (${e.statusCode}) — retrying via query');
     }
 
-    await _register(query: {'token': token, 'platform': _platform});
+    await _register(query: {'token': token, 'platform': _platform, 'language': _language});
   }
 
   Future<void> unregisterDeviceToken(String deviceToken) async {

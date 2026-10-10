@@ -39,11 +39,13 @@ class AuthRepository extends GetxService {
   }
 
   /// تسجيل دخول بالبريد ورقم الهاتف وكلمة المرور.
-  Future<Map<String, dynamic>?> login({required String email, required String phone, required String password}) async {
+  /// [login] بريد إلكتروني أو رقم هاتف بأي صيغة شائعة (`0912345678` · `+963912345678` · `00963…`).
+  /// الخادم يحدد الحساب بكلمة المرور (الهاتف غير فريد). الأخطاء: 422 `errors.login[0]`، 403 حساب موقوف، 429.
+  Future<Map<String, dynamic>?> login({required String login, required String password}) async {
     final body = await _client.handle(
       () => _client.post(
         ApiEndpoints.studentLogin,
-        data: {'email': email.trim(), 'phone': phone.trim(), 'password': password, 'device_name': _deviceName()},
+        data: {'login': login.trim(), 'password': password, 'device_name': _deviceName()},
       ),
       (data) => normalizeApiBody(data),
     );
@@ -134,6 +136,39 @@ class AuthRepository extends GetxService {
       studentId: studentId,
     );
     _printTokenForDebug('auth', token);
+  }
+
+  /// يرسل رمز إعادة تعيين كلمة المرور (6 أرقام) إلى البريد. يُرجع رسالة الخادم إن وُجدت.
+  Future<String?> requestPasswordReset(String email) {
+    return _client.handle(() => _client.post(ApiEndpoints.studentPasswordForgot, data: {'email': email}), (data) {
+      final body = normalizeApiBody(data);
+      return body is Map ? body['message']?.toString() : null;
+    });
+  }
+
+  /// يعيّن كلمة مرور جديدة بالرمز. الخادم يسجّل خروج الطالب من كل الأجهزة.
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    await _client.handle(
+      () => _client.post(
+        ApiEndpoints.studentPasswordReset,
+        data: {'email': email, 'code': code, 'password': password, 'password_confirmation': passwordConfirmation},
+      ),
+      (data) => data,
+    );
+  }
+
+  /// حذف الحساب نهائياً بعد التحقق من كلمة المرور. الخادم يلغي كل الجلسات ويحذف توكنات الأجهزة.
+  Future<void> deleteAccount(String password) async {
+    await _client.handle(
+      () => _client.delete(ApiEndpoints.studentAccount, data: {'password': password}),
+      (data) => null,
+    );
+    await _tokenStorage.clearSession();
   }
 
   Future<void> logout() async {

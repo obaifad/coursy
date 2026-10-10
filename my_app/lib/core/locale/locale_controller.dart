@@ -8,6 +8,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../network/api_client.dart';
+import '../services/push_notification_service.dart';
 import 'locale_refresh.dart';
 import 'locale_request_guard.dart';
 import '../../widgets/app_selection_sheet.dart';
@@ -74,6 +75,10 @@ class LocaleController extends GetxService {
         Get.find<LocaleRequestGuard>().bump();
       }
       await LocaleRefresh.reloadAll();
+      // الخادم يحفظ لغة كل جهاز ليرسل إشعاراته بها: نعيد تسجيل التوكن باللغة الجديدة.
+      if (Get.isRegistered<PushNotificationService>()) {
+        unawaited(Get.find<PushNotificationService>().syncDeviceTokenIfLoggedIn(force: true));
+      }
     }
   }
 

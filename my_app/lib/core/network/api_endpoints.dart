@@ -5,9 +5,12 @@ abstract final class ApiEndpoints {
   static const studentLogout = '/student/logout';
   static const studentMe = '/student/me';
   static const studentProfile = '/student/profile';
+  static const studentAccount = '/student/account';
+  static const studentPasswordForgot = '/student/password/forgot';
+  static const studentPasswordReset = '/student/password/reset';
+  static const appConfig = '/app/config';
   static const studentSuggestedCourses = '/student/suggested-courses';
   static const studentEnrollments = '/student/enrollments';
-  static String studentEnrollCourse(int courseId) => '/student/courses/$courseId/enroll';
   static String studentCancelEnrollment(int enrollmentId) => '/student/enrollments/$enrollmentId/cancel';
   static String studentEnrollmentPayment(int enrollmentId) => '/student/enrollments/$enrollmentId/payment';
   static String studentEnrollmentShamCash(int enrollmentId) => '/student/enrollments/$enrollmentId/payment/shamcash';
@@ -15,6 +18,8 @@ abstract final class ApiEndpoints {
   static String studentCourseFavorite(int courseId) => '/student/courses/$courseId/favorite';
   static String studentCourseReviews(int courseId) => '/student/courses/$courseId/reviews';
   static String courseReviews(int courseId) => '/courses/$courseId/reviews';
+  static String instructorReviews(int instructorId) => '/instructors/$instructorId/reviews';
+  static String instituteReviews(int instituteId) => '/institutes/$instituteId/reviews';
   static const studentNotifications = '/student/notifications';
   static const studentMobileVerificationSend = '/student/mobile-verification/send';
   static const studentMobileVerificationVerify = '/student/mobile-verification/verify';
@@ -35,7 +40,6 @@ abstract final class ApiEndpoints {
   static const courses = '/courses';
   static const courseSchedules = '/course-schedules';
   static const studentProfiles = '/student-profiles';
-  static const enrollments = '/enrollments';
   static const reviews = '/reviews';
   static const studentReviews = '/student/reviews';
   static const favorites = '/favorites';
@@ -45,7 +49,6 @@ abstract final class ApiEndpoints {
   static const permissions = '/permissions';
 
   static String enrollByCourse(int courseId) => '/courses/$courseId/enroll';
-  static String enrollCourseAlt(int courseId) => '/course/$courseId/enroll';
   static String categoryById(int id) => '/categories/$id';
   static String categoryCourses(int id) => '/categories/$id/courses';
   static String cityById(int id) => '/cities/$id';

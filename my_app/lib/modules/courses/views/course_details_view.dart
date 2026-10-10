@@ -15,6 +15,7 @@ import '../../../widgets/app_widgets.dart';
 import '../../../modules/auth/widgets/register_form_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/registration_closed_dialog.dart';
+import '../../../widgets/review_card.dart';
 import '../controllers/course_details_controller.dart';
 import '../../../core/locale/plural.dart';
 import '../../../theme/app_motion.dart';

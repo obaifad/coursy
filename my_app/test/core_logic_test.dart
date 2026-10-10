@@ -7,14 +7,12 @@ import 'package:shared_preferences_platform_interface/in_memory_shared_preferenc
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 import 'package:my_app/core/data/repositories/enrollment_repository.dart';
-import 'package:my_app/core/data/repositories/profile_repository.dart';
 import 'package:my_app/core/locale/app_translations.dart';
 import 'package:my_app/core/locale/locale_request_guard.dart';
 import 'package:my_app/core/models/app_models.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/core/network/api_exception.dart';
 import 'package:my_app/core/network/json_parser.dart';
-import 'package:my_app/core/services/student_id_resolver.dart';
 import 'package:my_app/core/storage/enrollment_status_store.dart';
 import 'package:my_app/core/storage/token_storage.dart';
 import 'package:my_app/core/utils/education_level_utils.dart';
@@ -102,7 +100,7 @@ void main() {
     final tokenStorage = TokenStorage();
     final client = ApiClient(tokenStorage);
     Get.put(tokenStorage);
-    Get.put(EnrollmentRepository(client, StudentIdResolver(tokenStorage, ProfileRepository(client, tokenStorage))));
+    Get.put(EnrollmentRepository(client));
     final controller = MyCoursesController();
     controller.enrollments.assignAll([
       EnrollmentModel(id: 1, status: 'pending', paymentStatus: 'unpaid'),

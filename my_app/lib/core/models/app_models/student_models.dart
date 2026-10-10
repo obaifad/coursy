@@ -50,6 +50,8 @@ class ReviewModel {
     required this.comment,
     required this.studentName,
     this.studentId,
+    this.studentImageUrl,
+    this.courseTitle,
   });
 
   final int id;
@@ -58,13 +60,33 @@ class ReviewModel {
   final String studentName;
   final int? studentId;
 
+  /// صورة صاحب التقييم (`student.profile_image`) — مسار نسبي أو رابط.
+  final String? studentImageUrl;
+
+  /// اسم الدورة المقيَّمة (تقييمات المدرّس تشمل كل دوراته).
+  final String? courseTitle;
+
+  String? get resolvedStudentImageUrl => ApiConfig.resolveMediaUrl(studentImageUrl);
+
   factory ReviewModel.fromJson(Map<String, dynamic> json) {
     var studentName = '';
+    String? studentImage;
     var studentId = JsonHelpers.parseIntOrNull(json['student_id']);
     if (json['student'] is Map<String, dynamic>) {
       final s = json['student'] as Map<String, dynamic>;
-      studentName = '${s['first_name'] ?? ''} ${s['last_name'] ?? ''}'.trim();
+      // الخادم يرسل اسماً مختصراً جاهزاً في `name` (مثل «Sara H.»)؛ first/last احتياط للنسخ القديمة.
+      final short = s['name']?.toString().trim() ?? '';
+      studentName = short.isNotEmpty ? short : '${s['first_name'] ?? ''} ${s['last_name'] ?? ''}'.trim();
+      final img = (s['profile_image'] ?? s['photo'])?.toString().trim();
+      studentImage = img == null || img.isEmpty ? null : img;
       studentId ??= JsonHelpers.parseIntOrNull(s['id']);
+    }
+    String? courseTitle;
+    final course = json['course'];
+    if (course is Map<String, dynamic>) {
+      final names = JsonHelpers.bilingualText(course, 'title');
+      final t = JsonHelpers.pickLocalized(ar: names.ar, en: names.en).trim();
+      courseTitle = t.isEmpty ? course['title']?.toString() : t;
     }
     return ReviewModel(
       id: JsonHelpers.parseInt(json['id']),
@@ -72,6 +94,8 @@ class ReviewModel {
       comment: json['comment']?.toString() ?? '',
       studentName: studentName,
       studentId: studentId,
+      studentImageUrl: studentImage,
+      courseTitle: courseTitle,
     );
   }
 }

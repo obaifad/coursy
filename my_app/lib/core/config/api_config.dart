@@ -11,6 +11,10 @@ abstract final class ApiConfig {
   /// صفحة التواصل والدعم على الموقع.
   static const String contactUrl = '$siteUrl/contact';
 
+  /// صفحات الموقع العامة بلغة التطبيق (?lang=ar|en).
+  static String privacyUrl(String lang) => '$siteUrl/privacy?lang=$lang';
+  static String termsUrl(String lang) => '$siteUrl/terms?lang=$lang';
+
   /// منفذ بروكسي التطوير — يجب أن يطابق `tool/dev_cors_proxy.dart`.
   static const int webDevProxyPort = 5478;
 

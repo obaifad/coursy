@@ -22,4 +22,5 @@ abstract class AppRoutes {
   static const courseBooking = '/course-booking';
   static const favorites = '/favorites';
   static const payment = '/payment';
+  static const deleteAccount = '/delete-account';
 }

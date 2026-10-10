@@ -270,6 +270,12 @@ String messageFromErrorBody(dynamic body, {String? fallback}) {
   return fallback ?? 'error_unexpected'.tr;
 }
 
+String? errorCodeFromBody(dynamic body) {
+  if (body is! Map) return null;
+  final code = body['code'];
+  return code is String && code.isNotEmpty ? code : null;
+}
+
 Map<String, String> fieldErrorsFromBody(dynamic body) {
   if (body is! Map) return {};
   final errors = body['errors'];

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 
 import 'package:my_app/modules/auth/controllers/auth_controller.dart';
+import 'package:my_app/modules/auth/controllers/forgot_password_controller.dart';
 import 'package:my_app/modules/auth/views/auth_views.dart';
 import 'package:my_app/modules/auth/views/register_view.dart';
 import 'package:my_app/modules/courses/controllers/course_details_controller.dart';
@@ -16,7 +17,9 @@ import 'package:my_app/modules/notifications/controllers/notifications_controlle
 import 'package:my_app/modules/notifications/views/notifications_view.dart';
 import 'package:my_app/modules/payment/controllers/payment_controller.dart';
 import 'package:my_app/modules/payment/views/payment_view.dart';
+import 'package:my_app/modules/profile/controllers/delete_account_controller.dart';
 import 'package:my_app/modules/profile/controllers/my_courses_controller.dart';
+import 'package:my_app/modules/profile/views/delete_account_view.dart';
 import 'package:my_app/modules/root/controllers/root_controller.dart';
 import 'package:my_app/modules/root/views/root_view.dart';
 import 'package:my_app/modules/search/controllers/search_controller.dart';
@@ -217,6 +220,42 @@ void main() {
             await registerFakes(loggedIn: true, locale: Get.locale?.languageCode ?? locale);
             fakePaymentJson = scene.value;
             Get.put(PaymentController(enrollmentId: 42));
+          },
+        ),
+      );
+    });
+  }
+
+  testWidgets('delete account', (tester) async {
+    allIssues.addAll(
+      await auditScene(
+        tester,
+        'delete-account',
+        () => const DeleteAccountView(),
+        beforeEach: () async {
+          await registerFakes(loggedIn: true, locale: Get.locale?.languageCode ?? locale);
+          Get.put(DeleteAccountController()).passwordError.value = 'كلمة المرور غير صحيحة.';
+        },
+      ),
+    );
+  });
+
+  for (final codeStep in [false, true]) {
+    final name = codeStep ? 'forgot-password-code' : 'forgot-password-email';
+    testWidgets(name, (tester) async {
+      allIssues.addAll(
+        await auditScene(
+          tester,
+          name,
+          () => const ForgotPasswordView(),
+          beforeEach: () async {
+            await registerFakes(loggedIn: false, locale: Get.locale?.languageCode ?? locale);
+            final c = Get.put(ForgotPasswordController());
+            c.emailController.text = 'student.with.a.long.address@coursy.sy';
+            if (codeStep) {
+              c.step.value = 1;
+              c.resendIn.value = 45;
+            }
           },
         ),
       );

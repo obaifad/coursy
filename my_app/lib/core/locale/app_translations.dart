@@ -34,6 +34,21 @@ class AppTranslations extends Translations {
     'privacy_policy': 'سياسة الخصوصية',
     'about_app': 'عن التطبيق',
     'contact_us': 'تواصل معنا',
+    'terms_of_use': 'شروط الاستخدام',
+    'delete_account': 'حذف الحساب',
+    'delete_account_title': 'حذف حسابك نهائياً',
+    'delete_account_intro': 'سيُحذف حسابك وبياناتك الشخصية فوراً، ولا يمكن التراجع عن ذلك.',
+    'delete_account_item_data': 'تُحذف بياناتك الشخصية وصورتك ومفضلتك وإشعاراتك.',
+    'delete_account_item_enrollments': 'تُحذف تسجيلاتك في الدورات، بما فيها المقبولة.',
+    'delete_account_item_payments': 'تبقى سجلات الدفع لدى المعهد بدون اسمك أو عنوان شام كاش.',
+    'delete_account_item_devices': 'يُسجَّل خروجك من كل الأجهزة.',
+    'delete_account_password': 'كلمة المرور للتأكيد',
+    'delete_account_password_required': 'أدخل كلمة المرور لتأكيد الحذف',
+    'delete_account_button': 'حذف حسابي نهائياً',
+    'delete_account_confirm_title': 'تأكيد حذف الحساب',
+    'delete_account_confirm_msg': 'هل تريد حذف حسابك وبياناتك نهائياً؟ لا يمكن التراجع عن هذه الخطوة.',
+    'account_deleted_title': 'تم حذف الحساب',
+    'account_deleted_msg': 'حُذف حسابك وبياناتك. يمكنك متابعة التصفح كضيف.',
     'institute_contact_title': 'تواصل مع المعهد',
     'contact_call': 'اتصال',
     'contact_whatsapp': 'واتساب',
@@ -41,27 +56,6 @@ class AppTranslations extends Translations {
     'contact_facebook': 'فيسبوك',
     'contact_instagram': 'إنستغرام',
     'open_link_failed': 'تعذّر فتح الرابط',
-    'privacy_policy_body':
-        'آخر تحديث: يونيو 2026\n\n'
-        'مرحباً بك في تطبيق Coursy. نحن نحترم خصوصيتك ونلتزم بحماية بياناتك الشخصية وفقاً للقوانين المعمول بها في الجمهورية العربية السورية.\n\n'
-        '1) البيانات التي نجمعها\n'
-        '• بيانات التسجيل: الاسم، البريد الإلكتروني، رقم الهاتف، المدينة، ومعلومات أكاديمية اختيارية.\n'
-        '• بيانات الاستخدام: الدورات التي تتصفحها، التسجيلات، المفضلة، والتقييمات.\n'
-        '• صورة الملف الشخصي إن اخترت إضافتها.\n'
-        '• بيانات الدفع: رقم عملية شام كاش والمبلغ المحوَّل للمعهد. لا نطّلع على محفظتك ولا نحتفظ بأموالك؛ يُدفع المبلغ مباشرة للمعهد.\n'
-        '• بيانات تقنية: نوع الجهاز وإصدار التطبيق، ومعرّف الجهاز لإرسال الإشعارات، وتقارير الأعطال (عبر Firebase من Google) لإصلاح المشاكل.\n\n'
-        '2) كيف نستخدم بياناتك\n'
-        '• إنشاء حسابك وإدارة تسجيلك في الدورات والمعاهد.\n'
-        '• إرسال إشعارات متعلقة بالدورات والتسجيل (يمكنك التحكم بها من الإعدادات).\n'
-        '• تحسين تجربة التعلّم ودعمك عند الحاجة.\n\n'
-        '3) مشاركة البيانات\n'
-        'لا نبيع بياناتك الشخصية. قد نشارك معلومات محدودة مع المعهد أو المدرّب المرتبط بالدورة التي سجّلت فيها، فقط بما يلزم لإتمام التسجيل والمتابعة.\n\n'
-        '4) حماية البيانات\n'
-        'نستخدم إجراءات تقنية وتنظيمية معقولة لحماية بياناتك من الوصول غير المصرّح به أو الفقدان أو التعديل.\n\n'
-        '5) حقوقك\n'
-        'يمكنك طلب الاطلاع على بياناتك أو تصحيحها أو حذف حسابك عبر التواصل معنا من داخل التطبيق أو عبر قنوات الدعم الرسمية.\n\n'
-        '6) التواصل\n'
-        'لأي استفسار حول الخصوصية، تواصل معنا عبر صفحة «تواصل معنا» في الإعدادات أو على coursy.sy/contact.',
     'about_app_body':
         'Coursy — منصة تعليمية سورية\n\n'
         'Coursy منصة رقمية تجمع الدورات التدريبية والمعاهد والمدرّبين في مكان واحد، لتسهيل البحث والتسجيل والمتابعة داخل سوريا.\n\n'
@@ -132,6 +126,14 @@ class AppTranslations extends Translations {
     'no_courses': 'لا توجد دورات',
     'load_more': 'تحميل المزيد',
     'retry': 'إعادة',
+    'maintenance_title': 'التطبيق قيد الصيانة',
+    'maintenance_default_msg': 'نعمل على تحسين الخدمة. حاول مرة أخرى بعد قليل.',
+    'update_required_title': 'يلزم تحديث التطبيق',
+    'update_required_msg': 'هذه النسخة لم تعد مدعومة. حدّث التطبيق من المتجر للمتابعة.',
+    'update_available_title': 'تحديث جديد متوفر',
+    'update_available_msg': 'نسخة أحدث من Coursy متوفرة في المتجر، فيها تحسينات وإصلاحات.',
+    'update_now': 'تحديث',
+    'later': 'لاحقاً',
     'done': 'تم',
     'good_morning': 'صباح الخير',
     'home_search_hint': 'ابحث عن دورة، معهد، أو مهارة...',
@@ -197,6 +199,8 @@ class AppTranslations extends Translations {
     'no_categories': 'لا توجد تصنيفات — اسحب للأسفل لإعادة التحميل',
     'home_partial_load_error': 'تعذر تحميل بعض الأقسام',
     'retry_action': 'إعادة المحاولة',
+    'session_expired_title': 'انتهت الجلسة',
+    'session_expired_msg': 'سجّل الدخول من جديد للمتابعة.',
     'course_load_failed': 'تعذر تحميل الدورة',
     'refresh': 'تحديث',
     'back': 'رجوع',
@@ -206,6 +210,7 @@ class AppTranslations extends Translations {
     'rate_n_of_5': 'تقييم @n من 5',
     'clear_search': 'مسح البحث',
     'price_on_request': 'السعر قريباً',
+    'price_free': 'مجاني',
     'payment_title': 'الدفع',
     'payment_summary': 'ملخص الدفع',
     'payment_amount_due': 'سعر الدورة',
@@ -278,7 +283,11 @@ class AppTranslations extends Translations {
     'login_welcome_back': 'أهلاً بك',
     'auth_hero_login_desc': 'منصة تعليمية متكاملة للدورات والمدربين والمعاهد في مكان واحد.',
     'login_subtitle': 'استخدم رقم الهاتف وكلمة المرور المسجّلين',
-    'login_subtitle_email_phone': 'استخدم البريد الإلكتروني ورقم الهاتف وكلمة المرور المسجّلين',
+    'login_subtitle_email_phone': 'سجّل الدخول بالبريد الإلكتروني أو رقم الهاتف وكلمة المرور',
+    'login_identifier': 'البريد الإلكتروني أو رقم الهاتف *',
+    'login_identifier_hint': 'name@example.com أو 09XXXXXXXX',
+    'enter_login_password': 'أدخل البريد الإلكتروني أو رقم الهاتف وكلمة المرور',
+    'enter_valid_login': 'أدخل بريداً إلكترونياً صحيحاً أو رقم هاتف صحيحاً',
     'email': 'البريد الإلكتروني',
     'email_required': 'البريد الإلكتروني *',
     'phone': 'رقم الهاتف',
@@ -372,10 +381,22 @@ class AppTranslations extends Translations {
     'otp_send_failed': 'تعذر إرسال رمز التحقق',
     'otp_verify_failed': 'تعذر التحقق من الرمز',
     'forgot_title': 'استعادة كلمة المرور',
-    'forgot_phone_title': 'استعادة الحساب برقم الهاتف',
-    'forgot_phone_desc':
-        'سجّل الدخول برقم هاتفك. إذا لم يكن مؤكدًا بعد، ستنتقل لصفحة إرسال رمز التحقق (OTP) وتأكيد الرقم.',
-    'go_to_login': 'الانتقال لتسجيل الدخول',
+    'forgot_email_heading': 'أدخل بريدك الإلكتروني',
+    'forgot_email_desc': 'سنرسل إلى بريدك رمزاً من 6 أرقام لإعادة تعيين كلمة المرور.',
+    'send_reset_code': 'إرسال الرمز',
+    'reset_code_heading': 'أدخل الرمز وكلمة المرور الجديدة',
+    'reset_code_desc': 'أرسلنا رمزاً إلى @email. قد يصل خلال دقائق، فتحقق من البريد غير المرغوب أيضاً.',
+    'reset_code_label': 'رمز التحقق (6 أرقام)',
+    'reset_code_invalid': 'أدخل الرمز المكوّن من 6 أرقام',
+    'new_password_label': 'كلمة المرور الجديدة',
+    'reset_password_required': 'أدخل كلمة المرور الجديدة',
+    'passwords_do_not_match': 'كلمتا المرور غير متطابقتين',
+    'reset_password_button': 'تغيير كلمة المرور',
+    'change_email': 'تغيير البريد',
+    'reset_code_sent_title': 'تم إرسال الرمز',
+    'reset_code_sent_msg': 'تحقق من بريدك الإلكتروني.',
+    'password_reset_done_title': 'تم تغيير كلمة المرور',
+    'password_reset_done_msg': 'سجّل الدخول بكلمة المرور الجديدة. تم تسجيل خروجك من الأجهزة الأخرى.',
     'profile_edit': 'تعديل الملف الشخصي',
     'personal_info': 'المعلومات الشخصية',
     'my_courses': 'دوراتي',
@@ -508,6 +529,7 @@ class AppTranslations extends Translations {
     'no_schedule_yet': 'لم يُحدَّد جدول هذه الدورة بعد.',
     'no_instructor_info': 'لا توجد معلومات عن المدرّب حالياً.',
     'no_reviews_yet': 'لا توجد تقييمات بعد. كن أول من يقيّم الدورة.',
+    'no_instructor_reviews': 'لا توجد تقييمات لدورات هذا المدرّب بعد.',
     'instructor_years': '@role · @years سنوات',
     'instructor_experience_one': 'خبرة سنة واحدة',
     'instructor_experience_two': 'خبرة سنتين',
@@ -695,6 +717,21 @@ class AppTranslations extends Translations {
     'privacy_policy': 'Privacy policy',
     'about_app': 'About',
     'contact_us': 'Contact us',
+    'terms_of_use': 'Terms of use',
+    'delete_account': 'Delete account',
+    'delete_account_title': 'Permanently delete your account',
+    'delete_account_intro': 'Your account and personal data will be deleted immediately. This cannot be undone.',
+    'delete_account_item_data': 'Your personal data, photo, favorites and notifications are deleted.',
+    'delete_account_item_enrollments': 'Your course enrollments are deleted, including approved ones.',
+    'delete_account_item_payments': 'Payment records stay with the institute without your name or ShamCash address.',
+    'delete_account_item_devices': 'You are signed out on every device.',
+    'delete_account_password': 'Password to confirm',
+    'delete_account_password_required': 'Enter your password to confirm',
+    'delete_account_button': 'Delete my account',
+    'delete_account_confirm_title': 'Delete account?',
+    'delete_account_confirm_msg': 'Delete your account and data permanently? This cannot be undone.',
+    'account_deleted_title': 'Account deleted',
+    'account_deleted_msg': 'Your account and data were deleted. You can keep browsing as a guest.',
     'institute_contact_title': 'Contact the institute',
     'contact_call': 'Call',
     'contact_whatsapp': 'WhatsApp',
@@ -702,27 +739,6 @@ class AppTranslations extends Translations {
     'contact_facebook': 'Facebook',
     'contact_instagram': 'Instagram',
     'open_link_failed': 'Could not open the link',
-    'privacy_policy_body':
-        'Last updated: June 2026\n\n'
-        'Welcome to Coursy. We respect your privacy and are committed to protecting your personal data in line with applicable regulations in the Syrian Arab Republic.\n\n'
-        '1) Data we collect\n'
-        '• Registration data: name, email, phone number, city, and optional academic details.\n'
-        '• Usage data: courses you browse, enrollments, favorites, and reviews.\n'
-        '• Profile picture, if you choose to add one.\n'
-        '• Payment data: the ShamCash transaction ID and the amount sent to the institute. We never access your wallet or hold your money; you pay the institute directly.\n'
-        '• Technical data: device type, app version, a device token for push notifications, and crash reports (via Google Firebase) used to fix problems.\n\n'
-        '2) How we use your data\n'
-        '• To create your account and manage course enrollments.\n'
-        '• To send course- and enrollment-related notifications (you can control these in Settings).\n'
-        '• To improve the learning experience and provide support when needed.\n\n'
-        '3) Data sharing\n'
-        'We do not sell your personal data. Limited information may be shared with the institute or instructor linked to a course you enrolled in, only as needed to complete registration and follow-up.\n\n'
-        '4) Data protection\n'
-        'We apply reasonable technical and organizational measures to protect your data from unauthorized access, loss, or alteration.\n\n'
-        '5) Your rights\n'
-        'You may request access, correction, or deletion of your account by contacting us through in-app or official support channels.\n\n'
-        '6) Contact\n'
-        'For privacy questions, use Contact us in Settings or visit coursy.sy/contact.',
     'about_app_body':
         'Coursy — Syrian learning platform\n\n'
         'Coursy is a digital platform that brings together training courses, institutes, and instructors in one place, making it easier to discover, enroll, and follow up across Syria.\n\n'
@@ -790,6 +806,14 @@ class AppTranslations extends Translations {
     'no_courses': 'No courses found',
     'load_more': 'Load more',
     'retry': 'Retry',
+    'maintenance_title': 'Under maintenance',
+    'maintenance_default_msg': 'We are improving the service. Please try again shortly.',
+    'update_required_title': 'Update required',
+    'update_required_msg': 'This version is no longer supported. Update the app from the store to continue.',
+    'update_available_title': 'Update available',
+    'update_available_msg': 'A newer version of Coursy is available in the store with improvements and fixes.',
+    'update_now': 'Update',
+    'later': 'Later',
     'done': 'Done',
     'good_morning': 'Good morning',
     'home_search_hint': 'Search for a course, institute, or skill...',
@@ -849,6 +873,8 @@ class AppTranslations extends Translations {
     'no_categories': 'No categories — pull to refresh',
     'home_partial_load_error': 'Some sections could not load',
     'retry_action': 'Try again',
+    'session_expired_title': 'Session expired',
+    'session_expired_msg': 'Please log in again to continue.',
     'course_load_failed': 'Could not load the course',
     'refresh': 'Refresh',
     'back': 'Back',
@@ -858,6 +884,7 @@ class AppTranslations extends Translations {
     'rate_n_of_5': 'Rate @n of 5',
     'clear_search': 'Clear search',
     'price_on_request': 'Price coming soon',
+    'price_free': 'Free',
     'payment_title': 'Payment',
     'payment_summary': 'Payment summary',
     'payment_amount_due': 'Course price',
@@ -932,7 +959,11 @@ class AppTranslations extends Translations {
     'login_welcome_back': 'Welcome',
     'auth_hero_login_desc': 'An all-in-one learning platform for courses, instructors, and institutes.',
     'login_subtitle': 'Use your phone number and password',
-    'login_subtitle_email_phone': 'Use your email, phone number, and password',
+    'login_subtitle_email_phone': 'Log in with your email or phone number and password',
+    'login_identifier': 'Email or phone number *',
+    'login_identifier_hint': 'name@example.com or 09XXXXXXXX',
+    'enter_login_password': 'Enter your email or phone number and password',
+    'enter_valid_login': 'Enter a valid email or phone number',
     'email': 'Email',
     'email_required': 'Email *',
     'phone': 'Phone number',
@@ -1024,9 +1055,22 @@ class AppTranslations extends Translations {
     'otp_send_failed': 'Could not send verification code',
     'otp_verify_failed': 'Could not verify code',
     'forgot_title': 'Reset password',
-    'forgot_phone_title': 'Recover account with phone',
-    'forgot_phone_desc': 'Log in with your phone. If not verified yet, you will complete OTP verification.',
-    'go_to_login': 'Go to login',
+    'forgot_email_heading': 'Enter your email',
+    'forgot_email_desc': 'We will email you a 6-digit code to reset your password.',
+    'send_reset_code': 'Send code',
+    'reset_code_heading': 'Enter the code and a new password',
+    'reset_code_desc': 'We sent a code to @email. It can take a few minutes, so check your spam folder too.',
+    'reset_code_label': 'Verification code (6 digits)',
+    'reset_code_invalid': 'Enter the 6-digit code',
+    'new_password_label': 'New password',
+    'reset_password_required': 'Enter a new password',
+    'passwords_do_not_match': 'Passwords do not match',
+    'reset_password_button': 'Change password',
+    'change_email': 'Change email',
+    'reset_code_sent_title': 'Code sent',
+    'reset_code_sent_msg': 'Check your email.',
+    'password_reset_done_title': 'Password changed',
+    'password_reset_done_msg': 'Sign in with your new password. You were signed out on other devices.',
     'profile_edit': 'Edit profile',
     'personal_info': 'Personal information',
     'my_courses': 'My courses',
@@ -1151,6 +1195,7 @@ class AppTranslations extends Translations {
     'no_schedule_yet': 'No schedule has been set for this course yet.',
     'no_instructor_info': 'No instructor information available.',
     'no_reviews_yet': 'No reviews yet. Be the first to review this course.',
+    'no_instructor_reviews': "No reviews for this instructor's courses yet.",
     'instructor_years': '@role · @years years',
     'instructor_experience_one': '1 year of experience',
     'instructor_experience_other': '@years years of experience',

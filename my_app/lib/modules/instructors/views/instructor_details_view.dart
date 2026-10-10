@@ -9,6 +9,7 @@ import '../../../theme/app_colors.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/design_system.dart';
+import '../../../widgets/review_card.dart';
 import '../controllers/instructor_details_controller.dart';
 import '../../../core/locale/plural.dart';
 
@@ -27,7 +28,7 @@ class InstructorDetailsView extends GetView<InstructorDetailsController> {
       final name = item?.name ?? 'instructor_details'.tr;
 
       return DefaultTabController(
-        length: 3,
+        length: 4,
         child: Scaffold(
           body: NestedScrollView(
             headerSliverBuilder: (context, inner) => [
@@ -35,18 +36,7 @@ class InstructorDetailsView extends GetView<InstructorDetailsController> {
                 expandedHeight: 220,
                 pinned: true,
                 backgroundColor: AppColors.surface,
-                actions: [
-                  Obx(
-                    () => IconButton(
-                      tooltip: controller.isFavorite.value ? 'favorite_remove'.tr : 'favorite_add'.tr,
-                      onPressed: controller.toggleFavorite,
-                      icon: Icon(
-                        controller.isFavorite.value ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        color: controller.isFavorite.value ? AppColors.danger : AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ],
+                // مفضلة المدرّسين غير مدعومة في الخادم (POST /student/favorites يقبل الدورات فقط) — مخفية حتى تُضاف.
                 title: Text(name),
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
@@ -71,6 +61,7 @@ class InstructorDetailsView extends GetView<InstructorDetailsController> {
                             Tab(text: 'tab_info'.tr),
                             Tab(text: 'tab_courses'.tr),
                             Tab(text: 'tab_institutes'.tr),
+                            Tab(text: 'tab_reviews'.tr),
                           ],
                         ),
                       ),
@@ -84,6 +75,7 @@ class InstructorDetailsView extends GetView<InstructorDetailsController> {
                 _InstructorInfoTab(instructor: item, totalCourses: controller.totalCourses.value),
                 _InstructorCoursesTab(controller: controller),
                 _InstructorInstitutesTab(instructor: item),
+                _InstructorReviewsTab(controller: controller),
               ],
             ),
           ),
@@ -332,6 +324,53 @@ class _InstructorCoursesTab extends StatelessWidget {
               ),
             ),
         ],
+      );
+    });
+  }
+}
+
+/// تقييمات دورات المدرّس من `GET /instructors/{id}/reviews` (الأحدث أولاً، مع اسم الدورة).
+class _InstructorReviewsTab extends StatelessWidget {
+  const _InstructorReviewsTab({required this.controller});
+
+  final InstructorDetailsController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final reviews = controller.reviews.toList(growable: false);
+      if (controller.isLoadingReviews.value && reviews.isEmpty) {
+        return const AppListSkeleton(itemCount: 3);
+      }
+      if (reviews.isEmpty) {
+        return AppEmptyState.scrollable(
+          context: context,
+          message: 'no_instructor_reviews'.tr,
+          icon: Icons.reviews_outlined,
+        );
+      }
+      final avg = reviews.map((r) => r.rating).reduce((a, b) => a + b) / reviews.length;
+      return ListView.separated(
+        padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
+        itemCount: reviews.length + 1,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (_, i) {
+          if (i == 0) {
+            return Row(
+              children: [
+                const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 22),
+                const SizedBox(width: 6),
+                Text(avg.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+                const SizedBox(width: 8),
+                Text(
+                  pluralTr('reviews_total', reviews.length),
+                  style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                ),
+              ],
+            );
+          }
+          return ReviewCard(review: reviews[i - 1], showCourse: true);
+        },
       );
     });
   }

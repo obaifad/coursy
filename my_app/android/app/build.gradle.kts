@@ -34,7 +34,8 @@ android {
         // المعرّف النهائي على Google Play — لا يمكن تغييره بعد النشر.
         applicationId = "sy.coursy.app"
         minSdk = 23
-        targetSdk = flutter.targetSdkVersion
+        // Google Play يشترط Android 16 (API 36) للتطبيقات الجديدة والتحديثات منذ 31 أغسطس 2026.
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
