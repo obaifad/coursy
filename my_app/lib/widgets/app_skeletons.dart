@@ -74,10 +74,10 @@ class AppHomeSkeleton extends StatelessWidget {
           const _SkeletonSectionHeader(),
           const SizedBox(height: 10),
           AppHorizontalListView(
-            height: 200,
+            height: InstituteMiniCard.railHeight(context),
             separatorWidth: 12,
             itemCount: 2,
-            itemBuilder: (_, __) => const SizedBox(width: 200, child: _SkeletonInstituteMiniCard()),
+            itemBuilder: (_, __) => const SizedBox(width: InstituteMiniCard.width, child: _SkeletonInstituteMiniCard()),
           ),
         ],
       ),

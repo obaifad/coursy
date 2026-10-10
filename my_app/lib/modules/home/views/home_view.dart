@@ -254,7 +254,7 @@ class HomeView extends GetView<HomeController> {
               else
                 AppHorizontalListView(
                   resetToken: scrollReset,
-                  height: 190 + 38 * CourseCardMetrics.textScaleOf(context),
+                  height: InstituteMiniCard.railHeight(context),
                   bottomInset: AppHorizontalListView.cardShadowBottomInset,
                   itemCount: institutes.length,
                   itemBuilder: (_, i) {

@@ -76,7 +76,7 @@ void main() {
               ),
               const SizedBox(height: 16),
               AppHorizontalListView(
-                height: 200,
+                height: InstituteMiniCard.railHeight(context),
                 bottomInset: AppHorizontalListView.cardShadowBottomInset,
                 itemCount: institutes.length,
                 itemBuilder: (_, i) => InstituteMiniCard(institute: institutes[i], onTap: () {}),

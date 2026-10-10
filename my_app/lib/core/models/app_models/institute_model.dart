@@ -11,6 +11,7 @@ class InstituteModel {
     String? cityEn,
     required this.rating,
     required this.coursesCount,
+    this.reviewsCount,
     this.description,
     this.address,
     this.latitude,
@@ -36,6 +37,9 @@ class InstituteModel {
   final String cityEn;
   final double rating;
   final int coursesCount;
+
+  /// عدد التقييمات إن أرسله الخادم (`reviews_count`) — null = غير معروف فلا يُعرض.
+  final int? reviewsCount;
   final String? description;
   final String? address;
   final double? latitude;
@@ -74,6 +78,7 @@ class InstituteModel {
     String? cityEn,
     double? rating,
     int? coursesCount,
+    int? reviewsCount,
     String? description,
     String? address,
     double? latitude,
@@ -95,6 +100,7 @@ class InstituteModel {
       cityEn: cityEn ?? city ?? this.cityEn,
       rating: rating ?? this.rating,
       coursesCount: coursesCount ?? this.coursesCount,
+      reviewsCount: reviewsCount ?? this.reviewsCount,
       description: description ?? this.description,
       address: address ?? this.address,
       latitude: latitude ?? this.latitude,
@@ -141,6 +147,7 @@ class InstituteModel {
       cityEn: cityEn,
       rating: JsonHelpers.resolveInstituteRating(json),
       coursesCount: _resolveCoursesCount(json),
+      reviewsCount: JsonHelpers.parseIntOrNull(json['reviews_count'] ?? json['ratings_count']),
       description: JsonHelpers.pickLocalized(ar: descriptionNames.ar, en: descriptionNames.en).isEmpty
           ? null
           : JsonHelpers.pickLocalized(ar: descriptionNames.ar, en: descriptionNames.en),
