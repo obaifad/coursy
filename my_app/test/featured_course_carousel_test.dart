@@ -74,19 +74,17 @@ void main() {
     expect(_centeredCourseId(tester), isNot(first), reason: 'resumes after release');
   });
 
-  testWidgets('tapping a card or its buttons opens that course', (tester) async {
+  testWidgets('tapping a card or its button opens that course', (tester) async {
     final opened = <int>[];
     await tester.pumpWidget(_host(courses, onOpen: (c) => opened.add(c.id)));
     final shown = _centeredCourseId(tester);
 
     await tester.tap(find.text('book_now').hitTestable().first);
     await tester.pump();
-    await tester.tap(find.text('course_details').hitTestable().first);
-    await tester.pump();
     await tester.tapAt(tester.getCenter(find.byType(FeaturedCourseCarousel)) + const Offset(0, -40));
     await tester.pump();
 
-    expect(opened, [shown, shown, shown]);
+    expect(opened, [shown, shown]);
   });
 
   testWidgets('a single course shows no dots and never auto-scrolls', (tester) async {

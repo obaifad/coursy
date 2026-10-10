@@ -12,9 +12,9 @@ import '../../../widgets/design_system.dart';
 
 /// تدرّج البانر من ألوان الهوية نفسها ([AppColors]): الأغمق عند النص (لتباين الأبيض) والأفتح عند الصورة.
 const _bannerGradient = LinearGradient(
-  colors: [AppColors.primaryDark, AppColors.primary, AppColors.primaryLight],
-  begin: AlignmentDirectional.topStart,
-  end: AlignmentDirectional.bottomEnd,
+  colors: [AppColors.primary, AppColors.primaryLight],
+  begin: AlignmentDirectional.centerStart,
+  end: AlignmentDirectional.centerEnd,
 );
 
 /// بانر الدورات المميزة في الرئيسية: شرائح أفقية بحواف الجيران ظاهرة، تمرير تلقائي كل [interval]،
@@ -29,13 +29,13 @@ class FeaturedCourseCarousel extends StatefulWidget {
 
   final List<CourseModel> courses;
 
-  /// يُستدعى عند الضغط على البطاقة أو أحد زريها. الافتراضي: صفحة تفاصيل الدورة.
+  /// يُستدعى عند الضغط على البطاقة أو زرّها. الافتراضي: صفحة تفاصيل الدورة.
   final ValueChanged<CourseModel>? onOpenCourse;
   final Duration interval;
 
   static const _transition = Duration(milliseconds: 700);
   static const _viewportFraction = 0.88;
-  static const _cardHeight = 222.0;
+  static const _cardHeight = 210.0;
   static const _pagePadH = 5.0;
   static const _pagePadTop = 4.0;
   static const _pagePadBottom = 16.0;
@@ -214,14 +214,14 @@ class _CourseBannerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(20);
+    final radius = BorderRadius.circular(22);
     return Semantics(
       button: true,
       label: course.title,
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: radius,
-          boxShadow: [BoxShadow(color: AppColors.shadowPrimary, blurRadius: 16, offset: Offset(0, 8))],
+          boxShadow: const [BoxShadow(color: AppColors.shadowPrimary, blurRadius: 18, offset: Offset(0, 8))],
         ),
         child: ClipRRect(
           borderRadius: radius,
@@ -231,37 +231,19 @@ class _CourseBannerCard extends StatelessWidget {
               decoration: const BoxDecoration(gradient: _bannerGradient),
               child: InkWell(
                 onTap: onOpen,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    const Positioned.fill(child: BrandBannerPattern()),
-                    // وهج خلف الصورة.
-                    Positioned.fill(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            center: const AlignmentDirectional(-0.75, -0.1),
-                            radius: 0.85,
-                            colors: [Colors.white.withValues(alpha: 0.28), Colors.transparent],
-                          ),
-                        ),
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 16, 16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        flex: 55,
+                        child: _TextSide(course: course, onOpen: onOpen),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 10, 14),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            flex: 58,
-                            child: _TextSide(course: course, onOpen: onOpen),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(flex: 42, child: _VisualSide(course: course)),
-                        ],
-                      ),
-                    ),
-                  ],
+                      const SizedBox(width: 14),
+                      Expanded(flex: 45, child: _ImageSide(course: course)),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -280,46 +262,37 @@ class _TextSide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final instructor = course.instructor?.name.trim() ?? '';
-    final institute = course.institute.trim();
     final duration = course.duration;
+    final instructor = course.instructor?.name.trim() ?? '';
+    // سطران كحد أقصى: المعهد والمدة، والمدرّس بديل لأيٍّ منهما إن غاب.
+    final meta = <(IconData, String)>[
+      if (course.institute.trim().isNotEmpty) (Icons.apartment_rounded, course.institute.trim()),
+      if (duration != '—') (Icons.schedule_rounded, duration),
+      if (instructor.isNotEmpty) (Icons.person_outline_rounded, instructor),
+    ].take(2);
     final badge = course.isFeatured ? 'featured_course'.tr : (course.categoryName?.trim() ?? '');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _GlassBadge(label: badge.isEmpty ? 'featured_course'.tr : badge),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Text(
           course.title,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17, height: 1.25),
+          style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17, height: 1.35),
         ),
-        const SizedBox(height: 6),
-        if (instructor.isNotEmpty) _MetaRow(icon: Icons.person_outline_rounded, text: instructor),
-        if (institute.isNotEmpty) _MetaRow(icon: Icons.apartment_rounded, text: institute),
-        if (duration != '—') _MetaRow(icon: Icons.schedule_rounded, text: duration),
+        const SizedBox(height: 8),
+        for (final (icon, text) in meta) _MetaRow(icon: icon, text: text),
         const Spacer(),
-        Row(
-          children: [
-            Flexible(
-              child: _PrimaryButton(label: 'book_now'.tr, onTap: onOpen),
-            ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: _SecondaryButton(label: 'course_details'.tr, onTap: onOpen),
-            ),
-          ],
-        ),
+        _PrimaryButton(label: 'book_now'.tr, onTap: onOpen),
       ],
     );
   }
 }
 
-/// كبسولة زجاجية شبه شفافة (تعبئة وحد أبيضان خفيفان) — بلا BackdropFilter لأن الخلفية تدرّج ناعم
-/// فلا فرق مرئي للضبابية، وهي مكلفة داخل PageView.
+/// كبسولة زجاجية شبه شفافة — بلا BackdropFilter (الخلفية تدرّج ناعم، والضبابية مكلفة داخل PageView).
 class _GlassBadge extends StatelessWidget {
   const _GlassBadge({required this.label});
 
@@ -329,12 +302,12 @@ class _GlassBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
+        color: Colors.white.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.26)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -345,7 +318,7 @@ class _GlassBadge extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 11),
+                style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 11.5),
               ),
             ),
           ],
@@ -364,11 +337,11 @@ class _MetaRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 2),
+      padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
-          Icon(icon, size: 13, color: Colors.white.withValues(alpha: 0.9)),
-          const SizedBox(width: 5),
+          Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.9)),
+          const SizedBox(width: 6),
           Expanded(
             child: Text(
               text,
@@ -377,7 +350,8 @@ class _MetaRow extends StatelessWidget {
               style: AppFonts.tajawal(
                 color: Colors.white.withValues(alpha: 0.92),
                 fontWeight: FontWeight.w500,
-                fontSize: 11.5,
+                fontSize: 12,
+                height: 1.3,
               ),
             ),
           ),
@@ -398,25 +372,31 @@ class _PrimaryButton extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: const [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 10, offset: Offset(0, 3))],
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 10, offset: Offset(0, 4))],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: Container(
-            height: 34,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            alignment: Alignment.center,
-            // الأغمق فوق البرتقالي: الأبيض عليه تباينه ضعيف.
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+            // يصغّر المحتوى بدل أن يفيض على الشاشات الضيقة أو مع خط كبير.
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(
-                label,
-                maxLines: 1,
-                style: AppFonts.tajawal(color: AppColors.primaryDark, fontWeight: FontWeight.w800, fontSize: 12),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    maxLines: 1,
+                    style: AppFonts.tajawal(color: AppColors.primaryDark, fontWeight: FontWeight.w800, fontSize: 13),
+                  ),
+                  const SizedBox(width: 6),
+                  // arrow_forward ينعكس تلقائياً في العربية فيشير لليسار.
+                  const Icon(Icons.arrow_forward_rounded, color: AppColors.primaryDark, size: 16),
+                ],
               ),
             ),
           ),
@@ -426,46 +406,9 @@ class _PrimaryButton extends StatelessWidget {
   }
 }
 
-class _SecondaryButton extends StatelessWidget {
-  const _SecondaryButton({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1.2),
-          ),
-          child: Container(
-            height: 34,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            alignment: Alignment.center,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                label,
-                maxLines: 1,
-                style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// الجانب البصري: إطار دائري متوهج بصورة الدورة (أو المدرّس إن لم تتوفر)، أيقونات عائمة، وشريط الخصم.
-class _VisualSide extends StatelessWidget {
-  const _VisualSide({required this.course});
+/// صورة الدورة (أو المدرّس) داخل إطار مستدير ناعم، ووسم الخصم على زاويتها العليا.
+class _ImageSide extends StatelessWidget {
+  const _ImageSide({required this.course});
 
   final CourseModel course;
 
@@ -473,123 +416,147 @@ class _VisualSide extends StatelessWidget {
   Widget build(BuildContext context) {
     final imageUrl = course.resolvedImageUrl ?? course.instructor?.resolvedImageUrl;
     final percent = course.discountPercent;
+    final fallback = _ImageFallback(label: course.categoryName);
 
     return RepaintBoundary(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final d =
-              (constraints.maxWidth < constraints.maxHeight ? constraints.maxWidth : constraints.maxHeight) * 0.88;
-          return Stack(
-            alignment: Alignment.center,
+      child: Center(
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: Stack(
             clipBehavior: Clip.none,
             children: [
-              Container(
-                width: d,
-                height: d,
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [Colors.white, Colors.white.withValues(alpha: 0.45)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              Positioned.fill(
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                    boxShadow: [BoxShadow(color: Colors.white.withValues(alpha: 0.18), blurRadius: 16)],
                   ),
-                  boxShadow: [BoxShadow(color: Colors.white.withValues(alpha: 0.35), blurRadius: 22, spreadRadius: 1)],
-                ),
-                child: ClipOval(
-                  child: DecoratedBox(
-                    decoration: const BoxDecoration(color: AppColors.primaryDark),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
                     child: imageUrl == null
-                        ? const _ImageFallback()
-                        : AppNetworkImage(
-                            url: imageUrl,
-                            width: d - 8,
-                            height: d - 8,
-                            ignorePointer: true,
-                            errorWidget: const _ImageFallback(),
-                          ),
+                        ? fallback
+                        : AppNetworkImage(url: imageUrl, ignorePointer: true, errorWidget: fallback),
                   ),
                 ),
               ),
-              const PositionedDirectional(top: 0, end: 0, child: _FloatingIcon(icon: Icons.code_rounded)),
-              const PositionedDirectional(
-                top: 22,
-                start: -4,
-                child: _FloatingIcon(icon: Icons.laptop_mac_rounded, size: 24),
-              ),
-              const PositionedDirectional(
-                bottom: 22,
-                end: -2,
-                child: _FloatingIcon(icon: Icons.school_rounded, size: 24),
-              ),
-              if (percent != null)
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: _DiscountRibbon(percent: percent),
-                ),
+              if (percent != null) PositionedDirectional(top: -6, start: -6, child: _DiscountTag(percent: percent)),
             ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _ImageFallback extends StatelessWidget {
-  const _ImageFallback();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: Icon(Icons.school_rounded, color: Colors.white70, size: 44));
-  }
-}
-
-class _FloatingIcon extends StatelessWidget {
-  const _FloatingIcon({required this.icon, this.size = 28});
-
-  final IconData icon;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-        boxShadow: const [BoxShadow(color: AppColors.shadowPrimary, blurRadius: 6, offset: Offset(0, 3))],
-      ),
-      child: Icon(icon, color: Colors.white, size: size * 0.55),
-    );
-  }
-}
-
-class _DiscountRibbon extends StatelessWidget {
-  const _DiscountRibbon({required this.percent});
-
-  final int percent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: -0.08,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: const [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 8, offset: Offset(0, 4))],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          child: Text(
-            'banner_discount'.trParams({'percent': '$percent'}),
-            maxLines: 1,
-            style: AppFonts.tajawal(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 12),
           ),
         ),
       ),
     );
   }
+}
+
+/// بلا صورة: مربع متدرّج من ألوان الهوية مع شارة دورة صغيرة واسم التصنيف.
+class _ImageFallback extends StatelessWidget {
+  const _ImageFallback({this.label});
+
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = label?.trim() ?? '';
+    return DecoratedBox(
+      decoration: const BoxDecoration(gradient: AppGradients.primary),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(Icons.auto_stories_rounded, color: Colors.white, size: 24),
+            ),
+            if (text.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 11.5),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// وسم الخصم العائم: كهرماني بنص داكن، بطيّة صغيرة تحت حافته الخارجية كأنه ملتف حول الإطار.
+class _DiscountTag extends StatelessWidget {
+  const _DiscountTag({required this.percent});
+
+  final int percent;
+
+  static const _fill = [Color(0xFFFFE08A), Color(0xFFFFC14D)];
+  static const _fold = Color(0xFFD99A2B);
+  static const _text = Color(0xFF5A3300);
+
+  @override
+  Widget build(BuildContext context) {
+    final direction = Directionality.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: _fill),
+            borderRadius: const BorderRadiusDirectional.only(
+              topStart: Radius.circular(6),
+              topEnd: Radius.circular(10),
+              bottomEnd: Radius.circular(10),
+            ).resolve(direction),
+            boxShadow: const [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 8, offset: Offset(0, 3))],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: Text(
+              'banner_discount'.trParams({'percent': '$percent'}),
+              maxLines: 1,
+              style: AppFonts.tajawal(color: _text, fontWeight: FontWeight.w800, fontSize: 12),
+            ),
+          ),
+        ),
+        CustomPaint(size: const Size(6, 6), painter: _FoldPainter(_fold, direction)),
+      ],
+    );
+  }
+}
+
+/// مثلث الطيّة تحت الطرف الخارجي (start) للوسم.
+class _FoldPainter extends CustomPainter {
+  _FoldPainter(this.color, this.direction);
+
+  final Color color;
+  final TextDirection direction;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0);
+    if (direction == TextDirection.rtl) {
+      path.lineTo(size.width, size.height);
+    } else {
+      path.lineTo(0, size.height);
+    }
+    canvas.drawPath(path..close(), Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant _FoldPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.direction != direction;
 }
