@@ -57,33 +57,3 @@ String? _coursePromoBadge(CourseModel course) {
   }
   return null;
 }
-
-String _courseSummaryLine(CourseModel course) {
-  final desc = course.description?.trim();
-  if (desc != null && desc.isNotEmpty) {
-    final normalized = desc.replaceAll(RegExp(r'\s+'), ' ').trim();
-    if (normalized.length <= 54) return normalized;
-    final slice = normalized.substring(0, 54);
-    final breakAt = slice.lastIndexOf(RegExp(r'[\s،,.;]'));
-    final cut = (breakAt > 24 ? slice.substring(0, breakAt) : slice).trim();
-    return '$cut…';
-  }
-  if (course.institute.isNotEmpty) return course.institute;
-  return course.categoryName?.trim() ?? '';
-}
-
-({Color bg, Color fg}) _levelBadgeColors(String level) {
-  final l = level.toLowerCase();
-  if (l.contains('مبتد') || l.contains('beginner')) {
-    return (bg: AppColors.successSoft, fg: AppColors.successText);
-  }
-  if (l.contains('متوسط') || l.contains('intermediate')) {
-    return (bg: AppColors.infoSoft, fg: AppColors.infoText);
-  }
-  if (l.contains('متقد') || l.contains('advanced')) {
-    return (bg: AppColors.dangerSoft, fg: AppColors.dangerText);
-  }
-  return (bg: AppColors.neutralFill, fg: AppColors.textMuted);
-}
-
-String _courseActionLabel(CourseModel course) => course.isRegistrationOpen ? 'enroll_now'.tr : 'view_details'.tr;

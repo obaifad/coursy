@@ -49,7 +49,7 @@ void main() {
                 itemCount: courses.length,
                 itemBuilder: (_, i) => SizedBox(
                   width: CourseCardMetrics.featuredCardWidth(context),
-                  child: CourseCard(course: courses[i], showActionButton: false, onTap: () {}),
+                  child: CourseCard(course: courses[i], onTap: () {}),
                 ),
               ),
             ],

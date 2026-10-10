@@ -157,7 +157,6 @@ class HomeView extends GetView<HomeController> {
                       width: cardWidth,
                       child: CourseCard(
                         course: course,
-                        showActionButton: false,
                         onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
                       ),
                     );
@@ -187,7 +186,6 @@ class HomeView extends GetView<HomeController> {
                       width: cardWidth,
                       child: CourseCard(
                         course: course,
-                        showActionButton: false,
                         onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
                       ),
                     );

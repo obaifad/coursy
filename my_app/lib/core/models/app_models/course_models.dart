@@ -36,6 +36,7 @@ class CourseModel {
     String? instituteAr,
     String? instituteEn,
     required this.rating,
+    this.reviewsCount,
     this.levelCode,
     this.instituteId,
     this.categoryId,
@@ -77,6 +78,9 @@ class CourseModel {
   final String instituteAr;
   final String instituteEn;
   final double rating;
+
+  /// عدد التقييمات إن أرسله الخادم (`reviews_count` أو قائمة `reviews`) — null = غير معروف فلا يُعرض.
+  final int? reviewsCount;
 
   /// القيمة الخام من الـ API (beginner / intermediate / advanced) — النص المترجم في [level].
   final String? levelCode;
@@ -195,6 +199,15 @@ class CourseModel {
     return pluralTr('students_count', current);
   }
 
+  static int? _parseReviewsCount(Map<String, dynamic> json) {
+    for (final key in ['reviews_count', 'ratings_count', 'review_count']) {
+      final value = JsonHelpers.parseIntOrNull(json[key]);
+      if (value != null) return value;
+    }
+    final reviews = json['reviews'];
+    return reviews is List ? reviews.length : null;
+  }
+
   static int? _parseConfirmedStudents(Map<String, dynamic> json) {
     const keys = [
       'confirmed_students_count',
@@ -231,6 +244,7 @@ class CourseModel {
     String? instituteWhatsapp,
     String? instituteWebsite,
     double? rating,
+    int? reviewsCount,
     int? studentsCount,
     int? confirmedStudentsCount,
   }) {
@@ -242,6 +256,7 @@ class CourseModel {
       instituteAr: instituteAr ?? this.instituteAr,
       instituteEn: instituteEn ?? this.instituteEn,
       rating: rating ?? this.rating,
+      reviewsCount: reviewsCount ?? this.reviewsCount,
       levelCode: levelCode,
       instituteId: instituteId,
       categoryId: categoryId,
@@ -369,6 +384,7 @@ class CourseModel {
       discountPrice: json['discount_price']?.toString(),
       imageUrl: _extractCourseImagePath(json),
       rating: JsonHelpers.resolveCourseRating(json, fallback: instituteRating),
+      reviewsCount: _parseReviewsCount(json),
       levelCode: levelRaw,
       description: description.isNotEmpty ? description : json['description']?.toString(),
       requirements: requirements.isNotEmpty ? requirements : json['requirements']?.toString(),

@@ -1,152 +1,47 @@
 part of '../app_widgets.dart';
 
+/// بطاقة الدورة بتصميم التذكرة: صورة داخلية بشارة، التصنيف والمستوى، العنوان، المعهد والمدينة،
+/// التقييم، ثم خط متقطع بقصّتين جانبيتين، وتحته السعر والمدة ونوع الحضور.
+/// تُستخدم في كل القوائم (الرئيسية، الشبكات، المفضلة، صفحة المدرّس) والضغط في أي مكان يفتح الدورة.
 class CourseCard extends StatelessWidget {
-  const CourseCard({super.key, required this.course, this.onTap, this.compact = false, this.showActionButton = true});
+  const CourseCard({super.key, required this.course, this.onTap});
 
   final CourseModel course;
   final VoidCallback? onTap;
-  final bool compact;
-  final bool showActionButton;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final layout = CourseCardMetrics.layoutFor(
-          constraints,
-          showActionButton: showActionButton,
+        final spec = CourseCardMetrics.ticketSpec(
+          constraints.maxWidth,
           textScale: CourseCardMetrics.textScaleOf(context),
         );
-        final isFeaturedRail = !showActionButton && layout.compact;
+        // ارتفاع مفروض (شبكة / قائمة أفقية) يُحترم؛ وإلا ارتفاع المحتوى الطبيعي.
+        final height = constraints.hasTightHeight
+            ? constraints.maxHeight
+            : spec.totalHeight.clamp(0.0, constraints.maxHeight).toDouble();
+        final shape = _TicketShape(
+          radius: _kCourseCardRadius,
+          notchFromBottom: spec.notchFromBottom,
+          notchRadius: CourseTicketSpec.notchRadius,
+        );
 
-        if (isFeaturedRail) {
-          return _buildFeaturedRailCard(context, constraints, layout);
-        }
-
-        final cardHeight = constraints.maxHeight.isFinite ? constraints.maxHeight : layout.cardHeight;
-        final imageHeight = layout.imageHeight;
-        final titleSize = layout.titleSize;
-        final priceSize = layout.compact ? 15.0 : 18.0;
-        final summary = _courseSummaryLine(course);
-
-        return Container(
-          height: cardHeight,
+        return SizedBox(
           width: constraints.maxWidth,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(_kCourseCardRadius),
-            boxShadow: _courseCardShadow,
-          ),
-          child: Material(
-            color: AppColors.card,
-            elevation: 0,
-            clipBehavior: Clip.antiAlias,
-            borderRadius: BorderRadius.circular(_kCourseCardRadius),
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(_kCourseCardRadius),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(
-                    height: imageHeight,
-                    child: _CourseCardHeroImage(course: course, height: imageHeight, compact: layout.compact),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(layout.padding, layout.padding - 2, layout.padding, layout.padding),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          SizedBox(
-                            height: layout.titleHeight,
-                            child: Align(
-                              alignment: AlignmentDirectional.topStart,
-                              child: BidiText(
-                                course.title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppFonts.tajawal(
-                                  fontSize: titleSize,
-                                  fontWeight: FontWeight.w800,
-                                  height: 1.2,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                          ),
-                          // الصف محجوز دائماً (حتى لو فارغ) كي تتساوى مواضع الشارات والأسعار بين البطاقات.
-                          SizedBox(height: layout.sectionGap - 1),
-                          SizedBox(
-                            height: layout.subtitleHeight,
-                            child: Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              child: BidiText(
-                                summary,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppFonts.tajawal(
-                                  fontSize: layout.compact ? 10.5 : 11.5,
-                                  fontWeight: FontWeight.w500,
-                                  height: 1.2,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: layout.sectionGap),
-                          SizedBox(
-                            height: layout.chipsHeight,
-                            child: _CourseLevelBadgeRow(course: course, compact: layout.compact),
-                          ),
-                          SizedBox(height: layout.sectionGap),
-                          SizedBox(
-                            height: layout.statsHeight,
-                            child: _CourseCardCompactStats(course: course, compact: layout.compact),
-                          ),
-                          const Spacer(),
-                          SizedBox(
-                            height: layout.priceHeight,
-                            child: Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              child: _CourseCardPriceBlock(
-                                course: course,
-                                priceSize: priceSize,
-                                compact: layout.compact,
-                              ),
-                            ),
-                          ),
-                          if (showActionButton) ...[
-                            SizedBox(height: layout.sectionGap),
-                            SizedBox(
-                              width: double.infinity,
-                              height: layout.buttonHeight,
-                              child: FilledButton(
-                                onPressed: onTap,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(layout.compact ? 10 : 12),
-                                  ),
-                                  padding: EdgeInsets.symmetric(horizontal: layout.compact ? 8 : 12),
-                                  textStyle: AppFonts.tajawal(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: layout.compact ? 11 : 12.5,
-                                  ),
-                                ),
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(_courseActionLabel(course), maxLines: 1),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+          height: height,
+          child: DecoratedBox(
+            decoration: ShapeDecoration(color: AppColors.card, shape: shape, shadows: _courseCardShadow),
+            child: ClipPath(
+              clipper: ShapeBorderClipper(shape: shape, textDirection: Directionality.of(context)),
+              child: Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  onTap: onTap,
+                  splashColor: AppColors.primary.withValues(alpha: 0.08),
+                  highlightColor: AppColors.primary.withValues(alpha: 0.04),
+                  child: _TicketContent(course: course, spec: spec),
+                ),
               ),
             ),
           ),
@@ -154,344 +49,288 @@ class CourseCard extends StatelessWidget {
       },
     );
   }
-
-  /// بطاقة «دورات مميزة» — تسلسل بصري Udemy/Coursera مع hover على الويب.
-  Widget _buildFeaturedRailCard(BuildContext context, BoxConstraints constraints, CourseCardLayout layout) {
-    return _FeaturedCourseCard(
-      course: course,
-      onTap: onTap,
-      width: constraints.maxWidth,
-      imageHeight: layout.imageHeight,
-    );
-  }
 }
 
-/// نظام مسافات موحّد لبطاقة الدورة المميزة.
-abstract final class _FeaturedCardSpace {
-  _FeaturedCardSpace._();
-
-  static const double sm = 8;
-  static const double coverGap = 10;
-  static const double bodyPad = 14;
-  static const double bottomPad = 18;
-  static const double radius = 18;
-  static const double badgeRadius = 8;
-}
-
-/// بطاقة دورة مميزة — StatefulWidget لدعم hover على الويب/سطح المكتب.
-class _FeaturedCourseCard extends StatefulWidget {
-  const _FeaturedCourseCard({
-    required this.course,
-    required this.onTap,
-    required this.width,
-    required this.imageHeight,
-  });
+class _TicketContent extends StatelessWidget {
+  const _TicketContent({required this.course, required this.spec});
 
   final CourseModel course;
-  final VoidCallback? onTap;
-  final double width;
-  final double imageHeight;
-
-  @override
-  State<_FeaturedCourseCard> createState() => _FeaturedCourseCardState();
-}
-
-class _FeaturedCourseCardState extends State<_FeaturedCourseCard> {
-  bool _hovered = false;
-
-  String get _subtitle => _courseSummaryLine(widget.course);
+  final CourseTicketSpec spec;
 
   @override
   Widget build(BuildContext context) {
-    final textScale = CourseCardMetrics.textScaleOf(context);
-    final shadows = _hovered
-        ? const [
-            BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 22, offset: Offset(0, 10)),
-            BoxShadow(color: Color(0x1A000000), blurRadius: 6, offset: Offset(0, 2)),
-          ]
-        : _courseCardShadow;
-
-    final card = AnimatedContainer(
-      duration: AppMotion.fast,
-      curve: Curves.easeOutCubic,
-      width: widget.width,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(_FeaturedCardSpace.radius), boxShadow: shadows),
-      child: Material(
-        color: AppColors.card,
-        elevation: 0,
-        clipBehavior: Clip.antiAlias,
-        borderRadius: BorderRadius.circular(_FeaturedCardSpace.radius),
-        child: InkWell(
-          onTap: widget.onTap,
-          borderRadius: BorderRadius.circular(_FeaturedCardSpace.radius),
-          hoverColor: AppColors.primary.withValues(alpha: 0.04),
-          splashColor: AppColors.primary.withValues(alpha: 0.08),
+    final pad = spec.padding;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(CourseTicketSpec.inset, CourseTicketSpec.inset, CourseTicketSpec.inset, 0),
+          child: SizedBox(
+            height: spec.imageHeight,
+            child: _TicketImage(course: course, compact: spec.compact),
+          ),
+        ),
+        const SizedBox(height: CourseTicketSpec.gapAfterImage),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: pad),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SizedBox(
-                height: widget.imageHeight,
-                child: _FeaturedCourseCover(course: widget.course, imageHeight: widget.imageHeight),
+                height: spec.categoryHeight,
+                child: _CategoryLevelLine(course: course),
               ),
-              const SizedBox(height: _FeaturedCardSpace.coverGap),
-              Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  _FeaturedCardSpace.bodyPad,
-                  0,
-                  _FeaturedCardSpace.bodyPad,
-                  _FeaturedCardSpace.bottomPad,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // 1) العنوان — أوضح وأثقل بصرياً
-                    SizedBox(
-                      height: CourseCardMetrics.featuredTitleHeight * textScale,
-                      child: Align(
-                        alignment: AlignmentDirectional.topStart,
-                        child: BidiText(
-                          widget.course.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppFonts.tajawal(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            height: 1.25,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
+              const SizedBox(height: CourseTicketSpec.gapAfterCategory),
+              SizedBox(
+                height: spec.titleHeight,
+                child: Align(
+                  alignment: AlignmentDirectional.topStart,
+                  child: BidiText(
+                    course.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.tajawal(
+                      fontSize: spec.titleSize,
+                      fontWeight: FontWeight.w800,
+                      height: 1.25,
+                      color: AppColors.textPrimary,
                     ),
-                    if (_subtitle.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      BidiText(
-                        _subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppFonts.tajawal(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          height: 1.2,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: _FeaturedCardSpace.sm),
-                    _CourseLevelBadgeRow(course: widget.course, compact: true),
-                    const SizedBox(height: _FeaturedCardSpace.sm),
-                    SizedBox(
-                      height: 18 * textScale,
-                      child: _CourseCardCompactStats(course: widget.course, compact: true),
-                    ),
-                    const SizedBox(height: _FeaturedCardSpace.sm),
-                    _FeaturedCoursePriceBlock(course: widget.course),
-                  ],
+                  ),
                 ),
+              ),
+              const SizedBox(height: CourseTicketSpec.gapAfterTitle),
+              SizedBox(
+                height: spec.instituteHeight,
+                child: _InstituteLine(course: course),
+              ),
+              const SizedBox(height: CourseTicketSpec.gapAfterInstitute),
+              SizedBox(
+                height: spec.ratingHeight,
+                child: _RatingLine(course: course),
               ),
             ],
           ),
         ),
-      ),
+        const Spacer(),
+        SizedBox(
+          height: CourseTicketSpec.dividerHeight,
+          child: _DashedDivider(inset: CourseTicketSpec.notchRadius + 6),
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: pad),
+          child: SizedBox(
+            height: spec.footerHeight,
+            child: spec.compact ? _CompactFooter(course: course) : _WideFooter(course: course),
+          ),
+        ),
+        const SizedBox(height: CourseTicketSpec.bottomPadding),
+      ],
     );
+  }
+}
 
-    if (!kIsWeb) return card;
+/// مستطيل بزوايا مدوّرة تُقصّ منه دائرتان على الحافتين عند الخط المتقطع (شكل التذكرة).
+/// الظل في [ShapeDecoration] يتبع هذا المسار فتظهر القصّتان فعلاً لا كدوائر ملوّنة فوق البطاقة.
+class _TicketShape extends ShapeBorder {
+  const _TicketShape({required this.radius, required this.notchFromBottom, required this.notchRadius});
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedScale(
-        scale: _hovered ? 1.015 : 1,
-        duration: AppMotion.fast,
-        curve: Curves.easeOutCubic,
-        child: card,
+  final double radius;
+  final double notchFromBottom;
+  final double notchRadius;
+
+  @override
+  EdgeInsetsGeometry get dimensions => EdgeInsets.zero;
+
+  @override
+  Path getInnerPath(Rect rect, {TextDirection? textDirection}) => getOuterPath(rect, textDirection: textDirection);
+
+  @override
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
+    final card = Path()..addRRect(RRect.fromRectAndRadius(rect, Radius.circular(radius)));
+    final y = rect.bottom - notchFromBottom;
+    final notches = Path()
+      ..addOval(Rect.fromCircle(center: Offset(rect.left, y), radius: notchRadius))
+      ..addOval(Rect.fromCircle(center: Offset(rect.right, y), radius: notchRadius));
+    return Path.combine(PathOperation.difference, card, notches);
+  }
+
+  @override
+  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {}
+
+  @override
+  ShapeBorder scale(double t) =>
+      _TicketShape(radius: radius * t, notchFromBottom: notchFromBottom * t, notchRadius: notchRadius * t);
+
+  @override
+  bool operator ==(Object other) =>
+      other is _TicketShape &&
+      other.radius == radius &&
+      other.notchFromBottom == notchFromBottom &&
+      other.notchRadius == notchRadius;
+
+  @override
+  int get hashCode => Object.hash(radius, notchFromBottom, notchRadius);
+}
+
+class _DashedDivider extends StatelessWidget {
+  const _DashedDivider({required this.inset});
+
+  /// المسافة من حافتي البطاقة (بعد القصّتين).
+  final double inset;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: inset),
+      child: const CustomPaint(
+        painter: _DashPainter(color: AppColors.borderStrong),
+        child: SizedBox.expand(),
       ),
     );
   }
 }
 
-/// غلاف الدورة — تدرج، أيقونة، شريط تقني، شارة مدمجة.
-class _FeaturedCourseCover extends StatelessWidget {
-  const _FeaturedCourseCover({required this.course, required this.imageHeight});
+class _DashPainter extends CustomPainter {
+  const _DashPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const dash = 5.0;
+    const gap = 4.0;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.2;
+    final y = size.height / 2;
+    for (var x = 0.0; x < size.width; x += dash + gap) {
+      canvas.drawLine(Offset(x, y), Offset((x + dash).clamp(0, size.width), y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashPainter oldDelegate) => oldDelegate.color != color;
+}
+
+/// الصورة داخل البطاقة بزوايا مدوّرة، مع شارة داكنة (الأكثر مبيعاً / مقاعد محدودة / جديدة…) في الزاوية.
+class _TicketImage extends StatelessWidget {
+  const _TicketImage({required this.course, required this.compact});
 
   final CourseModel course;
-  final double imageHeight;
-
-  String? get _badgeLabel => _coursePromoBadge(course);
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final badge = _badgeLabel;
-    final category = course.categoryName?.trim();
-    // لا نعرض "—" عندما لا يُعرف المستوى.
-    final level = (course.levelCode ?? '').trim().isEmpty ? '' : course.level.trim();
-    // عربي فقط — بدون UPPERCASE إنجليزي يشتت الانتباه
-    final stripParts = <String>[if (category != null && category.isNotEmpty) category, if (level.isNotEmpty) level];
-    final stripLabel = stripParts.join(' · ');
-    final hasImage = course.resolvedImageUrl != null;
-
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(_FeaturedCardSpace.radius)),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          _CourseCardImage(course: course, borderRadius: BorderRadius.zero, fallbackSize: 52),
-          // تدرج أقوى عند وجود صورة لتخفيف النص الإنجليزي الخلفي
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: hasImage ? 0.18 : 0.08),
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: hasImage ? 0.62 : 0.45),
-                ],
-                stops: const [0, 0.4, 1],
-              ),
-            ),
-          ),
-          // أيقونة كبيرة عند غياب الصورة
-          if (course.resolvedImageUrl == null)
-            Center(
-              child: Icon(_categoryIcon(course.categoryName), size: 52, color: Colors.white.withValues(alpha: 0.88)),
-            ),
-          // شريط تقني سفلي
-          if (stripLabel.isNotEmpty)
-            PositionedDirectional(
-              start: 0,
-              end: 0,
-              bottom: 0,
-              child: Container(
-                padding: const EdgeInsetsDirectional.fromSTEB(12, 7, 12, 8),
-                color: Colors.black.withValues(alpha: 0.55),
-                child: BidiText(
-                  stripLabel,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w800, height: 1.2, color: Colors.white),
-                ),
-              ),
-            ),
-          // شارة مدمجة مع هوية التطبيق
-          if (badge != null)
-            PositionedDirectional(
-              top: 10,
-              start: 10,
+    final badge = _coursePromoBadge(course);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        _CourseCardImage(
+          course: course,
+          borderRadius: BorderRadius.circular(_kCourseCardRadius - 4),
+          fallbackSize: compact ? 26 : 30,
+        ),
+        if (badge != null)
+          PositionedDirectional(
+            top: 8,
+            end: 8,
+            start: 40,
+            child: Align(
+              alignment: AlignmentDirectional.topEnd,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  gradient: AppGradients.primary,
-                  borderRadius: BorderRadius.circular(_FeaturedCardSpace.badgeRadius),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.45),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+                  color: AppColors.textPrimary.withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(7, 3, 8, 3),
+                  padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: 4),
                   child: Text(
                     badge,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: AppFonts.tajawal(
                       color: Colors.white,
-                      fontSize: 11,
+                      fontSize: compact ? 10 : 11,
                       fontWeight: FontWeight.w800,
-                      height: 1.1,
+                      height: 1.2,
                     ),
                   ),
                 ),
               ),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
-
-  IconData _categoryIcon(String? category) => courseCategoryIcon(category);
 }
 
-/// السعر — العنصر الأبرز في أسفل البطاقة (رقم كبير + عملة أصغر).
-class _FeaturedCoursePriceBlock extends StatelessWidget {
-  const _FeaturedCoursePriceBlock({required this.course});
+/// «البرمجة • مبتدئ»: التصنيف بلون الهوية والمستوى بالأخضر. لا نعرض مستوى غير معروف.
+class _CategoryLevelLine extends StatelessWidget {
+  const _CategoryLevelLine({required this.course});
 
   final CourseModel course;
 
   @override
   Widget build(BuildContext context) {
-    final price = CoursePriceText(price: course.price, amountSize: 18, currencySize: 11);
-    if (!(course.hasDiscount && course.originalPriceLabel != null)) return price;
-    // يُصغَّر قليلاً عند ضيق المساحة بدل قصّ الأرقام بـ "…".
-    return _ScaleDownStart(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _FeaturedStrikethroughPrice(label: course.originalPriceLabel!),
-          const SizedBox(width: 10),
-          price,
-        ],
+    final category = course.categoryName?.trim() ?? '';
+    final level = (course.levelCode ?? '').trim().isEmpty ? '' : course.level.trim();
+    if (category.isEmpty && level.isEmpty) return const SizedBox.shrink();
+    final style = AppFonts.tajawal(fontSize: 11.5, fontWeight: FontWeight.w700, height: 1.3);
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Text.rich(
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        TextSpan(
+          style: style,
+          children: [
+            if (category.isNotEmpty)
+              TextSpan(
+                text: category,
+                style: const TextStyle(color: AppColors.primary),
+              ),
+            if (category.isNotEmpty && level.isNotEmpty)
+              const TextSpan(
+                text: ' • ',
+                style: TextStyle(color: AppColors.textHint),
+              ),
+            if (level.isNotEmpty)
+              TextSpan(
+                text: level,
+                style: const TextStyle(color: AppColors.successText),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// سعر قديم بخط يتوسطه — Stack يدوي لأن lineThrough لا يظهر دائماً مع Tajawal على الويب.
-class _FeaturedStrikethroughPrice extends StatelessWidget {
-  const _FeaturedStrikethroughPrice({required this.label, this.fontSize = 12, this.currencySize = 10});
+class _InstituteLine extends StatelessWidget {
+  const _InstituteLine({required this.course});
 
-  final String label;
-  final double fontSize;
-  final double currencySize;
+  final CourseModel course;
 
   @override
   Widget build(BuildContext context) {
-    final parts = label.trim().split(RegExp(r'\s+'));
-    final amount = parts.isNotEmpty ? parts.first : label;
-    final currency = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-
-    final text = Text.rich(
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      textAlign: TextAlign.end,
-      TextSpan(
-        children: [
-          TextSpan(
-            text: amount,
+    final city = course.instituteCity?.trim() ?? '';
+    final parts = [course.institute.trim(), city].where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return const SizedBox.shrink();
+    return Row(
+      children: [
+        const Icon(Icons.apartment_rounded, size: 13, color: AppColors.textHint),
+        const SizedBox(width: 5),
+        Expanded(
+          child: BidiText(
+            parts.join(' • '),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: AppFonts.tajawal(
-              fontSize: fontSize,
-              fontWeight: FontWeight.w700,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w500,
               color: AppColors.textSecondary,
               height: 1.3,
             ),
-          ),
-          if (currency.isNotEmpty)
-            TextSpan(
-              text: ' $currency',
-              style: AppFonts.tajawal(
-                fontSize: currencySize,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary,
-                height: 1.3,
-              ),
-            ),
-        ],
-      ),
-    );
-
-    return Stack(
-      alignment: Alignment.center,
-      clipBehavior: Clip.none,
-      children: [
-        text,
-        Positioned.fill(
-          child: Align(
-            alignment: Alignment.center,
-            child: FractionallySizedBox(widthFactor: 1, child: Container(height: 1.3, color: AppColors.textHint)),
           ),
         ),
       ],
@@ -499,292 +338,225 @@ class _FeaturedStrikethroughPrice extends StatelessWidget {
   }
 }
 
-class _CourseLevelBadgeRow extends StatelessWidget {
-  const _CourseLevelBadgeRow({required this.course, required this.compact});
+/// نجوم صفراء + القيمة + عدد التقييمات بين قوسين (إن أرسله الخادم).
+class _RatingLine extends StatelessWidget {
+  const _RatingLine({required this.course});
 
   final CourseModel course;
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    // المستوى غير معروف → لا نعرض شارة "—" فارغة المعنى.
-    if ((course.levelCode ?? '').trim().isEmpty) return const SizedBox.shrink();
-    final level = course.level.trim();
+    final rating = course.rating;
+    final filled = rating.round().clamp(0, 5);
+    final count = course.reviewsCount;
+    return Row(
+      children: [
+        for (var i = 0; i < 5; i++)
+          Icon(Icons.star_rounded, size: 15, color: i < filled ? AppColors.ratingStar : AppColors.borderNeutral),
+        if (rating > 0) ...[
+          const SizedBox(width: 5),
+          Text(
+            rating.toStringAsFixed(1),
+            textDirection: TextDirection.ltr,
+            style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textBody, height: 1.2),
+          ),
+          if (count != null && count > 0) ...[
+            const SizedBox(width: 3),
+            Flexible(
+              child: Text(
+                '($count)',
+                textDirection: TextDirection.ltr,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppFonts.tajawal(fontSize: 11, color: AppColors.textHint, height: 1.2),
+              ),
+            ),
+          ],
+        ],
+      ],
+    );
+  }
+}
 
-    final colors = _levelBadgeColors(level);
-    return Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 9, vertical: compact ? 3 : 4),
-        decoration: BoxDecoration(color: colors.bg, borderRadius: BorderRadius.circular(8)),
-        child: Text(
-          level,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppFonts.tajawal(
-            fontSize: compact ? 10 : 10.5,
-            fontWeight: FontWeight.w700,
-            color: colors.fg,
-            height: 1.1,
+/// البطاقة العريضة: المدة ونوع الحضور في جهة البداية، والسعر في جهة النهاية.
+class _WideFooter extends StatelessWidget {
+  const _WideFooter({required this.course});
+
+  final CourseModel course;
+
+  @override
+  Widget build(BuildContext context) {
+    final meta = _metaItems(course);
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var i = 0; i < meta.length; i++) ...[if (i > 0) const SizedBox(height: 4), _MetaItem(item: meta[i])],
+            ],
           ),
         ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerEnd,
+            child: _PriceBlock(course: course, alignEnd: true, amountSize: 18),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// البطاقة الضيقة (عمودان): السعر أولاً ثم المدة ونوع الحضور في سطر واحد.
+class _CompactFooter extends StatelessWidget {
+  const _CompactFooter({required this.course});
+
+  final CourseModel course;
+
+  @override
+  Widget build(BuildContext context) {
+    final meta = _metaItems(course);
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _ScaleDownStart(child: _PriceBlock(course: course, alignEnd: false, amountSize: 16)),
+        if (meta.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          _ScaleDownStart(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < meta.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 10),
+                  _MetaItem(item: meta[i]),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+List<({IconData icon, String text})> _metaItems(CourseModel course) {
+  final duration = course.duration;
+  final studyType = course.studyType;
+  return [
+    if (duration.isNotEmpty && duration != '—') (icon: Icons.schedule_rounded, text: duration),
+    if (studyType != null && studyType.isNotEmpty) (icon: courseStudyTypeIcon(studyType), text: studyType),
+  ];
+}
+
+class _MetaItem extends StatelessWidget {
+  const _MetaItem({required this.item});
+
+  final ({IconData icon, String text}) item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(item.icon, size: 15, color: AppColors.primary),
+        const SizedBox(width: 5),
+        Flexible(
+          child: Text(
+            item.text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textBody, height: 1.2),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// السعر القديم مشطوباً + وسم النسبة الوردي فوق السعر الحالي البارز.
+class _PriceBlock extends StatelessWidget {
+  const _PriceBlock({required this.course, required this.alignEnd, required this.amountSize});
+
+  final CourseModel course;
+  final bool alignEnd;
+  final double amountSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final price = CoursePriceText(price: course.price, amountSize: amountSize, currencySize: 11);
+    final original = course.originalPriceLabel;
+    final percent = course.discountPercent;
+    if (original == null) return price;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _StrikethroughPrice(label: original),
+            if (percent != null) ...[const SizedBox(width: 6), _DiscountPill(percent: percent)],
+          ],
+        ),
+        const SizedBox(height: 3),
+        price,
+      ],
+    );
+  }
+}
+
+class _DiscountPill extends StatelessWidget {
+  const _DiscountPill({required this.percent});
+
+  final int percent;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(color: AppColors.accentPink, borderRadius: BorderRadius.circular(8)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        // «-8%» يبقى بهذا الترتيب في العربية أيضاً.
+        child: Text(
+          '-$percent%',
+          textDirection: TextDirection.ltr,
+          style: AppFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white, height: 1.2),
+        ),
       ),
     );
   }
 }
 
-class _CourseCardCompactStats extends StatelessWidget {
-  const _CourseCardCompactStats({required this.course, required this.compact});
-
-  final CourseModel course;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final iconSize = compact ? 12.0 : 13.0;
-    final fontSize = compact ? 10.0 : 10.5;
-    final items = <Widget>[];
-
-    // كل عنصر مع فاصله وحدة واحدة — ما لا يتّسع في السطر ينتقل لسطر مخفي بالكامل (لا يُقصّ نصفه).
-    void addItem(Widget child) {
-      if (items.isEmpty) {
-        items.add(child);
-        return;
-      }
-      items.add(
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 5),
-              child: Text(
-                '·',
-                style: TextStyle(color: AppColors.borderStrong, fontSize: fontSize + 1),
-              ),
-            ),
-            child,
-          ],
-        ),
-      );
-    }
-
-    if (course.rating > 0) {
-      addItem(
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.star_rounded, size: iconSize, color: AppColors.ratingStar),
-            const SizedBox(width: 2),
-            Text(
-              course.rating.toStringAsFixed(1),
-              style: AppFonts.tajawal(fontSize: fontSize, fontWeight: FontWeight.w700, color: AppColors.textBody),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (course.durationHours != null && course.durationHours! > 0) {
-      addItem(
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.schedule_outlined, size: iconSize, color: AppColors.primary),
-            const SizedBox(width: 2),
-            Flexible(
-              child: Text(
-                pluralTr('hours_unit', course.durationHours!),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppFonts.tajawal(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    } else if (course.duration.isNotEmpty && course.duration != '—') {
-      addItem(
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.schedule_outlined, size: iconSize, color: AppColors.primary),
-            const SizedBox(width: 2),
-            Flexible(
-              child: Text(
-                course.duration,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppFonts.tajawal(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (course.studyType != null && course.studyType!.isNotEmpty) {
-      addItem(
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(courseStudyTypeIcon(course.studyType!), size: iconSize, color: AppColors.primary),
-            const SizedBox(width: 2),
-            Flexible(
-              child: Text(
-                course.studyType!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppFonts.tajawal(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final students = course.enrolledCountForCapacity;
-    if (students > 0) {
-      addItem(
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.people_outline_rounded, size: iconSize, color: AppColors.primary),
-            const SizedBox(width: 2),
-            Text(
-              compact ? '$students' : pluralTr('students_count', students),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppFonts.tajawal(fontSize: fontSize, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (items.isEmpty) return const SizedBox.shrink();
-
-    // سطر واحد: العناصر التي لا تتسع تلتف لسطر ثانٍ يُقصّ بالكامل (بدل تمرير أفقي خفي داخل البطاقة).
-    return ClipRect(
-      child: OverflowBox(
-        alignment: AlignmentDirectional.topStart,
-        maxHeight: double.infinity,
-        child: Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: items),
-      ),
-    );
-  }
-}
-
-class _CourseCardPriceBlock extends StatelessWidget {
-  const _CourseCardPriceBlock({required this.course, required this.priceSize, required this.compact});
-
-  final CourseModel course;
-  final double priceSize;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final price = CoursePriceText(price: course.price, amountSize: priceSize, currencySize: compact ? 10 : 11);
-    if (!(course.hasDiscount && course.originalPriceLabel != null)) return _ScaleDownStart(child: price);
-    final original = _CardStrikethroughPrice(label: course.originalPriceLabel!, fontSize: compact ? 10 : 11);
-    // البطاقة الضيقة (عمودان على الهاتف): السعر القديم فوق الحالي — كانا يُقصّان معاً بـ "…".
-    return _ScaleDownStart(
-      child: compact
-          ? Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [original, price],
-            )
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [original, const SizedBox(width: 8), price],
-            ),
-    );
-  }
-}
-
-class _CardStrikethroughPrice extends StatelessWidget {
-  const _CardStrikethroughPrice({required this.label, required this.fontSize});
+/// سعر قديم بخط يتوسطه — Stack يدوي لأن lineThrough لا يظهر دائماً مع Tajawal على الويب.
+class _StrikethroughPrice extends StatelessWidget {
+  const _StrikethroughPrice({required this.label});
 
   final String label;
-  final double fontSize;
 
   @override
   Widget build(BuildContext context) {
-    return _FeaturedStrikethroughPrice(label: label, fontSize: fontSize, currencySize: fontSize - 1);
-  }
-}
-
-class _CourseCardHeroImage extends StatelessWidget {
-  const _CourseCardHeroImage({required this.course, required this.height, required this.compact});
-
-  final CourseModel course;
-  final double height;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final badge = _badgeLabel(course);
-    final edgeInset = compact ? 10.0 : 12.0;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxBadgeWidth = (constraints.maxWidth - edgeInset * 2).clamp(60.0, double.infinity);
-
-        return Stack(
-          fit: StackFit.expand,
-          clipBehavior: Clip.hardEdge,
-          children: [
-            _CourseCardImage(
-              course: course,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(_kCourseCardRadius)),
-              fallbackSize: compact ? 34 : 40,
-            ),
-            if (badge != null)
-              PositionedDirectional(
-                top: edgeInset,
-                start: edgeInset,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxBadgeWidth),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: compact ? 7 : 8, vertical: compact ? 3 : 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.72),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      badge,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppFonts.tajawal(
-                        color: Colors.white,
-                        fontSize: compact ? 8.5 : 9,
-                        fontWeight: FontWeight.w800,
-                        height: 1.1,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
+    final amount = label.trim().split(RegExp(r'\s+')).first;
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        Text(
+          amount,
+          maxLines: 1,
+          style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textHint, height: 1.3),
+        ),
+        Positioned.fill(
+          child: Align(child: Container(height: 1.3, color: AppColors.textHint)),
+        ),
+      ],
     );
   }
-
-  String? _badgeLabel(CourseModel course) => _coursePromoBadge(course);
 }
 
 class _CourseCardImage extends StatelessWidget {
@@ -819,20 +591,46 @@ class _CourseCardImage extends StatelessWidget {
     return ClipRRect(borderRadius: borderRadius, child: _fallback());
   }
 
+  /// بلا صورة: تدرّج التصنيف + نقش خفيف ودائرتان شفافتان، والأيقونة داخل مربع زجاجي.
   Widget _fallback() {
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(gradient: _categoryGradient(course.categoryName)),
-      child: Center(
-        child: Icon(
-          _categoryIcon(course.categoryName),
-          color: Colors.white.withValues(alpha: 0.92),
-          size: fallbackSize,
-        ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const BrandBannerPattern(),
+          PositionedDirectional(
+            top: -fallbackSize * 0.9,
+            end: -fallbackSize * 0.7,
+            child: _SoftCircle(size: fallbackSize * 2.6, alpha: 0.12),
+          ),
+          PositionedDirectional(
+            bottom: -fallbackSize * 0.8,
+            start: -fallbackSize * 0.5,
+            child: _SoftCircle(size: fallbackSize * 2, alpha: 0.09),
+          ),
+          // أسفل المركز قليلاً كي لا تغطيها الشارة في البطاقات الضيقة.
+          Align(
+            alignment: const Alignment(0, 0.3),
+            child: Container(
+              width: fallbackSize * 1.7,
+              height: fallbackSize * 1.7,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(fallbackSize * 0.45),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+              ),
+              child: Icon(
+                courseCategoryIcon(course.categoryName, rounded: true),
+                color: Colors.white,
+                size: fallbackSize,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
-
-  IconData _categoryIcon(String? category) => courseCategoryIcon(category, rounded: true);
 
   LinearGradient _categoryGradient(String? category) {
     final name = (category ?? '').toLowerCase();
@@ -843,6 +641,25 @@ class _CourseCardImage extends StatelessWidget {
       return const LinearGradient(colors: [Color(0xFF0EA5E9), Color(0xFF6366F1)]);
     }
     return AppGradients.cardPlaceholder;
+  }
+}
+
+class _SoftCircle extends StatelessWidget {
+  const _SoftCircle({required this.size, required this.alpha});
+
+  final double size;
+  final double alpha;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: alpha),
+      ),
+    );
   }
 }
 

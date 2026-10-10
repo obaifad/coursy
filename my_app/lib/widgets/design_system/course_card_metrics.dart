@@ -5,9 +5,6 @@ abstract final class CourseCardMetrics {
   CourseCardMetrics._();
 
   static const double gridSpacing = 12;
-  static const double gridAspectRatio = 0.72;
-  static const double gridImageHeight = 108;
-  static const double gridBodyPadding = 12;
   static const double cardRadius = 18;
 
   /// معامل تكبير الخط الفعلي (إعداد الجهاز محصور بين 1.0 و1.3 في app.dart).
@@ -22,78 +19,30 @@ abstract final class CourseCardMetrics {
     return (available * 0.70).clamp(200.0, 280.0);
   }
 
-  /// ارتفاع القائمة الأفقية — يُقدَّر من محتوى البطاقة المميزة المعاد تصميمها.
-  static double featuredCardHeight(BuildContext context) {
-    final w = featuredCardWidth(context);
-    final imageH = (w / 1.65).clamp(88.0, 112.0);
-    // المحتوى الفعلي للبطاقة المميزة (بدون زر): مسافات ثابتة + عناصر نصية تكبر مع الخط.
-    // العنوان سطران بخط 14 يحتاج 36. هامش 8 صغير فوق القياس الفعلي ليبقى بلا overflow.
-    const fixedH = 10 + 6 + 8 + 8 + 8 + 18; // coverGap + فواصل + bottomPad
-    const scaledH = featuredTitleHeight + 14 + 20 + 18 + 26 + 8;
-    return imageH + fixedH + scaledH * textScaleOf(context);
-  }
-
-  /// ارتفاع عنوان البطاقة المميزة (سطران) عند حجم الخط الافتراضي.
-  static const double featuredTitleHeight = 36;
+  /// ارتفاع القائمة الأفقية = ارتفاع بطاقة الدورة بعرض بطاقة الرئيسية.
+  static double featuredCardHeight(BuildContext context) =>
+      ticketSpec(featuredCardWidth(context), textScale: textScaleOf(context)).totalHeight;
 
   static double featuredListHeight(BuildContext context) => featuredCardHeight(context);
 
-  /// عرض بطاقة الشبكة (عمودين) — أضيق من بطاقات القوائم الأفقية في الهوم.
+  /// بطاقة ضيقة (عمودان على الهاتف): السعر فوق المدة ونوع الحضور بدل أن يتجاورا.
   static bool isCompactTile(double width) => width < 220;
 
-  static bool isFeaturedTile(double width, {required bool includeButton}) {
-    return !includeButton && width >= 220;
-  }
-
-  static _CourseCardSizeSpec _specFor(double width, {required bool includeButton, double textScale = 1}) {
+  /// مقاسات بطاقة الدورة (تصميم التذكرة) لعرض [width]. كل سطر بارتفاع ثابت (حتى لو فارغ)
+  /// فتتساوى مواضع العناصر والسعر بين بطاقات الشبكة الواحدة.
+  static CourseTicketSpec ticketSpec(double width, {double textScale = 1}) {
     final s = textScale;
-    if (isFeaturedTile(width, includeButton: includeButton)) {
-      final imageHeight = (width / 1.65).clamp(88.0, 112.0);
-      return _CourseCardSizeSpec(
-        imageHeight: imageHeight,
-        padding: 12,
-        titleHeight: 36 * s,
-        summaryHeight: 16 * s,
-        titleSize: 13,
-        chipsHeight: 20 * s,
-        statsHeight: 18 * s,
-        priceHeight: 30 * s,
-        buttonHeight: 32 * s + 14 * (s - 1),
-        sectionGap: 6,
-        includeButton: false,
-        compact: true,
-      );
-    }
-    if (isCompactTile(width)) {
-      return _CourseCardSizeSpec(
-        imageHeight: 84,
-        padding: 10,
-        titleHeight: 34 * s,
-        summaryHeight: 14 * s,
-        titleSize: 12.5,
-        chipsHeight: 20 * s,
-        statsHeight: 16 * s,
-        // السعر القديم فوق الحالي في البطاقة الضيقة (بدل قصّهما بـ "…").
-        priceHeight: 36 * s,
-        buttonHeight: 30 * s + 14 * (s - 1),
-        sectionGap: 5,
-        includeButton: includeButton,
-        compact: true,
-      );
-    }
-    return _CourseCardSizeSpec(
-      imageHeight: gridImageHeight,
-      padding: gridBodyPadding,
-      titleHeight: 38 * s,
-      summaryHeight: 16 * s,
-      titleSize: 14,
-      chipsHeight: 22 * s,
-      statsHeight: 18 * s,
-      priceHeight: 32 * s,
-      buttonHeight: 34 * s + 14 * (s - 1),
-      sectionGap: 6,
-      includeButton: includeButton,
-      compact: false,
+    final compact = isCompactTile(width);
+    return CourseTicketSpec(
+      compact: compact,
+      imageHeight: ((width - CourseTicketSpec.inset * 2) / 1.7).clamp(80.0, 150.0),
+      padding: compact ? 10 : 12,
+      categoryHeight: 16 * s,
+      titleSize: compact ? 13 : 14.5,
+      titleHeight: (compact ? 34 : 38) * s,
+      instituteHeight: 16 * s,
+      ratingHeight: 16 * s,
+      footerHeight: (compact ? 62 : 42) * s,
     );
   }
 
@@ -123,71 +72,90 @@ abstract final class CourseCardMetrics {
     return gridCardHeightForWidth(courseGridTileWidth(context), textScale: textScaleOf(context));
   }
 
-  static double gridCardHeightForWidth(double width, {bool? compact, bool includeButton = true, double textScale = 1}) {
-    return _specFor(width, includeButton: includeButton, textScale: textScale).totalHeight;
+  static double gridCardHeightForWidth(double width, {double textScale = 1}) {
+    return ticketSpec(width, textScale: textScale).totalHeight;
   }
 
-  static CourseCardLayout layoutFor(BoxConstraints constraints, {bool showActionButton = true, double textScale = 1}) {
-    final w = constraints.maxWidth;
-    final spec = _specFor(w, includeButton: showActionButton, textScale: textScale);
+  /// مقاسات تقريبية لهيكل التحميل (Skeleton) بنفس ارتفاع البطاقة الحقيقية.
+  static CourseCardLayout layoutFor(BoxConstraints constraints, {double textScale = 1}) {
+    final spec = ticketSpec(constraints.maxWidth, textScale: textScale);
     return CourseCardLayout(
       cardHeight: constraints.maxHeight.isFinite ? constraints.maxHeight : spec.totalHeight,
       padding: spec.padding,
       imageHeight: spec.imageHeight,
       compact: spec.compact,
       titleSize: spec.titleSize,
-      subtitleSize: spec.compact ? 11 : 12,
+      subtitleSize: 11.5,
       titleHeight: spec.titleHeight,
-      subtitleHeight: spec.summaryHeight,
-      footerHeight: spec.priceHeight,
-      chipsHeight: spec.chipsHeight,
-      statsHeight: spec.statsHeight,
-      priceHeight: spec.priceHeight,
-      buttonHeight: spec.buttonHeight,
-      sectionGap: spec.sectionGap,
-      gapAfterImage: 0,
-      gapAfterTitle: spec.sectionGap,
-      gapBeforeFooter: spec.sectionGap,
+      subtitleHeight: spec.instituteHeight,
+      footerHeight: spec.footerHeight,
+      chipsHeight: spec.categoryHeight,
+      statsHeight: spec.ratingHeight,
+      priceHeight: spec.footerHeight,
+      buttonHeight: 0,
+      sectionGap: 6,
+      gapAfterImage: CourseTicketSpec.gapAfterImage,
+      gapAfterTitle: 6,
+      gapBeforeFooter: 6,
     );
   }
 }
 
-class _CourseCardSizeSpec {
-  const _CourseCardSizeSpec({
+/// مقاسات بطاقة الدورة بتصميم التذكرة (صورة داخلية، تفاصيل، خط متقطع بقصّتين، ثم السعر).
+class CourseTicketSpec {
+  const CourseTicketSpec({
+    required this.compact,
     required this.imageHeight,
     required this.padding,
-    required this.titleHeight,
-    required this.summaryHeight,
+    required this.categoryHeight,
     required this.titleSize,
-    required this.chipsHeight,
-    required this.statsHeight,
-    required this.priceHeight,
-    required this.buttonHeight,
-    required this.sectionGap,
-    required this.includeButton,
-    required this.compact,
+    required this.titleHeight,
+    required this.instituteHeight,
+    required this.ratingHeight,
+    required this.footerHeight,
   });
 
+  /// هامش الصورة داخل البطاقة.
+  static const double inset = 8;
+  static const double gapAfterImage = 10;
+  static const double gapAfterCategory = 4;
+  static const double gapAfterTitle = 6;
+  static const double gapAfterInstitute = 5;
+  static const double gapAfterRating = 4;
+
+  /// منطقة الخط المتقطع — القصّتان في منتصفها.
+  static const double dividerHeight = 18;
+  static const double bottomPadding = 12;
+  static const double notchRadius = 8;
+
+  final bool compact;
   final double imageHeight;
   final double padding;
-  final double titleHeight;
-  final double summaryHeight;
+  final double categoryHeight;
   final double titleSize;
-  final double chipsHeight;
-  final double statsHeight;
-  final double priceHeight;
-  final double buttonHeight;
-  final double sectionGap;
-  final bool includeButton;
-  final bool compact;
+  final double titleHeight;
+  final double instituteHeight;
+  final double ratingHeight;
+  final double footerHeight;
 
-  double get bodyHeight {
-    var h = padding * 2 + titleHeight + summaryHeight + chipsHeight + statsHeight + priceHeight + sectionGap * 4;
-    if (includeButton) h += buttonHeight + 6;
-    return h;
-  }
+  double get totalHeight =>
+      inset +
+      imageHeight +
+      gapAfterImage +
+      categoryHeight +
+      gapAfterCategory +
+      titleHeight +
+      gapAfterTitle +
+      instituteHeight +
+      gapAfterInstitute +
+      ratingHeight +
+      gapAfterRating +
+      dividerHeight +
+      footerHeight +
+      bottomPadding;
 
-  double get totalHeight => imageHeight + bodyHeight;
+  /// بُعد مركز القصّتين عن أسفل البطاقة.
+  double get notchFromBottom => bottomPadding + footerHeight + dividerHeight / 2;
 }
 
 class CourseCardLayout {
@@ -231,21 +199,13 @@ class CourseCardLayout {
 }
 
 abstract final class AppGridLayouts {
-  /// [includeButton] = false للبطاقات بلا زر (المفضلة) — وإلا يبقى فراغ بارتفاع الزر أسفل البطاقة.
-  static SliverGridDelegateWithFixedCrossAxisCount courseGridFor(BuildContext context, {bool includeButton = true}) {
-    final crossAxisCount = CourseCardMetrics.courseGridCrossAxisCount(context);
+  static SliverGridDelegateWithFixedCrossAxisCount courseGridFor(BuildContext context) {
     final tileWidth = CourseCardMetrics.courseGridTileWidth(context);
     return SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: crossAxisCount,
-      // البطاقة بلا زر ترسم ارتفاعها الطبيعي، وقد يزيد عن التقدير بكسور بكسل بحسب مقاييس الخط —
-      // هامش 4 يمنع الفيض دون فراغ ملحوظ.
+      crossAxisCount: CourseCardMetrics.courseGridCrossAxisCount(context),
+      // هامش 2 لكسور البكسل في مقاييس الخط.
       mainAxisExtent:
-          CourseCardMetrics.gridCardHeightForWidth(
-            tileWidth,
-            includeButton: includeButton,
-            textScale: CourseCardMetrics.textScaleOf(context),
-          ) +
-          (includeButton ? 0 : 4),
+          CourseCardMetrics.gridCardHeightForWidth(tileWidth, textScale: CourseCardMetrics.textScaleOf(context)) + 2,
       crossAxisSpacing: CourseCardMetrics.gridSpacing,
       mainAxisSpacing: CourseCardMetrics.gridSpacing,
     );

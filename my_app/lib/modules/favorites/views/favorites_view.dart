@@ -129,7 +129,7 @@ class _FavoritesBody extends StatelessWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.fromLTRB(hPad, 16, hPad, AppLayout.scrollBottomInset(context)),
           itemCount: controller.courses.length,
-          gridDelegate: AppGridLayouts.courseGridFor(context, includeButton: false),
+          gridDelegate: AppGridLayouts.courseGridFor(context),
           itemBuilder: (_, i) {
             final course = controller.courses[i];
             return _FavoriteGridItem(key: ValueKey(course.id), course: course, controller: controller);
@@ -193,7 +193,6 @@ class _FavoriteGridItemState extends State<_FavoriteGridItem> {
             Positioned.fill(
               child: CourseCard(
                 course: course,
-                showActionButton: false,
                 onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
               ),
             ),
