@@ -54,7 +54,9 @@ class CourseModel {
     this.registrationDeadline,
     this.certificateAvailable = false,
     this.requiresAdvancePayment = false,
-    this.instituteCity,
+    String? instituteCity,
+    String? instituteCityAr,
+    String? instituteCityEn,
     this.instituteAddress,
     this.institutePhone,
     this.instituteWhatsapp,
@@ -70,7 +72,9 @@ class CourseModel {
   }) : titleAr = titleAr ?? title ?? '',
        titleEn = titleEn ?? title ?? '',
        instituteAr = instituteAr ?? institute ?? '',
-       instituteEn = instituteEn ?? institute ?? '';
+       instituteEn = instituteEn ?? institute ?? '',
+       instituteCityAr = instituteCityAr ?? instituteCity ?? '',
+       instituteCityEn = instituteCityEn ?? instituteCity ?? '';
 
   final int id;
   final String titleAr;
@@ -102,7 +106,16 @@ class CourseModel {
   final String? registrationDeadline;
   final bool certificateAvailable;
   final bool requiresAdvancePayment;
-  final String? instituteCity;
+
+  /// المدينة بالنسختين — تُختار عند العرض بلغة الواجهة الحالية (مثل العنوان واسم المعهد).
+  final String instituteCityAr;
+  final String instituteCityEn;
+
+  String? get instituteCity {
+    final city = JsonHelpers.pickLocalized(ar: instituteCityAr, en: instituteCityEn);
+    return city.isEmpty ? null : city;
+  }
+
   final String? instituteAddress;
   final String? institutePhone;
   final String? instituteWhatsapp;
@@ -236,7 +249,8 @@ class CourseModel {
     String? categoryName,
     String? description,
     String? requirements,
-    String? instituteCity,
+    String? instituteCityAr,
+    String? instituteCityEn,
     String? instituteAr,
     String? instituteEn,
     String? instituteAddress,
@@ -274,7 +288,8 @@ class CourseModel {
       registrationDeadline: registrationDeadline,
       certificateAvailable: certificateAvailable,
       requiresAdvancePayment: requiresAdvancePayment,
-      instituteCity: instituteCity ?? this.instituteCity,
+      instituteCityAr: instituteCityAr ?? this.instituteCityAr,
+      instituteCityEn: instituteCityEn ?? this.instituteCityEn,
       instituteAddress: instituteAddress ?? this.instituteAddress,
       institutePhone: institutePhone ?? this.institutePhone,
       instituteWhatsapp: instituteWhatsapp ?? this.instituteWhatsapp,
@@ -300,7 +315,8 @@ class CourseModel {
     var instituteNameEn = '';
     var instituteRating = 0.0;
     var instituteId = JsonHelpers.parseIntOrNull(json['institute_id']);
-    String? instituteCity;
+    var instituteCityAr = '';
+    var instituteCityEn = '';
     String? instituteAddress;
     String? institutePhone;
     String? instituteWhatsapp;
@@ -318,10 +334,9 @@ class CourseModel {
       instituteWebsite = instituteObj['website']?.toString();
       final cityObj = instituteObj['city'];
       if (cityObj is Map<String, dynamic>) {
-        instituteCity = JsonHelpers.pickLocalized(
-          ar: JsonHelpers.bilingualText(cityObj).ar,
-          en: JsonHelpers.bilingualText(cityObj).en,
-        );
+        final cityNames = JsonHelpers.bilingualText(cityObj);
+        instituteCityAr = cityNames.ar;
+        instituteCityEn = cityNames.en;
       }
     } else if (instituteObj is String && instituteObj.trim().isNotEmpty) {
       final flat = instituteObj.trim();
@@ -400,7 +415,8 @@ class CourseModel {
       registrationDeadline: json['registration_deadline']?.toString(),
       certificateAvailable: JsonHelpers.parseBool(json['certificate_available']),
       requiresAdvancePayment: JsonHelpers.parseBool(json['requires_advance_payment']),
-      instituteCity: instituteCity,
+      instituteCityAr: instituteCityAr,
+      instituteCityEn: instituteCityEn,
       instituteAddress: instituteAddress,
       institutePhone: institutePhone,
       instituteWhatsapp: instituteWhatsapp,

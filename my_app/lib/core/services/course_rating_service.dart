@@ -141,7 +141,8 @@ class CourseRatingService extends GetxService {
             updated = updated.copyWith(
               instituteAr: updated.instituteAr.isEmpty ? institute.nameAr : null,
               instituteEn: updated.instituteEn.isEmpty ? institute.nameEn : null,
-              instituteCity: (updated.instituteCity ?? '').isEmpty && institute.city.isNotEmpty ? institute.city : null,
+              instituteCityAr: updated.instituteCity == null && institute.cityAr.isNotEmpty ? institute.cityAr : null,
+              instituteCityEn: updated.instituteCity == null && institute.cityEn.isNotEmpty ? institute.cityEn : null,
             );
           }
           final category = _categories?[updated.categoryId];

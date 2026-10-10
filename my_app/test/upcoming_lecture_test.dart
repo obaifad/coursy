@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
 import 'package:my_app/core/models/app_models.dart';
 import 'package:my_app/modules/home/upcoming_lecture.dart';
 import 'package:my_app/modules/home/widgets/home_status_banner.dart';
@@ -131,5 +132,15 @@ void main() {
     expect(find.text('course_details'), findsOneWidget);
     expect(find.text('contact_institute'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  test('city follows the current app language, even for a course loaded earlier', () {
+    Get.locale = const Locale('ar');
+    final course = _course();
+    expect(course.instituteCity, 'دمشق');
+    Get.locale = const Locale('en');
+    expect(course.instituteCity, 'Damascus');
+    expect(course.copyWith(rating: 4).instituteCity, 'Damascus');
+    Get.locale = const Locale('ar');
   });
 }

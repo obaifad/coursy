@@ -46,11 +46,24 @@ class UpcomingLectureCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  'home_welcome_back'.tr,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppFonts.tajawal(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        'home_welcome_back'.tr,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppFonts.tajawal(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    // أيقونة بدل الإيموجي: لا تعتمد على خط إيموجي في الجهاز (كانت تظهر مربعاً فارغاً).
+                    const Icon(Icons.waving_hand_rounded, size: 20, color: AppColors.ratingStar),
+                  ],
                 ),
               ),
               const SizedBox(width: 8),
