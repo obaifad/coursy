@@ -15,7 +15,7 @@ class StudentProfilePayload {
     this.specializationEn,
     this.specializationAr,
     this.interests,
-    this.preferredTags,
+    this.preferredCategories,
     this.notificationRadiusKm,
   });
 
@@ -34,18 +34,18 @@ class StudentProfilePayload {
   final String? specializationEn;
   final String? specializationAr;
   final List<String>? interests;
-  final List<int>? preferredTags;
+  final List<int>? preferredCategories;
   final int? notificationRadiusKm;
 
   Map<String, dynamic>? _studentProfileJson() {
-    final tags = preferredTags;
-    final hasTags = tags != null && tags.isNotEmpty;
+    final categories = preferredCategories;
+    final hasCategories = categories != null && categories.isNotEmpty;
     final hasEducation = educationLevel != null && educationLevel!.isNotEmpty;
     final hasUniversity = universityId != null;
     final hasSpecialization = specializationId != null;
     final hasRadius = notificationRadiusKm != null;
 
-    if (!hasEducation && !hasUniversity && !hasSpecialization && !hasTags && !hasRadius) {
+    if (!hasEducation && !hasUniversity && !hasSpecialization && !hasCategories && !hasRadius) {
       return null;
     }
 
@@ -53,7 +53,7 @@ class StudentProfilePayload {
       if (hasEducation) 'education_level': educationLevel,
       if (hasUniversity) 'university_id': universityId,
       if (hasSpecialization) 'specialization_id': specializationId,
-      if (hasTags) ...{'preferred_tags': tags, 'tag_ids': tags},
+      if (hasCategories) 'preferred_categories': categories,
       if (hasRadius) 'notification_radius_km': notificationRadiusKm,
     };
   }
@@ -77,7 +77,7 @@ class StudentProfilePayload {
       if (specializationEn != null && specializationEn!.isNotEmpty) 'specialization_en': specializationEn,
       if (specializationAr != null && specializationAr!.isNotEmpty) 'specialization_ar': specializationAr,
       if (interests != null && interests!.isNotEmpty) 'interests': interests,
-      if (preferredTags != null && preferredTags!.isNotEmpty) 'preferred_tags': preferredTags,
+      if (preferredCategories != null && preferredCategories!.isNotEmpty) 'preferred_categories': preferredCategories,
       if (notificationRadiusKm != null) 'notification_radius_km': notificationRadiusKm,
       if (studentProfile != null) 'student_profile': studentProfile,
     };

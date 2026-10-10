@@ -332,7 +332,7 @@ class ProfileController extends GetxController with LatestLoadGuard {
           educationLevel: selectedEducationLevel.value,
           universityId: requiresUniversityFields ? selectedUniversityId.value : null,
           specializationId: requiresUniversityFields ? selectedSpecializationId.value : null,
-          preferredTags: selectedCategoryIds.isEmpty ? null : selectedCategoryIds.toList(),
+          preferredCategories: selectedCategoryIds.isEmpty ? null : selectedCategoryIds.toList(),
           birthDate: birthDate.value == null ? null : EducationLevelUtils.formatApiDate(birthDate.value!),
         ),
       );

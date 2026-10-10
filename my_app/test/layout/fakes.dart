@@ -223,7 +223,7 @@ class _Profile extends ProfileRepository {
       'education_level': 'Bachelor',
       'university_id': 1,
       'specialization_id': 1,
-      'preferred_tags': [3, 5],
+      'preferred_categories': [3, 5],
     },
   };
 }

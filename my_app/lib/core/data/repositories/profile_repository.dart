@@ -82,8 +82,8 @@ class ProfileRepository extends GetxService {
       user['specialization_id'] ??= cache.specializationId;
     }
     if (extractPreferredInterestIds({...profile, ...user}).isEmpty && cache.preferredCategoryIds.isNotEmpty) {
-      profile['preferred_tags'] = cache.preferredCategoryIds;
-      user['preferred_tags'] = cache.preferredCategoryIds;
+      profile['preferred_categories'] = cache.preferredCategoryIds;
+      user['preferred_categories'] = cache.preferredCategoryIds;
     }
 
     return {...user, 'student_profile': profile};
@@ -93,14 +93,14 @@ class ProfileRepository extends GetxService {
     String? educationLevel,
     int? universityId,
     int? specializationId,
-    List<int>? preferredTags,
+    List<int>? preferredCategories,
   }) async {
-    final tagIds = preferredTags ?? const [];
+    final categoryIds = preferredCategories ?? const [];
     final cache = AcademicProfileCache(
       educationLevel: educationLevel,
       universityId: universityId,
       specializationId: specializationId,
-      preferredCategoryIds: tagIds,
+      preferredCategoryIds: categoryIds,
     );
     if (!cache.isEmpty) {
       await _tokenStorage.saveAcademicCache(cache);
@@ -110,7 +110,7 @@ class ProfileRepository extends GetxService {
       educationLevel: educationLevel,
       universityId: universityId,
       specializationId: specializationId,
-      preferredTags: tagIds.isEmpty ? null : tagIds,
+      preferredCategories: categoryIds.isEmpty ? null : categoryIds,
     );
     if (cache.isEmpty) return;
 

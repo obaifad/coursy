@@ -318,7 +318,7 @@ class AuthController extends GetxController {
         educationLevel: selectedEducationLevel.value,
         universityId: requiresUniversityFields ? selectedUniversityId.value : null,
         specializationId: requiresUniversityFields ? selectedSpecializationId.value : null,
-        preferredTags: selectedCategoryIds.isEmpty ? null : selectedCategoryIds.toList(),
+        preferredCategories: selectedCategoryIds.isEmpty ? null : selectedCategoryIds.toList(),
         deviceName: GetPlatform.isAndroid
             ? 'android'
             : GetPlatform.isIOS
@@ -334,7 +334,7 @@ class AuthController extends GetxController {
           educationLevel: payload.educationLevel,
           universityId: payload.universityId,
           specializationId: payload.specializationId,
-          preferredTags: payload.preferredTags,
+          preferredCategories: payload.preferredCategories,
         );
         Get.snackbar('welcome'.tr, 'account_created_ok'.tr);
         await _afterAuthSuccess();

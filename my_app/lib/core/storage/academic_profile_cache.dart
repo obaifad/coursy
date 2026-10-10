@@ -24,7 +24,7 @@ class AcademicProfileCache {
     if (educationLevel != null && educationLevel!.isNotEmpty) 'education_level': educationLevel,
     if (universityId != null) 'university_id': universityId,
     if (specializationId != null) 'specialization_id': specializationId,
-    if (preferredCategoryIds.isNotEmpty) 'preferred_tags': preferredCategoryIds,
+    if (preferredCategoryIds.isNotEmpty) 'preferred_categories': preferredCategoryIds,
   };
 
   factory AcademicProfileCache.fromJson(Map<String, dynamic> json) {
@@ -32,12 +32,8 @@ class AcademicProfileCache {
       educationLevel: json['education_level']?.toString(),
       universityId: int.tryParse(json['university_id']?.toString() ?? ''),
       specializationId: int.tryParse(json['specialization_id']?.toString() ?? ''),
-      preferredCategoryIds: _parseIds(
-        json['preferred_tags'] ??
-            json['preferred_tag_ids'] ??
-            json['preferred_categories'] ??
-            json['preferred_category_ids'],
-      ),
+      // `preferred_tags` القديم كان معرّفات tags — قائمة مختلفة عن التصنيفات فلا نقرؤه.
+      preferredCategoryIds: _parseIds(json['preferred_categories'] ?? json['preferred_category_ids']),
     );
   }
 

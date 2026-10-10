@@ -182,20 +182,10 @@ List<int> extractPreferredCategoryIds(dynamic preferred) {
   return ids;
 }
 
-/// يستخرج معرّفات الاهتمامات (tags) من استجابة الملف الشخصي.
+/// يستخرج معرّفات الاهتمامات (تصنيفات) من استجابة الملف الشخصي.
+/// مفاتيح الـ tags لا تُقرأ: معرّفاتها قائمة مختلفة عن التصنيفات.
 List<int> extractPreferredInterestIds(Map<String, dynamic> source) {
-  for (final key in [
-    'preferred_tags',
-    'preferred_tag_ids',
-    'tag_ids',
-    'tags',
-    'interests',
-    'interest_ids',
-    'preferred_categories',
-    'preferred_category_ids',
-    'category_ids',
-    'categories',
-  ]) {
+  for (final key in ['preferred_categories', 'preferred_category_ids', 'category_ids', 'categories']) {
     final ids = extractPreferredCategoryIds(source[key]);
     if (ids.isNotEmpty) return ids;
   }
