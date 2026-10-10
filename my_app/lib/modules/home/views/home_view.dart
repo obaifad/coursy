@@ -13,6 +13,7 @@ import '../../../theme/app_fonts.dart';
 import '../../../core/locale/plural.dart';
 import '../controllers/home_controller.dart';
 import '../widgets/featured_course_carousel.dart';
+import '../widgets/home_categories_grid.dart';
 
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
@@ -126,7 +127,7 @@ class HomeView extends GetView<HomeController> {
                 ),
               ),
               const SizedBox(height: 10),
-              _CategoriesRow(categories: categories, scrollReset: scrollReset),
+              _CategoriesSection(categories: categories),
               const SizedBox(height: 22),
               Padding(
                 padding: _sectionPad(context),
@@ -271,10 +272,9 @@ class HomeView extends GetView<HomeController> {
   }
 }
 
-class _CategoriesRow extends StatelessWidget {
-  const _CategoriesRow({required this.categories, required this.scrollReset});
+class _CategoriesSection extends StatelessWidget {
+  const _CategoriesSection({required this.categories});
   final List<CategoryModel> categories;
-  final int scrollReset;
 
   @override
   Widget build(BuildContext context) {
@@ -286,25 +286,16 @@ class _CategoriesRow extends StatelessWidget {
         ),
       );
     }
-    return AppHorizontalListView(
-      resetToken: scrollReset,
-      height: _CategoryTile.heightFor(context),
-      bottomInset: 4,
-      separatorWidth: 12,
-      itemCount: categories.length,
-      itemBuilder: (_, i) {
-        final cat = categories[i];
-        return _EntranceFade(
-          index: i,
-          child: _CategoryTile(
-            category: cat,
-            onTap: () => Get.toNamed(
-              AppRoutes.categoryCourses,
-              arguments: {'id': cat.id, 'name': cat.name, 'icon': cat.icon, 'coursesCount': cat.coursesCount},
-            ),
-          ),
-        );
-      },
+    return Padding(
+      padding: AppLayout.sectionHorizontal(context),
+      child: HomeCategoriesGrid(
+        categories: categories,
+        onShowAll: () => AppNavigation.switchToTab(0),
+        onOpenCategory: (cat) => Get.toNamed(
+          AppRoutes.categoryCourses,
+          arguments: {'id': cat.id, 'name': cat.name, 'icon': cat.icon, 'coursesCount': cat.coursesCount},
+        ),
+      ),
     );
   }
 }
@@ -341,117 +332,6 @@ class _EntranceFade extends StatelessWidget {
         child: Transform.translate(offset: Offset(0, 10 * (1 - t)), child: child),
       ),
       child: child,
-    );
-  }
-}
-
-/// تصنيف كبطاقة مربعة بأسلوب Outline نظيف: مربع أبيض بحد بنفسجي خفيف وأيقونة بنفسجية،
-/// وعند التحديد (selected) يمتلئ بالبنفسجي الصلب وتصبح الأيقونة بيضاء والاسم بنفسجياً.
-class _CategoryTile extends StatefulWidget {
-  // ignore: unused_element_parameter
-  const _CategoryTile({required this.category, this.onTap, this.selected = false});
-
-  static const double width = 92;
-  static const double _iconBox = 58;
-
-  /// الارتفاع يتبع تكبير الخط (اسم بسطرين + عدد).
-  static double heightFor(BuildContext context) => 88 + 40 * CourseCardMetrics.textScaleOf(context);
-
-  final CategoryModel category;
-  final VoidCallback? onTap;
-  final bool selected;
-
-  @override
-  State<_CategoryTile> createState() => _CategoryTileState();
-}
-
-class _CategoryTileState extends State<_CategoryTile> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final cat = widget.category;
-    final selected = widget.selected;
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: cat.coursesCount > 0 ? '${cat.name}، ${pluralTr('category_courses_count', cat.coursesCount)}' : cat.name,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTap: widget.onTap,
-        behavior: HitTestBehavior.opaque,
-        child: AnimatedScale(
-          scale: _pressed ? 0.95 : 1,
-          duration: const Duration(milliseconds: 110),
-          child: SizedBox(
-            width: _CategoryTile.width,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
-                  width: _CategoryTile._iconBox,
-                  height: _CategoryTile._iconBox,
-                  decoration: BoxDecoration(
-                    color: selected ? AppColors.primary : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: selected ? AppColors.primary : AppColors.primary.withValues(alpha: 0.3),
-                      width: selected ? 1.5 : 1.2,
-                    ),
-                    boxShadow: selected
-                        ? [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.28),
-                              blurRadius: 12,
-                              offset: const Offset(0, 5),
-                            ),
-                          ]
-                        : const [],
-                  ),
-                  alignment: Alignment.center,
-                  child: CategoryIcon(
-                    category: cat,
-                    size: 38,
-                    borderRadius: BorderRadius.circular(12),
-                    iconColor: selected ? Colors.white : AppColors.primary,
-                    backgroundColor: Colors.transparent,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  cat.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: AppFonts.tajawal(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 11.5,
-                    height: 1.25,
-                    color: selected ? AppColors.primary : AppColors.textPrimary,
-                  ),
-                ),
-                if (cat.coursesCount > 0) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    pluralTr('category_courses_count', cat.coursesCount),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppFonts.tajawal(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
