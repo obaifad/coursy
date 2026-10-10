@@ -14,6 +14,7 @@ import '../../../core/locale/plural.dart';
 import '../controllers/home_controller.dart';
 import '../widgets/featured_course_carousel.dart';
 import '../widgets/home_categories_grid.dart';
+import '../widgets/home_status_banner.dart';
 
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
@@ -37,6 +38,8 @@ class HomeView extends GetView<HomeController> {
         final instructorSubjects = controller.instructorSubjects.toList(growable: false);
         final scrollReset = controller.horizontalScrollReset.value;
         final bannerCourses = controller.bannerCourses;
+        final upcomingLecture = controller.upcomingLecture.value;
+        final isGuest = !controller.isLoggedIn;
         return RefreshIndicator(
           color: AppColors.primary,
           onRefresh: () => controller.loadHome(forceRefresh: true, refreshStatic: true),
@@ -113,7 +116,15 @@ class HomeView extends GetView<HomeController> {
                 ),
                 const SizedBox(height: 12),
               ],
-              if (bannerCourses.isEmpty)
+              // ضيف → دعوة للتسجيل؛ طالب بمحاضرة قادمة → بطاقتها؛ وإلا → عروض الدورات.
+              if (isGuest)
+                Padding(padding: _sectionPad(context), child: const GuestSignUpBanner())
+              else if (upcomingLecture != null)
+                Padding(
+                  padding: _sectionPad(context),
+                  child: UpcomingLectureCard(lecture: upcomingLecture),
+                )
+              else if (bannerCourses.isEmpty)
                 Padding(padding: _sectionPad(context), child: const _HomeHeroBanner())
               else
                 FeaturedCourseCarousel(courses: bannerCourses),
