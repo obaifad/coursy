@@ -1,7 +1,8 @@
 part of '../design_system.dart';
 
-/// هيدر صفحة بنفسجي متدرّج بقاع مدوّر — نفس أسلوب "كل الدورات" و"فئة الدورات":
-/// زر رجوع اختياري، كبسولة (عدّاد)، عنوان كبير، وسطر فرعي.
+/// الهيدر الموحّد لكل صفحات القوائم (الدورات، التصنيف، المعاهد، دوراتي، المفضلة، مدرّسو التخصص):
+/// تدرّج بنفسجي بقاع مدوّر، زر رجوع اختياري، كبسولة عدّاد، عنوان، وسطر فرعي.
+/// صف الكبسولة محجوز دائماً (حتى قبل وصول العدد) فيبقى ارتفاع الهيدر واحداً في كل الصفحات.
 class AppHeroHeader extends StatelessWidget {
   const AppHeroHeader({super.key, required this.title, this.subtitle, this.badge, this.onBack});
 
@@ -65,8 +66,10 @@ class AppHeroHeader extends StatelessWidget {
                         ),
                         SizedBox(height: compact ? 4 : 8),
                       ],
-                      if (badge != null) ...[
-                        Container(
+                      // بلا عدد بعد: كبسولة شفافة بنفس الحجم.
+                      Opacity(
+                        opacity: badge == null ? 0 : 1,
+                        child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.18),
@@ -74,14 +77,16 @@ class AppHeroHeader extends StatelessWidget {
                             border: Border.all(color: Colors.white24),
                           ),
                           child: Text(
-                            badge!,
+                            badge ?? ' ',
                             style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                      ],
+                      ),
+                      const SizedBox(height: 8),
                       Text(
                         title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: AppFonts.tajawal(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
@@ -93,6 +98,8 @@ class AppHeroHeader extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           subtitle!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: AppFonts.tajawal(
                             color: Colors.white.withValues(alpha: 0.88),
                             fontSize: 13,

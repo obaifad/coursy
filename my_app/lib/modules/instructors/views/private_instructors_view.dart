@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/locale/locale_rebuild.dart';
+import '../../../core/locale/plural.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
@@ -16,17 +17,31 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('private_instructors_title'.tr)),
+      backgroundColor: AppColors.surface,
       body: Obx(() {
         final _ = localeRebuildToken;
+        final count = controller.instructors.length;
+        final header = AppHeroHeader(
+          title: 'private_instructors_title'.tr,
+          subtitle: 'private_instructors_subtitle'.tr,
+          badge: count > 0 ? pluralTr('instructor_subject_count', count) : null,
+          onBack: Get.back,
+        );
         if (controller.isLoading.value && controller.instructors.isEmpty) {
-          return const AppListSkeleton(padding: EdgeInsets.fromLTRB(16, 12, 16, 24));
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              header,
+              const Expanded(child: AppListSkeleton(padding: EdgeInsets.fromLTRB(16, 12, 16, 24))),
+            ],
+          );
         }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 8),
+            header,
+            const SizedBox(height: 10),
             InstructorSpecializationFiltersPanel(
               subjects: controller.subjects.toList(growable: false),
               selectedKey: controller.selectedSubjectKey.value,

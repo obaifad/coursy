@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../theme/app_fonts.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../routes/app_routes.dart';
 import '../../../widgets/app_widgets.dart';
@@ -22,10 +21,14 @@ class CoursesView extends GetView<CoursesController> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _AllCoursesHeroHeader(
-              coursesCount: controller.totalCount.value > controller.courses.length
-                  ? controller.totalCount.value
-                  : controller.courses.length,
+            AppHeroHeader(
+              title: 'all_courses'.tr,
+              subtitle: 'browse_courses'.tr,
+              badge: _countBadge(
+                controller.totalCount.value > controller.courses.length
+                    ? controller.totalCount.value
+                    : controller.courses.length,
+              ),
             ),
             const SizedBox(height: 10),
             CourseFiltersPanel(
@@ -80,79 +83,4 @@ class CoursesView extends GetView<CoursesController> {
   }
 }
 
-/// بانر متدرّج أعلى تبويب "كل الدورات" — نفس لغة البانر في [CategoryCoursesView]
-/// (بدون زر رجوع لأنها شاشة تبويب رئيسي وليست صفحة مدفوعة).
-class _AllCoursesHeroHeader extends StatelessWidget {
-  const _AllCoursesHeroHeader({required this.coursesCount});
-
-  final int coursesCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final hPad = AppLayout.horizontalPage(context);
-    final compact = MediaQuery.sizeOf(context).height < 700;
-
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
-      child: DecoratedBox(
-        decoration: const BoxDecoration(gradient: AppGradients.heroBanner),
-        child: Stack(
-          children: [
-            const BrandBannerPattern(),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.black.withValues(alpha: 0.05), Colors.black.withValues(alpha: 0.38)],
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(hPad, 14, hPad, compact ? 16 : 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: Text(
-                      pluralTr('category_courses_count', coursesCount),
-                      style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'all_courses'.tr,
-                    style: AppFonts.tajawal(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: compact ? 22 : 24,
-                      height: 1.2,
-                    ),
-                  ),
-                  if (!compact) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      'browse_courses'.tr,
-                      style: AppFonts.tajawal(
-                        color: Colors.white.withValues(alpha: 0.88),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+String? _countBadge(int count) => count > 0 ? pluralTr('category_courses_count', count) : null;

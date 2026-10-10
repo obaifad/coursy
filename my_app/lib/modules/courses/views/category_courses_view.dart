@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../theme/app_fonts.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
@@ -35,7 +34,16 @@ class CategoryCoursesView extends GetView<CategoryCoursesController> {
                 child: CustomScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
-                    _CategoryHeroHeader(title: title, coursesCount: controller.courses.length),
+                    SliverToBoxAdapter(
+                      child: AppHeroHeader(
+                        title: title,
+                        subtitle: 'category_page_subtitle'.tr,
+                        badge: controller.courses.isEmpty
+                            ? null
+                            : pluralTr('category_courses_count', controller.courses.length),
+                        onBack: Get.back,
+                      ),
+                    ),
                     if (!isLoading && controller.courses.isNotEmpty)
                       SliverToBoxAdapter(
                         child: Padding(
@@ -111,103 +119,5 @@ class CategoryCoursesView extends GetView<CategoryCoursesController> {
               ),
       );
     });
-  }
-}
-
-class _CategoryHeroHeader extends StatelessWidget {
-  const _CategoryHeroHeader({required this.title, required this.coursesCount});
-
-  final String title;
-  final int coursesCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final hPad = AppLayout.horizontalPage(context);
-    final compact = MediaQuery.sizeOf(context).height < 700;
-    final titleSize = compact ? 22.0 : 24.0;
-
-    return SliverToBoxAdapter(
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
-        child: DecoratedBox(
-          decoration: const BoxDecoration(gradient: AppGradients.heroBanner),
-          child: Stack(
-            children: [
-              const BrandBannerPattern(),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.black.withValues(alpha: 0.05), Colors.black.withValues(alpha: 0.38)],
-                  ),
-                ),
-              ),
-              SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: EdgeInsetsDirectional.fromSTEB(hPad, 4, hPad, compact ? 16 : 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        tooltip: 'back'.tr,
-                        onPressed: Get.back,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                        icon: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-                          child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
-                        ),
-                      ),
-                      SizedBox(height: compact ? 6 : 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white24),
-                        ),
-                        child: Text(
-                          pluralTr('category_courses_count', coursesCount),
-                          style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppFonts.tajawal(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: titleSize,
-                          height: 1.2,
-                        ),
-                      ),
-                      if (!compact) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          'category_page_subtitle'.tr,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppFonts.tajawal(
-                            color: Colors.white.withValues(alpha: 0.88),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

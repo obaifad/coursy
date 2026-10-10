@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/locale/locale_rebuild.dart';
+import '../../../core/locale/plural.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/app_skeletons.dart';
@@ -23,65 +24,78 @@ class CityDetailsView extends GetView<CityDetailsController> {
           : controller.institutes.fold<int>(0, (sum, item) => sum + item.coursesCount);
 
       return Scaffold(
-        appBar: AppBar(title: Text(controller.title.value), centerTitle: true),
-        body: AppTabSafeArea(
-          top: false,
-          child: controller.isLoading.value
-              ? const AppListSkeleton()
-              : RefreshIndicator(
-                  onRefresh: controller.load,
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
-                    children: [
-                      SoftCard(
-                        child: Row(
+        backgroundColor: AppColors.surface,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AppHeroHeader(
+              title: controller.title.value,
+              subtitle: 'city_page_subtitle'.tr,
+              badge: institutesCount > 0 ? pluralTr('city_institutes_count', institutesCount) : null,
+              onBack: Get.back,
+            ),
+            Expanded(
+              child: AppTabSafeArea(
+                top: false,
+                child: controller.isLoading.value
+                    ? const AppListSkeleton()
+                    : RefreshIndicator(
+                        onRefresh: controller.load,
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
                           children: [
-                            _StatBox(label: 'nav_institutes'.tr, value: '$institutesCount'),
-                            const SizedBox(width: 12),
-                            _StatBox(label: 'stat_courses'.tr, value: '$coursesCount'),
+                            SoftCard(
+                              child: Row(
+                                children: [
+                                  _StatBox(label: 'nav_institutes'.tr, value: '$institutesCount'),
+                                  const SizedBox(width: 12),
+                                  _StatBox(label: 'stat_courses'.tr, value: '$coursesCount'),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text('city_institutes_section'.tr, style: Theme.of(context).textTheme.titleMedium),
+                            const SizedBox(height: 12),
+                            if (controller.institutes.isEmpty && controller.errorMessage.value != null)
+                              SoftCard(
+                                child: AppLoadErrorState(
+                                  message: controller.errorMessage.value!,
+                                  onRetry: controller.load,
+                                  compact: true,
+                                ),
+                              )
+                            else if (controller.institutes.isEmpty)
+                              SoftCard(
+                                child: AppEmptyState.inline(
+                                  message: 'no_institutes_in_city'.tr,
+                                  icon: Icons.apartment_outlined,
+                                ),
+                              )
+                            else
+                              ...controller.institutes.map(
+                                (inst) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: InstituteListCard(
+                                    institute: inst,
+                                    onTap: () => Get.toNamed(AppRoutes.instituteDetails, arguments: inst),
+                                  ),
+                                ),
+                              ),
+                            if (controller.hasMore.value)
+                              OutlinedButton.icon(
+                                onPressed: controller.isLoadingMore.value ? null : controller.loadMore,
+                                icon: controller.isLoadingMore.value
+                                    ? const AppInlineLoader()
+                                    : const Icon(Icons.expand_more_rounded),
+                                label: Text('load_more'.tr),
+                              ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Text('city_institutes_section'.tr, style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: 12),
-                      if (controller.institutes.isEmpty && controller.errorMessage.value != null)
-                        SoftCard(
-                          child: AppLoadErrorState(
-                            message: controller.errorMessage.value!,
-                            onRetry: controller.load,
-                            compact: true,
-                          ),
-                        )
-                      else if (controller.institutes.isEmpty)
-                        SoftCard(
-                          child: AppEmptyState.inline(
-                            message: 'no_institutes_in_city'.tr,
-                            icon: Icons.apartment_outlined,
-                          ),
-                        )
-                      else
-                        ...controller.institutes.map(
-                          (inst) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: InstituteListCard(
-                              institute: inst,
-                              onTap: () => Get.toNamed(AppRoutes.instituteDetails, arguments: inst),
-                            ),
-                          ),
-                        ),
-                      if (controller.hasMore.value)
-                        OutlinedButton.icon(
-                          onPressed: controller.isLoadingMore.value ? null : controller.loadMore,
-                          icon: controller.isLoadingMore.value
-                              ? const AppInlineLoader()
-                              : const Icon(Icons.expand_more_rounded),
-                          label: Text('load_more'.tr),
-                        ),
-                    ],
-                  ),
-                ),
+              ),
+            ),
+          ],
         ),
       );
     });

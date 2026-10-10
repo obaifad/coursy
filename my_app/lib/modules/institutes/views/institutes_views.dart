@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/locale/plural.dart';
+
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/models/json_helpers.dart';
@@ -23,7 +25,13 @@ class InstitutesView extends GetView<InstitutesController> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AppHeroHeader(title: 'institutes_title'.tr, subtitle: 'institutes_subtitle'.tr),
+            AppHeroHeader(
+              title: 'institutes_title'.tr,
+              subtitle: 'institutes_subtitle'.tr,
+              badge: controller.institutes.isEmpty
+                  ? null
+                  : pluralTr('city_institutes_count', controller.institutes.length),
+            ),
             const SizedBox(height: 10),
             Obx(
               () => HorizontalCityFilters(

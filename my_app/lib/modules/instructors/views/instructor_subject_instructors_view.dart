@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../theme/app_fonts.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/app_skeletons.dart';
@@ -30,7 +29,14 @@ class InstructorSubjectInstructorsView extends GetView<InstructorSubjectInstruct
                 child: CustomScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
-                    _SubjectHeroHeader(title: title, instructorsCount: count),
+                    SliverToBoxAdapter(
+                      child: AppHeroHeader(
+                        title: title,
+                        subtitle: 'instructor_subject_subtitle'.tr,
+                        badge: count > 0 ? pluralTr('instructor_subject_count', count) : null,
+                        onBack: Get.back,
+                      ),
+                    ),
                     if (controller.errorMessage.value != null && instructors.isEmpty)
                       SliverFillRemaining(
                         hasScrollBody: false,
@@ -100,103 +106,5 @@ class InstructorSubjectInstructorsView extends GetView<InstructorSubjectInstruct
               ),
       );
     });
-  }
-}
-
-class _SubjectHeroHeader extends StatelessWidget {
-  const _SubjectHeroHeader({required this.title, required this.instructorsCount});
-
-  final String title;
-  final int instructorsCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final hPad = AppLayout.horizontalPage(context);
-    final compact = MediaQuery.sizeOf(context).height < 700;
-    final titleSize = compact ? 22.0 : 24.0;
-
-    return SliverToBoxAdapter(
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
-        child: DecoratedBox(
-          decoration: const BoxDecoration(gradient: AppGradients.heroBanner),
-          child: Stack(
-            children: [
-              const BrandBannerPattern(),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.black.withValues(alpha: 0.05), Colors.black.withValues(alpha: 0.38)],
-                  ),
-                ),
-              ),
-              SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(8, 4, hPad, compact ? 16 : 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        tooltip: 'back'.tr,
-                        onPressed: Get.back,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                        icon: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-                          child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
-                        ),
-                      ),
-                      SizedBox(height: compact ? 6 : 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white24),
-                        ),
-                        child: Text(
-                          pluralTr('instructor_subject_count', instructorsCount),
-                          style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppFonts.tajawal(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: titleSize,
-                          height: 1.2,
-                        ),
-                      ),
-                      if (!compact) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          'instructor_subject_subtitle'.tr,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppFonts.tajawal(
-                            color: Colors.white.withValues(alpha: 0.88),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/locale/plural.dart';
+
 import '../../../theme/app_fonts.dart';
 import '../../../core/config/api_config.dart';
 import '../../../core/locale/locale_rebuild.dart';
@@ -73,7 +75,15 @@ class _MyCoursesShellState extends State<_MyCoursesShell> with SingleTickerProvi
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AppHeroHeader(title: 'my_courses'.tr, subtitle: 'my_courses_subtitle'.tr),
+            Obx(
+              () => AppHeroHeader(
+                title: 'my_courses'.tr,
+                subtitle: 'my_courses_subtitle'.tr,
+                badge: controller.enrollments.isEmpty
+                    ? null
+                    : pluralTr('bookings_count', controller.enrollments.length),
+              ),
+            ),
             const SizedBox(height: 10),
             AppTabBarSection(
               controller: _tabController,
