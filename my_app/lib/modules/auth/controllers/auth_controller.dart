@@ -394,10 +394,9 @@ class AuthController extends GetxController {
         } else if (password != confirm) {
           errors['confirmPassword'] = 'password_mismatch'.tr;
         }
-        if (selectedGender.value == null) errors['gender'] = 'pick_gender'.tr;
-        if (birthDate.value == null) {
-          errors['birthDate'] = 'pick_birth_date'.tr;
-        } else if (!_isValidBirthDate(birthDate.value!)) {
+        // الجنس وتاريخ الميلاد اختياريان؛ إن اختير التاريخ يجب أن يكون منطقياً.
+        final birth = birthDate.value;
+        if (birth != null && !_isValidBirthDate(birth)) {
           errors['birthDate'] = 'pick_valid_birth_date'.tr;
         }
         break;
@@ -532,12 +531,11 @@ class AuthController extends GetxController {
     }
   }
 
+  /// الشرط الوحيد: 6 خانات على الأقل، بأي أحرف أو أرقام أو رموز.
+  static const minPasswordLength = 6;
+
   String? _passwordValidationError(String password) {
-    if (password.length < 8) return 'password_min_8'.tr;
-    if (!RegExp(r'[A-Za-z]').hasMatch(password) || !RegExp(r'\d').hasMatch(password)) {
-      return 'password_must_have_letter_number'.tr;
-    }
-    return null;
+    return password.length < minPasswordLength ? 'password_min_6'.tr : null;
   }
 
   bool _isValidEmail(String email) {

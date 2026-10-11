@@ -340,7 +340,7 @@ class _RegisterStepBody extends GetView<AuthController> {
             ),
             const SizedBox(height: 6),
             Text(
-              'password_must_have_letter_number'.tr,
+              'password_hint_min_6'.tr,
               style: AppFonts.tajawal(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
             ),
             const SizedBox(height: 14),
@@ -373,12 +373,15 @@ class _RegisterStepBody extends GetView<AuthController> {
                   RegisterChoiceChip(
                     label: 'male'.tr,
                     selected: controller.selectedGender.value == 'male',
-                    onTap: () => controller.selectedGender.value = 'male',
+                    // الضغط على المختار يلغيه: الجنس اختياري.
+                    onTap: () =>
+                        controller.selectedGender.value = controller.selectedGender.value == 'male' ? null : 'male',
                   ),
                   RegisterChoiceChip(
                     label: 'female'.tr,
                     selected: controller.selectedGender.value == 'female',
-                    onTap: () => controller.selectedGender.value = 'female',
+                    onTap: () =>
+                        controller.selectedGender.value = controller.selectedGender.value == 'female' ? null : 'female',
                   ),
                 ],
               ),
@@ -390,7 +393,7 @@ class _RegisterStepBody extends GetView<AuthController> {
             const SizedBox(height: 16),
             Obx(
               () => RegisterDateField(
-                label: '${'birth_date'.tr} *',
+                label: 'birth_date'.tr,
                 value: controller.birthDate.value == null
                     ? null
                     : AuthController.formatBirthDate(controller.birthDate.value!),
