@@ -104,11 +104,15 @@ class EmailVerificationController extends GetxController {
         await _onVerified();
         return;
       }
-      if (e.statusCode == 429) {
-        _startTimer(defaultResendSeconds);
-        errorMessage.value = 'email_code_too_many'.tr;
-      } else {
-        errorMessage.value = e.message;
+      // نصوصنا المترجمة بدل رسالة Laravel الإنجليزية («Too Many Attempts.»).
+      switch (e.statusCode) {
+        case 429:
+          _startTimer(e.retryAfterSeconds ?? defaultResendSeconds);
+          errorMessage.value = 'email_code_too_many'.tr;
+        case 503:
+          errorMessage.value = 'email_code_send_failed'.tr;
+        default:
+          errorMessage.value = e.message;
       }
     } catch (_) {
       errorMessage.value = 'email_code_send_failed'.tr;
@@ -174,15 +178,19 @@ class EmailVerificationController extends GetxController {
     }
   }
 
-  /// يغيّر البريد في الملف الشخصي ثم يرسل رمزاً جديداً. يُرجع رسالة خطأ أو null عند النجاح.
-  Future<String?> changeEmail(String value) async {
+  /// يغيّر البريد (بكلمة المرور الحالية) ثم يرسل رمزاً جديداً.
+  /// يُرجع أخطاء الحقول (`email` / `current_password`) أو null عند النجاح.
+  Future<Map<String, String>?> changeEmail(String value, String currentPassword) async {
     final next = value.trim();
-    if (!RegExp(r'^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$').hasMatch(next)) return 'enter_valid_email'.tr;
+    if (!RegExp(r'^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$').hasMatch(next)) return {'email': 'enter_valid_email'.tr};
     if (next == email.value) return null;
-    if (!Get.isRegistered<ProfileRepository>()) return 'error_unexpected'.tr;
+    if (currentPassword.isEmpty) return {'current_password': 'current_password_required'.tr};
+    if (!Get.isRegistered<ProfileRepository>()) return {'email': 'error_unexpected'.tr};
     isSavingEmail.value = true;
     try {
-      await Get.find<ProfileRepository>().updateProfile(StudentProfilePayload(email: next));
+      await Get.find<ProfileRepository>().updateProfile(
+        StudentProfilePayload(email: next, currentPassword: currentPassword),
+      );
       email.value = next;
       codeController.clear();
       errorMessage.value = null;
@@ -191,9 +199,11 @@ class EmailVerificationController extends GetxController {
       unawaited(sendCode());
       return null;
     } on ApiException catch (e) {
-      return e.fieldErrors?['email'] ?? e.message;
+      final fields = e.fieldErrors ?? const {};
+      if (fields.containsKey('current_password')) return {'current_password': fields['current_password']!};
+      return {'email': fields['email'] ?? e.message};
     } catch (_) {
-      return 'connection_error'.tr;
+      return {'email': 'connection_error'.tr};
     } finally {
       isSavingEmail.value = false;
     }

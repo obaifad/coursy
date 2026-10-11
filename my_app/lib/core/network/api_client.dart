@@ -132,6 +132,7 @@ class ApiClient extends GetxService {
           statusCode: status,
           fieldErrors: fieldErrorsFromBody(body),
           code: errorCodeFromBody(body),
+          retryAfterSeconds: _retryAfter(response.headers),
         );
       }
 
@@ -154,8 +155,19 @@ class ApiClient extends GetxService {
         throw ApiException('error_invalid_server_response'.tr, statusCode: status);
       }
       final msg = messageFromErrorBody(raw, fallback: _dioMessage(e));
-      throw ApiException(msg, statusCode: status, fieldErrors: fieldErrorsFromBody(raw), code: errorCodeFromBody(raw));
+      throw ApiException(
+        msg,
+        statusCode: status,
+        fieldErrors: fieldErrorsFromBody(raw),
+        code: errorCodeFromBody(raw),
+        retryAfterSeconds: _retryAfter(e.response?.headers),
+      );
     }
+  }
+
+  static int? _retryAfter(Headers? headers) {
+    final value = int.tryParse(headers?.value('retry-after')?.trim() ?? '');
+    return value != null && value > 0 ? value : null;
   }
 
   void _maybeSessionExpired(RequestOptions options) {

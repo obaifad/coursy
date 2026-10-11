@@ -17,6 +17,7 @@ class StudentProfilePayload {
     this.interests,
     this.preferredCategories,
     this.notificationRadiusKm,
+    this.currentPassword,
   });
 
   final String? firstName;
@@ -36,6 +37,9 @@ class StudentProfilePayload {
   final List<String>? interests;
   final List<int>? preferredCategories;
   final int? notificationRadiusKm;
+
+  /// مطلوبة عند تغيير البريد (حماية من تغييره بتوكن مسروق).
+  final String? currentPassword;
 
   Map<String, dynamic>? _studentProfileJson() {
     final categories = preferredCategories;
@@ -79,6 +83,7 @@ class StudentProfilePayload {
       if (interests != null && interests!.isNotEmpty) 'interests': interests,
       if (preferredCategories != null && preferredCategories!.isNotEmpty) 'preferred_categories': preferredCategories,
       if (notificationRadiusKm != null) 'notification_radius_km': notificationRadiusKm,
+      if (currentPassword != null && currentPassword!.isNotEmpty) 'current_password': currentPassword,
       if (studentProfile != null) 'student_profile': studentProfile,
     };
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:my_app/core/data/repositories/auth_repository.dart';
+import 'package:my_app/core/models/student_profile_payload.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/core/network/api_exception.dart';
 import 'package:my_app/core/storage/token_storage.dart';
@@ -111,5 +112,33 @@ void main() {
 
     expect(c.verified.value, isTrue);
     await tester.pumpAndSettle(const Duration(seconds: 2));
+  });
+
+  testWidgets('429 on send uses Retry-After for the countdown, 503 shows our message', (tester) async {
+    final (_, c) = await _open(
+      tester,
+      setup: (a) => a.sendError = ApiException('Too Many Attempts.', statusCode: 429, retryAfterSeconds: 37),
+    );
+    expect(c.resendSeconds.value, 37);
+    expect(c.errorMessage.value, 'email_code_too_many');
+    Get.back<void>();
+    await tester.pumpAndSettle();
+    Get.delete<EmailVerificationController>();
+  });
+
+  testWidgets('changing the email requires the current password', (tester) async {
+    final (_, c) = await _open(tester);
+
+    expect(await c.changeEmail('new@example.com', ''), {'current_password': 'current_password_required'});
+    expect(await c.changeEmail('not-an-email', 'secret'), {'email': 'enter_valid_email'});
+
+    Get.back<void>();
+    await tester.pumpAndSettle();
+    Get.delete<EmailVerificationController>();
+  });
+
+  test('profile payload sends current_password only when given', () {
+    expect(StudentProfilePayload(email: 'a@b.co', currentPassword: 'secret').toJson()['current_password'], 'secret');
+    expect(StudentProfilePayload(email: 'a@b.co').toJson().containsKey('current_password'), isFalse);
   });
 }

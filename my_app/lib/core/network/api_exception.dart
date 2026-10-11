@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 
 class ApiException implements Exception {
-  ApiException(this.message, {this.statusCode, this.fieldErrors, this.code});
+  ApiException(this.message, {this.statusCode, this.fieldErrors, this.code, this.retryAfterSeconds});
 
   final String message;
   final int? statusCode;
@@ -9,6 +9,9 @@ class ApiException implements Exception {
 
   /// رمز خطأ ثابت من الخادم (مثل `transaction_already_used`) — للمطابقة بدل نص الرسالة.
   final String? code;
+
+  /// ترويسة `Retry-After` مع 429 (بالثواني) — لعدّاد «أعد المحاولة بعد».
+  final int? retryAfterSeconds;
 
   @override
   String toString() => message;

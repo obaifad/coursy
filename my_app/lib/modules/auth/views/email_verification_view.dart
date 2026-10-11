@@ -286,7 +286,9 @@ class _VerifiedState extends StatelessWidget {
 /// تعديل البريد ثم إرسال رمز جديد إليه.
 Future<void> _showEditEmailSheet(BuildContext context, EmailVerificationController controller) async {
   final field = TextEditingController(text: controller.email.value);
-  final error = RxnString();
+  final password = TextEditingController();
+  final errors = <String, String>{}.obs;
+  final hidePassword = true.obs;
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -317,8 +319,26 @@ Future<void> _showEditEmailSheet(BuildContext context, EmailVerificationControll
               autofillHints: const [AutofillHints.email],
               decoration: InputDecoration(
                 labelText: 'email'.tr,
-                errorText: error.value,
+                errorText: errors['email'],
                 prefixIcon: const Icon(Icons.alternate_email_rounded),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Obx(
+            () => TextField(
+              controller: password,
+              obscureText: hidePassword.value,
+              autofillHints: const [AutofillHints.password],
+              decoration: InputDecoration(
+                labelText: 'current_password'.tr,
+                errorText: errors['current_password'],
+                prefixIcon: const Icon(Icons.lock_outline_rounded),
+                suffixIcon: IconButton(
+                  tooltip: 'toggle_password_visibility'.tr,
+                  onPressed: hidePassword.toggle,
+                  icon: Icon(hidePassword.value ? Icons.visibility_off_rounded : Icons.visibility_rounded),
+                ),
               ),
             ),
           ),
@@ -330,11 +350,11 @@ Future<void> _showEditEmailSheet(BuildContext context, EmailVerificationControll
               onPressed: controller.isSavingEmail.value
                   ? null
                   : () async {
-                      final message = await controller.changeEmail(field.text);
-                      if (message == null) {
+                      final result = await controller.changeEmail(field.text, password.text);
+                      if (result == null) {
                         if (sheetContext.mounted) Navigator.of(sheetContext).pop();
                       } else {
-                        error.value = message;
+                        errors.assignAll(result);
                       }
                     },
             ),
@@ -344,4 +364,5 @@ Future<void> _showEditEmailSheet(BuildContext context, EmailVerificationControll
     ),
   );
   field.dispose();
+  password.dispose();
 }
