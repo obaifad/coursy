@@ -212,7 +212,7 @@ class _DashPainter extends CustomPainter {
   bool shouldRepaint(covariant _DashPainter oldDelegate) => oldDelegate.color != color;
 }
 
-/// الصورة داخل البطاقة بزوايا مدوّرة، مع شارة داكنة (الأكثر مبيعاً / مقاعد محدودة / جديدة…) في الزاوية.
+/// الصورة داخل البطاقة بزوايا مدوّرة، مع شارة داكنة (الأكثر طلباً / مقاعد محدودة / جديدة…) في الزاوية.
 class _TicketImage extends StatelessWidget {
   const _TicketImage({required this.course, required this.compact});
 
