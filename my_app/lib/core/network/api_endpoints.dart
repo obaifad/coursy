@@ -23,6 +23,8 @@ abstract final class ApiEndpoints {
   static const studentNotifications = '/student/notifications';
   static const studentMobileVerificationSend = '/student/mobile-verification/send';
   static const studentMobileVerificationVerify = '/student/mobile-verification/verify';
+  static const studentEmailVerificationSend = '/student/email-verification/send';
+  static const studentEmailVerificationVerify = '/student/email-verification/verify';
   static const studentDevices = '/student/devices';
   static const logout = '/logout';
 

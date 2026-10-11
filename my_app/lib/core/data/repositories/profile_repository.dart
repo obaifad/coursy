@@ -41,6 +41,10 @@ class ProfileRepository extends GetxService {
     if (phoneVerified != null) {
       await _tokenStorage.savePhoneVerified(phoneVerified);
     }
+    final emailVerified = emailVerificationStatus(extractUserMap(meMap) ?? meMap);
+    if (emailVerified != null) {
+      await _tokenStorage.saveEmailVerified(emailVerified);
+    }
 
     var user = mergeProfileUserData(meMap);
     final profile = profileRecord;

@@ -26,6 +26,9 @@ class TokenStorage extends GetxService {
   /// حالة التحقق من الهاتف: true/false من الخادم، أو null إن لم يُعرف بعد (الخادم لم يرسل الحقل).
   final RxnBool phoneVerified = RxnBool();
 
+  /// حالة تأكيد البريد بنفس المنطق: null = الخادم لم يرسل `email_verified_at` بعد.
+  final RxnBool emailVerified = RxnBool();
+
   int? get studentId => _studentId.value;
   String? get token => _token.value;
   bool get isLoggedIn => _token.value != null && _token.value!.isNotEmpty;
@@ -97,6 +100,8 @@ class TokenStorage extends GetxService {
     userAvatarUrl.value = stored[SessionKeys.avatarUrl];
     final storedVerified = stored[SessionKeys.phoneVerified];
     phoneVerified.value = storedVerified == null ? null : storedVerified == 'true';
+    final storedEmailVerified = stored[SessionKeys.emailVerified];
+    emailVerified.value = storedEmailVerified == null ? null : storedEmailVerified == 'true';
 
     final sid = int.tryParse(stored[SessionKeys.studentId] ?? '');
     _studentId.value = (sid != null && sid > 0) ? sid : null;
@@ -166,12 +171,19 @@ class TokenStorage extends GetxService {
 
   Future<void> markPhoneVerified() => savePhoneVerified(true);
 
+  Future<void> saveEmailVerified(bool verified) async {
+    if (emailVerified.value == verified) return;
+    emailVerified.value = verified;
+    await _secure.write(SessionKeys.emailVerified, verified ? 'true' : 'false');
+  }
+
   Future<void> clearSession() async {
     _token.value = null;
     userName.value = null;
     userPhone.value = null;
     userAvatarUrl.value = null;
     phoneVerified.value = null;
+    emailVerified.value = null;
     _studentId.value = null;
 
     await _secure.deleteAll();

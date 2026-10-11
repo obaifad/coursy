@@ -5,6 +5,7 @@ abstract final class SessionKeys {
   static const userPhone = 'session.user_phone';
   static const studentId = 'session.student_id';
   static const phoneVerified = 'session.phone_verified';
+  static const emailVerified = 'session.email_verified';
   static const avatarUrl = 'session.avatar_url';
   static const avatarLocalPath = 'session.avatar_local_path';
   static const academicProfileCache = 'session.academic_profile_cache';

@@ -162,8 +162,16 @@ class ProfileView extends StatelessWidget {
               }
               // يظهر فقط إن أكّد الخادم أن الرقم غير مُتحقَّق منه (null = غير معروف → لا نزعج المستخدم).
               final needsPhoneVerification = AppFlags.phoneVerificationEnabled && storage.phoneVerified.value == false;
+              // نفس المبدأ: يظهر فقط حين يؤكد الخادم أن البريد غير مؤكد.
+              final needsEmailVerification = AppFlags.emailVerificationEnabled && storage.emailVerified.value == false;
               return Column(
                 children: [
+                  if (needsEmailVerification)
+                    ProfileMenuTile(
+                      title: 'verify_email_title'.tr,
+                      icon: Icons.mark_email_unread_outlined,
+                      onTap: () => Get.toNamed(AppRoutes.emailVerification),
+                    ),
                   if (needsPhoneVerification)
                     ProfileMenuTile(
                       title: 'verify_phone_title'.tr,

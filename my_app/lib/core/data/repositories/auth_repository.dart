@@ -9,10 +9,13 @@ import '../../network/json_parser.dart';
 import '../../storage/token_storage.dart';
 
 class OtpSendResult {
-  OtpSendResult({required this.message, this.expiresInSeconds, this.debugCode});
+  OtpSendResult({required this.message, this.expiresInSeconds, this.resendAfterSeconds, this.debugCode});
 
   final String message;
   final int? expiresInSeconds;
+
+  /// متى يُسمح بطلب رمز جديد (عدّاد «إعادة الإرسال»).
+  final int? resendAfterSeconds;
   final String? debugCode;
 }
 
@@ -116,6 +119,32 @@ class AuthRepository extends GetxService {
         return user;
       },
     );
+  }
+
+  /// يرسل رمز تأكيد من 6 أرقام إلى بريد الطالب المسجّل (التوكن يحدد الطالب، بلا جسم).
+  Future<OtpSendResult> sendEmailVerificationCode() {
+    return _client.handle(() => _client.post(ApiEndpoints.studentEmailVerificationSend), (data) {
+      final map = normalizeApiBody(data);
+      if (map is! Map) return OtpSendResult(message: 'email_code_sent'.tr);
+      int? seconds(String key) => map[key] is int ? map[key] as int : int.tryParse(map[key]?.toString() ?? '');
+      final debugCode = map['verification_code']?.toString();
+      if (debugCode != null && debugCode.isNotEmpty) AppDebugLog.otp('EMAIL OTP code=$debugCode');
+      return OtpSendResult(
+        message: map['message']?.toString() ?? 'email_code_sent'.tr,
+        expiresInSeconds: seconds('expires_in_seconds'),
+        resendAfterSeconds: seconds('resend_after_seconds'),
+        debugCode: debugCode,
+      );
+    });
+  }
+
+  /// يتحقق من الرمز. 422 = رمز خاطئ أو منتهٍ. يحفظ الحالة محلياً عند النجاح.
+  Future<void> verifyEmailCode(String code) async {
+    await _client.handle(
+      () => _client.post(ApiEndpoints.studentEmailVerificationVerify, data: {'code': code.trim()}),
+      (data) => normalizeApiBody(data),
+    );
+    await _tokenStorage.saveEmailVerified(true);
   }
 
   Future<void> _saveSessionFromBody(dynamic body) async {

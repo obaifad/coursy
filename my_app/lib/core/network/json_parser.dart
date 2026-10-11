@@ -137,6 +137,13 @@ bool? phoneVerificationStatus(Map<String, dynamic>? user) {
   return v != null && v.toString().isNotEmpty && v.toString() != 'null';
 }
 
+/// حالة تأكيد البريد (`email_verified_at`) بنفس منطق الهاتف: null إن لم يُرسل الخادم الحقل.
+bool? emailVerificationStatus(Map<String, dynamic>? user) {
+  if (user == null || !user.containsKey('email_verified_at')) return null;
+  final v = user['email_verified_at'];
+  return v != null && v.toString().isNotEmpty && v.toString() != 'null';
+}
+
 /// حقول المستخدم/الطالب من استجابة الملف الشخصي أو /student/me.
 Map<String, dynamic> extractProfileUserMap(dynamic body) {
   return mergeProfileUserData(body);

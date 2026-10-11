@@ -6,6 +6,8 @@ import '../modules/auth/controllers/phone_verification_controller.dart';
 import '../modules/auth/views/auth_views.dart';
 import '../modules/auth/views/register_view.dart';
 import '../modules/auth/views/phone_verification_view.dart';
+import '../modules/auth/views/email_verification_view.dart';
+import '../modules/auth/controllers/email_verification_controller.dart';
 import '../modules/courses/controllers/course_details_controller.dart';
 import '../modules/courses/controllers/booking_controller.dart';
 import '../modules/courses/controllers/category_courses_controller.dart';
@@ -74,6 +76,11 @@ class AppPages {
       name: AppRoutes.phoneVerification,
       page: () => const PhoneVerificationView(),
       binding: BindingsBuilder(() => Get.lazyPut<PhoneVerificationController>(() => PhoneVerificationController())),
+    ),
+    GetPage(
+      name: AppRoutes.emailVerification,
+      page: () => const EmailVerificationView(),
+      binding: BindingsBuilder(() => Get.lazyPut<EmailVerificationController>(() => EmailVerificationController())),
     ),
     GetPage(name: AppRoutes.root, page: () => const RootView(), binding: RootBinding()),
     GetPage(

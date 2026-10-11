@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/config/app_flags.dart';
 import '../../../core/data/repositories/auth_repository.dart';
 import '../../../core/data/repositories/interest_repository.dart';
 import '../../../core/data/repositories/city_repository.dart';
@@ -338,6 +341,11 @@ class AuthController extends GetxController {
         );
         Get.snackbar('welcome'.tr, 'account_created_ok'.tr);
         await _afterAuthSuccess();
+        // تأكيد البريد اختياري: يُعرض مرة بعد إنشاء الحساب مع «تخطي الآن».
+        final email = payload.email.trim();
+        if (AppFlags.emailVerificationEnabled && email.isNotEmpty) {
+          unawaited(Get.toNamed(AppRoutes.emailVerification, arguments: {'email': email, 'fromRegister': true}));
+        }
         return;
       }
 

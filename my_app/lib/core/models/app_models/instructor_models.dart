@@ -167,6 +167,7 @@ class InstructorModel {
   final String? imageUrl;
   final bool isPrivate;
   final String? mobile;
+
   /// الأسعار كأرقام؛ النص («75,000 ل.س») يُبنى عند العرض بلغة الواجهة الحالية.
   final double? sessionPriceValue;
   final double? hourlyPriceValue;
