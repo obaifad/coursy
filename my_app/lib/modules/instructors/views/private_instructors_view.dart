@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/locale/locale_rebuild.dart';
+import '../../../core/locale/plural.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_system_ui.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/filter_chips.dart';
@@ -15,32 +17,46 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('private_instructors_title'.tr),
-      ),
-      body: Obx(() {
-        final _ = localeRebuildToken;
-        if (controller.isLoading.value && controller.instructors.isEmpty) {
-          return const AppListSkeleton(padding: EdgeInsets.fromLTRB(16, 12, 16, 24));
-        }
+    // الرأس البنفسجي يمتد تحت شريط الحالة.
+    return AppStatusBar(
+      lightIcons: true,
+      child: Scaffold(
+        backgroundColor: AppColors.surface,
+        body: Obx(() {
+          final _ = localeRebuildToken;
+          final count = controller.instructors.length;
+          final header = AppHeroHeader(
+            title: 'private_instructors_title'.tr,
+            subtitle: 'private_instructors_subtitle'.tr,
+            badge: count > 0 ? pluralTr('instructor_subject_count', count) : null,
+            onBack: Get.back,
+          );
+          if (controller.isLoading.value && controller.instructors.isEmpty) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                header,
+                const Expanded(child: AppListSkeleton(padding: EdgeInsets.fromLTRB(16, 12, 16, 24))),
+              ],
+            );
+          }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 8),
-            InstructorSpecializationFiltersPanel(
-              subjects: controller.subjects.toList(growable: false),
-              selectedKey: controller.selectedSubjectKey.value,
-              onSelected: controller.selectSubject,
-              isLoading: controller.isLoadingFilters.value && controller.subjects.isEmpty,
-            ),
-            Expanded(
-              child: _buildBody(context),
-            ),
-          ],
-        );
-      }),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              header,
+              const SizedBox(height: 10),
+              InstructorSpecializationFiltersPanel(
+                subjects: controller.subjects.toList(growable: false),
+                selectedKey: controller.selectedSubjectKey.value,
+                onSelected: controller.selectSubject,
+                isLoading: controller.isLoadingFilters.value && controller.subjects.isEmpty,
+              ),
+              Expanded(child: _buildBody(context)),
+            ],
+          );
+        }),
+      ),
     );
   }
 
@@ -54,11 +70,7 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
             children: [
               const Icon(Icons.cloud_off_outlined, size: 48, color: AppColors.textSecondary),
               const SizedBox(height: 12),
-              Text(
-                controller.errorMessage.value!,
-                textAlign: TextAlign.center,
-                style: AppTypography.pageSubtitle(),
-              ),
+              Text(controller.errorMessage.value!, textAlign: TextAlign.center, style: AppTypography.pageSubtitle()),
               const SizedBox(height: 16),
               FilledButton(onPressed: controller.loadInstructors, child: Text('retry'.tr)),
             ],
@@ -72,9 +84,7 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            controller.selectedSubjectKey.value == null
-                ? 'no_private_instructors'.tr
-                : 'no_instructors_in_subject'.tr,
+            controller.selectedSubjectKey.value == null ? 'no_private_instructors'.tr : 'no_instructors_in_subject'.tr,
             textAlign: TextAlign.center,
             style: AppTypography.pageSubtitle(),
           ),
@@ -82,33 +92,35 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
       );
     }
 
+    // لقطة واحدة للعدد والعناصر وحالة «المزيد» (القائمة تُبنى أثناء التمرير).
+    final instructors = controller.instructors.toList();
+    final hasMore = controller.hasMore.value;
+    final isLoadingMore = controller.isLoadingMore.value;
     return AppMaxWidth(
       child: RefreshIndicator(
-      onRefresh: controller.loadInstructors,
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: AppLayout.scrollPadding(context),
-        itemCount: controller.instructors.length + 1,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (_, i) {
-          if (i == controller.instructors.length) {
-            if (!controller.hasMore.value) return const SizedBox(height: 8);
-            return OutlinedButton.icon(
-              onPressed: controller.isLoadingMore.value ? null : controller.loadMore,
-              icon: controller.isLoadingMore.value
-                  ? const AppInlineLoader()
-                  : const Icon(Icons.expand_more_rounded),
-              label: Text('load_more'.tr),
-            );
-          }
+        onRefresh: controller.loadInstructors,
+        child: ListView.separated(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: AppLayout.scrollPadding(context),
+          itemCount: instructors.length + 1,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (_, i) {
+            if (i == instructors.length) {
+              if (!hasMore) return const SizedBox(height: 8);
+              return OutlinedButton.icon(
+                onPressed: isLoadingMore ? null : controller.loadMore,
+                icon: isLoadingMore ? const AppInlineLoader() : const Icon(Icons.expand_more_rounded),
+                label: Text('load_more'.tr),
+              );
+            }
 
-          final item = controller.instructors[i];
-          return PrivateInstructorListCard(
-            instructor: item,
-            onTap: () => Get.toNamed(AppRoutes.instructorDetails, arguments: item),
-          );
-        },
-      ),
+            final item = instructors[i];
+            return PrivateInstructorListCard(
+              instructor: item,
+              onTap: () => Get.toNamed(AppRoutes.instructorDetails, arguments: item),
+            );
+          },
+        ),
       ),
     );
   }

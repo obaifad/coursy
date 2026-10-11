@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../locale/locale_controller.dart';
+import '../locale/plural.dart';
 
 /// مساعدات تحويل JSON مشتركة (مطابقة لـ Laravel API).
 abstract final class JsonHelpers {
@@ -74,10 +75,7 @@ abstract final class JsonHelpers {
     if (stats is Map) {
       final statsMap = Map<String, dynamic>.from(stats);
       final fromStats = parseDoubleOrNull(
-        statsMap['average_rating'] ??
-            statsMap['rating'] ??
-            statsMap['avg_rating'] ??
-            statsMap['reviews_average'],
+        statsMap['average_rating'] ?? statsMap['rating'] ?? statsMap['avg_rating'] ?? statsMap['reviews_average'],
       );
       if (fromStats != null && fromStats > 0) return fromStats;
     }
@@ -110,7 +108,18 @@ abstract final class JsonHelpers {
     final priceNum = parseDouble(price);
     final value = discountNum > 0 ? discountNum : priceNum;
     if (value <= 0) return '—';
-    return '${value.toStringAsFixed(0)} ${'currency_syp'.tr}';
+    return '${groupThousands(value.round())} ${'currency_syp'.tr}';
+  }
+
+  /// 1500000 → 1,500,000
+  static String groupThousands(int value) {
+    final digits = value.abs().toString();
+    final buffer = StringBuffer(value < 0 ? '-' : '');
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(digits[i]);
+    }
+    return buffer.toString();
   }
 
   static String levelLabel(String? level) {
@@ -140,8 +149,8 @@ abstract final class JsonHelpers {
   }
 
   static String durationLabel({int? hours, int? sessions}) {
-    if (hours != null && hours > 0) return 'hours_unit'.trParams({'n': '$hours'});
-    if (sessions != null && sessions > 0) return 'sessions_unit'.trParams({'n': '$sessions'});
+    if (hours != null && hours > 0) return pluralTr('hours_unit', hours);
+    if (sessions != null && sessions > 0) return pluralTr('sessions_unit', sessions);
     return '—';
   }
 
@@ -195,8 +204,11 @@ abstract final class JsonHelpers {
       case 'paid':
       case 'completed':
         return 'payment_status_paid'.tr;
-      case 'pending':
+      case 'partial':
+        return 'payment_status_partial'.tr;
       case 'unpaid':
+        return 'payment_status_unpaid'.tr;
+      case 'pending':
         return 'payment_status_pending'.tr;
       case 'failed':
         return 'payment_status_failed'.tr;

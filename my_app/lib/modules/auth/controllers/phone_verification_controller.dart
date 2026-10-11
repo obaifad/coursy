@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -7,6 +8,7 @@ import '../../../core/data/repositories/auth_repository.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/storage/token_storage.dart';
+
 class PhoneVerificationController extends GetxController {
   final AuthRepository _authRepository = Get.find();
   final TokenStorage _tokenStorage = Get.find();
@@ -44,7 +46,8 @@ class PhoneVerificationController extends GetxController {
       final result = await _authRepository.sendMobileVerificationCode();
       step.value = 1;
       _startResendTimer(result.expiresInSeconds ?? 60);
-      if (result.debugCode != null && result.debugCode!.isNotEmpty) {
+      // رمز التطوير يُعرض في نسخة debug فقط — لا يظهر للمستخدم حتى لو أرجعه الخادم.
+      if (kDebugMode && result.debugCode != null && result.debugCode!.isNotEmpty) {
         debugOtpHint.value = 'dev_otp'.trParams({'code': result.debugCode!});
       }
       Get.snackbar('verified_success'.tr, result.message);

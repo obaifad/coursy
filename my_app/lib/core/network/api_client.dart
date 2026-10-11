@@ -15,6 +15,26 @@ class ApiClient extends GetxService {
 
   final TokenStorage _tokenStorage;
   late final Dio dio;
+
+  /// يُستدعى عند 401 على طلب كان يحمل توكن (الجلسة أُلغيت من الخادم). يُضبط في main.
+  static void Function()? onUnauthorized;
+
+  /// يُستدعى عند 403 `{"code": "account_inactive"}` على طلب كان يحمل توكن (الإدارة أوقفت حساب الطالب)
+  /// مع رسالة الخادم: مثل 401 — مسح الجلسة وشاشة الدخول — لكن بنص الخادم بدل «انتهت الجلسة».
+  /// يُضبط في main (SessionRefresh.onAccountInactive)؛ إن لم يُضبط يُستخدم مسار 401 ([onUnauthorized]).
+  static void Function(String message)? onAccountInactive;
+
+  static const accountInactiveCode = 'account_inactive';
+
+  /// مسارات تُرجع 401 كجزء طبيعي من عملها (دخول/خروج/كلمة مرور) فلا تعني انتهاء الجلسة.
+  static const _authFlowPaths = <String>[
+    '/student/login',
+    '/student/register',
+    '/student/logout',
+    '/logout',
+    '/student/password/',
+    '/student/devices',
+  ];
   CancelToken _readCancelToken = CancelToken();
 
   /// يلغي طلبات GET الجارية (مثلاً عند تبديل اللغة) لمنع race condition.
@@ -33,10 +53,7 @@ class ApiClient extends GetxService {
         baseUrl: ApiConfig.baseUrl,
         connectTimeout: ApiConfig.connectTimeout,
         receiveTimeout: ApiConfig.receiveTimeout,
-        headers: const {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
+        headers: const {'Accept': 'application/json', 'Content-Type': 'application/json'},
         validateStatus: (status) => status != null && status < 500,
       ),
     );
@@ -45,10 +62,19 @@ class ApiClient extends GetxService {
 
     dio.interceptors.add(
       InterceptorsWrapper(
+        onResponse: (response, handler) {
+          if (response.statusCode == 401) _maybeSessionExpired(response.requestOptions);
+          if (response.statusCode == 403) _maybeAccountInactive(response);
+          handler.next(response);
+        },
+        onError: (e, handler) {
+          final response = e.response;
+          if (response?.statusCode == 401) _maybeSessionExpired(e.requestOptions);
+          if (response != null && response.statusCode == 403) _maybeAccountInactive(response);
+          handler.next(e);
+        },
         onRequest: (options, handler) {
-          final lang = Get.isRegistered<LocaleController>()
-              ? Get.find<LocaleController>().code.value
-              : 'ar';
+          final lang = Get.isRegistered<LocaleController>() ? Get.find<LocaleController>().code.value : 'ar';
           options.headers['Accept-Language'] = lang;
           // لا نضيف lang كـ query على POST/PATCH/PUT — Laravel قد يدمجه في body ويكسر insert (مثل enrollments).
           if (options.method.toUpperCase() == 'GET') {
@@ -71,23 +97,11 @@ class ApiClient extends GetxService {
     );
   }
 
-  Future<Response<dynamic>> get(
-    String path, {
-    Map<String, dynamic>? query,
-    CancelToken? cancelToken,
-  }) {
-    return dio.get<dynamic>(
-      path,
-      queryParameters: query,
-      cancelToken: cancelToken,
-    );
+  Future<Response<dynamic>> get(String path, {Map<String, dynamic>? query, CancelToken? cancelToken}) {
+    return dio.get<dynamic>(path, queryParameters: query, cancelToken: cancelToken);
   }
 
-  Future<Response<dynamic>> post(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? query,
-  }) {
+  Future<Response<dynamic>> post(String path, {dynamic data, Map<String, dynamic>? query}) {
     return dio.post<dynamic>(path, data: data, queryParameters: query);
   }
 
@@ -99,11 +113,7 @@ class ApiClient extends GetxService {
     return dio.patch<dynamic>(path, data: data);
   }
 
-  Future<Response<dynamic>> delete(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? query,
-  }) {
+  Future<Response<dynamic>> delete(String path, {dynamic data, Map<String, dynamic>? query}) {
     return dio.delete<dynamic>(path, data: data, queryParameters: query);
   }
 
@@ -122,25 +132,24 @@ class ApiClient extends GetxService {
       final body = response.data;
 
       if (_isHostingChallengeHtml(body)) {
-        throw ApiException(
-          'الخادم لم يرجع JSON (غالباً حماية الاستضافة على POST). '
-          'جرّب التطبيق على Android أو Windows، أو اطلب من مبرمج الـ API تفعيل CORS ودعم POST.',
-          statusCode: status,
-        );
+        // صفحة حماية الاستضافة بدل JSON.
+        throw ApiException('error_invalid_server_response'.tr, statusCode: status);
       }
 
       if (status >= 400) {
         throw ApiException(
-          messageFromErrorBody(body, fallback: 'فشل الطلب ($status)'),
+          messageFromErrorBody(body, fallback: 'error_request_failed'.trParams({'status': '$status'})),
           statusCode: status,
           fieldErrors: fieldErrorsFromBody(body),
+          code: errorCodeFromBody(body),
+          retryAfterSeconds: _retryAfter(response.headers),
         );
       }
 
       try {
         normalizeApiBody(body);
-      } on FormatException catch (e) {
-        throw ApiException(e.message, statusCode: status);
+      } on FormatException {
+        throw ApiException('error_invalid_server_response'.tr, statusCode: status);
       }
 
       return mapper(body);
@@ -153,21 +162,48 @@ class ApiClient extends GetxService {
       final status = e.response?.statusCode;
       final raw = e.response?.data;
       if (_isHostingChallengeHtml(raw)) {
-        throw ApiException(
-          'الخادم لم يرجع JSON على طلب POST. شغّل التطبيق على Android/Windows وليس Chrome.',
-          statusCode: status,
-        );
+        throw ApiException('error_invalid_server_response'.tr, statusCode: status);
       }
-      final msg = messageFromErrorBody(
-        raw,
-        fallback: _dioMessage(e),
-      );
+      final msg = messageFromErrorBody(raw, fallback: _dioMessage(e));
       throw ApiException(
         msg,
         statusCode: status,
         fieldErrors: fieldErrorsFromBody(raw),
+        code: errorCodeFromBody(raw),
+        retryAfterSeconds: _retryAfter(e.response?.headers),
       );
     }
+  }
+
+  static int? _retryAfter(Headers? headers) {
+    final value = int.tryParse(headers?.value('retry-after')?.trim() ?? '');
+    return value != null && value > 0 ? value : null;
+  }
+
+  void _maybeSessionExpired(RequestOptions options) {
+    if (!_endsSession(options)) return;
+    onUnauthorized?.call();
+  }
+
+  /// حساب موقوف: الجلسة لم تعد صالحة لأي طلب — نعاملها مثل 401 ونعرض رسالة الخادم.
+  void _maybeAccountInactive(Response<dynamic> response) {
+    if (!isAccountInactiveBody(response.data) || !_endsSession(response.requestOptions)) return;
+    final message = messageFromErrorBody(response.data, fallback: 'account_inactive_msg'.tr);
+    final handler = onAccountInactive;
+    if (handler != null) {
+      handler(message);
+    } else {
+      onUnauthorized?.call();
+    }
+  }
+
+  static bool isAccountInactiveBody(dynamic body) => errorCodeFromBody(body) == accountInactiveCode;
+
+  /// طلب كان يحمل توكن وليس من مسارات الدخول/الخروج (التي تُرجع 401/403 كجزء طبيعي من عملها).
+  bool _endsSession(RequestOptions options) {
+    final hadToken = options.headers['Authorization']?.toString().startsWith('Bearer ') ?? false;
+    if (!hadToken) return false;
+    return !_authFlowPaths.any(options.path.startsWith);
   }
 
   bool _isHostingChallengeHtml(dynamic body) {
@@ -192,11 +228,15 @@ class ApiClient extends GetxService {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        return 'تعذر الاتصال بالخادم. تحقق من الإنترنت وعنوان API: ${ApiConfig.baseUrl}';
+        // لا نعرض عنوان الـ API للمستخدم — يظهر في سجل التطوير فقط.
+        AppDebugLog.api('CONNECTION FAILED', ApiConfig.baseUrl);
+        return 'error_connection_timeout'.tr;
       case DioExceptionType.badCertificate:
-        return 'خطأ في شهادة HTTPS للخادم.';
+        return 'error_bad_certificate'.tr;
       default:
-        return e.message ?? 'فشل الاتصال بالخادم';
+        // مثل أخطاء 5xx — نص Dio التقني (بالإنجليزية) لا يُعرض للمستخدم.
+        final status = e.response?.statusCode;
+        return status == null ? 'connection_error'.tr : 'error_request_failed'.trParams({'status': '$status'});
     }
   }
 }

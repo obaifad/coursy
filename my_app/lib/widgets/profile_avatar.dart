@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -30,7 +31,7 @@ class ProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final avatar = Stack(
       clipBehavior: Clip.none,
-      alignment: Alignment.bottomRight,
+      alignment: AlignmentDirectional.bottomEnd,
       children: [
         Container(
           padding: const EdgeInsets.all(4),
@@ -70,7 +71,13 @@ class ProfileAvatar extends StatelessWidget {
     );
 
     if (onTap == null) return avatar;
-    return GestureDetector(onTap: onTap, child: avatar);
+    return InkResponse(
+      onTap: onTap,
+      customBorder: const CircleBorder(),
+      containedInkWell: false,
+      radius: size / 2 + 12,
+      child: avatar,
+    );
   }
 }
 
@@ -83,24 +90,34 @@ class _AvatarImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = _resolveProvider();
-    if (provider != null) {
-      return Image(image: provider, fit: BoxFit.cover, width: size, height: size);
-    }
-    return ColoredBox(
+    final placeholder = ColoredBox(
       color: AppColors.indicatorFill,
       child: Icon(Icons.person_rounded, size: size * 0.55, color: AppColors.primary),
     );
+    final provider = _resolveProvider();
+    if (provider != null) {
+      return Image(
+        image: provider,
+        fit: BoxFit.cover,
+        width: size,
+        height: size,
+        errorBuilder: (_, __, ___) => placeholder,
+      );
+    }
+    return placeholder;
   }
 
   ImageProvider? _resolveProvider() {
-    if (localPath != null && localPath!.isNotEmpty) {
-      if (kIsWeb) return NetworkImage(localPath!);
-      return FileImage(File(localPath!));
+    final path = localPath;
+    if (path != null && path.isNotEmpty) {
+      if (kIsWeb) return NetworkImage(path);
+      // ملف مؤقت قد يكون حُذف — نرجع لرابط الخادم بدل صورة فارغة.
+      final file = File(path);
+      if (file.existsSync()) return FileImage(file);
     }
     final resolved = ApiConfig.resolveMediaUrl(imageUrl);
     if (resolved != null && resolved.isNotEmpty) {
-      return NetworkImage(resolved);
+      return kIsWeb ? NetworkImage(resolved) : CachedNetworkImageProvider(resolved);
     }
     return null;
   }

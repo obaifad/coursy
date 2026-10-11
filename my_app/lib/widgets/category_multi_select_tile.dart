@@ -42,7 +42,7 @@ class CategoryMultiSelectTile extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         color: ids.isEmpty ? AppColors.textSecondary : AppColors.textPrimary,
                       ),
                     ),

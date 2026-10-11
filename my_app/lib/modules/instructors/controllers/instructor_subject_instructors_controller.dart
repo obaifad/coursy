@@ -3,8 +3,9 @@ import 'package:get/get.dart';
 import '../../../core/data/repositories/instructor_repository.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/locale/locale_request_guard.dart';
 
-class InstructorSubjectInstructorsController extends GetxController {
+class InstructorSubjectInstructorsController extends GetxController with InitialLoadState {
   final InstructorRepository _repository = Get.find();
 
   final isLoading = true.obs;
@@ -40,7 +41,7 @@ class InstructorSubjectInstructorsController extends GetxController {
   }
 
   Future<void> loadInstructors() async {
-    isLoading.value = true;
+    isLoading.value = isInitialLoad;
     errorMessage.value = null;
     _visibleCount = 0;
     try {
@@ -51,6 +52,7 @@ class InstructorSubjectInstructorsController extends GetxController {
       _visibleCount = instructors.length;
       instructorsCount.value = _allInstructors.length;
       hasMore.value = _visibleCount < _allInstructors.length;
+      markLoaded();
     } on ApiException catch (e) {
       errorMessage.value = e.message;
       instructors.clear();

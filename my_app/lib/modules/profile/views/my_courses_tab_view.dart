@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/locale/plural.dart';
+
+import '../../../theme/app_fonts.dart';
 import '../../../core/config/api_config.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
@@ -73,12 +75,16 @@ class _MyCoursesShellState extends State<_MyCoursesShell> with SingleTickerProvi
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AppScreenHeader(
-              title: 'my_courses'.tr,
-              subtitle: 'my_courses_subtitle'.tr,
-              logoInline: true,
-              logoHeight: 44,
+            Obx(
+              () => AppHeroHeader(
+                title: 'my_courses'.tr,
+                subtitle: 'my_courses_subtitle'.tr,
+                badge: controller.enrollments.isEmpty
+                    ? null
+                    : pluralTr('bookings_count', controller.enrollments.length),
+              ),
             ),
+            const SizedBox(height: 10),
             AppTabBarSection(
               controller: _tabController,
               tabs: [
@@ -91,7 +97,7 @@ class _MyCoursesShellState extends State<_MyCoursesShell> with SingleTickerProvi
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                physics: const BouncingScrollPhysics(),
+                physics: const ClampingScrollPhysics(),
                 children: const [
                   _EnrollmentList(status: _EnrollmentListStatus.pending),
                   _EnrollmentList(status: _EnrollmentListStatus.confirmed),
@@ -131,6 +137,20 @@ class _EnrollmentList extends GetView<MyCoursesController> {
   Widget build(BuildContext context) {
     return Obx(() {
       final items = _itemsForStatus();
+      final error = controller.errorMessage.value;
+      // بلا اتصال: رسالة الخطأ مع «إعادة المحاولة» بدل «لا حجوزات».
+      if (items.isEmpty && controller.enrollments.isEmpty && error != null) {
+        return RefreshIndicator(
+          onRefresh: controller.load,
+          color: AppColors.primary,
+          child: AppEmptyState.scrollable(
+            context: context,
+            message: error,
+            icon: Icons.cloud_off_outlined,
+            action: FilledButton(onPressed: controller.load, child: Text('retry'.tr)),
+          ),
+        );
+      }
       if (items.isEmpty) {
         return RefreshIndicator(
           onRefresh: controller.load,
@@ -151,10 +171,7 @@ class _EnrollmentList extends GetView<MyCoursesController> {
           padding: AppLayout.scrollPadding(context, rootTab: true, top: 8),
           itemCount: items.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (_, i) => _EnrollmentCard(
-            enrollment: items[i],
-            controller: controller,
-          ),
+          itemBuilder: (_, i) => _EnrollmentCard(enrollment: items[i], controller: controller),
         ),
       );
     });
@@ -221,47 +238,15 @@ class _EnrollmentCard extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: [
-                  for (final m in meta.rows) _MetaChip(icon: m.icon, label: m.label),
-                ],
+                children: [for (final m in meta.rows) _MetaChip(icon: m.icon, label: m.label)],
               ),
             ],
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                if (enrollment.canCancel) ...[
-                  Expanded(
-                    child: Obx(() {
-                      controller.cancellingIds.length;
-                      final isCancelling = controller.cancellingIds.contains(enrollment.id);
-                      return OutlinedButton.icon(
-                        onPressed: isCancelling ? null : () => _confirmCancel(context, enrollment),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFFDC2626),
-                          side: BorderSide(color: const Color(0xFFDC2626).withValues(alpha: 0.35)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        icon: isCancelling
-                            ? const AppInlineLoader()
-                            : const Icon(Icons.close_rounded, size: 18),
-                        label: Text(
-                          isCancelling ? 'saving'.tr : 'cancel_booking'.tr,
-                          style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13),
-                        ),
-                      );
-                    }),
-                  ),
-                  const SizedBox(width: 10),
-                ],
-                Expanded(
-                  flex: enrollment.canCancel ? 1 : 2,
-                  child: RegisterGradientButton(
-                    label: 'view_details'.tr,
-                    onPressed: () => _openCourseDetails(enrollment),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 14),
+            _BookingActions(
+              enrollment: enrollment,
+              controller: controller,
+              onDetails: () => _openCourseDetails(enrollment),
+              onCancel: () => _confirmCancel(context, enrollment),
             ),
           ],
         ),
@@ -283,11 +268,12 @@ class _EnrollmentCard extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('cancel_booking'.tr, style: GoogleFonts.tajawal(fontWeight: FontWeight.w800)),
+        title: Text('cancel_booking'.tr, style: AppFonts.tajawal(fontWeight: FontWeight.w800)),
         content: Text('cancel_booking_confirm'.tr),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text('cancel'.tr)),
           FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(96, 46)),
             onPressed: () => Navigator.of(context).pop(true),
             child: Text('confirm'.tr),
           ),
@@ -346,11 +332,7 @@ class _StatusBadge extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: GoogleFonts.tajawal(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: theme.foregroundColor,
-            ),
+            style: AppFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w800, color: theme.foregroundColor),
           ),
         ],
       ),
@@ -368,10 +350,7 @@ class _MetaChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: AppColors.indicatorFill,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -379,11 +358,7 @@ class _MetaChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: GoogleFonts.tajawal(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF374151),
-            ),
+            style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textBody),
           ),
         ],
       ),
@@ -400,6 +375,13 @@ class _MetaRow {
 class _EnrollmentMeta {
   const _EnrollmentMeta(this.rows);
 
+  /// الدورات التي تُدفع حضورياً في المعهد: «غير مدفوع» تقلق الطالب بلا داعٍ، فلا تظهر إلا إن وُجد دفع.
+  static bool _showsPaymentStatus(EnrollmentModel e) {
+    final status = e.paymentStatus.toLowerCase();
+    if (status.isEmpty) return false;
+    return e.course?.requiresAdvancePayment == true || status == 'paid' || status == 'partial';
+  }
+
   final List<_MetaRow> rows;
 
   bool get isNotEmpty => rows.isNotEmpty;
@@ -408,7 +390,7 @@ class _EnrollmentMeta {
     final course = enrollment.course;
     final rows = <_MetaRow>[
       _MetaRow(icon: Icons.confirmation_number_outlined, label: '${'booking_id'.tr} #${enrollment.id}'),
-      if (enrollment.paymentStatus.isNotEmpty)
+      if (_showsPaymentStatus(enrollment))
         _MetaRow(
           icon: Icons.payments_outlined,
           label: '${'payment_status'.tr}: ${JsonHelpers.paymentStatusLabel(enrollment.paymentStatus)}',
@@ -430,38 +412,132 @@ class _EnrollmentMeta {
   }
 }
 
-class _EnrollmentStatusTheme {
-  const _EnrollmentStatusTheme({
-    required this.backgroundColor,
-    required this.foregroundColor,
-    required this.icon,
+/// أزرار بطاقة الحجز في صف واحد مضغوط:
+/// الإجراء الأساسي (ادفع الآن إن أمكن، وإلا عرض التفاصيل) ممتلئ بالبنفسجي،
+/// والثانوي (عرض التفاصيل) بحد خفيف، وإلغاء الحجز زر صغير بحد أحمر خفيف.
+class _BookingActions extends StatelessWidget {
+  const _BookingActions({
+    required this.enrollment,
+    required this.controller,
+    required this.onDetails,
+    required this.onCancel,
   });
+
+  final EnrollmentModel enrollment;
+  final MyCoursesController controller;
+  final VoidCallback onDetails;
+  final VoidCallback onCancel;
+
+  static const double _height = 44;
+
+  ButtonStyle _outlined(Color color) => OutlinedButton.styleFrom(
+    foregroundColor: color,
+    side: BorderSide(color: color.withValues(alpha: 0.4)),
+    minimumSize: const Size(0, _height),
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final canCancel = enrollment.canCancel;
+    final label = AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 13);
+
+    return Obx(() {
+      // «ادفع الآن» فقط إذا كان الدفع الإلكتروني متاحاً فعلاً؛ وإلا «عرض التفاصيل» هو الإجراء الأساسي.
+      controller.paymentAvailable.length;
+      final canPay = controller.showPayButton(enrollment);
+      return _buildRow(canPay, canCancel, label);
+    });
+  }
+
+  Widget _buildRow(bool canPay, bool canCancel, TextStyle label) {
+    // يصغر النص بدل قصّه: «عرض التفاصيل» كان يظهر «عرض التفاصـ…» بجانب «ادفع الآن» على هاتف 1080px.
+    Widget fitted(String text) => FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(text, style: label, maxLines: 1),
+    );
+    final details = canPay
+        ? OutlinedButton(onPressed: onDetails, style: _outlined(AppColors.primary), child: fitted('view_details'.tr))
+        : SizedBox(
+            height: _height,
+            child: RegisterGradientButton(label: 'view_details'.tr, onPressed: onDetails),
+          );
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // عرضان متساويان: «عرض التفاصيل» أطول من «ادفع الآن»، وكانت حصته 2 من 5 فقط.
+        if (canPay)
+          Expanded(
+            child: SizedBox(
+              height: _height,
+              child: ElevatedButton.icon(
+                onPressed: () => Get.toNamed(AppRoutes.payment, arguments: enrollment),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.account_balance_wallet_rounded, size: 18),
+                label: fitted('payment_pay_now'.tr),
+              ),
+            ),
+          ),
+        if (canPay) const SizedBox(width: 8),
+        Expanded(child: details),
+        if (canCancel) ...[
+          const SizedBox(width: 8),
+          Obx(() {
+            controller.cancellingIds.length;
+            final cancelling = controller.cancellingIds.contains(enrollment.id);
+            return Tooltip(
+              message: 'cancel_booking'.tr,
+              child: OutlinedButton(
+                onPressed: cancelling ? null : onCancel,
+                style: _outlined(AppColors.danger).copyWith(
+                  minimumSize: const WidgetStatePropertyAll(Size(_height, _height)),
+                  padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+                ),
+                child: cancelling ? const AppInlineLoader() : const Icon(Icons.close_rounded, size: 20),
+              ),
+            );
+          }),
+        ],
+      ],
+    );
+  }
+}
+
+class _EnrollmentStatusTheme {
+  const _EnrollmentStatusTheme({required this.backgroundColor, required this.foregroundColor, required this.icon});
 
   final Color backgroundColor;
   final Color foregroundColor;
   final IconData icon;
 
   static const pending = _EnrollmentStatusTheme(
-    backgroundColor: Color(0xFFFEF3C7),
-    foregroundColor: Color(0xFFD97706),
+    backgroundColor: AppColors.warningFill,
+    foregroundColor: AppColors.warning,
     icon: Icons.hourglass_top_rounded,
   );
 
   static const confirmed = _EnrollmentStatusTheme(
-    backgroundColor: Color(0xFFD1FAE5),
-    foregroundColor: Color(0xFF059669),
+    backgroundColor: AppColors.successFill,
+    foregroundColor: AppColors.successStrong,
     icon: Icons.check_circle_outline_rounded,
   );
 
   static const completed = _EnrollmentStatusTheme(
-    backgroundColor: Color(0xFFDBEAFE),
-    foregroundColor: Color(0xFF2563EB),
+    backgroundColor: AppColors.infoSoft,
+    foregroundColor: AppColors.info,
     icon: Icons.school_outlined,
   );
 
   static const cancelled = _EnrollmentStatusTheme(
-    backgroundColor: Color(0xFFFEE2E2),
-    foregroundColor: Color(0xFFDC2626),
+    backgroundColor: AppColors.dangerSoft,
+    foregroundColor: AppColors.danger,
     icon: Icons.cancel_outlined,
   );
 
@@ -495,6 +571,12 @@ class _MyCoursesEmptyState extends StatelessWidget {
       _EnrollmentListStatus.completed => _EnrollmentStatusTheme.completed,
       _EnrollmentListStatus.cancelled => _EnrollmentStatusTheme.cancelled,
     };
+    final title = switch (status) {
+      _EnrollmentListStatus.pending => 'my_courses_empty_title_pending'.tr,
+      _EnrollmentListStatus.confirmed => 'my_courses_empty_title_confirmed'.tr,
+      _EnrollmentListStatus.completed => 'my_courses_empty_title_completed'.tr,
+      _EnrollmentListStatus.cancelled => 'my_courses_empty_title_cancelled'.tr,
+    };
     final message = switch (status) {
       _EnrollmentListStatus.pending => 'my_courses_empty_pending'.tr,
       _EnrollmentListStatus.confirmed => 'my_courses_empty_confirmed'.tr,
@@ -504,18 +586,15 @@ class _MyCoursesEmptyState extends StatelessWidget {
     final showBrowse = status == _EnrollmentListStatus.pending;
 
     return AppEmptyState(
-      message: 'my_courses_empty_title'.tr,
+      message: title,
       subtitle: message,
       icon: theme.icon,
-      iconColor: theme.foregroundColor,
-      iconBackgroundColor: theme.backgroundColor,
+      iconColor: AppColors.primary,
+      iconBackgroundColor: AppColors.primary.withValues(alpha: 0.1),
       action: showBrowse
           ? SizedBox(
               width: 220,
-              child: RegisterGradientButton(
-                label: 'browse_courses'.tr,
-                onPressed: () => AppNavigation.switchToTab(0),
-              ),
+              child: RegisterGradientButton(label: 'browse_courses'.tr, onPressed: () => AppNavigation.switchToTab(0)),
             )
           : null,
     );
@@ -546,16 +625,9 @@ class _MyCoursesLoginPrompt extends StatelessWidget {
                   children: [
                     const AppLogo(height: 44),
                     const SizedBox(height: 20),
-                    Text(
-                      'login_to_see_courses'.tr,
-                      textAlign: TextAlign.center,
-                      style: AppTypography.sectionTitle(),
-                    ),
+                    Text('login_to_see_courses'.tr, textAlign: TextAlign.center, style: AppTypography.sectionTitle()),
                     const SizedBox(height: 20),
-                    RegisterGradientButton(
-                      label: 'login'.tr,
-                      onPressed: () => Get.toNamed(AppRoutes.login),
-                    ),
+                    RegisterGradientButton(label: 'login'.tr, onPressed: () => Get.toNamed(AppRoutes.login)),
                   ],
                 ),
               ),

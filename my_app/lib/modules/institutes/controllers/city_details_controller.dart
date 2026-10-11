@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import '../../../core/data/repositories/city_repository.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/network/api_exception.dart';
 
 class CityDetailsController extends GetxController {
   final CityRepository _cityRepository = Get.find();
@@ -12,38 +13,43 @@ class CityDetailsController extends GetxController {
   final city = Rxn<CityModel>();
   final institutes = <InstituteModel>[].obs;
   final title = ''.obs;
+  final errorMessage = RxnString();
 
   late final int cityId;
   int _page = 1;
   static const _perPage = 12;
 
+  /// هل لدينا اسم المدينة الفعلي (وليس العنوان الافتراضي المترجم).
+  bool _hasCityName = false;
+
   @override
   void onInit() {
     super.onInit();
     final arg = Get.arguments;
+    String? name;
     if (arg is Map<String, dynamic>) {
       cityId = (arg['id'] as int?) ?? 0;
-      title.value = arg['name']?.toString() ?? 'المدينة';
+      name = arg['name']?.toString();
     } else if (arg is CityModel) {
       cityId = arg.id;
       city.value = arg;
-      title.value = arg.name;
+      name = arg.name;
     } else {
       cityId = 0;
-      title.value = 'المدينة';
     }
+    _hasCityName = name != null && name.isNotEmpty;
+    title.value = _hasCityName ? name! : 'city'.tr;
     load();
   }
 
   Future<void> load() async {
-    final hasTitle = title.value.isNotEmpty && title.value != 'المدينة';
-    if (!hasTitle) isLoading.value = true;
+    if (!_hasCityName) isLoading.value = true;
+    errorMessage.value = null;
     _page = 1;
     try {
-      await Future.wait<void>([
-        _fetchCityIfNeeded(),
-        _fetchInstitutesPage(),
-      ]);
+      await Future.wait<void>([_fetchCityIfNeeded(), _fetchInstitutesPage()]);
+    } catch (e) {
+      if (institutes.isEmpty) errorMessage.value = userErrorMessage(e);
     } finally {
       isLoading.value = false;
     }
@@ -54,6 +60,7 @@ class CityDetailsController extends GetxController {
     try {
       city.value = await _cityRepository.fetchCityById(cityId);
       title.value = city.value!.name;
+      _hasCityName = true;
     } catch (_) {}
   }
 
@@ -72,6 +79,8 @@ class CityDetailsController extends GetxController {
       institutes.addAll(result.items);
       _page = next;
       hasMore.value = result.hasMore;
+    } catch (e) {
+      Get.snackbar('error'.tr, userErrorMessage(e));
     } finally {
       isLoadingMore.value = false;
     }

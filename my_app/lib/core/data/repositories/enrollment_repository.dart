@@ -6,15 +6,13 @@ import '../../models/paginated_result.dart';
 import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
 import '../../network/api_exception.dart';
-import '../../network/api_fallback.dart';
 import '../../network/json_parser.dart';
-import '../../services/student_id_resolver.dart';
+import '../../network/paginated_fetch.dart';
 
 class EnrollmentRepository extends GetxService {
-  EnrollmentRepository(this._client, this._studentIdResolver);
+  EnrollmentRepository(this._client);
 
   final ApiClient _client;
-  final StudentIdResolver _studentIdResolver;
 
   void _log(String action, dynamic body) {
     AppDebugLog.repo('Enroll', '$action ${body.toString()}');
@@ -26,7 +24,7 @@ class EnrollmentRepository extends GetxService {
     final map = extractObjectMap(normalized);
     if (map != null) return EnrollmentModel.fromJson(map);
     if (normalized is Map<String, dynamic>) return EnrollmentModel.fromJson(normalized);
-    throw ApiException('استجابة التسجيل في الدورة غير صالحة');
+    throw ApiException('error_invalid_server_response'.tr);
   }
 
   Future<PaginatedResult<EnrollmentModel>> fetchEnrollmentsPage({int page = 1, int perPage = 15}) async {
@@ -36,64 +34,23 @@ class EnrollmentRepository extends GetxService {
     );
   }
 
-  Future<List<EnrollmentModel>> fetchEnrollments() async {
+  /// كل تسجيلات الطالب عبر كل الصفحات (يُستخدم لمعرفة «هل حجزت هذه الدورة؟» ولمتابعة الحالات).
+  Future<List<EnrollmentModel>> fetchEnrollments() {
+    return fetchAllPages(_client, ApiEndpoints.studentEnrollments, EnrollmentModel.fromJson, strict: false);
+  }
+
+  /// الخادم يأخذ الطالب من التوكن ويحدد حالة التسجيل والدفع بنفسه — لا يُرسل شيء في الجسم.
+  /// 201 لتسجيل جديد، و200 إن كان الطالب مسجلاً من قبل.
+  Future<EnrollmentModel> enrollInCourse(int courseId) {
     return _client.handle(
-      () => _client.get(ApiEndpoints.studentEnrollments),
-      (data) => extractListMap(data).map(EnrollmentModel.fromJson).toList(),
+      () => _client.post(ApiEndpoints.enrollByCourse(courseId), data: const <String, dynamic>{}),
+      _parseEnrollment,
     );
-  }
-
-  /// عدد التسجيلات المؤكّدة لدورة (بدون المعلّقة).
-  Future<int?> countConfirmedEnrollmentsForCourse(int courseId) async {
-    if (courseId <= 0) return null;
-    try {
-      var page = 1;
-      var count = 0;
-      while (true) {
-        final result = await _client.handle(
-          () => _client.get(ApiEndpoints.enrollments, query: {'page': page, 'per_page': 100}),
-          (data) => PaginatedResult<EnrollmentModel>.fromBody(data, EnrollmentModel.fromJson),
-        );
-        count += result.items
-            .where((e) => e.courseId == courseId && e.countsTowardCourseCapacity)
-            .length;
-        if (!result.hasMore) break;
-        page++;
-      }
-      return count;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Map<String, dynamic> _enrollmentBody(int courseId, int studentId) => {
-        'course_id': courseId,
-        'student_id': studentId,
-        'status': 'pending',
-        'payment_status': 'unpaid',
-      };
-
-  Future<EnrollmentModel> enrollInCourse(int courseId) async {
-    final studentId = await _studentIdResolver.resolve();
-    final body = _enrollmentBody(courseId, studentId);
-
-    final attempts = [
-      ApiPostAttempt(path: ApiEndpoints.studentEnrollments, data: body),
-      ApiPostAttempt(path: ApiEndpoints.studentEnrollCourse(courseId), data: body),
-      ApiPostAttempt(path: ApiEndpoints.enrollByCourse(courseId), data: body),
-      ApiPostAttempt(path: ApiEndpoints.enrollments, data: body),
-      ApiPostAttempt(path: ApiEndpoints.enrollCourseAlt(courseId), data: body),
-    ];
-
-    return postFirstSuccess(_client, attempts, _parseEnrollment);
   }
 
   Future<EnrollmentModel> cancelEnrollment(int enrollmentId) async {
     return _client.handle(
-      () => _client.post(
-        ApiEndpoints.studentCancelEnrollment(enrollmentId),
-        data: const <String, dynamic>{},
-      ),
+      () => _client.post(ApiEndpoints.studentCancelEnrollment(enrollmentId), data: const <String, dynamic>{}),
       _parseEnrollment,
     );
   }

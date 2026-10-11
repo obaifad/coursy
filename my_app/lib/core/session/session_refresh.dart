@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 
 import '../../modules/auth/controllers/auth_controller.dart';
@@ -14,6 +16,11 @@ import '../services/app_lifecycle_sync.dart';
 import '../services/enrollment_sync_service.dart';
 import '../services/enrollment_watch_scheduler.dart';
 import '../services/push_notification_service.dart';
+import '../config/app_debug_log.dart';
+import '../navigation/app_navigation.dart';
+import '../storage/recent_search_storage.dart';
+import '../storage/token_storage.dart';
+import '../../routes/app_routes.dart';
 import 'enrollment_status_coordinator.dart';
 import 'remote_notification_sync.dart';
 
@@ -50,7 +57,9 @@ abstract final class SessionRefresh {
       await Get.find<NotificationsController>().loadNotifications();
     }
     if (Get.isRegistered<PushNotificationService>()) {
-      await Get.find<PushNotificationService>().ensurePermissionsAndSyncToken();
+      // تسجيل التوكن فقط: إذن الإشعارات يُطلب بعد أول حجز أو من الإعدادات — طلبه هنا كان يُظهر نافذة
+      // النظام وزر الدخول ما زال يدور.
+      await Get.find<PushNotificationService>().ensurePermissionsAndSyncToken(requestPermission: false);
     }
     if (Get.isRegistered<AppLifecycleSync>()) {
       Get.find<AppLifecycleSync>().startWatching();
@@ -58,8 +67,12 @@ abstract final class SessionRefresh {
     await EnrollmentWatchScheduler.startForLoggedInUser();
   }
 
-  /// بعد تسجيل الخروج — مسح الذاكرة المؤقتة في كل المتحكمات النشطة.
+  /// عند تسجيل الخروج — مسح الذاكرة المؤقتة في كل المتحكمات النشطة وإلغاء تسجيل الجهاز (يحتاج التوكن).
+  /// لا يعيد تحميل البيانات العامة: ذلك في [reloadAsGuest] بعد مسح التوكن، حتى لا ينتظره الانتقال.
   static Future<void> onLogout() async {
+    if (Get.isRegistered<RecentSearchStorage>()) {
+      await Get.find<RecentSearchStorage>().clear();
+    }
     if (Get.isRegistered<FavoritesService>()) {
       Get.find<FavoritesService>().clearForLogout();
     }
@@ -83,15 +96,6 @@ abstract final class SessionRefresh {
     } else if (Get.isRegistered<EnrollmentStatusCoordinator>()) {
       Get.find<EnrollmentStatusCoordinator>().reset();
     }
-    if (Get.isRegistered<HomeController>()) {
-      await Get.find<HomeController>().loadHome(forceRefresh: true);
-    }
-    if (Get.isRegistered<CoursesController>()) {
-      await Get.find<CoursesController>().reloadLocalizedData();
-    }
-    if (Get.isRegistered<InstitutesController>()) {
-      await Get.find<InstitutesController>().reloadLocalizedData();
-    }
     if (Get.isRegistered<AuthController>()) {
       Get.find<AuthController>().resetAfterLogout();
     }
@@ -102,6 +106,42 @@ abstract final class SessionRefresh {
       Get.find<AppLifecycleSync>().stopWatching();
     }
     await EnrollmentWatchScheduler.stop();
+  }
+
+  static bool _handlingInactive = false;
+
+  /// 403 `account_inactive` (ApiClient.onAccountInactive): الإدارة أوقفت حساب الطالب. مثل انتهاء الجلسة
+  /// (SessionExpiry) — مسح الجلسة وشاشة الدخول — لكن برسالة الخادم بدل «انتهت الجلسة».
+  static Future<void> onAccountInactive(String message) async {
+    if (_handlingInactive) return;
+    final storage = Get.isRegistered<TokenStorage>() ? Get.find<TokenStorage>() : null;
+    if (storage == null || !storage.isLoggedIn) return;
+    _handlingInactive = true;
+    try {
+      AppDebugLog.api('403', 'account inactive — clearing local session');
+      // التوكن أولاً: الطلبات اللاحقة تُرسل بلا توكن فلا تتكرر 403.
+      await storage.clearSession();
+      await onLogout();
+      reloadAsGuest();
+      AppNavigation.goToRoot(tab: 2);
+      Get.toNamed(AppRoutes.login);
+      Get.snackbar('account_inactive_title'.tr, message, duration: const Duration(seconds: 6));
+    } catch (e) {
+      AppDebugLog.api('403', 'account inactive cleanup failed: $e');
+    } finally {
+      _handlingInactive = false;
+    }
+  }
+
+  /// بعد مسح التوكن والانتقال: إعادة تحميل الرئيسية والدورات والمعاهد كضيف في الخلفية.
+  static void reloadAsGuest() {
+    unawaited(
+      Future.wait<void>([
+        if (Get.isRegistered<HomeController>()) Get.find<HomeController>().loadHome(forceRefresh: true),
+        if (Get.isRegistered<CoursesController>()) Get.find<CoursesController>().reloadLocalizedData(),
+        if (Get.isRegistered<InstitutesController>()) Get.find<InstitutesController>().reloadLocalizedData(),
+      ]).catchError((_) => const <void>[]),
+    );
   }
 
   /// بعد التسجيل في دورة جديدة أو تغيّر حالة التسجيل (موافقة المعهد، رفض، إلخ).

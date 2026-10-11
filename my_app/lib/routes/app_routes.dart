@@ -5,6 +5,7 @@ abstract class AppRoutes {
   static const register = '/register';
   static const forgotPassword = '/forgot-password';
   static const phoneVerification = '/phone-verification';
+  static const emailVerification = '/email-verification';
   static const root = '/root';
   static const search = '/search';
   static const courseDetails = '/course-details';
@@ -21,4 +22,6 @@ abstract class AppRoutes {
   static const cityDetails = '/city-details';
   static const courseBooking = '/course-booking';
   static const favorites = '/favorites';
+  static const payment = '/payment';
+  static const deleteAccount = '/delete-account';
 }

@@ -1,19 +1,73 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
+import '../../../theme/app_fonts.dart';
+import '../../../core/config/api_config.dart';
 import '../../../core/locale/locale_rebuild.dart';
+import '../../../core/utils/external_launcher.dart';
 import '../../../core/responsive/responsive.dart';
+import '../../../core/navigation/app_navigation.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
-import '../../../widgets/guest_access.dart';
 import '../controllers/auth_controller.dart';
 import '../widgets/auth_split_layout.dart';
 import '../widgets/login_page_metrics.dart';
 import '../widgets/register_form_widgets.dart';
+import '../../../widgets/app_select_field.dart';
+import '../../../widgets/app_selection_sheet.dart';
 import '../../../widgets/design_system.dart';
+import '../../../theme/app_motion.dart';
+
+/// خانة الموافقة على شروط الاستخدام وسياسة الخصوصية (روابط صفحات الموقع بلغة التطبيق).
+class _TermsAgreement extends GetView<AuthController> {
+  const _TermsAgreement();
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = Get.locale?.languageCode == 'en' ? 'en' : 'ar';
+    const linkStyle = TextStyle(
+      color: AppColors.primary,
+      fontWeight: FontWeight.w700,
+      decoration: TextDecoration.underline,
+      decorationColor: AppColors.primary,
+    );
+    return Obx(
+      () => Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Checkbox(
+            value: controller.acceptedTerms.value,
+            onChanged: (value) {
+              controller.acceptedTerms.value = value ?? false;
+              if (controller.acceptedTerms.value) controller.registerStepError.value = null;
+            },
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Wrap(
+                children: [
+                  Text('${'terms_agree_prefix'.tr} '),
+                  InkWell(
+                    onTap: () => ExternalLauncher.openWebPage(ApiConfig.termsUrl(lang)),
+                    child: Text('terms_of_use'.tr, style: linkStyle),
+                  ),
+                  Text(' ${'and_word'.tr} '),
+                  InkWell(
+                    onTap: () => ExternalLauncher.openWebPage(ApiConfig.privacyUrl(lang)),
+                    child: Text('privacy_policy'.tr, style: linkStyle),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 final List<TextInputFormatter> _phoneInputFormatters = [
   FilteringTextInputFormatter.digitsOnly,
@@ -44,12 +98,9 @@ class _RegisterViewState extends State<RegisterView> {
     final metrics = LoginPageMetrics.of(context);
 
     return Theme(
-      data: Theme.of(context).copyWith(
-        textTheme: GoogleFonts.tajawalTextTheme(Theme.of(context).textTheme),
-      ),
+      data: Theme.of(context).copyWith(textTheme: AppFonts.tajawalTextTheme(Theme.of(context).textTheme)),
       child: Scaffold(
-        backgroundColor:
-            metrics.useSplitLayout ? Colors.white : const Color(0xFFF6F5FF),
+        backgroundColor: metrics.useSplitLayout ? Colors.white : AppColors.surfaceSoft,
         resizeToAvoidBottomInset: true,
         body: SafeArea(
           child: Obx(() {
@@ -65,14 +116,13 @@ class _RegisterViewState extends State<RegisterView> {
               children: [
                 AppLogo(
                   height: metrics.logoHeight,
-                  alignment: metrics.useSplitLayout
-                      ? AlignmentDirectional.centerStart
-                      : Alignment.center,
+                  alignment: metrics.useSplitLayout ? AlignmentDirectional.centerStart : Alignment.center,
                 ),
                 SizedBox(height: metrics.sectionGap),
                 Row(
                   children: [
                     IconButton(
+                      tooltip: 'back'.tr,
                       onPressed: controller.previousRegisterStep,
                       icon: const Icon(Icons.arrow_back_rounded),
                       style: IconButton.styleFrom(
@@ -99,8 +149,7 @@ class _RegisterViewState extends State<RegisterView> {
                 ),
                 SizedBox(height: metrics.sectionGap),
                 RegisterSegmentedProgress(currentStep: step),
-                if (controller.registerStepError.value != null &&
-                    controller.registerStepError.value!.isNotEmpty) ...[
+                if (controller.registerStepError.value != null && controller.registerStepError.value!.isNotEmpty) ...[
                   SizedBox(height: metrics.fieldGap),
                   _ErrorBanner(message: controller.registerStepError.value!),
                 ],
@@ -108,15 +157,14 @@ class _RegisterViewState extends State<RegisterView> {
                 RegisterFloatingCard(
                   elevated: !metrics.useSplitLayout,
                   child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 320),
+                    duration: AppMotion.normal,
                     switchInCurve: Curves.easeOutCubic,
                     switchOutCurve: Curves.easeInCubic,
                     transitionBuilder: (child, animation) {
                       return FadeTransition(
                         opacity: animation,
                         child: SlideTransition(
-                          position: Tween<Offset>(begin: const Offset(0.04, 0), end: Offset.zero)
-                              .animate(animation),
+                          position: Tween<Offset>(begin: const Offset(0.04, 0), end: Offset.zero).animate(animation),
                           child: child,
                         ),
                       );
@@ -131,6 +179,7 @@ class _RegisterViewState extends State<RegisterView> {
                     ),
                   ),
                 ),
+                if (step == 2) ...[SizedBox(height: metrics.fieldGap), const _TermsAgreement()],
                 SizedBox(height: metrics.sectionGap),
                 Row(
                   children: [
@@ -149,8 +198,8 @@ class _RegisterViewState extends State<RegisterView> {
                         label: loading
                             ? (step < 2 ? 'validating'.tr : 'saving'.tr)
                             : step < 2
-                                ? 'next'.tr
-                                : 'create_account'.tr,
+                            ? 'next'.tr
+                            : 'create_account'.tr,
                         loading: loading,
                         onPressed: loading
                             ? null
@@ -168,7 +217,11 @@ class _RegisterViewState extends State<RegisterView> {
                 SizedBox(height: metrics.fieldGap),
                 Center(child: _SignInLink()),
                 const SizedBox(height: 8),
-                Center(child: GuestContinueButton()),
+                RegisterGhostButton(
+                  label: 'continue_as_guest'.tr,
+                  primaryText: true,
+                  onPressed: AppNavigation.enterAsGuest,
+                ),
               ],
             );
 
@@ -220,17 +273,19 @@ class _SignInLink extends StatelessWidget {
       alignment: WrapAlignment.center,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        Text('have_account_prefix'.tr, style: GoogleFonts.tajawal(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+        Text(
+          'have_account_prefix'.tr,
+          style: AppFonts.tajawal(color: AppColors.textSecondary, fontWeight: FontWeight.w700),
+        ),
         TextButton(
           onPressed: () => Get.offNamed(AppRoutes.login),
           style: TextButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 6),
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            minimumSize: const Size(48, 44),
           ),
           child: Text(
             'sign_in'.tr,
-            style: GoogleFonts.tajawal(
+            style: AppFonts.tajawal(
               color: AppColors.primary,
               fontWeight: FontWeight.w800,
               decoration: TextDecoration.underline,
@@ -250,19 +305,19 @@ class _ErrorBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.red.withValues(alpha: 0.08),
+      color: AppColors.danger.withValues(alpha: 0.08),
       borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.error_outline_rounded, color: Colors.red.shade700, size: 20),
+            Icon(Icons.error_outline_rounded, color: AppColors.dangerText, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.tajawal(color: Colors.red.shade700, fontWeight: FontWeight.w600, height: 1.35),
+                style: AppFonts.tajawal(color: AppColors.dangerText, fontWeight: FontWeight.w700, height: 1.35),
               ),
             ),
           ],
@@ -273,28 +328,12 @@ class _ErrorBanner extends StatelessWidget {
 }
 
 class _RegisterStepBody extends GetView<AuthController> {
-  const _RegisterStepBody({
-    required this.step,
-    required this.fieldGap,
-    this.nameFieldsInRow = false,
-  });
+  const _RegisterStepBody({required this.step, required this.fieldGap, this.nameFieldsInRow = false});
   final int step;
   final double fieldGap;
   final bool nameFieldsInRow;
 
   String? _fieldError(String key) => controller.registerFieldErrors[key];
-
-  InputDecoration _dropdownDecoration({
-    required String label,
-    String? errorText,
-    IconData? icon,
-  }) {
-    return RegisterDecor.fieldDecoration(
-      label: label,
-      errorText: errorText,
-      prefixIcon: icon == null ? null : Icon(icon, color: AppColors.primary),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -342,6 +381,7 @@ class _RegisterStepBody extends GetView<AuthController> {
                 prefixIcon: Icons.lock_outline_rounded,
                 errorText: _fieldError('password'),
                 suffixIcon: IconButton(
+                  tooltip: 'toggle_password_visibility'.tr,
                   onPressed: () => controller.hideRegisterPassword.toggle(),
                   icon: Icon(
                     controller.hideRegisterPassword.value ? Icons.visibility_off_rounded : Icons.visibility_rounded,
@@ -352,8 +392,8 @@ class _RegisterStepBody extends GetView<AuthController> {
             ),
             const SizedBox(height: 6),
             Text(
-              'password_must_have_letter_number'.tr,
-              style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
+              'password_hint_min_6'.tr,
+              style: AppFonts.tajawal(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
             ),
             const SizedBox(height: 14),
             Obx(
@@ -365,6 +405,7 @@ class _RegisterStepBody extends GetView<AuthController> {
                 prefixIcon: Icons.lock_reset_rounded,
                 errorText: _fieldError('confirmPassword'),
                 suffixIcon: IconButton(
+                  tooltip: 'toggle_password_visibility'.tr,
                   onPressed: () => controller.hideConfirmPassword.toggle(),
                   icon: Icon(
                     controller.hideConfirmPassword.value ? Icons.visibility_off_rounded : Icons.visibility_rounded,
@@ -374,7 +415,7 @@ class _RegisterStepBody extends GetView<AuthController> {
               ),
             ),
             const SizedBox(height: 16),
-            Text('gender'.tr, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 14)),
+            Text('gender'.tr, style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 14)),
             const SizedBox(height: 8),
             Obx(
               () => Wrap(
@@ -384,27 +425,27 @@ class _RegisterStepBody extends GetView<AuthController> {
                   RegisterChoiceChip(
                     label: 'male'.tr,
                     selected: controller.selectedGender.value == 'male',
-                    onTap: () => controller.selectedGender.value = 'male',
+                    // الضغط على المختار يلغيه: الجنس اختياري.
+                    onTap: () =>
+                        controller.selectedGender.value = controller.selectedGender.value == 'male' ? null : 'male',
                   ),
                   RegisterChoiceChip(
                     label: 'female'.tr,
                     selected: controller.selectedGender.value == 'female',
-                    onTap: () => controller.selectedGender.value = 'female',
+                    onTap: () =>
+                        controller.selectedGender.value = controller.selectedGender.value == 'female' ? null : 'female',
                   ),
                 ],
               ),
             ),
             if (_fieldError('gender') != null) ...[
               const SizedBox(height: 6),
-              Text(
-                _fieldError('gender')!,
-                style: GoogleFonts.tajawal(color: Colors.red.shade700, fontSize: 12),
-              ),
+              Text(_fieldError('gender')!, style: AppFonts.tajawal(color: AppColors.dangerText, fontSize: 12)),
             ],
             const SizedBox(height: 16),
             Obx(
               () => RegisterDateField(
-                label: '${'birth_date'.tr} *',
+                label: 'birth_date'.tr,
                 value: controller.birthDate.value == null
                     ? null
                     : AuthController.formatBirthDate(controller.birthDate.value!),
@@ -436,7 +477,7 @@ class _RegisterStepBody extends GetView<AuthController> {
               ),
               child: Text(
                 'role_student'.tr,
-                style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, color: AppColors.primary),
+                style: AppFonts.tajawal(fontWeight: FontWeight.w800, color: AppColors.primary),
               ),
             ),
             const SizedBox(height: 16),
@@ -446,10 +487,7 @@ class _RegisterStepBody extends GetView<AuthController> {
                   enabled: true,
                   child: Container(
                     height: 56,
-                    decoration: BoxDecoration(
-                      color: AppColors.indicatorFill,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
                   ),
                 );
               }
@@ -459,59 +497,40 @@ class _RegisterStepBody extends GetView<AuthController> {
                   children: [
                     Text(
                       controller.citiesError.value ?? 'connection_error'.tr,
-                      style: GoogleFonts.tajawal(color: Colors.red.shade700, height: 1.4),
+                      style: AppFonts.tajawal(color: AppColors.dangerText, height: 1.4),
                     ),
                     const SizedBox(height: 8),
-                    RegisterGhostButton(
-                      label: 'reload_cities'.tr,
-                      onPressed: () => controller.loadCities(force: true),
-                    ),
+                    RegisterGhostButton(label: 'reload_cities'.tr, onPressed: () => controller.loadCities(force: true)),
                   ],
                 );
               }
               final selectedId = controller.selectedCityId.value;
-              final cityValue =
-                  controller.cities.any((c) => c.id == selectedId) ? selectedId : null;
-              return DropdownButtonFormField<int>(
+              final cityValue = controller.cities.any((c) => c.id == selectedId) ? selectedId : null;
+              return AppSelectField<int>(
                 value: cityValue,
-                isExpanded: true,
-                decoration: _dropdownDecoration(
-                  label: '${'city'.tr} *',
-                  errorText: controller.citiesError.value ?? controller.registerFieldErrors['city'],
-                  icon: Icons.location_city_outlined,
-                ),
-                hint: Text('pick_city'.tr, style: GoogleFonts.tajawal()),
-                items: controller.cities
-                    .map(
-                      (c) => DropdownMenuItem(
-                        value: c.id,
-                        child: Text(
-                          c.name,
-                          style: GoogleFonts.tajawal(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    )
+                label: '${'city'.tr} *',
+                hint: 'pick_city'.tr,
+                icon: Icons.location_city_outlined,
+                errorText: controller.citiesError.value ?? controller.registerFieldErrors['city'],
+                options: controller.cities
+                    .map((c) => AppSheetOption<int>(value: c.id, label: c.name, icon: Icons.location_city_rounded))
                     .toList(),
                 onChanged: (v) => controller.selectedCityId.value = v,
               );
             }),
             const SizedBox(height: 14),
             Obx(
-              () => DropdownButtonFormField<String>(
+              () => AppSelectField<String>(
                 value: controller.selectedEducationLevel.value,
-                isExpanded: true,
-                decoration: _dropdownDecoration(
-                  label: 'education_level_optional'.tr,
-                  icon: Icons.school_outlined,
-                ),
-                hint: Text('education_level_hint'.tr, style: GoogleFonts.tajawal()),
-                items: AuthController.educationLevels
+                label: 'education_level_optional'.tr,
+                hint: 'education_level_hint'.tr,
+                icon: Icons.school_outlined,
+                options: AuthController.educationLevels
                     .map(
-                      (e) => DropdownMenuItem(
+                      (e) => AppSheetOption<String>(
                         value: e,
-                        child: Text(controller.educationLevelLabel(e), style: GoogleFonts.tajawal()),
+                        label: controller.educationLevelLabel(e),
+                        icon: Icons.school_outlined,
                       ),
                     )
                     .toList(),
@@ -538,25 +557,16 @@ class _RegisterStepBody extends GetView<AuthController> {
                       ),
                     )
                   else
-                    DropdownButtonFormField<int>(
+                    AppSelectField<int>(
                       value: controller.selectedUniversityId.value,
-                      isExpanded: true,
-                      decoration: _dropdownDecoration(
-                        label: 'university_optional'.tr,
-                        errorText: controller.registerFieldErrors['university'],
-                        icon: Icons.account_balance_rounded,
-                      ),
-                      hint: Text('pick_university'.tr, style: GoogleFonts.tajawal()),
-                      items: controller.universities
-                          .map((u) => DropdownMenuItem(
-                                value: u.id,
-                                child: Text(
-                                  u.name,
-                                  style: GoogleFonts.tajawal(),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ))
+                      label: 'university_optional'.tr,
+                      hint: 'pick_university'.tr,
+                      icon: Icons.account_balance_rounded,
+                      errorText: controller.registerFieldErrors['university'],
+                      options: controller.universities
+                          .map(
+                            (u) => AppSheetOption<int>(value: u.id, label: u.name, icon: Icons.account_balance_rounded),
+                          )
                           .toList(),
                       onChanged: (v) => controller.selectedUniversityId.value = v,
                     ),
@@ -573,25 +583,17 @@ class _RegisterStepBody extends GetView<AuthController> {
                       ),
                     )
                   else
-                    DropdownButtonFormField<int>(
+                    AppSelectField<int>(
                       value: controller.selectedSpecializationId.value,
-                      isExpanded: true,
-                      decoration: _dropdownDecoration(
-                        label: 'specialization_optional'.tr,
-                        errorText: controller.registerFieldErrors['specialization'],
-                        icon: Icons.workspace_premium_outlined,
-                      ),
-                      hint: Text('pick_specialization'.tr, style: GoogleFonts.tajawal()),
-                      items: controller.specializations
-                          .map((s) => DropdownMenuItem(
-                                value: s.id,
-                                child: Text(
-                                  s.name,
-                                  style: GoogleFonts.tajawal(),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ))
+                      label: 'specialization_optional'.tr,
+                      hint: 'pick_specialization'.tr,
+                      icon: Icons.workspace_premium_outlined,
+                      errorText: controller.registerFieldErrors['specialization'],
+                      options: controller.specializations
+                          .map(
+                            (s) =>
+                                AppSheetOption<int>(value: s.id, label: s.name, icon: Icons.workspace_premium_outlined),
+                          )
                           .toList(),
                       onChanged: (v) => controller.selectedSpecializationId.value = v,
                     ),
@@ -612,7 +614,7 @@ class _RegisterStepBody extends GetView<AuthController> {
             const SizedBox(height: 14),
             Text(
               'register_after_note'.tr,
-              style: GoogleFonts.tajawal(color: AppColors.textSecondary, height: 1.45, fontSize: 13),
+              style: AppFonts.tajawal(color: AppColors.textSecondary, height: 1.45, fontSize: 13),
             ),
           ],
         );

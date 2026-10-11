@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- نفس لون تدرّج شاشة السبلاش في Flutter (AppColors.primary) لانتقال بلا وميض أسود. -->
+    <color name="splash_background">#6C63FF</color>
 </resources>

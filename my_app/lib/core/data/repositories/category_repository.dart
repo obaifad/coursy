@@ -13,22 +13,14 @@ class CategoryRepository extends GetxService {
 
   /// كل التصنيفات/الاهتمامات — يجلب كل الصفحات حتى total من الـ API (أي عدد).
   Future<List<CategoryModel>> fetchCategories({int perPage = 50}) async {
-    return fetchAllPages(
-      _client,
-      ApiEndpoints.categories,
-      CategoryModel.fromJson,
-      perPage: perPage,
-    );
+    return fetchAllPages(_client, ApiEndpoints.categories, CategoryModel.fromJson, perPage: perPage);
   }
 
   Future<Map<String, dynamic>?> fetchCategoryById(int id) async {
-    return _client.handle(
-      () => _client.get(ApiEndpoints.categoryById(id)),
-      (data) {
-        final map = normalizeApiBody(data);
-        if (map is Map<String, dynamic>) return map;
-        return null;
-      },
-    );
+    return _client.handle(() => _client.get(ApiEndpoints.categoryById(id)), (data) {
+      final map = normalizeApiBody(data);
+      if (map is Map<String, dynamic>) return map;
+      return null;
+    });
   }
 }

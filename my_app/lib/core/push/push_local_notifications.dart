@@ -1,6 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 typedef PushNotificationTapHandler = void Function(String payload);
 
@@ -12,27 +13,54 @@ abstract final class PushLocalNotifications {
   static final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   static bool _initialized = false;
 
+  /// مفتاح الإشعارات في الإعدادات. يُحفظ في [SharedPreferencesAsync] لأن الفحص الخلفي ومعالج FCM
+  /// يعملان في isolate منفصل لا يرى GetStorage.
+  static const userEnabledKey = 'push_notifications_enabled';
+
+  /// false = المستخدم أوقف الإشعارات: لا يُعرض أي إشعار محلي (حالات التسجيل، الفحص الخلفي، FCM).
+  static bool userEnabled = true;
+
+  static Future<void> saveUserEnabled(bool enabled) async {
+    userEnabled = enabled;
+    try {
+      await SharedPreferencesAsync().setBool(userEnabledKey, enabled);
+    } catch (_) {}
+  }
+
+  /// للـ isolate الخلفي: يقرأ المفتاح المحفوظ (الافتراضي مفعّل).
+  static Future<void> loadUserEnabled() async {
+    try {
+      userEnabled = await SharedPreferencesAsync().getBool(userEnabledKey) ?? true;
+    } catch (_) {
+      userEnabled = true;
+    }
+  }
+
   static AndroidFlutterLocalNotificationsPlugin? get _android =>
       _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
 
+  static PushNotificationTapHandler? _onTap;
+  static bool _tapRegistered = false;
+
+  /// [onTap] يُسجَّل حتى لو سبقت التهيئةُ (bootstrapFirebase يهيّئ بلا معالج قبل PushNotificationService) —
+  /// كان يُتجاهل فلا يفعل الضغط على الإشعار المحلي شيئاً.
   static Future<void> ensureInitialized({PushNotificationTapHandler? onTap}) async {
-    if (_initialized) return;
+    if (onTap != null) _onTap = onTap;
+    if (_initialized && (_onTap == null || _tapRegistered)) return;
 
     const androidSettings = AndroidInitializationSettings('@drawable/ic_notification');
-    const iosSettings = DarwinInitializationSettings();
-    await _plugin.initialize(
-      settings: const InitializationSettings(
-        android: androidSettings,
-        iOS: iosSettings,
-      ),
-      onDidReceiveNotificationResponse: onTap == null
-          ? null
-          : (response) {
-              final payload = response.payload;
-              if (payload == null || payload.isEmpty) return;
-              onTap(payload);
-            },
+    // لا نطلب الإذن عند التهيئة على iOS: يُطلب بعد أول حجز أو من الإعدادات (PushNotificationService).
+    const iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
+    await _plugin.initialize(
+      settings: const InitializationSettings(android: androidSettings, iOS: iosSettings),
+      onDidReceiveNotificationResponse: _onTap == null ? null : _onResponse,
+    );
+    _tapRegistered = _onTap != null;
+    if (_initialized) return;
 
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       await _android?.createNotificationChannel(
@@ -49,6 +77,36 @@ abstract final class PushLocalNotifications {
     }
 
     _initialized = true;
+  }
+
+  static void _onResponse(NotificationResponse response) {
+    final payload = response.payload;
+    if (payload == null || payload.isEmpty) return;
+    _onTap?.call(payload);
+  }
+
+  /// الإشعار المحلي الذي فتح التطبيق وهو مُغلق — في هذه الحالة لا يُستدعى معالج الضغط.
+  static Future<String?> launchPayload() async {
+    if (kIsWeb) return null;
+    try {
+      final details = await _plugin.getNotificationAppLaunchDetails();
+      if (details == null || !details.didNotificationLaunchApp) return null;
+      final payload = details.notificationResponse?.payload;
+      return payload == null || payload.isEmpty ? null : payload;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// `type=enrollment_approved&course_id=5` → خريطة بيانات مثل `RemoteMessage.data`.
+  static Map<String, dynamic> decodePayload(String payload) {
+    final data = <String, dynamic>{};
+    for (final part in payload.split('&')) {
+      final idx = part.indexOf('=');
+      if (idx <= 0) continue;
+      data[part.substring(0, idx)] = part.substring(idx + 1);
+    }
+    return data;
   }
 
   static Future<bool> requestAndroidPermission() async {
@@ -96,6 +154,7 @@ abstract final class PushLocalNotifications {
     String payload = '',
     bool requirePermission = true,
   }) async {
+    if (!userEnabled) return;
     if (title.trim().isEmpty && body.trim().isEmpty) return;
 
     if (requirePermission && !kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
@@ -131,10 +190,9 @@ abstract final class PushLocalNotifications {
     final notification = message.notification;
     final data = message.data;
 
-    final title = notification?.title ??
-        data['title']?.toString() ??
-        data['notification_title']?.toString();
-    final body = notification?.body ??
+    final title = notification?.title ?? data['title']?.toString() ?? data['notification_title']?.toString();
+    final body =
+        notification?.body ??
         data['body']?.toString() ??
         data['message']?.toString() ??
         data['notification_body']?.toString();
@@ -143,11 +201,7 @@ abstract final class PushLocalNotifications {
       return null;
     }
 
-    return (
-      title: title ?? 'Coursy',
-      body: body ?? '',
-      payload: _encodePayload(data),
-    );
+    return (title: title ?? 'Coursy', body: body ?? '', payload: _encodePayload(data));
   }
 
   static String _encodePayload(Map<String, dynamic> data) {

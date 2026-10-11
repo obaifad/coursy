@@ -13,25 +13,22 @@ class HomeRepository extends GetxService {
   /// يحاول جلب الصفحة الرئيسية؛ إن فشل أو كانت فارغة يُرجع null ليُكمّل الـ Controller بجلب منفصل.
   Future<HomePayload?> fetchHomepage() async {
     try {
-      return await _client.handle(
-        () => _client.get(ApiEndpoints.homepage),
-        (data) {
-          if (data is! Map<String, dynamic>) {
-            return null;
-          }
-          final map = extractObjectMap(data) ?? data;
-          return HomePayload(
-            courses: extractListMap(map['featured_courses'] ?? map['courses']).map(CourseModel.fromJson).toList(),
-            // للزوار فقط — المسجّلون يستخدمون /student/suggested-courses
-            suggestedCourses: extractListMap(map['latest_courses'] ?? map['suggested_courses'])
-                .map(CourseModel.fromJson)
-                .toList(),
-            institutes: extractListMap(map['institutes'] ?? map['top_institutes']).map(InstituteModel.fromJson).toList(),
-            categories: extractListMap(map['categories']).map(CategoryModel.fromJson).toList(),
-            cities: extractListMap(map['cities']).map(CityModel.fromJson).toList(),
-          );
-        },
-      );
+      return await _client.handle(() => _client.get(ApiEndpoints.homepage), (data) {
+        if (data is! Map<String, dynamic>) {
+          return null;
+        }
+        final map = extractObjectMap(data) ?? data;
+        return HomePayload(
+          courses: extractListMap(map['featured_courses'] ?? map['courses']).map(CourseModel.fromJson).toList(),
+          // للزوار فقط — المسجّلون يستخدمون /student/suggested-courses
+          suggestedCourses: extractListMap(
+            map['latest_courses'] ?? map['suggested_courses'],
+          ).map(CourseModel.fromJson).toList(),
+          institutes: extractListMap(map['institutes'] ?? map['top_institutes']).map(InstituteModel.fromJson).toList(),
+          categories: extractListMap(map['categories']).map(CategoryModel.fromJson).toList(),
+          cities: extractListMap(map['cities']).map(CityModel.fromJson).toList(),
+        );
+      });
     } catch (_) {
       return null;
     }

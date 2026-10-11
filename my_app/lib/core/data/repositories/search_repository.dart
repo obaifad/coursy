@@ -8,12 +8,7 @@ import '../../network/json_parser.dart';
 import '../../services/course_rating_service.dart';
 
 /// نطاق البحث — عند [all] لا يُرسل type فيُبحث في الكل.
-enum SearchScope {
-  all,
-  courses,
-  institutes,
-  instructors,
-}
+enum SearchScope { all, courses, institutes, instructors }
 
 extension SearchScopeApi on SearchScope {
   String? get apiParam {
@@ -114,27 +109,25 @@ class SearchRepository extends GetxService {
       if (verified == true) 'verified': 1,
     };
 
-    final result = await _client.handle(
-      () => _client.get(ApiEndpoints.search, query: params),
-      (data) {
-        final normalized = normalizeApiBody(data);
-        if (normalized is! Map<String, dynamic>) {
-          return SearchResult();
-        }
-        final map = extractObjectMap(normalized) ?? normalized;
+    final result = await _client.handle(() => _client.get(ApiEndpoints.search, query: params), (data) {
+      final normalized = normalizeApiBody(data);
+      if (normalized is! Map<String, dynamic>) {
+        return SearchResult();
+      }
+      final map = extractObjectMap(normalized) ?? normalized;
 
-        final courseMaps = map.containsKey('courses') ? extractListMap(map['courses']) : const <Map<String, dynamic>>[];
-        final instituteMaps = _extractInstituteMaps(map);
-        final instructorMaps =
-            map.containsKey('instructors') ? extractListMap(map['instructors']) : const <Map<String, dynamic>>[];
+      final courseMaps = map.containsKey('courses') ? extractListMap(map['courses']) : const <Map<String, dynamic>>[];
+      final instituteMaps = _extractInstituteMaps(map);
+      final instructorMaps = map.containsKey('instructors')
+          ? extractListMap(map['instructors'])
+          : const <Map<String, dynamic>>[];
 
-        return SearchResult(
-          courses: courseMaps.map(CourseModel.fromJson).toList(),
-          institutes: instituteMaps.map(InstituteModel.fromJson).toList(),
-          instructors: instructorMaps.map(InstructorModel.fromJson).toList(),
-        );
-      },
-    );
+      return SearchResult(
+        courses: courseMaps.map(CourseModel.fromJson).toList(),
+        institutes: instituteMaps.map(InstituteModel.fromJson).toList(),
+        instructors: instructorMaps.map(InstructorModel.fromJson).toList(),
+      );
+    });
 
     return _enrichSearchResult(result);
   }
@@ -163,18 +156,12 @@ class SearchRepository extends GetxService {
   }
 
   Future<SearchResult> _enrichSearchResult(SearchResult result) async {
-    final courses = result.courses.isEmpty
-        ? result.courses
-        : await _ratingService.enrich(result.courses);
+    final courses = result.courses.isEmpty ? result.courses : await _ratingService.enrich(result.courses);
     final institutes = result.institutes.isEmpty
         ? result.institutes
         : await _enrichInstitutes(result.institutes, searchCourses: result.courses);
 
-    return SearchResult(
-      courses: courses,
-      institutes: institutes,
-      instructors: result.instructors,
-    );
+    return SearchResult(courses: courses, institutes: institutes, instructors: result.instructors);
   }
 
   /// استكمال عدد الدورات/التقييم/اللوغو من كاش قائمة المعاهد (بدون طلبات إضافية).
@@ -197,11 +184,7 @@ class SearchRepository extends GetxService {
 }
 
 class SearchResult {
-  SearchResult({
-    this.courses = const [],
-    this.institutes = const [],
-    this.instructors = const [],
-  });
+  SearchResult({this.courses = const [], this.institutes = const [], this.instructors = const []});
 
   final List<CourseModel> courses;
   final List<InstituteModel> institutes;

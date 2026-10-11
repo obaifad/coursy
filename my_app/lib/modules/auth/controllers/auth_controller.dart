@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/config/app_flags.dart';
 import '../../../core/data/repositories/auth_repository.dart';
 import '../../../core/data/repositories/interest_repository.dart';
 import '../../../core/data/repositories/city_repository.dart';
@@ -24,8 +27,8 @@ class AuthController extends GetxController {
 
   static const educationLevels = ['High School', 'Diploma', 'Bachelor', 'Master', 'PhD'];
 
-  final loginEmailController = TextEditingController();
-  final loginPhoneController = TextEditingController();
+  /// حقل دخول واحد: بريد إلكتروني أو رقم هاتف.
+  final loginIdController = TextEditingController();
   final passwordController = TextEditingController();
 
   final firstNameController = TextEditingController();
@@ -64,6 +67,9 @@ class AuthController extends GetxController {
 
   final isAdvancingStep = false.obs;
   final isSubmittingRegister = false.obs;
+
+  /// الموافقة على شروط الاستخدام وسياسة الخصوصية — شرط لإنشاء الحساب (والتقييمات محتوى ينشره المستخدم).
+  final acceptedTerms = false.obs;
   final registerReferenceReady = false.obs;
   final registerStep1Validated = false.obs;
   final registerStep0Validated = false.obs;
@@ -97,13 +103,8 @@ class AuthController extends GetxController {
   /// تحميل قوائم التسجيل عند فتح الشاشة فقط — لا يُستدعى عند الدخول.
   Future<void> prepareRegisterReferenceData({bool force = false}) async {
     if (registerReferenceReady.value && !force) return;
-    await Future.wait([
-      loadCities(force: force),
-      loadReferences(force: force),
-      loadCategories(force: force),
-    ]);
-    registerReferenceReady.value =
-        cities.isNotEmpty && universities.isNotEmpty && categories.isNotEmpty;
+    await Future.wait([loadCities(force: force), loadReferences(force: force), loadCategories(force: force)]);
+    registerReferenceReady.value = cities.isNotEmpty && universities.isNotEmpty && categories.isNotEmpty;
   }
 
   Future<void> loadCities({bool force = false}) async {
@@ -190,11 +191,7 @@ class AuthController extends GetxController {
   }
 
   Future<void> reloadLocalizedData() async {
-    await Future.wait([
-      loadCities(force: true),
-      loadReferences(force: true),
-      loadCategories(force: true),
-    ]);
+    await Future.wait([loadCities(force: true), loadReferences(force: true), loadCategories(force: true)]);
   }
 
   void setEducationLevel(String? level) {
@@ -205,8 +202,7 @@ class AuthController extends GetxController {
     }
   }
 
-  bool get requiresUniversityFields =>
-      EducationLevelUtils.requiresUniversityFields(selectedEducationLevel.value);
+  bool get requiresUniversityFields => EducationLevelUtils.requiresUniversityFields(selectedEducationLevel.value);
 
   void setCategoryIds(List<int> ids) {
     selectedCategoryIds.assignAll(ids.where((id) => id > 0).toSet().toList());
@@ -221,27 +217,22 @@ class AuthController extends GetxController {
   }
 
   Future<void> login() async {
-    final email = loginEmailController.text.trim();
-    final phone = loginPhoneController.text.trim();
+    final loginId = loginIdController.text.trim();
     final pass = passwordController.text;
 
-    if (email.isEmpty || phone.isEmpty || pass.isEmpty) {
-      Get.snackbar('alert'.tr, 'enter_email_phone_password'.tr);
+    if (loginId.isEmpty || pass.isEmpty) {
+      Get.snackbar('alert'.tr, 'enter_login_password'.tr);
       return;
     }
-    if (!email.contains('@')) {
-      Get.snackbar('alert'.tr, 'enter_valid_email'.tr);
-      return;
-    }
-    if (!_isValidSyrianMobile(phone)) {
-      Get.snackbar('alert'.tr, 'enter_valid_phone'.tr);
+    if (loginId.contains('@') ? !_isValidEmail(loginId) : !_looksLikePhone(loginId)) {
+      Get.snackbar('alert'.tr, 'enter_valid_login'.tr);
       return;
     }
 
     isLoading.value = true;
     errorMessage.value = null;
     try {
-      await _authRepository.login(email: email, phone: phone, password: pass);
+      await _authRepository.login(login: loginId, password: pass);
       await _afterAuthSuccess();
     } on ApiException catch (e) {
       errorMessage.value = e.message;
@@ -279,9 +270,9 @@ class AuthController extends GetxController {
 
     isAdvancingStep.value = true;
     try {
+      // تكرار البريد/الهاتف يتحقق منه الخادم عند الإرسال (422) ويُعاد المستخدم للخطوة الأولى
+      // مع الرسالة تحت الحقل — بدل البحث في /users بدون تسجيل دخول.
       if (step == 0) {
-        final blocked = await _validateRegisterStep0Remote();
-        if (blocked) return;
         registerStep0Validated.value = true;
       } else if (step == 1) {
         registerStep1Validated.value = true;
@@ -317,6 +308,11 @@ class AuthController extends GetxController {
     final step2Errors = _collectRegisterStepErrors(2);
     if (!_applyRegisterFieldErrors(step2Errors)) return;
 
+    if (!acceptedTerms.value) {
+      registerStepError.value = 'terms_required'.tr;
+      return;
+    }
+
     isSubmittingRegister.value = true;
     try {
       final phone = phoneController.text.trim();
@@ -333,14 +329,14 @@ class AuthController extends GetxController {
         educationLevel: selectedEducationLevel.value,
         universityId: requiresUniversityFields ? selectedUniversityId.value : null,
         specializationId: requiresUniversityFields ? selectedSpecializationId.value : null,
-        preferredTags: selectedCategoryIds.isEmpty ? null : selectedCategoryIds.toList(),
+        preferredCategories: selectedCategoryIds.isEmpty ? null : selectedCategoryIds.toList(),
         deviceName: GetPlatform.isAndroid
             ? 'android'
             : GetPlatform.isIOS
-                ? 'ios'
-                : GetPlatform.isWindows
-                    ? 'windows'
-                    : 'flutter',
+            ? 'ios'
+            : GetPlatform.isWindows
+            ? 'windows'
+            : 'flutter',
       );
 
       final autoLoggedIn = await _authRepository.register(payload);
@@ -349,16 +345,21 @@ class AuthController extends GetxController {
           educationLevel: payload.educationLevel,
           universityId: payload.universityId,
           specializationId: payload.specializationId,
-          preferredTags: payload.preferredTags,
+          preferredCategories: payload.preferredCategories,
         );
         Get.snackbar('welcome'.tr, 'account_created_ok'.tr);
         await _afterAuthSuccess();
+        // تأكيد البريد اختياري: يُعرض مرة بعد إنشاء الحساب مع «تخطي الآن».
+        final email = payload.email.trim();
+        if (AppFlags.emailVerificationEnabled && email.isNotEmpty) {
+          unawaited(Get.toNamed(AppRoutes.emailVerification, arguments: {'email': email, 'fromRegister': true}));
+        }
         return;
       }
 
       Get.offAllNamed(AppRoutes.login);
-      loginEmailController.text = emailController.text.trim();
-      loginPhoneController.text = phone;
+      final registeredEmail = emailController.text.trim();
+      loginIdController.text = registeredEmail.isNotEmpty ? registeredEmail : phone;
       Get.snackbar('register_done'.tr, 'register_login_hint'.tr);
     } on ApiException catch (e) {
       _applyApiRegisterErrors(e);
@@ -409,10 +410,9 @@ class AuthController extends GetxController {
         } else if (password != confirm) {
           errors['confirmPassword'] = 'password_mismatch'.tr;
         }
-        if (selectedGender.value == null) errors['gender'] = 'pick_gender'.tr;
-        if (birthDate.value == null) {
-          errors['birthDate'] = 'pick_birth_date'.tr;
-        } else if (!_isValidBirthDate(birthDate.value!)) {
+        // الجنس وتاريخ الميلاد اختياريان؛ إن اختير التاريخ يجب أن يكون منطقياً.
+        final birth = birthDate.value;
+        if (birth != null && !_isValidBirthDate(birth)) {
           errors['birthDate'] = 'pick_valid_birth_date'.tr;
         }
         break;
@@ -456,25 +456,6 @@ class AuthController extends GetxController {
 
     registerFieldErrors.assignAll(nextErrors);
     registerFieldErrors.refresh();
-  }
-
-  Future<bool> _validateRegisterStep0Remote() async {
-    final email = emailController.text.trim();
-    final phone = phoneController.text.trim();
-
-    final emailTaken = await _authRepository.isEmailTaken(email);
-    if (emailTaken) {
-      _applyRegisterFieldErrors({'email': 'email_already_registered'.tr});
-      return true;
-    }
-
-    final phoneTaken = await _authRepository.isPhoneTaken(phone);
-    if (phoneTaken) {
-      _applyRegisterFieldErrors({'phone': 'phone_already_registered'.tr});
-      return true;
-    }
-
-    return false;
   }
 
   bool _applyRegisterFieldErrors(Map<String, String> errors) {
@@ -566,12 +547,11 @@ class AuthController extends GetxController {
     }
   }
 
+  /// الشرط الوحيد: 6 خانات على الأقل، بأي أحرف أو أرقام أو رموز.
+  static const minPasswordLength = 6;
+
   String? _passwordValidationError(String password) {
-    if (password.length < 8) return 'password_min_8'.tr;
-    if (!RegExp(r'[A-Za-z]').hasMatch(password) || !RegExp(r'\d').hasMatch(password)) {
-      return 'password_must_have_letter_number'.tr;
-    }
-    return null;
+    return password.length < minPasswordLength ? 'password_min_6'.tr : null;
   }
 
   bool _isValidEmail(String email) {
@@ -585,8 +565,12 @@ class AuthController extends GetxController {
     return !date.isBefore(minDate) && !date.isAfter(maxDate);
   }
 
-  static String formatBirthDate(DateTime d) {
-    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  static String formatBirthDate(DateTime d) => EducationLevelUtils.formatApiDate(d);
+
+  /// صيغة هاتف مرنة للدخول: الخادم يقبل 09… و+963… و00963… مع مسافات أو شرطات.
+  bool _looksLikePhone(String value) {
+    final compact = value.replaceAll(RegExp(r'[\s\-()]'), '');
+    return RegExp(r'^\+?\d{9,15}$').hasMatch(compact);
   }
 
   bool _isValidSyrianMobile(String phone) {
@@ -595,22 +579,7 @@ class AuthController extends GetxController {
 
   double get registerProgress => (registerStep.value + 1) / 3;
 
-  String educationLevelLabel(String value) {
-    switch (value) {
-      case 'High School':
-        return 'edu_high_school'.tr;
-      case 'Diploma':
-        return 'edu_diploma'.tr;
-      case 'Bachelor':
-        return 'edu_bachelor'.tr;
-      case 'Master':
-        return 'edu_master'.tr;
-      case 'PhD':
-        return 'edu_phd'.tr;
-      default:
-        return value;
-    }
-  }
+  String educationLevelLabel(String value) => EducationLevelUtils.label(value);
 
   void resetAfterLogout() {
     errorMessage.value = null;
@@ -625,8 +594,7 @@ class AuthController extends GetxController {
 
   @override
   void onClose() {
-    loginEmailController.dispose();
-    loginPhoneController.dispose();
+    loginIdController.dispose();
     passwordController.dispose();
     firstNameController.dispose();
     lastNameController.dispose();

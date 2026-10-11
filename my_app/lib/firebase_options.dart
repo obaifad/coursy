@@ -23,19 +23,18 @@ abstract final class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyC6FHxS0Hm6DjhMa7F9_WGDS2beSU_NA6Y',
-    appId: '1:1066276389507:android:fd24d96ec748c9f08a91b6',
+    appId: '1:1066276389507:android:a85041adc70d39698a91b6',
     messagingSenderId: '1066276389507',
     projectId: 'coursy-ec580',
     storageBucket: 'coursy-ec580.firebasestorage.app',
   );
 
-  /// iOS: ما زال يحتاج GoogleService-Info.plist من مشروع coursy-ec580.
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyABj6Tz_qUoG05ZW4Ge5ampfzKUlSvLtIc',
-    appId: '1:942516640322:ios:601ea896cb5ac17df6abdb',
+    apiKey: 'AIzaSyBPQvfD92olsmk2jKjv0euUxM1LmzIAXng',
+    appId: '1:1066276389507:ios:a707e2f6efff796b8a91b6',
     messagingSenderId: '1066276389507',
     projectId: 'coursy-ec580',
     storageBucket: 'coursy-ec580.firebasestorage.app',
-    iosBundleId: 'com.example.myApp',
+    iosBundleId: 'sy.coursy.app',
   );
 }

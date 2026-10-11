@@ -1,14 +1,27 @@
+import 'dart:async';
+
+import 'package:flutter/services.dart';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../network/api_client.dart';
+import '../services/push_notification_service.dart';
 import 'locale_refresh.dart';
 import 'locale_request_guard.dart';
+import '../../widgets/app_selection_sheet.dart';
+import '../../widgets/syrian_flag.dart';
 
 /// إدارة لغة التطبيق (عربي / إنجليزي) + RTL/LTR + Accept-Language للـ API.
 class LocaleController extends GetxService {
   static const _storageKey = 'app_locale';
+
+  /// نسخة من اللغة في SharedPreferences يقرؤها الفحص الخلفي (Workmanager) لإشعاراته —
+  /// GetStorage لا يُستخدم من الـ isolate الخلفي.
+  static const backgroundLocaleKey = 'app_locale';
+
   late final GetStorage _box;
 
   final RxString code = 'ar'.obs;
@@ -26,12 +39,22 @@ class LocaleController extends GetxService {
     if (Get.isRegistered<ApiClient>()) {
       Get.find<ApiClient>().dio.options.headers['Accept-Language'] = initial;
     }
+    unawaited(_mirrorForBackground(initial));
+  }
+
+  Future<void> _mirrorForBackground(String value) async {
+    try {
+      await SharedPreferencesAsync().setString(backgroundLocaleKey, value);
+    } catch (_) {
+      // غير حرج — الإشعارات الخلفية تستخدم العربية افتراضياً.
+    }
   }
 
   Future<void> setLocale(String newCode) async {
     if (newCode != 'ar' && newCode != 'en') return;
     if (newCode == code.value) return;
     await _box.write(_storageKey, newCode);
+    unawaited(_mirrorForBackground(newCode));
     await _apply(newCode, refreshData: true);
     Get.snackbar('language_changed'.tr, 'language_changed_desc'.tr);
   }
@@ -52,32 +75,35 @@ class LocaleController extends GetxService {
         Get.find<LocaleRequestGuard>().bump();
       }
       await LocaleRefresh.reloadAll();
+      // الخادم يحفظ لغة كل جهاز ليرسل إشعاراته بها: نعيد تسجيل التوكن باللغة الجديدة.
+      if (Get.isRegistered<PushNotificationService>()) {
+        unawaited(Get.find<PushNotificationService>().syncDeviceTokenIfLoggedIn(force: true));
+      }
     }
   }
 
-  void showLanguagePicker() {
-    Get.bottomSheet(
-      SafeArea(
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('choose_language'.tr, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 16),
-              _LanguageTile(code: 'ar', label: 'lang_arabic'.tr, flag: '🇸🇾'),
-              const SizedBox(height: 8),
-              _LanguageTile(code: 'en', label: 'lang_english'.tr, flag: '🇬🇧'),
-            ],
-          ),
+  /// ورقة اختيار اللغة بنفس النمط العائم الموحّد لباقي أوراق التطبيق.
+  void showLanguagePicker([BuildContext? context]) {
+    final ctx = context ?? Get.context;
+    if (ctx == null) return;
+    showAppFloatingSheet(
+      context: ctx,
+      builder: (_) => AppFloatingSheetFrame(
+        title: 'choose_language'.tr,
+        titleIcon: Icons.language_rounded,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _LanguageTile(code: 'ar', label: 'lang_arabic'.tr, flag: const SyrianFlag(width: 36)),
+            _LanguageTile(
+              code: 'en',
+              label: 'lang_english'.tr,
+              flag: const Text('🇬🇧', style: TextStyle(fontSize: 26)),
+            ),
+          ],
         ),
       ),
-      isScrollControlled: true,
     );
   }
 }
@@ -87,22 +113,21 @@ class _LanguageTile extends StatelessWidget {
 
   final String code;
   final String label;
-  final String flag;
+  final Widget flag;
 
   @override
   Widget build(BuildContext context) {
     final locale = Get.find<LocaleController>();
     return Obx(() {
       final selected = locale.code.value == code;
-      return ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        tileColor: selected ? const Color(0x146C63FF) : null,
-        leading: Text(flag, style: const TextStyle(fontSize: 28)),
-        title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.w800 : FontWeight.w600)),
-        trailing: selected ? const Icon(Icons.check_circle_rounded, color: Color(0xFF6C63FF)) : null,
+      return AppSelectableTile(
+        label: label,
+        selected: selected,
+        leading: SizedBox(width: 40, height: 38, child: Center(child: flag)),
         onTap: () async {
-          Get.back();
-          await locale.setLocale(code);
+          HapticFeedback.selectionClick();
+          Navigator.of(context).pop();
+          if (!selected) await locale.setLocale(code);
         },
       );
     });

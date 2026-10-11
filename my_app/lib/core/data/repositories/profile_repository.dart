@@ -9,6 +9,7 @@ import '../../models/student_profile_payload.dart';
 import '../../storage/academic_profile_cache.dart';
 import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
+import '../../network/api_exception.dart';
 import '../../network/json_parser.dart';
 import '../../storage/token_storage.dart';
 
@@ -20,35 +21,28 @@ class ProfileRepository extends GetxService {
 
   Future<Map<String, dynamic>> fetchMe() => fetchFullStudentUser();
 
-  /// `/student/me` + `/student/profile` + الكاش المحلي.
+  /// `/student/me` (يحمل الملف الأكاديمي `student_profile`) + الكاش المحلي.
+  /// (`GET /student/profile` غير موجود على الخادم — المسار للتعديل فقط — فكان كل تحميل يفشل بـ 405.)
   Future<Map<String, dynamic>> fetchFullStudentUser() async {
-    final meFuture = _client.handle(
+    final meMap = await _client.handle(
       () => _client.get(ApiEndpoints.studentMe),
       (data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{},
     );
-    final profileFuture = _tryFetchStudentProfileRecord();
-
-    late Map<String, dynamic> meMap;
-    Map<String, dynamic>? profileRecord;
-    await Future.wait([
-      meFuture.then((value) => meMap = value),
-      profileFuture.then((value) => profileRecord = value),
-    ]);
 
     final studentId = extractStudentId(meMap) ?? extractStudentId(extractUserMap(meMap));
     if (studentId != null && studentId > 0) {
       await _tokenStorage.saveStudentId(studentId);
     }
+    final phoneVerified = phoneVerificationStatus(extractUserMap(meMap) ?? meMap);
+    if (phoneVerified != null) {
+      await _tokenStorage.savePhoneVerified(phoneVerified);
+    }
+    final emailVerified = emailVerificationStatus(extractUserMap(meMap) ?? meMap);
+    if (emailVerified != null) {
+      await _tokenStorage.saveEmailVerified(emailVerified);
+    }
 
     var user = mergeProfileUserData(meMap);
-    final profile = profileRecord;
-    if (profile != null && profile.isNotEmpty) {
-      final existing = extractNestedStudentProfile(user) ?? <String, dynamic>{};
-      user = {
-        ...user,
-        'student_profile': {...existing, ...profile},
-      };
-    }
 
     final cached = await _tokenStorage.loadAcademicCache();
     if (cached != null && !cached.isEmpty) {
@@ -79,10 +73,9 @@ class ProfileRepository extends GetxService {
       profile['specialization_id'] = cache.specializationId;
       user['specialization_id'] ??= cache.specializationId;
     }
-    if (extractPreferredInterestIds({...profile, ...user}).isEmpty &&
-        cache.preferredCategoryIds.isNotEmpty) {
-      profile['preferred_tags'] = cache.preferredCategoryIds;
-      user['preferred_tags'] = cache.preferredCategoryIds;
+    if (extractPreferredInterestIds({...profile, ...user}).isEmpty && cache.preferredCategoryIds.isNotEmpty) {
+      profile['preferred_categories'] = cache.preferredCategoryIds;
+      user['preferred_categories'] = cache.preferredCategoryIds;
     }
 
     return {...user, 'student_profile': profile};
@@ -92,14 +85,14 @@ class ProfileRepository extends GetxService {
     String? educationLevel,
     int? universityId,
     int? specializationId,
-    List<int>? preferredTags,
+    List<int>? preferredCategories,
   }) async {
-    final tagIds = preferredTags ?? const [];
+    final categoryIds = preferredCategories ?? const [];
     final cache = AcademicProfileCache(
       educationLevel: educationLevel,
       universityId: universityId,
       specializationId: specializationId,
-      preferredCategoryIds: tagIds,
+      preferredCategoryIds: categoryIds,
     );
     if (!cache.isEmpty) {
       await _tokenStorage.saveAcademicCache(cache);
@@ -109,7 +102,7 @@ class ProfileRepository extends GetxService {
       educationLevel: educationLevel,
       universityId: universityId,
       specializationId: specializationId,
-      preferredTags: tagIds.isEmpty ? null : tagIds,
+      preferredCategories: categoryIds.isEmpty ? null : categoryIds,
     );
     if (cache.isEmpty) return;
 
@@ -147,46 +140,19 @@ class ProfileRepository extends GetxService {
     return hasEducation || hasUniversity || hasSpecialization || hasTags;
   }
 
-  Future<Map<String, dynamic>?> _tryFetchStudentProfileRecord() async {
-    try {
-      return await _client.handle(
-        () => _client.get(ApiEndpoints.studentProfile),
-        (data) => extractObjectMap(normalizeApiBody(data)),
-      );
-    } catch (_) {
-      return null;
-    }
-  }
-
   Future<Map<String, dynamic>> updateProfile(StudentProfilePayload payload) async {
     if (kDebugMode) {
       AppDebugLog.repo('Profile', 'PATCH ${ApiEndpoints.studentProfile}');
       AppDebugLog.repo('Profile', payload.toJson().toString());
     }
+    Map<String, dynamic> mapper(dynamic data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{};
     try {
-      return await _client.handle(
-        () => _client.patch(ApiEndpoints.studentProfile, data: payload.toJson()),
-        (data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{},
-      );
-    } catch (_) {
-      try {
-        return await _client.handle(
-          () => _client.post(ApiEndpoints.studentProfile, data: payload.toJson()),
-          (data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{},
-        );
-      } catch (_) {
-        final queryPath =
-            '${ApiEndpoints.studentProfile}?first_name=${Uri.encodeQueryComponent(payload.firstName ?? '')}'
-            '&last_name=${Uri.encodeQueryComponent(payload.lastName ?? '')}'
-            '&phone=${Uri.encodeQueryComponent(payload.phone ?? '')}'
-            '${payload.gender == null ? '' : '&gender=${Uri.encodeQueryComponent(payload.gender!)}'}'
-            '${payload.birthDate == null ? '' : '&birth_date=${Uri.encodeQueryComponent(payload.birthDate!)}'}'
-            '${payload.cityId == null ? '' : '&city_id=${payload.cityId}'}';
-        return _client.handle(
-          () => _client.post(queryPath, data: const <String, dynamic>{}),
-          (data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{},
-        );
-      }
+      return await _client.handle(() => _client.patch(ApiEndpoints.studentProfile, data: payload.toJson()), mapper);
+    } on ApiException catch (e) {
+      // POST فقط إن كان الخادم لا يدعم PATCH على هذا المسار. أخطاء التحقق (422) تُعرض كما هي.
+      // (أُزيلت محاولة ثالثة كانت ترسل الاسم والهاتف وتاريخ الميلاد داخل رابط الطلب.)
+      if (e.statusCode != 404 && e.statusCode != 405) rethrow;
+      return _client.handle(() => _client.post(ApiEndpoints.studentProfile, data: payload.toJson()), mapper);
     }
   }
 
@@ -207,9 +173,7 @@ class ProfileRepository extends GetxService {
   }
 
   Future<Map<String, dynamic>> uploadAvatarBytes(List<int> bytes, {String filename = 'avatar.jpg'}) async {
-    final formData = dio.FormData.fromMap({
-      'avatar': dio.MultipartFile.fromBytes(bytes, filename: filename),
-    });
+    final formData = dio.FormData.fromMap({'avatar': dio.MultipartFile.fromBytes(bytes, filename: filename)});
     return _client.handle(
       () => _client.postMultipart(ApiEndpoints.studentProfile, formData),
       (data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{},
@@ -218,21 +182,14 @@ class ProfileRepository extends GetxService {
 
   Future<Map<String, dynamic>> uploadAvatar(String filePath) async {
     final fileName = filePath.split(RegExp(r'[\\/]')).last;
-    final formData = dio.FormData.fromMap({
-      'avatar': await dio.MultipartFile.fromFile(filePath, filename: fileName),
-    });
+    final formData = dio.FormData.fromMap({'avatar': await dio.MultipartFile.fromFile(filePath, filename: fileName)});
     return _client.handle(
       () => _client.postMultipart(ApiEndpoints.studentProfile, formData),
       (data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{},
     );
   }
 
-  Future<void> syncProfileToSession({
-    String? firstName,
-    String? lastName,
-    String? phone,
-    String? avatarUrl,
-  }) async {
+  Future<void> syncProfileToSession({String? firstName, String? lastName, String? phone, String? avatarUrl}) async {
     final token = _tokenStorage.token;
     if (token == null || token.isEmpty) return;
 

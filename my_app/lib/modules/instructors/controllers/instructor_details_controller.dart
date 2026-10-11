@@ -19,6 +19,7 @@ class InstructorDetailsController extends GetxController {
   final instructor = Rxn<InstructorModel>();
   final courses = <CourseModel>[].obs;
   final reviews = <ReviewModel>[].obs;
+  final isLoadingReviews = false.obs;
   final totalCourses = 0.obs;
 
   late int instructorId;
@@ -75,11 +76,7 @@ class InstructorDetailsController extends GetxController {
     isLoading.value = !hasSeed;
 
     try {
-      await Future.wait<void>([
-        _refreshInstructor(),
-        _loadCourses(reset: true),
-        _loadReviews(),
-      ]);
+      await Future.wait<void>([_refreshInstructor(), _loadCourses(reset: true), _loadReviews()]);
     } finally {
       isLoading.value = false;
     }
@@ -133,10 +130,14 @@ class InstructorDetailsController extends GetxController {
   }
 
   Future<void> _loadReviews() async {
+    if (instructorId <= 0) return;
+    isLoadingReviews.value = true;
     try {
       reviews.assignAll(await _reviewRepository.fetchReviews(instructorId: instructorId));
     } catch (_) {
       reviews.clear();
+    } finally {
+      isLoadingReviews.value = false;
     }
   }
 

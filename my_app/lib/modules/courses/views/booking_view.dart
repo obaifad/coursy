@@ -3,7 +3,9 @@ import 'package:get/get.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../widgets/design_system.dart';
+import '../../../widgets/app_widgets.dart';
 import '../controllers/booking_controller.dart';
+import '../../auth/widgets/register_form_widgets.dart';
 
 class CourseBookingView extends GetView<BookingController> {
   const CourseBookingView({super.key});
@@ -14,7 +16,7 @@ class CourseBookingView extends GetView<BookingController> {
     return Scaffold(
       appBar: AppBar(title: Text('booking_confirm_title'.tr)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
         children: [
           SoftCard(
             child: Column(
@@ -34,7 +36,7 @@ class CourseBookingView extends GetView<BookingController> {
                   ],
                 ),
                 const SizedBox(height: 14),
-                Text(c.price, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900, fontSize: 22)),
+                CoursePriceText(price: c.price, amountSize: 22, currencySize: 13),
               ],
             ),
           ),
@@ -48,14 +50,20 @@ class CourseBookingView extends GetView<BookingController> {
                 Text('• ${'after_booking_1'.tr}', style: const TextStyle(height: 1.5)),
                 Text('• ${'after_booking_2'.tr}', style: const TextStyle(height: 1.5)),
                 Text('• ${'after_booking_3'.tr}', style: const TextStyle(height: 1.5)),
+                if (c.requiresAdvancePayment)
+                  Text(
+                    '• ${(c.isOnline ? 'after_booking_advance_online' : 'after_booking_advance').tr}',
+                    style: const TextStyle(height: 1.5, fontWeight: FontWeight.w700),
+                  ),
               ],
             ),
           ),
           const SizedBox(height: 24),
           Obx(
-            () => FilledButton(
+            () => RegisterGradientButton(
+              label: 'confirm_booking'.tr,
+              loading: controller.isSubmitting.value,
               onPressed: controller.isSubmitting.value ? null : controller.confirmBooking,
-              child: Text(controller.isSubmitting.value ? 'submitting_review'.tr : 'confirm_booking'.tr),
             ),
           ),
         ],
@@ -73,16 +81,13 @@ class _InfoChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.indicatorFill,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 16, color: AppColors.primary),
           const SizedBox(width: 6),
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
         ],
       ),
     );

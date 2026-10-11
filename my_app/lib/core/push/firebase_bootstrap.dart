@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
@@ -25,9 +26,23 @@ Future<void> bootstrapFirebase() async {
       );
     }
 
+    await _setUpCrashReporting();
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     await PushLocalNotifications.ensureInitialized();
   } catch (e) {
     AppDebugLog.fcm('initialize failed: $e');
   }
+}
+
+/// تقارير الأعطال: أخطاء Flutter وأخطاء Dart غير الملتقطة تُرسل إلى Crashlytics في نسخ الإصدار فقط.
+Future<void> _setUpCrashReporting() async {
+  final crashlytics = FirebaseCrashlytics.instance;
+  await crashlytics.setCrashlyticsCollectionEnabled(!kDebugMode);
+  if (kDebugMode) return;
+
+  FlutterError.onError = crashlytics.recordFlutterFatalError;
+  PlatformDispatcher.instance.onError = (error, stack) {
+    crashlytics.recordError(error, stack, fatal: true);
+    return true;
+  };
 }

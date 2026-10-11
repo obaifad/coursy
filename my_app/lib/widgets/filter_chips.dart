@@ -3,8 +3,10 @@ import 'package:get/get.dart';
 
 import '../core/models/app_models.dart';
 import '../theme/app_colors.dart';
+import 'app_selection_sheet.dart';
 import 'app_widgets.dart';
 import 'design_system.dart';
+import '../theme/app_motion.dart';
 
 class CourseFiltersPanel extends StatelessWidget {
   const CourseFiltersPanel({
@@ -52,10 +54,7 @@ class CourseFiltersPanel extends StatelessWidget {
           padding: EdgeInsetsDirectional.fromSTEB(inset, 0, inset, 0),
           child: Align(
             alignment: AlignmentDirectional.centerStart,
-            child: CourseSortDropdown(
-              selected: selectedSort,
-              onSelected: onSortSelected,
-            ),
+            child: CourseSortDropdown(selected: selectedSort, onSelected: onSortSelected),
           ),
         ),
       ],
@@ -82,18 +81,9 @@ class HorizontalCategoryFilters extends StatelessWidget {
       height: 44,
       separatorWidth: 8,
       children: [
-        _FilterChip(
-          label: 'filter_all'.tr,
-          selected: selectedId == null,
-          onTap: () => onSelected(null),
-        ),
+        _FilterChip(label: 'filter_all'.tr, selected: selectedId == null, onTap: () => onSelected(null)),
         for (final cat in categories)
-          _FilterChip(
-            label: cat.name,
-            selected: selectedId == cat.id,
-            category: cat,
-            onTap: () => onSelected(cat.id),
-          ),
+          _FilterChip(label: cat.name, selected: selectedId == cat.id, category: cat, onTap: () => onSelected(cat.id)),
       ],
     );
   }
@@ -198,11 +188,7 @@ class HorizontalInstructorSubjectFilters extends StatelessWidget {
 }
 
 class _SubjectFilterChip extends StatelessWidget {
-  const _SubjectFilterChip({
-    required this.subject,
-    required this.selected,
-    required this.onTap,
-  });
+  const _SubjectFilterChip({required this.subject, required this.selected, required this.onTap});
 
   final InstructorSubjectModel subject;
   final bool selected;
@@ -214,13 +200,13 @@ class _SubjectFilterChip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: AppMotion.fast,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : const Color(0xFFF7F6FF),
+          color: selected ? AppColors.primary : AppColors.surfaceSoft,
           borderRadius: BorderRadius.circular(20),
           boxShadow: selected
-              ? const [BoxShadow(color: Color(0x336C63FF), blurRadius: 10, offset: Offset(0, 4))]
+              ? const [BoxShadow(color: AppColors.shadowPrimary, blurRadius: 10, offset: Offset(0, 4))]
               : null,
         ),
         child: Row(
@@ -241,7 +227,7 @@ class _SubjectFilterChip extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
-                color: selected ? Colors.white : const Color(0xFF374151),
+                color: selected ? Colors.white : AppColors.textBody,
               ),
             ),
           ],
@@ -252,16 +238,10 @@ class _SubjectFilterChip extends StatelessWidget {
 }
 
 class CourseSortDropdown extends StatelessWidget {
-  const CourseSortDropdown({
-    super.key,
-    required this.selected,
-    required this.onSelected,
-  });
+  const CourseSortDropdown({super.key, required this.selected, required this.onSelected});
 
   final CourseSortOption selected;
   final ValueChanged<CourseSortOption> onSelected;
-
-  static const _options = CourseSortOption.values;
 
   @override
   Widget build(BuildContext context) {
@@ -273,54 +253,29 @@ class CourseSortDropdown extends StatelessWidget {
         const SizedBox(width: 6),
         Text('sort_by'.tr, style: AppTypography.filterSectionLabel()),
         const SizedBox(width: 10),
-        PopupMenuButton<CourseSortOption>(
-          initialValue: selected,
-          onSelected: onSelected,
-          offset: const Offset(0, 40),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          itemBuilder: (context) => [
-            for (final option in _options)
-              PopupMenuItem(
-                value: option,
-                child: Row(
-                  children: [
-                    if (option == selected)
-                      const Icon(Icons.check_rounded, size: 18, color: AppColors.primary)
-                    else
-                      const SizedBox(width: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      option.labelKey.tr,
-                      style: TextStyle(
-                        fontWeight: option == selected ? FontWeight.w800 : FontWeight.w600,
-                        color: option == selected ? AppColors.primary : const Color(0xFF374151),
-                      ),
-                    ),
-                  ],
-                ),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () => showCourseSortSheet(context: context, selected: selected, onSelected: onSelected),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSoft,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
               ),
-          ],
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7F6FF),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  selected.labelKey.tr,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: Color(0xFF374151),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    selected.labelKey.tr,
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textBody),
                   ),
-                ),
-                const SizedBox(width: 4),
-                Icon(Icons.expand_more_rounded, size: 20, color: AppColors.primary.withValues(alpha: 0.85)),
-              ],
+                  const SizedBox(width: 4),
+                  Icon(Icons.expand_more_rounded, size: 20, color: AppColors.primary.withValues(alpha: 0.85)),
+                ],
+              ),
             ),
           ),
         ),
@@ -329,13 +284,33 @@ class CourseSortDropdown extends StatelessWidget {
   }
 }
 
+/// ورقة اختيار ترتيب الدورات (عائمة، بأيقونات، بأنيميشن متتابع).
+Future<void> showCourseSortSheet({
+  required BuildContext context,
+  required CourseSortOption selected,
+  required ValueChanged<CourseSortOption> onSelected,
+}) {
+  IconData iconFor(CourseSortOption option) => switch (option) {
+    CourseSortOption.newest => Icons.schedule_rounded,
+    CourseSortOption.ratingHigh => Icons.star_rounded,
+    CourseSortOption.priceLow => Icons.trending_down_rounded,
+    CourseSortOption.priceHigh => Icons.trending_up_rounded,
+  };
+  return showAppSelectionSheet<CourseSortOption>(
+    context: context,
+    title: 'sort_by_title'.tr,
+    titleIcon: Icons.swap_vert_rounded,
+    selected: selected,
+    onSelected: onSelected,
+    options: [
+      for (final option in CourseSortOption.values)
+        AppSheetOption<CourseSortOption>(value: option, label: option.labelKey.tr, icon: iconFor(option)),
+    ],
+  );
+}
+
 class HorizontalCityFilters extends StatelessWidget {
-  const HorizontalCityFilters({
-    super.key,
-    required this.cities,
-    required this.selectedId,
-    required this.onSelected,
-  });
+  const HorizontalCityFilters({super.key, required this.cities, required this.selectedId, required this.onSelected});
 
   final List<CityModel> cities;
   final int? selectedId;
@@ -343,34 +318,22 @@ class HorizontalCityFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (cities.isEmpty) return const SizedBox.shrink();
+    // مدينة واحدة فقط → الفلتر بلا فائدة.
+    if (cities.length < 2) return const SizedBox.shrink();
     return AppHorizontalScrollRow(
       height: 44,
       separatorWidth: 8,
       children: [
-        _FilterChip(
-          label: 'filter_all_cities'.tr,
-          selected: selectedId == null,
-          onTap: () => onSelected(null),
-        ),
+        _FilterChip(label: 'filter_all_cities'.tr, selected: selectedId == null, onTap: () => onSelected(null)),
         for (final city in cities)
-          _FilterChip(
-            label: city.name,
-            selected: selectedId == city.id,
-            onTap: () => onSelected(city.id),
-          ),
+          _FilterChip(label: city.name, selected: selectedId == city.id, onTap: () => onSelected(city.id)),
       ],
     );
   }
 }
 
 class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.category,
-  });
+  const _FilterChip({required this.label, required this.selected, required this.onTap, this.category});
 
   final String label;
   final bool selected;
@@ -383,13 +346,13 @@ class _FilterChip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: AppMotion.fast,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : const Color(0xFFF7F6FF),
+          color: selected ? AppColors.primary : AppColors.surfaceSoft,
           borderRadius: BorderRadius.circular(20),
           boxShadow: selected
-              ? const [BoxShadow(color: Color(0x336C63FF), blurRadius: 10, offset: Offset(0, 4))]
+              ? const [BoxShadow(color: AppColors.shadowPrimary, blurRadius: 10, offset: Offset(0, 4))]
               : null,
         ),
         child: Row(
@@ -405,7 +368,7 @@ class _FilterChip extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
-                color: selected ? Colors.white : const Color(0xFF374151),
+                color: selected ? Colors.white : AppColors.textBody,
               ),
             ),
           ],
@@ -425,12 +388,9 @@ class _ChipCategoryIcon extends StatelessWidget {
     return CategoryIcon(
       category: category,
       size: 22,
-      borderRadius: BorderRadius.circular(7),
+      borderRadius: BorderRadius.circular(8),
       iconColor: selected ? Colors.white : AppColors.primary,
-      backgroundColor: selected
-          ? Colors.white.withValues(alpha: 0.22)
-          : AppColors.primary.withValues(alpha: 0.1),
+      backgroundColor: selected ? Colors.white.withValues(alpha: 0.22) : AppColors.primary.withValues(alpha: 0.1),
     );
   }
 }
-

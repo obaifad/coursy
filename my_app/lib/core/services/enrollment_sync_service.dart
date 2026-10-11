@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import '../data/repositories/enrollment_repository.dart';
 import '../data/repositories/notification_repository.dart';
+import '../models/app_models.dart';
 import '../storage/token_storage.dart';
 import '../storage/notification_delivery_store.dart';
 import '../config/app_debug_log.dart';
@@ -17,16 +18,36 @@ class EnrollmentSyncService extends GetxService {
   EnrollmentStatusCoordinator get _coordinator => Get.find();
   NotificationDeliveryStore get _deliveryStore => Get.find();
 
-  Future<void> checkForStatusChanges({bool updateMyCoursesList = true}) async {
-    if (!Get.find<TokenStorage>().isLoggedIn) return;
+  /// أقل فاصل بين فحصين (تبديل التبويبات، العودة للتطبيق، المؤقت الدوري).
+  static const _minCheckInterval = Duration(seconds: 30);
 
+  /// لا نفحص قبل تحميل الحالات المحفوظة — وإلا تُعاد الإشعارات القديمة وتُستبدل الحالات قبل قراءتها.
+  bool _seeded = false;
+  Future<void>? _inFlight;
+  DateTime? _lastCheckAt;
+
+  Future<void> checkForStatusChanges({bool updateMyCoursesList = true, bool force = false}) {
+    if (!Get.find<TokenStorage>().isLoggedIn || !_seeded) return Future<void>.value();
+    final running = _inFlight;
+    if (running != null) return running;
+    final last = _lastCheckAt;
+    if (!force && last != null && DateTime.now().difference(last) < _minCheckInterval) {
+      return Future<void>.value();
+    }
+    final future = _check(updateMyCoursesList: updateMyCoursesList);
+    _inFlight = future;
+    return future.whenComplete(() => _inFlight = null);
+  }
+
+  Future<void> _check({required bool updateMyCoursesList}) async {
+    _lastCheckAt = DateTime.now();
     try {
       final enrollments = await _repository.fetchEnrollments();
       await _coordinator.trackFromEnrollments(enrollments);
       await _checkNewServerNotifications();
 
       if (updateMyCoursesList && Get.isRegistered<MyCoursesController>()) {
-        Get.find<MyCoursesController>().enrollments.assignAll(enrollments);
+        Get.find<MyCoursesController>().mergeEnrollments(enrollments);
       }
     } catch (e) {
       AppDebugLog.repo('EnrollmentSync', e.toString());
@@ -41,13 +62,16 @@ class EnrollmentSyncService extends GetxService {
       await _deliveryStore.initForCurrentUser();
       await _coordinator.loadFromStore();
       await _baselineExistingNotifications();
-      await checkForStatusChanges(updateMyCoursesList: false);
+      _seeded = true;
+      await checkForStatusChanges(updateMyCoursesList: false, force: true);
     } catch (e) {
       AppDebugLog.repo('EnrollmentSync', 'seedStatuses: $e');
     }
   }
 
   Future<void> clearForLogout() {
+    _seeded = false;
+    _lastCheckAt = null;
     _deliveryStore.clearForCurrentUser();
     _coordinator.reset();
     return Future<void>.value();
@@ -77,14 +101,11 @@ class EnrollmentSyncService extends GetxService {
       await _deliveryStore.markDelivered([notification.id]);
 
       if (notification.isRead) continue;
-      if (notification.enrollmentId != null &&
-          _coordinator.wasDeliveredForEnrollment(notification.enrollmentId!)) {
+      if (notification.enrollmentId != null && _coordinator.wasDeliveredForEnrollment(notification.enrollmentId!)) {
         continue;
       }
 
-      final title = notification.title.trim().isEmpty
-          ? 'notification_default_title'.tr
-          : notification.title;
+      final title = notification.title.trim().isEmpty ? 'notification_default_title'.tr : notification.title;
       final body = notification.subtitle.trim();
 
       AppDebugLog.fcm('new server notification id=${notification.id} type=${notification.type}');
@@ -95,13 +116,11 @@ class EnrollmentSyncService extends GetxService {
         payload: _encodeNotificationPayload(notification),
       );
 
-      await RemoteNotificationSync.onMessageReceived(
-        RemoteNotificationSync.notificationToPushData(notification),
-      );
+      await RemoteNotificationSync.onMessageReceived(RemoteNotificationSync.notificationToPushData(notification));
     }
   }
 
-  String _encodeNotificationPayload(notification) {
+  String _encodeNotificationPayload(NotificationModel notification) {
     final data = RemoteNotificationSync.notificationToPushData(notification);
     if (data.isEmpty) return '';
     return data.entries.map((e) => '${e.key}=${e.value}').join('&');

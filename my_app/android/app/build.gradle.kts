@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -5,8 +8,15 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// مفتاح توقيع الإصدار من android/key.properties (خارج git). بدونه يُوقَّع بمفتاح debug للتجربة فقط.
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
 android {
-    namespace = "com.example.my_app"
+    namespace = "sy.coursy.app"
     compileSdk = 36
     ndkVersion = "27.0.12077973"
 
@@ -21,22 +31,47 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.my_app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        // المعرّف النهائي على Google Play — لا يمكن تغييره بعد النشر.
+        applicationId = "sy.coursy.app"
         minSdk = 23
-        targetSdk = flutter.targetSdkVersion
+        // Google Play يشترط Android 16 (API 36) للتطبيقات الجديدة والتحديثات منذ 31 أغسطس 2026.
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                // APK تجريبي فقط — حزمة Google Play (AAB) ترفض البناء بدون مفتاح الرفع (انظر أدناه).
+                signingConfigs.getByName("debug")
+            }
         }
+    }
+}
+
+// Google Play يرفض الحزم الموقّعة بمفتاح debug: لا نبني AAB للإصدار بدون key.properties.
+gradle.taskGraph.whenReady {
+    val buildsReleaseBundle = allTasks.any { it.project == project && it.name.startsWith("bundle") && it.name.endsWith("Release") }
+    if (buildsReleaseBundle && !keystorePropertiesFile.exists()) {
+        throw GradleException(
+            "android/key.properties غير موجود: حزمة Google Play يجب أن توقَّع بمفتاح الرفع " +
+                "(scripts/create_release_keystore.ps1). / android/key.properties is missing: " +
+                "a Google Play bundle must be signed with the upload key.",
+        )
     }
 }
 
@@ -50,4 +85,5 @@ dependencies {
 
 if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
+    apply(plugin = "com.google.firebase.crashlytics")
 }

@@ -59,12 +59,7 @@ extension ResponsiveContext on BuildContext {
 /// على الهاتف يُعيد العرض الكامل (لا تغيير بصري)، وعلى الشاشات الأوسع
 /// يحصر العرض ويوسّط المحتوى — بدون كسر التصميم الحالي.
 class AppMaxWidth extends StatelessWidget {
-  const AppMaxWidth({
-    super.key,
-    required this.child,
-    this.maxWidth,
-    this.alignment = Alignment.topCenter,
-  });
+  const AppMaxWidth({super.key, required this.child, this.maxWidth, this.alignment = Alignment.topCenter});
 
   final Widget child;
   final double? maxWidth;

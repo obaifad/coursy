@@ -8,7 +8,7 @@ import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/network/api_exception.dart';
 
-class InstitutesController extends GetxController with LatestLoadGuard {
+class InstitutesController extends GetxController with LatestLoadGuard, InitialLoadState {
   final InstituteRepository _repository = Get.find();
   final CityRepository _cityRepository = Get.find();
 
@@ -30,7 +30,7 @@ class InstitutesController extends GetxController with LatestLoadGuard {
   }
 
   Future<void> _loadCities() async {
-    final session = beginLoad();
+    final session = beginLoad('cities');
     try {
       final fresh = await _cityRepository.fetchCities();
       applyIfCurrent(session, () => cities.assignAll(fresh));
@@ -48,30 +48,30 @@ class InstitutesController extends GetxController with LatestLoadGuard {
 
   void selectCity(int? id) {
     selectedCityId.value = id;
+    resetInitialLoad();
     loadInstitutes();
   }
 
   Future<void> loadInstitutes() async {
     final session = beginLoad();
-    isLoading.value = true;
+    isLoading.value = isInitialLoad;
     errorMessage.value = null;
     _page = 1;
     try {
       final result = await _repository.fetchInstitutesPage(
         page: _page,
         perPage: _perPage,
-        query: {
-          if (selectedCityId.value != null) 'city_id': selectedCityId.value,
-        },
+        query: {if (selectedCityId.value != null) 'city_id': selectedCityId.value},
       );
       applyIfCurrent(session, () {
         institutes.assignAll(result.items);
         hasMore.value = result.hasMore;
+        markLoaded();
       });
     } on ApiCancelledException {
       return;
     } catch (e) {
-      if (shouldApply(session)) errorMessage.value = e.toString();
+      if (shouldApply(session)) errorMessage.value = userErrorMessage(e);
     } finally {
       applyIfCurrent(session, () => isLoading.value = false);
     }
@@ -80,20 +80,22 @@ class InstitutesController extends GetxController with LatestLoadGuard {
   Future<void> loadMoreInstitutes() async {
     if (!hasMore.value || isLoadingMore.value || isLoading.value) return;
     isLoadingMore.value = true;
+    // إن تغيّرت المدينة أثناء التحميل تُهمل الصفحة القديمة بدل خلطها بالقائمة الجديدة.
+    final session = currentLoad();
     try {
       final nextPage = _page + 1;
       final result = await _repository.fetchInstitutesPage(
         page: nextPage,
         perPage: _perPage,
-        query: {
-          if (selectedCityId.value != null) 'city_id': selectedCityId.value,
-        },
+        query: {if (selectedCityId.value != null) 'city_id': selectedCityId.value},
       );
-      institutes.addAll(result.items);
-      _page = nextPage;
-      hasMore.value = result.hasMore;
+      applyIfCurrent(session, () {
+        institutes.addAll(result.items);
+        _page = nextPage;
+        hasMore.value = result.hasMore;
+      });
     } catch (_) {
-      hasMore.value = false;
+      if (shouldApply(session)) hasMore.value = false;
     } finally {
       isLoadingMore.value = false;
     }
@@ -101,6 +103,10 @@ class InstitutesController extends GetxController with LatestLoadGuard {
 }
 
 class InstituteDetailsController extends GetxController {
+  /// صفحات تفاصيل المعاهد المفتوحة الآن — لكلٍّ متحكّمها بوسمٍ خاص، فلا يصلح Get.find بدون وسم.
+  static final Set<InstituteDetailsController> _open = {};
+  static List<InstituteDetailsController> get open => List.of(_open);
+
   final InstituteRepository _instituteRepository = Get.find();
   final CourseRepository _courseRepository = Get.find();
   final InstructorRepository _instructorRepository = Get.find();
@@ -115,6 +121,7 @@ class InstituteDetailsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _open.add(this);
     final arg = Get.arguments;
     if (arg is InstituteModel) {
       instituteId = arg.id;
@@ -125,6 +132,12 @@ class InstituteDetailsController extends GetxController {
       instituteId = 0;
     }
     loadDetails();
+  }
+
+  @override
+  void onClose() {
+    _open.remove(this);
+    super.onClose();
   }
 
   int get displayedCoursesCount {
@@ -138,11 +151,7 @@ class InstituteDetailsController extends GetxController {
     final hasSeed = institute.value != null;
     if (!hasSeed) isLoading.value = true;
     try {
-      await Future.wait<void>([
-        _fetchInstituteDetails(),
-        _fetchCourses(),
-        _fetchInstructors(),
-      ]);
+      await Future.wait<void>([_fetchInstituteDetails(), _fetchCourses(), _fetchInstructors()]);
     } finally {
       isLoading.value = false;
     }
@@ -161,15 +170,9 @@ class InstituteDetailsController extends GetxController {
   Future<void> _fetchCourses() async {
     var instituteCourses = <CourseModel>[];
     try {
+      // يجرّب `/institutes/{id}/courses` ثم `/courses?institute_id=` بكل الصفحات.
       instituteCourses = await _courseRepository.fetchInstituteCourses(instituteId);
-    } catch (_) {
-      try {
-        final all = await _courseRepository.fetchCourses(query: {'institute_id': instituteId});
-        instituteCourses = all.where((c) => c.instituteId == instituteId).toList();
-      } catch (_) {
-        instituteCourses = [];
-      }
-    }
+    } catch (_) {}
     courses.assignAll(instituteCourses);
     _syncCoursesCount();
   }
@@ -184,9 +187,12 @@ class InstituteDetailsController extends GetxController {
 
   InstituteModel _mergeInstitute(InstituteModel? previous, InstituteModel details) {
     if (previous == null) return details;
+    // النسختان العربية والإنجليزية منفصلتان — تمرير `name` المترجم كان يثبّت لغة واحدة.
     return details.copyWith(
-      name: details.name.isNotEmpty ? details.name : previous.name,
-      city: details.city.isNotEmpty ? details.city : previous.city,
+      nameAr: details.nameAr.isNotEmpty ? details.nameAr : previous.nameAr,
+      nameEn: details.nameEn.isNotEmpty ? details.nameEn : previous.nameEn,
+      cityAr: details.cityAr.isNotEmpty ? details.cityAr : previous.cityAr,
+      cityEn: details.cityEn.isNotEmpty ? details.cityEn : previous.cityEn,
       description: details.description ?? previous.description,
       address: details.address ?? previous.address,
       latitude: details.latitude ?? previous.latitude,

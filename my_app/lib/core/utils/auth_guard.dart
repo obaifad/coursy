@@ -17,6 +17,7 @@ class AuthGuard {
         actions: [
           TextButton(onPressed: () => Get.back(result: false), child: Text('cancel'.tr)),
           FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(96, 46)),
             onPressed: () => Get.back(result: true),
             child: Text('login'.tr),
           ),

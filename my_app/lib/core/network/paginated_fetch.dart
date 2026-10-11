@@ -6,6 +6,7 @@ import 'api_exception.dart';
 
 /// يجلب كل صفحات endpoint مرقّم (Laravel pagination) حتى يطابق [total] من الـ API.
 /// لا يفترض عدداً ثابتاً — يعمل مع أي حجم (82، 150، …) ويستمر عبر كل الصفحات.
+/// [strict] = false يُرجع ما جُمع إن نقص العدد عن total بدل رمي خطأ (لقوائم يكفي فيها الجزء المتاح).
 Future<List<T>> fetchAllPages<T>(
   ApiClient client,
   String path,
@@ -13,6 +14,7 @@ Future<List<T>> fetchAllPages<T>(
   Map<String, dynamic>? query,
   int perPage = 50,
   int maxPages = 500,
+  bool strict = true,
 }) async {
   final baseQuery = <String, dynamic>{...?query};
   final all = <T>[];
@@ -22,11 +24,7 @@ Future<List<T>> fetchAllPages<T>(
 
   while (page <= maxPages) {
     final result = await client.handle(
-      () => client.get(
-        path,
-        query: {...baseQuery, 'page': page, 'per_page': perPage},
-        cancelToken: cancelToken,
-      ),
+      () => client.get(path, query: {...baseQuery, 'page': page, 'per_page': perPage}, cancelToken: cancelToken),
       (data) => PaginatedResult<T>.fromBody(data, mapper),
     );
     if (result.total > 0) expectedTotal = result.total;
@@ -36,7 +34,7 @@ Future<List<T>> fetchAllPages<T>(
     if (result.items.isEmpty) break;
 
     if (page >= result.lastPage) {
-      if (expectedTotal > 0 && all.length < expectedTotal) {
+      if (strict && expectedTotal > 0 && all.length < expectedTotal) {
         throw ApiException(
           'Incomplete paginated fetch for $path: got ${all.length} of $expectedTotal (page $page/${result.lastPage})',
         );
@@ -47,10 +45,8 @@ Future<List<T>> fetchAllPages<T>(
     page++;
   }
 
-  if (expectedTotal > 0 && all.length < expectedTotal) {
-    throw ApiException(
-      'Incomplete paginated fetch for $path: got ${all.length} of $expectedTotal',
-    );
+  if (strict && expectedTotal > 0 && all.length < expectedTotal) {
+    throw ApiException('Incomplete paginated fetch for $path: got ${all.length} of $expectedTotal');
   }
 
   return all;

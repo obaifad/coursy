@@ -52,14 +52,15 @@ class FavoritesService extends GetxService {
     return null;
   }
 
+  /// رسالة آخر فشل في جلب المفضلة (null بعد نجاح) — لتمييز «لا مفضلة» عن «تعذّر التحميل».
+  final lastSyncError = RxnString();
+
   Future<void> syncFromApi({bool force = false}) async {
     if (!_tokenStorage.isLoggedIn) {
       clearForLogout();
       return;
     }
-    if (!force &&
-        _lastSyncedAt != null &&
-        DateTime.now().difference(_lastSyncedAt!) < _syncTtl) {
+    if (!force && _lastSyncedAt != null && DateTime.now().difference(_lastSyncedAt!) < _syncTtl) {
       return;
     }
     isSyncing.value = true;
@@ -67,10 +68,13 @@ class FavoritesService extends GetxService {
       final fromApi = await _repository.fetchMine();
       items.assignAll(fromApi);
       _lastSyncedAt = DateTime.now();
+      lastSyncError.value = null;
       _log('Synced ${items.length} favorites from API');
     } on ApiException catch (e) {
+      lastSyncError.value = e.message;
       _log('Sync API failed (${e.statusCode}): ${e.message}');
     } catch (e) {
+      lastSyncError.value = 'error_unexpected'.tr;
       _log('Sync error: $e');
     } finally {
       isSyncing.value = false;

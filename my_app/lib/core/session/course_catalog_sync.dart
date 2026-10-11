@@ -30,8 +30,8 @@ abstract final class CourseCatalogSync {
     if (Get.isRegistered<FavoritesController>()) {
       patchList(Get.find<FavoritesController>().courses);
     }
-    if (Get.isRegistered<InstituteDetailsController>()) {
-      patchList(Get.find<InstituteDetailsController>().courses);
+    for (final institute in InstituteDetailsController.open) {
+      patchList(institute.courses);
     }
     if (Get.isRegistered<MyCoursesController>()) {
       final my = Get.find<MyCoursesController>();

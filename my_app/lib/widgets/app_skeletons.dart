@@ -33,18 +33,12 @@ class AppHomeSkeleton extends StatelessWidget {
           const SizedBox(height: 10),
           Container(
             height: 50,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-            ),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
           ),
           const SizedBox(height: 22),
           Container(
             height: 168,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(22),
-            ),
+            decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(22)),
           ),
           const SizedBox(height: 22),
           const _SkeletonSectionHeader(),
@@ -80,10 +74,10 @@ class AppHomeSkeleton extends StatelessWidget {
           const _SkeletonSectionHeader(),
           const SizedBox(height: 10),
           AppHorizontalListView(
-            height: 200,
+            height: InstituteMiniCard.railHeight(context),
             separatorWidth: 12,
             itemCount: 2,
-            itemBuilder: (_, __) => const SizedBox(width: 200, child: _SkeletonInstituteMiniCard()),
+            itemBuilder: (_, __) => const SizedBox(width: InstituteMiniCard.width, child: _SkeletonInstituteMiniCard()),
           ),
         ],
       ),
@@ -183,7 +177,10 @@ class CourseDetailsSkeleton extends StatelessWidget {
                       (_) => Container(
                         width: 96,
                         height: 34,
-                        decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
+                        decoration: BoxDecoration(
+                          color: AppColors.indicatorFill,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -194,6 +191,7 @@ class CourseDetailsSkeleton extends StatelessWidget {
                   child: SoftCard(
                     child: GridView.count(
                       shrinkWrap: true,
+                      padding: EdgeInsets.zero,
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisCount: 2,
                       mainAxisSpacing: 10,
@@ -202,7 +200,10 @@ class CourseDetailsSkeleton extends StatelessWidget {
                       children: List.generate(
                         4,
                         (_) => Container(
-                          decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(14)),
+                          decoration: BoxDecoration(
+                            color: AppColors.indicatorFill,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                       ),
                     ),
@@ -219,7 +220,10 @@ class CourseDetailsSkeleton extends StatelessWidget {
                         const SizedBox(height: 12),
                         Container(
                           height: 10,
-                          decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(8)),
+                          decoration: BoxDecoration(
+                            color: AppColors.indicatorFill,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ],
                     ),
@@ -239,10 +243,10 @@ class CourseDetailsSkeleton extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               child: Column(
-                children: List.generate(3, (_) => const Padding(
-                      padding: EdgeInsets.only(bottom: 12),
-                      child: _SkeletonListTile(),
-                    )),
+                children: List.generate(
+                  3,
+                  (_) => const Padding(padding: EdgeInsets.only(bottom: 12), child: _SkeletonListTile()),
+                ),
               ),
             ),
           ),
@@ -273,21 +277,14 @@ class _SkeletonCourseCard extends StatelessWidget {
                 Container(
                   height: layout.imageHeight,
                   width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(16)),
                 ),
                 SizedBox(height: layout.gapAfterImage),
                 SizedBox(
                   height: layout.titleHeight,
                   child: const Align(
                     alignment: AlignmentDirectional.topStart,
-                    child: Text(
-                      'Course title placeholder',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    child: Text('Course title placeholder', maxLines: 2, overflow: TextOverflow.ellipsis),
                   ),
                 ),
                 SizedBox(height: layout.gapAfterTitle),
@@ -335,17 +332,17 @@ class _SkeletonCourseCard extends StatelessWidget {
                         child: Stack(
                           children: [
                             const Align(
-                              alignment: Alignment.centerLeft,
+                              alignment: AlignmentDirectional.centerStart,
                               child: Text('350000', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900)),
                             ),
                             Align(
-                              alignment: Alignment.centerRight,
+                              alignment: AlignmentDirectional.centerEnd,
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: const [
                                   Text('4.8', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
                                   SizedBox(width: 3),
-                                  Icon(Icons.star_rounded, size: 16, color: Color(0xFFF59E0B)),
+                                  Icon(Icons.star_rounded, size: 16, color: AppColors.ratingStar),
                                 ],
                               ),
                             ),
@@ -374,11 +371,14 @@ class _SkeletonInstituteMiniCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(height: 88, decoration: const BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.vertical(top: Radius.circular(20)))),
-          const Padding(
-            padding: EdgeInsets.all(12),
-            child: _SkeletonTextBlock(width: 150),
+          Container(
+            height: 88,
+            decoration: const BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
           ),
+          const Padding(padding: EdgeInsets.all(12), child: _SkeletonTextBlock(width: 150)),
         ],
       ),
     );
@@ -393,7 +393,11 @@ class _SkeletonListTile extends StatelessWidget {
     return SoftCard(
       child: Row(
         children: [
-          Container(width: 72, height: 72, decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(16))),
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(16)),
+          ),
           const SizedBox(width: 14),
           const Expanded(child: _SkeletonTextBlock(width: 180)),
         ],
@@ -407,13 +411,7 @@ class _SkeletonSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
-      children: [
-        Text('Section title'),
-        Spacer(),
-        Text('Show all'),
-      ],
-    );
+    return const Row(children: [Text('Section title'), Spacer(), Text('Show all')]);
   }
 }
 
@@ -428,11 +426,7 @@ class _SkeletonTextBlock extends StatelessWidget {
       width: width,
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Primary placeholder'),
-          SizedBox(height: 8),
-          Text('Secondary text'),
-        ],
+        children: [Text('Primary placeholder'), SizedBox(height: 8), Text('Secondary text')],
       ),
     );
   }

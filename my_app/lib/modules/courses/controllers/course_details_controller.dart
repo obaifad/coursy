@@ -14,8 +14,13 @@ import '../../../core/services/student_id_resolver.dart';
 import '../../../core/session/course_catalog_sync.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/utils/auth_guard.dart';
+import '../../profile/controllers/my_courses_controller.dart';
 
 class CourseDetailsController extends GetxController {
+  /// صفحات تفاصيل الدورات المفتوحة الآن — لكلٍّ متحكّمها بوسمٍ خاص، فلا يصلح Get.find بدون وسم.
+  static final Set<CourseDetailsController> _open = {};
+  static List<CourseDetailsController> get open => List.of(_open);
+
   final CourseRepository _courseRepository = Get.find();
   final ReviewRepository _reviewRepository = Get.find();
   final EnrollmentRepository _enrollmentRepository = Get.find();
@@ -25,34 +30,52 @@ class CourseDetailsController extends GetxController {
   final CourseRatingService _ratingService = Get.find();
 
   final isLoading = false.obs;
+
+  /// true عند فشل جلب الدورة ولا توجد بيانات أولية لعرضها (فتح من إشعار/معرّف فقط).
+  final loadFailed = false.obs;
+  int? _requestedId;
   final course = Rxn<CourseModel>();
   final schedules = <ScheduleModel>[].obs;
   final reviews = <ReviewModel>[].obs;
   final isEnrolled = false.obs;
   final hasCourseEnrollment = false.obs;
+
+  /// false حتى تُعرف حالة التسجيل (من الذاكرة المؤقتة أو الخادم) — الزر لا يعرض حالة مؤقتة خاطئة.
+  final enrollmentResolved = false.obs;
   final hasSubmittedReview = false.obs;
   final isCheckingEnrollment = false.obs;
   final isSubmittingReview = false.obs;
 
   final courseRating = 5.obs;
-  final instituteRating = 5.obs;
-  final instructorRating = 5.obs;
   final reviewCommentController = TextEditingController();
 
   @override
   void onInit() {
     super.onInit();
+    _open.add(this);
     final arg = Get.arguments;
     if (arg is CourseModel) {
+      _seedEnrollmentFromCache(arg.id);
       course.value = arg;
       schedules.assignAll(arg.schedules);
       _loadDetails(arg.id, hadSeed: true);
     } else if (arg is int) {
+      _seedEnrollmentFromCache(arg);
       _loadDetails(arg);
+    } else {
+      loadFailed.value = true;
     }
     if (_tokenStorage.isLoggedIn) {
-      unawaited(_favoritesService.syncFromApi(force: true));
+      // مع مدة الصلاحية (دقيقتان) بدل فرض المزامنة عند كل فتح لصفحة دورة.
+      unawaited(_favoritesService.syncFromApi());
     }
+  }
+
+  /// إعادة محاولة جلب الدورة بعد فشل التحميل.
+  Future<void> retryLoad() async {
+    final id = _requestedId;
+    if (id == null) return;
+    await _loadDetails(id);
   }
 
   bool get isLoggedIn => _tokenStorage.isLoggedIn;
@@ -72,12 +95,13 @@ class CourseDetailsController extends GetxController {
       categoryName: details.categoryName ?? previous.categoryName,
       description: details.description ?? previous.description,
       requirements: details.requirements ?? previous.requirements,
-      instituteCity: details.instituteCity ?? previous.instituteCity,
+      instituteCityAr: details.instituteCityAr.isNotEmpty ? details.instituteCityAr : previous.instituteCityAr,
+      instituteCityEn: details.instituteCityEn.isNotEmpty ? details.instituteCityEn : previous.instituteCityEn,
       instituteAddress: details.instituteAddress ?? previous.instituteAddress,
       institutePhone: details.institutePhone ?? previous.institutePhone,
       instituteWhatsapp: details.instituteWhatsapp ?? previous.instituteWhatsapp,
       instituteWebsite: details.instituteWebsite ?? previous.instituteWebsite,
-      rating: details.rating > 0 ? details.rating : previous.rating,
+      rating: details.rating > 0 || details.reviewsCount != null ? details.rating : previous.rating,
     );
     if (!hadSeed) return merged;
     // القائمة (Home/Courses) غالباً أحدث من /courses/{id} — لا نستبدل العدد بقيمة أقدم.
@@ -94,7 +118,12 @@ class CourseDetailsController extends GetxController {
   }
 
   Future<void> _loadDetails(int id, {bool hadSeed = false}) async {
-    if (id <= 0) return;
+    if (id <= 0) {
+      loadFailed.value = true;
+      return;
+    }
+    _requestedId = id;
+    loadFailed.value = false;
     if (!hadSeed) isLoading.value = true;
     try {
       final previous = course.value;
@@ -118,7 +147,8 @@ class CourseDetailsController extends GetxController {
         }
       }
     } catch (_) {
-      // الإبقاء على بيانات القائمة
+      // الإبقاء على بيانات القائمة؛ بدونها نعرض حالة فشل مع إعادة محاولة.
+      if (course.value == null) loadFailed.value = true;
     } finally {
       isLoading.value = false;
     }
@@ -127,41 +157,51 @@ class CourseDetailsController extends GetxController {
   }
 
   Future<void> _loadSecondaryData(int id) async {
-    await Future.wait<void>([
-      _refreshStudentCounts(id),
-      _updateReviewPermission(),
-      _checkEnrollment(id),
-    ]);
+    await Future.wait<void>([_updateReviewPermission(), _checkEnrollment(id)]);
   }
 
   Future<void> refreshEnrollment() async {
     final id = course.value?.id;
     if (id == null) return;
-    await Future.wait<void>([
-      _checkEnrollment(id),
-      _refreshStudentCounts(id),
-    ]);
+    await Future.wait<void>([_checkEnrollment(id), _refreshStudentCounts(id)]);
   }
 
+  /// أعداد الطلاب من `/courses/{id}` نفسها — بدون تنزيل تسجيلات كل الطلاب.
   Future<void> _refreshStudentCounts(int courseId) async {
-    final current = course.value;
-    if (current == null || courseId <= 0) return;
+    if (course.value == null || courseId <= 0) return;
+    try {
+      final fresh = await _courseRepository.fetchCourseById(courseId);
+      final current = course.value;
+      if (current == null || current.id != courseId) return;
+      course.value = current.copyWith(
+        studentsCount: fresh.studentsCount ?? current.studentsCount,
+        confirmedStudentsCount: fresh.confirmedStudentsCount ?? current.confirmedStudentsCount,
+      );
+    } catch (_) {
+      // نُبقي الأعداد الحالية.
+    }
+  }
 
-    final enrollCount = await _enrollmentRepository.countConfirmedEnrollmentsForCourse(courseId);
-    if (course.value?.id != courseId || enrollCount == null) return;
-
-    final nextConfirmed = _preferStudentCount(current.confirmedStudentsCount, enrollCount);
-    final currentDisplay = current.enrolledCountForCapacity;
-    final nextDisplay = nextConfirmed ?? current.studentsCount ?? 0;
-    if (nextDisplay < currentDisplay) return;
-
-    course.value = current.copyWith(confirmedStudentsCount: nextConfirmed);
+  /// يملأ حالة الزر فوراً من قائمة "دوراتي" المحمّلة سابقاً، فلا يظهر وميض قبل رد الخادم.
+  void _seedEnrollmentFromCache(int courseId) {
+    if (!_tokenStorage.isLoggedIn) {
+      enrollmentResolved.value = true;
+      return;
+    }
+    if (!Get.isRegistered<MyCoursesController>()) return;
+    final mine = Get.find<MyCoursesController>();
+    if (mine.isInitialLoad) return;
+    hasCourseEnrollment.value = mine.enrollments.any(
+      (e) => e.courseId == courseId && !{'cancelled', 'rejected'}.contains(e.status.toLowerCase()),
+    );
+    enrollmentResolved.value = true;
   }
 
   Future<void> _checkEnrollment(int courseId) async {
     if (!_tokenStorage.isLoggedIn) {
       isEnrolled.value = false;
       hasCourseEnrollment.value = false;
+      enrollmentResolved.value = true;
       return;
     }
     isCheckingEnrollment.value = true;
@@ -178,9 +218,13 @@ class CourseDetailsController extends GetxController {
       hasCourseEnrollment.value = enrolled;
       isEnrolled.value = canReview;
     } catch (_) {
-      isEnrolled.value = false;
-      hasCourseEnrollment.value = false;
+      // نُبقي آخر حالة معروفة بدل تصفيرها (تفادياً لوميض زر "احجز الآن").
+      if (!enrollmentResolved.value) {
+        isEnrolled.value = false;
+        hasCourseEnrollment.value = false;
+      }
     } finally {
+      enrollmentResolved.value = true;
       isCheckingEnrollment.value = false;
     }
   }
@@ -218,26 +262,6 @@ class CourseDetailsController extends GetxController {
         comment: reviewCommentController.text,
       );
 
-      if (item.instituteId != null) {
-        try {
-          await _reviewRepository.submitReview(
-            instituteId: item.instituteId,
-            rating: instituteRating.value,
-            comment: reviewCommentController.text,
-          );
-        } catch (_) {}
-      }
-
-      if (item.instructor != null) {
-        try {
-          await _reviewRepository.submitReview(
-            instructorId: item.instructor!.id,
-            rating: instructorRating.value,
-            comment: reviewCommentController.text,
-          );
-        } catch (_) {}
-      }
-
       reviews.assignAll(await _reviewRepository.fetchReviews(courseId: item.id));
       _ratingService.invalidateCache();
       if (reviews.isNotEmpty && course.value != null) {
@@ -260,6 +284,7 @@ class CourseDetailsController extends GetxController {
 
   @override
   void onClose() {
+    _open.remove(this);
     final latest = course.value;
     if (latest != null) {
       CourseCatalogSync.patchCourse(latest);
@@ -274,8 +299,9 @@ class CourseDetailsController extends GetxController {
       return;
     }
     try {
-      final studentId = await _studentIdResolver.resolve();
-      hasSubmittedReview.value = reviews.any((review) => review.studentId == studentId);
+      // التقييم يخزّن users.id في student_id، لا معرّف ملف الطالب.
+      final userId = await _studentIdResolver.resolveUserId();
+      hasSubmittedReview.value = userId != null && reviews.any((review) => review.studentId == userId);
     } catch (_) {
       hasSubmittedReview.value = false;
     }

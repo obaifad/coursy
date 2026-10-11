@@ -2,4 +2,13 @@
 abstract final class AppFlags {
   /// true = يجب تسجيل الدخول أو إنشاء حساب قبل الدخول للتطبيق.
   static const bool requireLogin = true;
+
+  /// التحقق من رقم الهاتف موقوف مؤقتاً: لا يوجد مزوّد SMS في الإنتاج فالرمز لا يصل.
+  /// أعِده true حين يُربط مزوّد SMS (أو حين يُرسل الخادم حقلاً يفعّله في `/student/me`).
+  static const bool phoneVerificationEnabled = false;
+
+  /// تأكيد البريد الإلكتروني (اختياري): بعد إنشاء الحساب، ومن «حسابي» حين يكون البريد غير مؤكد.
+  /// موقوف حتى ينشر الخادم `/student/email-verification/send` و`/verify` ويرسل `email_verified_at`
+  /// في `/student/me` — وإلا ظهر الخيار لكل المستخدمين وفشل الإرسال.
+  static const bool emailVerificationEnabled = false;
 }

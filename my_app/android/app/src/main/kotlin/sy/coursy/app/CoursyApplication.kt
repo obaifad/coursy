@@ -1,4 +1,4 @@
-package com.example.my_app
+package sy.coursy.app
 
 import android.app.Application
 import android.app.NotificationChannel

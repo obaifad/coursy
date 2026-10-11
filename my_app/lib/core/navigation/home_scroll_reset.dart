@@ -5,12 +5,13 @@ import '../../modules/root/controllers/root_controller.dart';
 
 /// يعيد ضبط موضع تمرير الصفحة الرئيسية (عمودي + أفقي) عند العودة إليها.
 abstract final class HomeScrollReset {
-  static void notifyIfHomeVisible() {
+  static void notifyIfHomeVisible({bool scrollToTop = true}) {
     if (!Get.isRegistered<HomeController>() || !Get.isRegistered<RootController>()) {
       return;
     }
     if (Get.find<RootController>().currentIndex.value != 2) return;
-    Get.find<HomeController>().resetScrollPosition();
-    Get.find<HomeController>().loadHome(forceRefresh: true);
+    if (scrollToTop) Get.find<HomeController>().resetScrollPosition();
+    // يُستدعى عند كل عودة للرئيسية (تبديل تبويب / زر رجوع) — نعيد التحميل فقط إن كانت البيانات قديمة.
+    Get.find<HomeController>().refreshIfStale();
   }
 }

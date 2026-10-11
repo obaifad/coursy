@@ -2,8 +2,10 @@ import 'package:get/get.dart';
 
 import '../../../core/data/repositories/instructor_repository.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/locale/locale_request_guard.dart';
+import '../../../core/network/api_exception.dart';
 
-class InstructorCoursesController extends GetxController {
+class InstructorCoursesController extends GetxController with InitialLoadState {
   final InstructorRepository _repository = Get.find();
 
   final isLoading = true.obs;
@@ -15,6 +17,7 @@ class InstructorCoursesController extends GetxController {
   final experienceYears = 0.obs;
   final bio = RxnString();
   final totalCourses = 0.obs;
+  final errorMessage = RxnString();
 
   late final int instructorId;
   int _page = 1;
@@ -55,7 +58,8 @@ class InstructorCoursesController extends GetxController {
       hasMore.value = false;
       return;
     }
-    isLoading.value = true;
+    isLoading.value = isInitialLoad;
+    errorMessage.value = null;
     _page = 1;
     try {
       final result = await _repository.fetchInstructorCoursesPage(
@@ -66,6 +70,9 @@ class InstructorCoursesController extends GetxController {
       courses.assignAll(result.items);
       hasMore.value = result.hasMore;
       totalCourses.value = result.total;
+      markLoaded();
+    } catch (e) {
+      if (courses.isEmpty) errorMessage.value = userErrorMessage(e);
     } finally {
       isLoading.value = false;
     }
@@ -85,6 +92,8 @@ class InstructorCoursesController extends GetxController {
       _page = nextPage;
       hasMore.value = result.hasMore;
       totalCourses.value = result.total;
+    } catch (e) {
+      Get.snackbar('error'.tr, userErrorMessage(e));
     } finally {
       isLoadingMore.value = false;
     }

@@ -1,3 +1,5 @@
+import 'package:get/get.dart';
+
 abstract final class EducationLevelUtils {
   static const bachelorAndAbove = {'Bachelor', 'Master', 'PhD'};
 
@@ -19,5 +21,28 @@ abstract final class EducationLevelUtils {
       if (level.toLowerCase() == compact) return level;
     }
     return value;
+  }
+
+  /// النص المترجم للمستوى التعليمي (مشترك بين التسجيل وتعديل الملف الشخصي).
+  static String label(String value) {
+    switch (value) {
+      case 'High School':
+        return 'edu_high_school'.tr;
+      case 'Diploma':
+        return 'edu_diploma'.tr;
+      case 'Bachelor':
+        return 'edu_bachelor'.tr;
+      case 'Master':
+        return 'edu_master'.tr;
+      case 'PhD':
+        return 'edu_phd'.tr;
+      default:
+        return value;
+    }
+  }
+
+  /// تاريخ الميلاد بصيغة الـ API: YYYY-MM-DD.
+  static String formatApiDate(DateTime d) {
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
   }
 }

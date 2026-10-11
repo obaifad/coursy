@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/locale/plural.dart';
+
 import '../../../core/locale/locale_rebuild.dart';
+import '../../../core/models/app_models.dart';
 import '../../../core/models/json_helpers.dart';
 import '../../../core/utils/external_launcher.dart';
 import '../../../routes/app_routes.dart';
@@ -18,88 +21,104 @@ class InstitutesView extends GetView<InstitutesController> {
   Widget build(BuildContext context) {
     return AppTabSafeArea(
       child: Obx(() {
-      final _ = localeRebuildToken;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppScreenHeader(
-            title: 'institutes_title'.tr,
-            subtitle: 'institutes_subtitle'.tr,
-            logoInline: true,
-            logoHeight: 44,
-          ),
-          const SizedBox(height: 10),
-          Obx(
-            () => HorizontalCityFilters(
-              cities: controller.cities,
-              selectedId: controller.selectedCityId.value,
-              onSelected: controller.selectCity,
+        final _ = localeRebuildToken;
+        // لقطة واحدة لكل بناء يُحسب منها itemCount وتُقرأ منها العناصر: القائمة تُبنى لاحقاً أثناء التمرير،
+        // وقراءة controller.institutes[i] بعد تغيّرها كانت ترمي RangeError (سجلّ نسخة الإصدار).
+        final institutes = controller.institutes.toList(growable: false);
+        final hasMore = controller.hasMore.value;
+        final loadingMore = controller.isLoadingMore.value;
+        final error = controller.errorMessage.value;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppHeroHeader(
+              title: 'institutes_title'.tr,
+              subtitle: 'institutes_subtitle'.tr,
+              badge: institutes.isEmpty ? null : pluralTr('city_institutes_count', institutes.length),
             ),
-          ),
-          const SizedBox(height: 8),
-          if (controller.selectedCityId.value != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: TextButton.icon(
-                  onPressed: () {
-                    final city = controller.cities.firstWhereOrNull((c) => c.id == controller.selectedCityId.value);
-                    if (city != null) {
-                      Get.toNamed(AppRoutes.cityDetails, arguments: {'id': city.id, 'name': city.name});
-                    }
-                  },
-                  icon: const Icon(Icons.map_outlined, size: 18),
-                  label: Text('city_details_btn'.tr),
-                ),
+            const SizedBox(height: 10),
+            Obx(
+              () => HorizontalCityFilters(
+                cities: controller.cities,
+                selectedId: controller.selectedCityId.value,
+                onSelected: controller.selectCity,
               ),
             ),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: controller.loadInstitutes,
-              child: controller.isLoading.value && controller.institutes.isEmpty
-                  ? const AppListSkeleton(padding: EdgeInsets.fromLTRB(16, 0, 16, 24))
-                  : controller.institutes.isEmpty
-                      ? AppEmptyState.scrollable(
-                          context: context,
-                          message: 'no_institutes'.tr,
-                          icon: Icons.apartment_outlined,
-                        )
-                      : ListView.separated(
-                          physics: const AlwaysScrollableScrollPhysics(),
+            const SizedBox(height: 8),
+            if (controller.selectedCityId.value != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      final city = controller.cities.firstWhereOrNull((c) => c.id == controller.selectedCityId.value);
+                      if (city != null) {
+                        Get.toNamed(AppRoutes.cityDetails, arguments: {'id': city.id, 'name': city.name});
+                      }
+                    },
+                    icon: const Icon(Icons.map_outlined, size: 18),
+                    label: Text('city_details_btn'.tr),
+                  ),
+                ),
+              ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: controller.loadInstitutes,
+                child: controller.isLoading.value && institutes.isEmpty
+                    ? const AppListSkeleton(padding: EdgeInsets.fromLTRB(16, 0, 16, 24))
+                    : institutes.isEmpty && error != null
+                    ? AppEmptyState.scrollable(
+                        context: context,
+                        message: error,
+                        icon: Icons.cloud_off_outlined,
+                        action: FilledButton(onPressed: controller.loadInstitutes, child: Text('retry'.tr)),
+                      )
+                    : institutes.isEmpty
+                    ? AppEmptyState.scrollable(
+                        context: context,
+                        message: 'no_institutes'.tr,
+                        icon: Icons.apartment_outlined,
+                      )
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
                         key: const PageStorageKey('institutes_tab'),
                         padding: AppLayout.scrollPadding(context, rootTab: true),
                         itemBuilder: (_, i) {
-                          if (i == controller.institutes.length) {
-                            if (!controller.hasMore.value) return const SizedBox.shrink();
+                          if (i == institutes.length) {
+                            if (!hasMore) return const SizedBox.shrink();
                             return OutlinedButton.icon(
-                              onPressed: controller.isLoadingMore.value ? null : controller.loadMoreInstitutes,
-                              icon: controller.isLoadingMore.value
-                                  ? const AppInlineLoader()
-                                  : const Icon(Icons.expand_more_rounded),
+                              onPressed: loadingMore ? null : controller.loadMoreInstitutes,
+                              icon: loadingMore ? const AppInlineLoader() : const Icon(Icons.expand_more_rounded),
                               label: Text('load_more'.tr),
                             );
                           }
-                          final institute = controller.institutes[i];
+                          final institute = institutes[i];
                           return InstituteListCard(
                             institute: institute,
                             onTap: () => Get.toNamed(AppRoutes.instituteDetails, arguments: institute),
                           );
                         },
                         separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemCount: controller.institutes.length + 1,
+                        itemCount: institutes.length + 1,
                       ),
+              ),
             ),
-          ),
-        ],
-      );
-    }),
+          ],
+        );
+      }),
     );
   }
 }
 
 class InstituteDetailsView extends GetView<InstituteDetailsController> {
-  const InstituteDetailsView({super.key});
+  const InstituteDetailsView({super.key, required this.controllerTag});
+
+  /// وسم متحكّم هذه الصفحة (انظر RouteScopedTag).
+  final String controllerTag;
+
+  @override
+  String? get tag => controllerTag;
 
   @override
   Widget build(BuildContext context) {
@@ -164,8 +183,7 @@ class _InfoTab extends StatelessWidget {
   const _InfoTab({required this.controller});
   final InstituteDetailsController controller;
 
-  Future<void> _openMaps(double lat, double lng) =>
-      ExternalLauncher.openMaps(lat: lat, lng: lng);
+  Future<void> _openMaps(double lat, double lng) => ExternalLauncher.openMaps(lat: lat, lng: lng);
 
   @override
   Widget build(BuildContext context) {
@@ -178,51 +196,121 @@ class _InfoTab extends StatelessWidget {
       final showAddress = address != null && address.isNotEmpty && !JsonHelpers.looksLikeCoordinates(address);
 
       return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        SoftCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('about_institute'.tr, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 10),
-              Text(
-                institute?.description ?? 'institute_default_desc'.tr,
-                style: const TextStyle(color: AppColors.textSecondary, height: 1.45),
-              ),
-              if (coursesCount > 0) ...[
-                const SizedBox(height: 16),
-                _StatChip(label: 'stat_courses'.tr, value: '$coursesCount'),
-              ],
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Icon(Icons.location_on_rounded, color: AppColors.primary),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(institute?.city ?? '—', style: const TextStyle(fontWeight: FontWeight.w600))),
-                ],
-              ),
-              if (showAddress) ...[
-                const SizedBox(height: 8),
-                Text(address, style: const TextStyle(color: AppColors.textSecondary)),
-              ],
-              if (coords != null) ...[
-                const SizedBox(height: 8),
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: TextButton.icon(
-                    onPressed: () => _openMaps(coords.lat, coords.lng),
-                    icon: const Icon(Icons.map_outlined, size: 18),
-                    label: Text('open_in_maps'.tr),
-                  ),
+        padding: AppLayout.scrollPadding(context, top: 16),
+        children: [
+          SoftCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('about_institute'.tr, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 10),
+                Text(
+                  institute?.description ?? 'institute_default_desc'.tr,
+                  style: const TextStyle(color: AppColors.textSecondary, height: 1.45),
                 ),
+                if (coursesCount > 0) ...[
+                  const SizedBox(height: 16),
+                  _StatChip(label: 'stat_courses'.tr, value: '$coursesCount'),
+                ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_rounded, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(institute?.city ?? '—', style: const TextStyle(fontWeight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+                if (showAddress) ...[
+                  const SizedBox(height: 8),
+                  Text(address, style: const TextStyle(color: AppColors.textSecondary)),
+                ],
+                if (coords != null) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton.icon(
+                      onPressed: () => _openMaps(coords.lat, coords.lng),
+                      icon: const Icon(Icons.map_outlined, size: 18),
+                      label: Text('open_in_maps'.tr),
+                    ),
+                  ),
+                ],
               ],
+            ),
+          ),
+          if (institute != null && institute.hasContact) ...[
+            const SizedBox(height: 14),
+            _InstituteContactCard(institute: institute),
+          ],
+        ],
+      );
+    });
+  }
+}
+
+class _InstituteContactCard extends StatelessWidget {
+  const _InstituteContactCard({required this.institute});
+
+  final InstituteModel institute;
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = <({IconData icon, String label, VoidCallback onTap})>[
+      if (institute.phone != null)
+        (icon: Icons.call_rounded, label: 'contact_call'.tr, onTap: () => ExternalLauncher.openPhone(institute.phone!)),
+      if (institute.whatsapp != null)
+        (
+          icon: Icons.chat_rounded,
+          label: 'contact_whatsapp'.tr,
+          onTap: () => ExternalLauncher.openWhatsApp(institute.whatsapp!),
+        ),
+      if (institute.website != null)
+        (
+          icon: Icons.language_rounded,
+          label: 'contact_website'.tr,
+          onTap: () => ExternalLauncher.openWebPage(institute.website!),
+        ),
+      if (institute.facebook != null)
+        (
+          icon: Icons.facebook_rounded,
+          label: 'contact_facebook'.tr,
+          onTap: () => ExternalLauncher.openWebPage(institute.facebook!),
+        ),
+      if (institute.instagram != null)
+        (
+          icon: Icons.photo_camera_outlined,
+          label: 'contact_instagram'.tr,
+          onTap: () => ExternalLauncher.openWebPage(institute.instagram!),
+        ),
+    ];
+    return SoftCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('institute_contact_title'.tr, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final a in actions)
+                OutlinedButton.icon(
+                  onPressed: a.onTap,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  icon: Icon(a.icon, size: 18),
+                  label: Text(a.label),
+                ),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
-    });
   }
 }
 
@@ -234,7 +322,9 @@ class _CoursesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final _ = localeRebuildToken;
-      if (controller.courses.isEmpty) {
+      // لقطة واحدة للعدد والعناصر (القائمة تُبنى أثناء التمرير وقد تتغير القائمة الأصلية بينهما).
+      final courses = controller.courses.toList();
+      if (courses.isEmpty) {
         return AppEmptyState.scrollable(
           context: context,
           message: 'no_courses_for_institute'.tr,
@@ -242,10 +332,10 @@ class _CoursesTab extends StatelessWidget {
         );
       }
       return ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: controller.courses.length,
+        padding: AppLayout.scrollPadding(context, top: 16),
+        itemCount: courses.length,
         itemBuilder: (_, i) {
-          final c = controller.courses[i];
+          final c = courses[i];
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: SoftCard(
@@ -258,7 +348,10 @@ class _CoursesTab extends StatelessWidget {
                   child: const Icon(Icons.menu_book_rounded, color: Colors.white),
                 ),
                 title: Text(c.title, style: const TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text('${c.rating} ★ · ${c.level}', style: const TextStyle(fontSize: 12)),
+                subtitle: Text(
+                  c.hasRating ? '${c.rating.toStringAsFixed(1)} ★ · ${c.level}' : c.level,
+                  style: const TextStyle(fontSize: 12),
+                ),
                 trailing: const Icon(Icons.chevron_left_rounded),
                 onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: c),
               ),
@@ -278,7 +371,8 @@ class _InstructorsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final _ = localeRebuildToken;
-      if (controller.instructors.isEmpty) {
+      final instructors = controller.instructors.toList();
+      if (instructors.isEmpty) {
         return AppEmptyState.scrollable(
           context: context,
           message: 'no_instructors_for_institute'.tr,
@@ -286,10 +380,10 @@ class _InstructorsTab extends StatelessWidget {
         );
       }
       return ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: controller.instructors.length,
+        padding: AppLayout.scrollPadding(context, top: 16),
+        itemCount: instructors.length,
         itemBuilder: (_, i) {
-          final ins = controller.instructors[i];
+          final ins = instructors[i];
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: PrivateInstructorListCard(
@@ -316,7 +410,10 @@ class _StatChip extends StatelessWidget {
       decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary)),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary),
+          ),
           const SizedBox(height: 4),
           Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
         ],

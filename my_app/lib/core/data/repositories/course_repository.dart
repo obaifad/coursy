@@ -5,7 +5,9 @@ import '../../models/json_helpers.dart';
 import '../../models/paginated_result.dart';
 import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
+import '../../network/api_exception.dart';
 import '../../network/json_parser.dart';
+import '../../network/paginated_fetch.dart';
 import '../../services/course_rating_service.dart';
 
 class CourseRepository extends GetxService {
@@ -37,28 +39,34 @@ class CourseRepository extends GetxService {
   /// دورات مقترحة مخصّصة للطالب (اهتمامات + تسجيلات + مفضلة) مع ترتيب وفلترة من الخادم.
   Future<List<CourseModel>> fetchSuggestedCourses({int limit = 10}) async {
     final items = await _client.handle(
-      () => _client.get(
-        ApiEndpoints.studentSuggestedCourses,
-        query: {'limit': limit},
-      ),
+      () => _client.get(ApiEndpoints.studentSuggestedCourses, query: {'limit': limit}),
       (data) => extractListMap(data).map(CourseModel.fromJson).toList(),
     );
     return _ratingService.enrich(items);
   }
 
   Future<List<CourseModel>> fetchInstituteCourses(int instituteId) async {
+    // كل الصفحات: الصفحة الأولى وحدها تُظهر 15 دورة فقط لمعهد عنده أكثر.
     try {
-      final items = await _client.handle(
-        () => _client.get(ApiEndpoints.instituteCourses(instituteId)),
-        (data) => extractListMap(data).map(CourseModel.fromJson).toList(),
+      final items = await fetchAllPages(
+        _client,
+        ApiEndpoints.instituteCourses(instituteId),
+        CourseModel.fromJson,
+        strict: false,
       );
       if (items.isNotEmpty) {
         return _ratingService.enrich(items);
       }
     } catch (_) {}
 
-    final fallback = await fetchCourses(query: {'institute_id': instituteId});
-    return fallback.where((course) => course.instituteId == instituteId).toList();
+    final fallback = await fetchAllPages(
+      _client,
+      ApiEndpoints.courses,
+      CourseModel.fromJson,
+      query: {'institute_id': instituteId},
+      strict: false,
+    );
+    return _ratingService.enrich(fallback.where((course) => course.instituteId == instituteId).toList());
   }
 
   /// عدد دورات المعهد — طلب خفيف واحد (pagination total) بدون جلب كل الدورات.
@@ -67,10 +75,7 @@ class CourseRepository extends GetxService {
 
     try {
       final count = await _client.handle(
-        () => _client.get(
-          ApiEndpoints.instituteCourses(instituteId),
-          query: const {'page': 1, 'per_page': 1},
-        ),
+        () => _client.get(ApiEndpoints.instituteCourses(instituteId), query: const {'page': 1, 'per_page': 1}),
         (data) {
           final meta = extractPagination(normalizeApiBody(data));
           if (meta != null && meta.total > 0) return meta.total;
@@ -82,10 +87,7 @@ class CourseRepository extends GetxService {
 
     try {
       final page = await _client.handle(
-        () => _client.get(
-          ApiEndpoints.courses,
-          query: {'institute_id': instituteId, 'page': 1, 'per_page': 1},
-        ),
+        () => _client.get(ApiEndpoints.courses, query: {'institute_id': instituteId, 'page': 1, 'per_page': 1}),
         (data) {
           final meta = extractPagination(normalizeApiBody(data));
           if (meta != null && meta.total > 0) return meta.total;
@@ -111,16 +113,13 @@ class CourseRepository extends GetxService {
   }
 
   Future<CourseModel> fetchCourseById(int id) async {
-    final course = await _client.handle(
-      () => _client.get(ApiEndpoints.resourceById(ApiEndpoints.courses, id)),
-      (data) {
-        final map = extractObjectMap(data);
-        if (map == null) {
-          throw Exception('بيانات الدورة غير صالحة');
-        }
-        return CourseModel.fromJson(map);
-      },
-    );
+    final course = await _client.handle(() => _client.get(ApiEndpoints.resourceById(ApiEndpoints.courses, id)), (data) {
+      final map = extractObjectMap(data);
+      if (map == null) {
+        throw ApiException('error_invalid_data'.tr);
+      }
+      return CourseModel.fromJson(map);
+    });
     final enriched = await _ratingService.enrich([course]);
     return enriched.first;
   }

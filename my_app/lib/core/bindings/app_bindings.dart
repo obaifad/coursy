@@ -13,10 +13,11 @@ import '../data/repositories/interest_repository.dart';
 import '../data/repositories/city_repository.dart';
 import '../data/repositories/course_repository.dart';
 import '../data/repositories/enrollment_repository.dart';
+import '../services/app_config_service.dart';
+import '../data/repositories/payment_repository.dart';
 import '../data/repositories/home_repository.dart';
 import '../data/repositories/instructor_repository.dart';
 import '../data/repositories/institute_repository.dart';
-import '../storage/favorites_storage.dart';
 import '../storage/notification_delivery_store.dart';
 import '../storage/recent_search_storage.dart';
 import '../data/repositories/notification_repository.dart';
@@ -43,14 +44,14 @@ class AppBindings extends Bindings {
     if (!Get.isRegistered<LocaleRequestGuard>()) {
       Get.put(LocaleRequestGuard(), permanent: true);
     }
-    if (!Get.isRegistered<FavoritesStorage>()) {
-      Get.put(FavoritesStorage(), permanent: true);
-    }
     if (!Get.isRegistered<RecentSearchStorage>()) {
       Get.put(RecentSearchStorage(), permanent: true);
     }
     if (!Get.isRegistered<ApiClient>()) {
       Get.put(ApiClient(Get.find<TokenStorage>()), permanent: true);
+    }
+    if (!Get.isRegistered<AppConfigService>()) {
+      Get.put(AppConfigService(Get.find()), permanent: true);
     }
 
     Get.lazyPut(() => AuthRepository(Get.find(), Get.find()), fenix: true);
@@ -66,8 +67,9 @@ class AppBindings extends Bindings {
     Get.lazyPut(() => StudentIdResolver(Get.find(), Get.find()), fenix: true);
     Get.lazyPut(() => SearchRepository(Get.find(), Get.find()), fenix: true);
     Get.lazyPut(() => CityRepository(Get.find()), fenix: true);
-    Get.lazyPut(() => ReviewRepository(Get.find(), Get.find()), fenix: true);
-    Get.lazyPut(() => EnrollmentRepository(Get.find(), Get.find()), fenix: true);
+    Get.lazyPut(() => ReviewRepository(Get.find()), fenix: true);
+    Get.lazyPut(() => EnrollmentRepository(Get.find()), fenix: true);
+    Get.lazyPut(() => PaymentRepository(Get.find()), fenix: true);
     Get.lazyPut(() => InstructorRepository(Get.find(), Get.find()), fenix: true);
     Get.lazyPut(() => FavoritesRepository(Get.find(), Get.find()), fenix: true);
     Get.lazyPut(() => DeviceRepository(Get.find()), fenix: true);

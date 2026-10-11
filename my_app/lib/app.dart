@@ -9,6 +9,7 @@ import 'core/navigation/home_scroll_reset.dart';
 import 'routes/app_pages.dart';
 import 'routes/app_routes.dart';
 import 'theme/app_theme.dart';
+import 'theme/app_motion.dart';
 
 class SyrianEducationApp extends StatelessWidget {
   const SyrianEducationApp({super.key});
@@ -19,9 +20,8 @@ class SyrianEducationApp extends StatelessWidget {
       builder: (locale) => GetMaterialApp(
         title: 'Coursy',
         debugShowCheckedModeBanner: false,
+        // التطبيق بتصميم فاتح فقط (لا يوجد وضع داكن مُصمَّم).
         theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.light,
         translations: AppTranslations(),
         locale: locale.locale,
         fallbackLocale: const Locale('ar'),
@@ -35,17 +35,20 @@ class SyrianEducationApp extends StatelessWidget {
         getPages: AppPages.pages,
         routingCallback: (routing) {
           if (routing?.isBack == true && Get.currentRoute == AppRoutes.root) {
-            HomeScrollReset.notifyIfHomeVisible();
+            HomeScrollReset.notifyIfHomeVisible(scrollToTop: false);
           }
         },
         defaultTransition: Transition.fadeIn,
         customTransition: AppFadeScaleTransition(),
-        transitionDuration: const Duration(milliseconds: 280),
+        transitionDuration: AppMotion.normal,
         builder: (context, child) {
           return Directionality(
             textDirection: locale.isRtl ? TextDirection.rtl : TextDirection.ltr,
+            // نحترم حجم الخط في إعدادات الجهاز (إمكانية الوصول) مع حدّ أعلى يحمي التخطيط من الانكسار.
             child: MediaQuery(
-              data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1)),
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: MediaQuery.textScalerOf(context).clamp(minScaleFactor: 1, maxScaleFactor: 1.3)),
               child: child ?? const SizedBox.shrink(),
             ),
           );

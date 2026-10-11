@@ -23,14 +23,8 @@ final Set<String> _hopByHopHeaders = {
 };
 
 Future<void> main() async {
-  final server = await HttpServer.bind(
-    InternetAddress.loopbackIPv4,
-    proxyPort,
-    shared: true,
-  );
-  stdout.writeln(
-    'CORS dev proxy listening on http://127.0.0.1:$proxyPort -> $targetScheme://$targetHost',
-  );
+  final server = await HttpServer.bind(InternetAddress.loopbackIPv4, proxyPort, shared: true);
+  stdout.writeln('CORS dev proxy listening on http://127.0.0.1:$proxyPort -> $targetScheme://$targetHost');
   await for (final request in server) {
     unawaited(_handleRequest(request));
   }
@@ -39,10 +33,7 @@ Future<void> main() async {
 void _addCorsHeaders(HttpResponse response) {
   response.headers
     ..add('Access-Control-Allow-Origin', '*')
-    ..add(
-      'Access-Control-Allow-Methods',
-      'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD',
-    )
+    ..add('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD')
     ..add(
       'Access-Control-Allow-Headers',
       'Origin, Content-Type, Accept, Authorization, Accept-Language, X-Requested-With',

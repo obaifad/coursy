@@ -7,14 +7,17 @@ import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../controllers/instructor_courses_controller.dart';
+import '../../../core/locale/plural.dart';
 
 class InstructorCoursesView extends GetView<InstructorCoursesController> {
   const InstructorCoursesView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => Scaffold(
+    return Obx(() {
+      // لقطة ثابتة لهذا البناء: الشبكة تبني عناصرها لاحقاً، وقراءة القائمة الحية بعد تغيّرها ترمي RangeError.
+      final courses = controller.courses.toList(growable: false);
+      return Scaffold(
         appBar: AppBar(
           title: Text(
             'instructor_courses_title'.trParams({'name': controller.instructorName.value}),
@@ -30,13 +33,18 @@ class InstructorCoursesView extends GetView<InstructorCoursesController> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
                     SliverToBoxAdapter(child: _InstructorHeader(controller: controller)),
-                    if (controller.courses.isEmpty)
+                    if (courses.isEmpty && controller.errorMessage.value != null)
                       SliverFillRemaining(
                         hasScrollBody: false,
-                        child: AppEmptyState(
-                          message: 'no_courses_for_instructor'.tr,
-                          icon: Icons.menu_book_outlined,
+                        child: AppLoadErrorState(
+                          message: controller.errorMessage.value!,
+                          onRetry: controller.loadCourses,
                         ),
+                      )
+                    else if (courses.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: AppEmptyState(message: 'no_courses_for_instructor'.tr, icon: Icons.menu_book_outlined),
                       )
                     else ...[
                       SliverPadding(
@@ -48,9 +56,9 @@ class InstructorCoursesView extends GetView<InstructorCoursesController> {
                         ),
                         sliver: SliverGrid.builder(
                           gridDelegate: AppGridLayouts.courseGridFor(context),
-                          itemCount: controller.courses.length,
+                          itemCount: courses.length,
                           itemBuilder: (_, i) {
-                            final course = controller.courses[i];
+                            final course = courses[i];
                             return CourseCard(
                               course: course,
                               onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
@@ -78,8 +86,8 @@ class InstructorCoursesView extends GetView<InstructorCoursesController> {
                   ],
                 ),
               ),
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -105,10 +113,7 @@ class _InstructorHeader extends StatelessWidget {
           Container(
             width: 64,
             height: 64,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-            ),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
             child: const Icon(Icons.person_rounded, color: AppColors.primary, size: 34),
           ),
           const SizedBox(width: 14),
@@ -118,18 +123,15 @@ class _InstructorHeader extends StatelessWidget {
               children: [
                 Text(
                   controller.instructorName.value,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 18,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'instructor_years'.trParams({
-                    'role': controller.specialization.value ?? 'instructor_default'.tr,
-                    'years': '${controller.experienceYears.value}',
-                  }),
+                  [
+                    controller.specialization.value ?? 'instructor_default'.tr,
+                    if (controller.experienceYears.value > 0)
+                      pluralTr('instructor_experience', controller.experienceYears.value),
+                  ].join(' · '),
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.9), height: 1.35),
                 ),
                 if (controller.bio.value != null && controller.bio.value!.trim().isNotEmpty) ...[
@@ -150,7 +152,7 @@ class _InstructorHeader extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      'instructor_courses_count'.trParams({'count': '${controller.totalCourses.value}'}),
+                      pluralTr('instructor_courses_count', controller.totalCourses.value),
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
                     ),
                   ),

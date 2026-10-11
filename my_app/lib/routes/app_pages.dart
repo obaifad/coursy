@@ -1,10 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import '../modules/auth/controllers/auth_controller.dart';
+import '../modules/auth/controllers/forgot_password_controller.dart';
 import '../modules/auth/controllers/phone_verification_controller.dart';
 import '../modules/auth/views/auth_views.dart';
 import '../modules/auth/views/register_view.dart';
 import '../modules/auth/views/phone_verification_view.dart';
+import '../modules/auth/views/email_verification_view.dart';
+import '../modules/auth/controllers/email_verification_controller.dart';
 import '../modules/courses/controllers/course_details_controller.dart';
 import '../modules/courses/controllers/booking_controller.dart';
 import '../modules/courses/controllers/category_courses_controller.dart';
@@ -27,10 +30,15 @@ import '../modules/institutes/views/institutes_views.dart';
 import '../modules/notifications/controllers/notifications_controller.dart';
 import '../modules/notifications/views/notifications_view.dart';
 import '../modules/onboarding/views/onboarding_view.dart';
+import '../modules/profile/controllers/delete_account_controller.dart';
 import '../modules/profile/controllers/profile_controller.dart';
+import '../modules/profile/views/delete_account_view.dart';
 import '../modules/profile/views/profile_views.dart';
 import '../core/bindings/root_binding.dart';
+import '../core/navigation/route_scoped_tag.dart';
 import '../modules/root/views/root_view.dart';
+import '../modules/payment/controllers/payment_controller.dart';
+import '../modules/payment/views/payment_view.dart';
 import '../modules/search/controllers/search_controller.dart';
 import '../modules/search/views/search_view.dart';
 import '../modules/favorites/controllers/favorites_controller.dart';
@@ -60,17 +68,22 @@ class AppPages {
         }
       }),
     ),
-    GetPage(name: AppRoutes.forgotPassword, page: () => const ForgotPasswordView()),
+    GetPage(
+      name: AppRoutes.forgotPassword,
+      page: () => const ForgotPasswordView(),
+      binding: BindingsBuilder(() => Get.lazyPut<ForgotPasswordController>(() => ForgotPasswordController())),
+    ),
     GetPage(
       name: AppRoutes.phoneVerification,
       page: () => const PhoneVerificationView(),
       binding: BindingsBuilder(() => Get.lazyPut<PhoneVerificationController>(() => PhoneVerificationController())),
     ),
     GetPage(
-      name: AppRoutes.root,
-      page: () => const RootView(),
-      binding: RootBinding(),
+      name: AppRoutes.emailVerification,
+      page: () => const EmailVerificationView(),
+      binding: BindingsBuilder(() => Get.lazyPut<EmailVerificationController>(() => EmailVerificationController())),
     ),
+    GetPage(name: AppRoutes.root, page: () => const RootView(), binding: RootBinding()),
     GetPage(
       name: AppRoutes.search,
       page: () => const SearchView(),
@@ -78,8 +91,13 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.courseDetails,
-      page: () => const CourseDetailsView(),
-      binding: BindingsBuilder(() => Get.lazyPut<CourseDetailsController>(() => CourseDetailsController())),
+      page: () => CourseDetailsView(controllerTag: RouteScopedTag.take()),
+      binding: BindingsBuilder(
+        () => Get.lazyPut<CourseDetailsController>(
+          () => CourseDetailsController(),
+          tag: RouteScopedTag.reserve('course'),
+        ),
+      ),
     ),
     GetPage(
       name: AppRoutes.categoryCourses,
@@ -95,15 +113,18 @@ class AppPages {
       name: AppRoutes.privateInstructors,
       page: () => const PrivateInstructorsView(),
       binding: BindingsBuilder(
-        () => Get.lazyPut<PrivateInstructorsController>(
-          () => PrivateInstructorsController(Get.find()),
-        ),
+        () => Get.lazyPut<PrivateInstructorsController>(() => PrivateInstructorsController(Get.find())),
       ),
     ),
     GetPage(
       name: AppRoutes.instructorDetails,
-      page: () => const InstructorDetailsView(),
-      binding: BindingsBuilder(() => Get.lazyPut<InstructorDetailsController>(() => InstructorDetailsController())),
+      page: () => InstructorDetailsView(controllerTag: RouteScopedTag.take()),
+      binding: BindingsBuilder(
+        () => Get.lazyPut<InstructorDetailsController>(
+          () => InstructorDetailsController(),
+          tag: RouteScopedTag.reserve('instructor'),
+        ),
+      ),
     ),
     GetPage(
       name: AppRoutes.instructorSubjectInstructors,
@@ -114,8 +135,13 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.instituteDetails,
-      page: () => const InstituteDetailsView(),
-      binding: BindingsBuilder(() => Get.lazyPut<InstituteDetailsController>(() => InstituteDetailsController())),
+      page: () => InstituteDetailsView(controllerTag: RouteScopedTag.take()),
+      binding: BindingsBuilder(
+        () => Get.lazyPut<InstituteDetailsController>(
+          () => InstituteDetailsController(),
+          tag: RouteScopedTag.reserve('institute'),
+        ),
+      ),
     ),
     GetPage(
       name: AppRoutes.notifications,
@@ -151,6 +177,16 @@ class AppPages {
       name: AppRoutes.cityDetails,
       page: () => const CityDetailsView(),
       binding: BindingsBuilder(() => Get.lazyPut<CityDetailsController>(() => CityDetailsController())),
+    ),
+    GetPage(
+      name: AppRoutes.payment,
+      page: () => const PaymentView(),
+      binding: BindingsBuilder(() => Get.lazyPut<PaymentController>(() => PaymentController())),
+    ),
+    GetPage(
+      name: AppRoutes.deleteAccount,
+      page: () => const DeleteAccountView(),
+      binding: BindingsBuilder(() => Get.lazyPut<DeleteAccountController>(() => DeleteAccountController())),
     ),
     GetPage(name: AppRoutes.settings, page: () => const SettingsView()),
     GetPage(

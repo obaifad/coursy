@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
+import '../../../theme/app_fonts.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
+import '../../../widgets/app_selection_sheet.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/app_loading.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/interest_picker_sheet.dart';
 import 'login_page_metrics.dart';
+import '../../../theme/app_motion.dart';
 
 /// خلفية ناعمة متدرجة لشاشة التسجيل.
 abstract final class RegisterDecor {
   static const LinearGradient background = LinearGradient(
-    colors: [Color(0xFFF3F1FF), Color(0xFFE9E6FF), Color(0xFFF6F5FF)],
+    colors: [Color(0xFFF3F1FF), Color(0xFFE9E6FF), AppColors.surfaceSoft],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -27,34 +29,20 @@ abstract final class RegisterDecor {
   );
 
   static List<BoxShadow> get cardShadow => const [
-        BoxShadow(color: Color(0x336C63FF), blurRadius: 28, offset: Offset(0, 14)),
-        BoxShadow(color: Color(0x14000000), blurRadius: 10, offset: Offset(0, 4)),
-      ];
+    BoxShadow(color: AppColors.shadowPrimary, blurRadius: 28, offset: Offset(0, 14)),
+    BoxShadow(color: AppColors.shadowNeutral, blurRadius: 10, offset: Offset(0, 4)),
+  ];
 
   static TextStyle heading(BuildContext context) {
-    return GoogleFonts.tajawal(
-      fontSize: 22,
-      fontWeight: FontWeight.w800,
-      color: const Color(0xFF111827),
-    );
+    return AppFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary);
   }
 
   static TextStyle subheading(BuildContext context) {
-    return GoogleFonts.tajawal(
-      fontSize: 14,
-      fontWeight: FontWeight.w500,
-      color: AppColors.textSecondary,
-      height: 1.4,
-    );
+    return AppFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textSecondary, height: 1.4);
   }
 
   static TextStyle sectionLabel() {
-    return GoogleFonts.tajawal(
-      fontSize: 13,
-      fontWeight: FontWeight.w800,
-      color: AppColors.primary,
-      letterSpacing: 0.2,
-    );
+    return AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primary, letterSpacing: 0.2);
   }
 
   static InputDecoration fieldDecoration({
@@ -65,7 +53,7 @@ abstract final class RegisterDecor {
     Widget? suffixIcon,
     bool focused = false,
   }) {
-    final borderColor = focused ? AppColors.primary : const Color(0xFFE5E7EB);
+    final borderColor = focused ? AppColors.primary : AppColors.borderNeutral;
     return InputDecoration(
       labelText: label,
       hintText: hint,
@@ -75,14 +63,11 @@ abstract final class RegisterDecor {
       suffixIcon: suffixIcon,
       filled: true,
       fillColor: focused ? AppColors.primary.withValues(alpha: 0.04) : Colors.white,
-      labelStyle: GoogleFonts.tajawal(
-        fontWeight: FontWeight.w600,
+      labelStyle: AppFonts.tajawal(
+        fontWeight: FontWeight.w700,
         color: focused ? AppColors.primary : AppColors.textSecondary,
       ),
-      floatingLabelStyle: GoogleFonts.tajawal(
-        fontWeight: FontWeight.w700,
-        color: AppColors.primary,
-      ),
+      floatingLabelStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, color: AppColors.primary),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: borderColor),
@@ -93,11 +78,11 @@ abstract final class RegisterDecor {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.red.shade400),
+        borderSide: BorderSide(color: AppColors.danger),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.red.shade400, width: 2),
+        borderSide: BorderSide(color: AppColors.danger, width: 2),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
     );
@@ -124,10 +109,7 @@ class AuthUnifiedShell extends StatelessWidget {
             boxShadow: RegisterDecor.cardShadow,
           ),
           child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: metrics.horizontalPadding,
-              vertical: metrics.formVerticalPadding,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: metrics.horizontalPadding, vertical: metrics.formVerticalPadding),
             child: child,
           ),
         ),
@@ -163,11 +145,7 @@ class RegisterSegmentedProgress extends StatelessWidget {
   const RegisterSegmentedProgress({super.key, required this.currentStep});
   final int currentStep;
 
-  static const _labels = [
-    'register_step_personal',
-    'register_step_security',
-    'register_step_interests',
-  ];
+  static const _labels = ['register_step_personal', 'register_step_security', 'register_step_interests'];
 
   @override
   Widget build(BuildContext context) {
@@ -182,15 +160,15 @@ class RegisterSegmentedProgress extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsetsDirectional.only(start: i == 0 ? 0 : 4, end: i == 2 ? 0 : 4),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 350),
+                  duration: AppMotion.normal,
                   curve: Curves.easeOutCubic,
                   height: 6,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(4),
                     gradient: active
                         ? (current
-                            ? RegisterDecor.button
-                            : const LinearGradient(colors: [AppColors.primaryLight, AppColors.primaryLight]))
+                              ? RegisterDecor.button
+                              : const LinearGradient(colors: [AppColors.primaryLight, AppColors.primaryLight]))
                         : null,
                     color: active ? null : AppColors.indicatorFill,
                   ),
@@ -208,23 +186,20 @@ class RegisterSegmentedProgress extends StatelessWidget {
               child: Column(
                 children: [
                   AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
+                    duration: AppMotion.normal,
                     width: 28,
                     height: 28,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: active || done ? AppColors.primary : AppColors.indicatorFill,
-                      border: Border.all(
-                        color: active ? AppColors.primary : Colors.transparent,
-                        width: 2,
-                      ),
+                      border: Border.all(color: active ? AppColors.primary : Colors.transparent, width: 2),
                     ),
                     child: Center(
                       child: done
                           ? const Icon(Icons.check_rounded, color: Colors.white, size: 16)
                           : Text(
                               '${i + 1}',
-                              style: GoogleFonts.tajawal(
+                              style: AppFonts.tajawal(
                                 color: active ? Colors.white : AppColors.textSecondary,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 13,
@@ -238,9 +213,9 @@ class RegisterSegmentedProgress extends StatelessWidget {
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.tajawal(
+                    style: AppFonts.tajawal(
                       fontSize: 11,
-                      fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                      fontWeight: active ? FontWeight.w800 : FontWeight.w700,
                       color: active ? AppColors.primary : AppColors.textSecondary,
                       height: 1.2,
                     ),
@@ -319,7 +294,7 @@ class _RegisterFloatingFieldState extends State<RegisterFloatingField> {
       textInputAction: widget.textInputAction,
       onChanged: widget.onChanged,
       readOnly: widget.readOnly,
-      style: GoogleFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 15),
+      style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 15),
       decoration: RegisterDecor.fieldDecoration(
         label: widget.label,
         hint: widget.hint,
@@ -353,7 +328,7 @@ class RegisterGradientButton extends StatelessWidget {
     final enabled = onPressed != null && !loading && !success;
     return AnimatedOpacity(
       opacity: enabled || loading || success ? 1 : 0.65,
-      duration: const Duration(milliseconds: 200),
+      duration: AppMotion.fast,
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: (enabled || loading || success)
@@ -361,7 +336,7 @@ class RegisterGradientButton extends StatelessWidget {
               : const LinearGradient(colors: [Color(0xFFB8B5E8), Color(0xFFB8B5E8)]),
           borderRadius: BorderRadius.circular(14),
           boxShadow: (enabled || loading || success)
-              ? const [BoxShadow(color: Color(0x446C63FF), blurRadius: 16, offset: Offset(0, 8))]
+              ? const [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 16, offset: Offset(0, 8))]
               : null,
         ),
         child: Material(
@@ -373,17 +348,19 @@ class RegisterGradientButton extends StatelessWidget {
               height: 52,
               child: Center(
                 child: loading
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: AppInlineLoader(color: Colors.white),
-                      )
+                    ? const SizedBox(width: 22, height: 22, child: AppInlineLoader(color: Colors.white))
                     : success
-                        ? const Icon(Icons.check_rounded, color: Colors.white, size: 28)
-                        : Text(
-                            label,
-                            style: GoogleFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
-                          ),
+                    ? const Icon(Icons.check_rounded, color: Colors.white, size: 28)
+                    // FittedBox: نص طويل + تكبير خط الجهاز على شاشة ضيقة قد لا يتسع بسطر واحد
+                    // ضمن الارتفاع الثابت (52) — نصغّره بدل قصّه على سطرين.
+                    : FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+                        ),
+                      ),
               ),
             ),
           ),
@@ -394,12 +371,7 @@ class RegisterGradientButton extends StatelessWidget {
 }
 
 class RegisterGhostButton extends StatelessWidget {
-  const RegisterGhostButton({
-    super.key,
-    required this.label,
-    required this.onPressed,
-    this.primaryText = false,
-  });
+  const RegisterGhostButton({super.key, required this.label, required this.onPressed, this.primaryText = false});
 
   final String label;
   final VoidCallback? onPressed;
@@ -413,23 +385,20 @@ class RegisterGhostButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         minimumSize: const Size.fromHeight(52),
         foregroundColor: color,
-        side: BorderSide(color: primaryText ? AppColors.primary.withValues(alpha: 0.35) : const Color(0xFFE5E7EB)),
+        side: BorderSide(color: primaryText ? AppColors.primary.withValues(alpha: 0.35) : AppColors.borderNeutral),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         backgroundColor: Colors.transparent,
       ),
-      child: Text(label, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 15, color: color)),
+      child: Text(
+        label,
+        style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 15, color: color),
+      ),
     );
   }
 }
 
 class RegisterChoiceChip extends StatelessWidget {
-  const RegisterChoiceChip({
-    super.key,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.leading,
-  });
+  const RegisterChoiceChip({super.key, required this.label, required this.selected, required this.onTap, this.leading});
 
   final String label;
   final bool selected;
@@ -439,7 +408,7 @@ class RegisterChoiceChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
+      duration: AppMotion.fast,
       curve: Curves.easeOut,
       child: Material(
         color: selected ? AppColors.primary : AppColors.indicatorFill,
@@ -455,10 +424,10 @@ class RegisterChoiceChip extends StatelessWidget {
                 if (leading != null) ...[leading!, const SizedBox(width: 8)],
                 Text(
                   label,
-                  style: GoogleFonts.tajawal(
+                  style: AppFonts.tajawal(
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
-                    color: selected ? Colors.white : const Color(0xFF374151),
+                    color: selected ? Colors.white : AppColors.textBody,
                   ),
                 ),
               ],
@@ -476,58 +445,16 @@ Future<void> showCityPickerSheet({
   required int? initialSelected,
   required ValueChanged<int> onPick,
 }) {
-  return showModalBottomSheet<void>(
+  return showAppSelectionSheet<int>(
     context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    useSafeArea: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-    ),
-    builder: (context) {
-      return LocaleRebuild(
-        builder: (context) {
-          var selected = initialSelected;
-          return Padding(
-            padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'pick_city'.tr,
-                  style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 18),
-                ),
-                const SizedBox(height: 12),
-                Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: cities.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF3F4F6)),
-                    itemBuilder: (_, i) {
-                      final city = cities[i];
-                      final isSelected = selected == city.id;
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.location_city_outlined, color: AppColors.primary),
-                        title: Text(city.name, style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
-                        trailing: isSelected
-                            ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
-                            : null,
-                        onTap: () {
-                          onPick(city.id);
-                          Navigator.of(context).pop();
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-    },
+    title: 'pick_city'.tr,
+    titleIcon: Icons.location_city_outlined,
+    selected: initialSelected,
+    onSelected: onPick,
+    options: [
+      for (final city in cities)
+        AppSheetOption<int>(value: city.id, label: city.name, icon: Icons.location_city_rounded),
+    ],
   );
 }
 
@@ -563,10 +490,7 @@ class RegisterCityPicker extends StatelessWidget {
                 label: label,
                 prefixIcon: const Icon(Icons.location_city_outlined, color: AppColors.primary),
               ),
-              child: Text(
-                'loading_cities'.tr,
-                style: GoogleFonts.tajawal(color: AppColors.textSecondary),
-              ),
+              child: Text('loading_cities'.tr, style: AppFonts.tajawal(color: AppColors.textSecondary)),
             ),
           );
         }
@@ -581,14 +505,11 @@ class RegisterCityPicker extends StatelessWidget {
                   errorText: errorText ?? 'connection_error'.tr,
                   prefixIcon: const Icon(Icons.location_city_outlined, color: AppColors.primary),
                 ),
-                child: Text('pick_city'.tr, style: GoogleFonts.tajawal(color: AppColors.textSecondary)),
+                child: Text('pick_city'.tr, style: AppFonts.tajawal(color: AppColors.textSecondary)),
               ),
               if (onReload != null) ...[
                 const SizedBox(height: 8),
-                RegisterGhostButton(
-                  label: 'reload_cities'.tr,
-                  onPressed: onReload,
-                ),
+                RegisterGhostButton(label: 'reload_cities'.tr, onPressed: onReload),
               ],
             ],
           );
@@ -598,12 +519,7 @@ class RegisterCityPicker extends StatelessWidget {
 
         return InkWell(
           onTap: () {
-            showCityPickerSheet(
-              context: context,
-              cities: cities,
-              initialSelected: selectedId,
-              onPick: onChanged,
-            );
+            showCityPickerSheet(context: context, cities: cities, initialSelected: selectedId, onPick: onChanged);
           },
           borderRadius: BorderRadius.circular(12),
           child: InputDecorator(
@@ -617,9 +533,9 @@ class RegisterCityPicker extends StatelessWidget {
               selected?.name ?? 'pick_city'.tr,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.tajawal(
-                fontWeight: FontWeight.w600,
-                color: selected == null ? AppColors.textSecondary : const Color(0xFF111827),
+              style: AppFonts.tajawal(
+                fontWeight: FontWeight.w700,
+                color: selected == null ? AppColors.textSecondary : AppColors.textPrimary,
               ),
             ),
           ),
@@ -651,86 +567,81 @@ class RegisterInterestPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     return LocaleRebuild(
       builder: (context) {
-    if (loading) {
-      return Skeletonizer(
-        enabled: true,
-        child: InputDecorator(
-          decoration: RegisterDecor.fieldDecoration(
-            label: 'interests_optional'.tr,
-            prefixIcon: const Icon(Icons.interests_rounded, color: AppColors.primary),
-          ),
-          child: Text('pick_interests'.tr, style: GoogleFonts.tajawal(color: AppColors.textSecondary)),
-        ),
-      );
-    }
-
-    if (categories.isEmpty) {
-      final summary = selectedIds.isEmpty
-          ? 'pick_interests'.tr
-          : interestSelectionSummary(categories, selectedIds);
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          InputDecorator(
-            decoration: RegisterDecor.fieldDecoration(
-              label: 'interests_optional'.tr,
-              errorText: selectedIds.isEmpty ? (errorText ?? 'connection_error'.tr) : errorText,
-              prefixIcon: const Icon(Icons.interests_rounded, color: AppColors.primary),
-            ),
-            child: Text(
-              summary,
-              style: GoogleFonts.tajawal(
-                color: selectedIds.isEmpty ? AppColors.textSecondary : const Color(0xFF111827),
-                fontWeight: selectedIds.isEmpty ? FontWeight.w400 : FontWeight.w600,
+        if (loading) {
+          return Skeletonizer(
+            enabled: true,
+            child: InputDecorator(
+              decoration: RegisterDecor.fieldDecoration(
+                label: 'interests_optional'.tr,
+                prefixIcon: const Icon(Icons.interests_rounded, color: AppColors.primary),
               ),
+              child: Text('pick_interests'.tr, style: AppFonts.tajawal(color: AppColors.textSecondary)),
             ),
-          ),
-          if (onReload != null) ...[
-            const SizedBox(height: 8),
-            RegisterGhostButton(
-              label: 'reload_interests'.tr,
-              onPressed: onReload,
+          );
+        }
+
+        if (categories.isEmpty) {
+          final summary = selectedIds.isEmpty ? 'pick_interests'.tr : interestSelectionSummary(categories, selectedIds);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              InputDecorator(
+                decoration: RegisterDecor.fieldDecoration(
+                  label: 'interests_optional'.tr,
+                  errorText: selectedIds.isEmpty ? (errorText ?? 'connection_error'.tr) : errorText,
+                  prefixIcon: const Icon(Icons.interests_rounded, color: AppColors.primary),
+                ),
+                child: Text(
+                  summary,
+                  style: AppFonts.tajawal(
+                    color: selectedIds.isEmpty ? AppColors.textSecondary : AppColors.textPrimary,
+                    fontWeight: selectedIds.isEmpty ? FontWeight.w400 : FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (onReload != null) ...[
+                const SizedBox(height: 8),
+                RegisterGhostButton(label: 'reload_interests'.tr, onPressed: onReload),
+              ],
+            ],
+          );
+        }
+
+        final summary = interestSelectionSummary(categories, selectedIds);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            InkWell(
+              onTap: () {
+                showInterestPickerSheet(
+                  context: context,
+                  categories: categories,
+                  initialSelected: selectedIds.toSet(),
+                  onApply: (ids) => onApply(ids.toList()),
+                );
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: InputDecorator(
+                decoration: RegisterDecor.fieldDecoration(
+                  label: 'interests_optional'.tr,
+                  errorText: errorText,
+                  prefixIcon: const Icon(Icons.interests_rounded, color: AppColors.primary),
+                  suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
+                ),
+                child: Text(
+                  summary,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.tajawal(
+                    fontWeight: FontWeight.w700,
+                    color: selectedIds.isEmpty ? AppColors.textSecondary : AppColors.textPrimary,
+                  ),
+                ),
+              ),
             ),
           ],
-        ],
-      );
-    }
-
-    final summary = interestSelectionSummary(categories, selectedIds);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        InkWell(
-          onTap: () {
-            showInterestPickerSheet(
-              context: context,
-              categories: categories,
-              initialSelected: selectedIds.toSet(),
-              onApply: (ids) => onApply(ids.toList()),
-            );
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: InputDecorator(
-            decoration: RegisterDecor.fieldDecoration(
-              label: 'interests_optional'.tr,
-              errorText: errorText,
-              prefixIcon: const Icon(Icons.interests_rounded, color: AppColors.primary),
-              suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
-            ),
-            child: Text(
-              summary,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.tajawal(
-                fontWeight: FontWeight.w600,
-                color: selectedIds.isEmpty ? AppColors.textSecondary : const Color(0xFF111827),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
+        );
       },
     );
   }
@@ -754,49 +665,43 @@ class RegisterInterestChips extends StatelessWidget {
   Widget build(BuildContext context) {
     return LocaleRebuild(
       builder: (context) {
-    if (loading) {
-      return Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: List.generate(
-          5,
-          (_) => Container(
-            width: 96,
-            height: 38,
-            decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
-          ),
-        ),
-      );
-    }
+        if (loading) {
+          return Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: List.generate(
+              5,
+              (_) => Container(
+                width: 96,
+                height: 38,
+                decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          );
+        }
 
-    if (categories.isEmpty) return const SizedBox.shrink();
+        if (categories.isEmpty) return const SizedBox.shrink();
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: categories.map((category) {
-        final selected = selectedIds.contains(category.id);
-        return RegisterChoiceChip(
-          label: category.name,
-          selected: selected,
-          leading: CategoryIcon(category: category, size: 22, borderRadius: BorderRadius.circular(6)),
-          onTap: () => onToggle(category.id),
+        return Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: categories.map((category) {
+            final selected = selectedIds.contains(category.id);
+            return RegisterChoiceChip(
+              label: category.name,
+              selected: selected,
+              leading: CategoryIcon(category: category, size: 22, borderRadius: BorderRadius.circular(6)),
+              onTap: () => onToggle(category.id),
+            );
+          }).toList(),
         );
-      }).toList(),
-    );
       },
     );
   }
 }
 
 class RegisterDateField extends StatelessWidget {
-  const RegisterDateField({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.onTap,
-    this.errorText,
-  });
+  const RegisterDateField({super.key, required this.label, required this.value, required this.onTap, this.errorText});
 
   final String label;
   final String? value;
@@ -819,9 +724,9 @@ class RegisterDateField extends StatelessWidget {
             ),
             child: Text(
               value ?? 'pick_date'.tr,
-              style: GoogleFonts.tajawal(
-                fontWeight: FontWeight.w600,
-                color: value == null ? AppColors.textSecondary : const Color(0xFF111827),
+              style: AppFonts.tajawal(
+                fontWeight: FontWeight.w700,
+                color: value == null ? AppColors.textSecondary : AppColors.textPrimary,
               ),
             ),
           ),

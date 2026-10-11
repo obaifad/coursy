@@ -1,11 +1,20 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'dart:ui';
 
+import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
+
+import 'package:my_app/core/locale/app_translations.dart';
 import 'package:my_app/core/models/app_models.dart';
 import 'package:my_app/core/models/json_helpers.dart';
 import 'package:my_app/core/network/api_endpoints.dart';
 import 'package:my_app/core/network/json_parser.dart';
 
 void main() {
+  setUp(() {
+    Get.addTranslations(AppTranslations().keys);
+    Get.locale = const Locale('ar');
+  });
+
   test('API base endpoints', () {
     expect(ApiEndpoints.courses, '/courses');
     expect(ApiEndpoints.institutes, '/institutes');
@@ -37,10 +46,38 @@ void main() {
     final course = CourseModel.fromJson(list.first);
     expect(course.title, 'Business English');
     expect(course.institute, 'Skills Academy');
-    expect(course.price, contains('270000'));
+    expect(course.price, contains('270,000'));
     expect(course.level, 'متوسط');
     expect(course.studyType, 'أونلاين');
     expect(course.rating, 3.75);
+  });
+
+  test('prices use thousands separators', () {
+    expect(JsonHelpers.groupThousands(1500000), '1,500,000');
+    expect(JsonHelpers.groupThousands(999), '999');
+    expect(JsonHelpers.formatSyrianPrice('300000.00', discount: '270000.00'), startsWith('270,000 '));
+  });
+
+  test('course labels follow the current language after parsing', () {
+    final course = CourseModel.fromJson({
+      'id': 5,
+      'title_ar': 'إنجليزي أعمال',
+      'title_en': 'Business English',
+      'price': '1500000',
+      'level': 'beginner',
+      'study_type': 'hybrid',
+    });
+
+    expect(course.title, 'إنجليزي أعمال');
+    expect(course.level, 'level_beginner'.tr);
+
+    Get.locale = const Locale('en');
+    expect(course.title, 'Business English');
+    expect(course.level, 'level_beginner'.tr);
+    expect(course.copyWith(rating: 4).title, 'Business English');
+
+    Get.locale = const Locale('ar');
+    expect(course.copyWith(rating: 4).title, 'إنجليزي أعمال');
   });
 
   test('course rating falls back to institute average', () {
@@ -81,10 +118,7 @@ void main() {
   test('merges sibling student_profile into user map', () {
     final user = mergeProfileUserData({
       'data': {
-        'user': {
-          'first_name': 'John',
-          'city_id': 1,
-        },
+        'user': {'first_name': 'John', 'city_id': 1},
         'student_profile': {
           'education_level': 'diploma',
           'preferred_categories': [

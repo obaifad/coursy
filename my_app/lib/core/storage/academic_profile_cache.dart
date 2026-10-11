@@ -21,32 +21,26 @@ class AcademicProfileCache {
       preferredCategoryIds.isEmpty;
 
   Map<String, dynamic> toJson() => {
-        if (educationLevel != null && educationLevel!.isNotEmpty) 'education_level': educationLevel,
-        if (universityId != null) 'university_id': universityId,
-        if (specializationId != null) 'specialization_id': specializationId,
-        if (preferredCategoryIds.isNotEmpty) 'preferred_tags': preferredCategoryIds,
-      };
+    if (educationLevel != null && educationLevel!.isNotEmpty) 'education_level': educationLevel,
+    if (universityId != null) 'university_id': universityId,
+    if (specializationId != null) 'specialization_id': specializationId,
+    if (preferredCategoryIds.isNotEmpty) 'preferred_categories': preferredCategoryIds,
+  };
 
   factory AcademicProfileCache.fromJson(Map<String, dynamic> json) {
     return AcademicProfileCache(
       educationLevel: json['education_level']?.toString(),
       universityId: int.tryParse(json['university_id']?.toString() ?? ''),
       specializationId: int.tryParse(json['specialization_id']?.toString() ?? ''),
-      preferredCategoryIds: _parseIds(
-        json['preferred_tags'] ??
-            json['preferred_tag_ids'] ??
-            json['preferred_categories'] ??
-            json['preferred_category_ids'],
-      ),
+      // `preferred_tags` القديم كان معرّفات tags — قائمة مختلفة عن التصنيفات فلا نقرؤه.
+      preferredCategoryIds: _parseIds(json['preferred_categories'] ?? json['preferred_category_ids']),
     );
   }
 
   static List<int> _parseIds(dynamic raw) {
     if (raw is! List) return [];
     return raw
-        .map((e) => e is Map
-            ? int.tryParse('${e['id'] ?? e['tag_id'] ?? e['category_id']}')
-            : int.tryParse('$e'))
+        .map((e) => e is Map ? int.tryParse('${e['id'] ?? e['tag_id'] ?? e['category_id']}') : int.tryParse('$e'))
         .whereType<int>()
         .where((id) => id > 0)
         .toList();

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:get/get.dart';
+
 import '../models/json_helpers.dart';
 
 /// يوحّد جسم الاستجابة (نص JSON، HTML، Map من Dio).
@@ -9,7 +11,7 @@ dynamic normalizeApiBody(dynamic body) {
     final trimmed = body.trim();
     if (trimmed.isEmpty) return null;
     if (trimmed.startsWith('<')) {
-      throw const FormatException('استجابة غير JSON من الخادم');
+      throw const FormatException('Non-JSON response from server');
     }
     return jsonDecode(trimmed);
   }
@@ -42,6 +44,7 @@ List<Map<String, dynamic>> extractListMap(dynamic body) {
   }
   return [];
 }
+
 PaginatedMeta? extractPagination(dynamic body) {
   if (body is! Map<String, dynamic>) return null;
   if (body['current_page'] == null) return null;
@@ -124,9 +127,20 @@ int? extractStudentIdFromBody(dynamic body) {
   return extractStudentId(extractUserMap(normalized));
 }
 
-bool isPhoneVerified(Map<String, dynamic>? user) {
-  if (user == null) return false;
+bool isPhoneVerified(Map<String, dynamic>? user) => phoneVerificationStatus(user) ?? false;
+
+/// حالة التحقق من الهاتف كما يرسلها الخادم: true/false، أو null إن لم يُرسل الحقل أصلاً
+/// (لا نفترض "غير مُتحقَّق" بلا دليل — وإلا ظهر طلب التحقق لمستخدمين مُتحقَّقين).
+bool? phoneVerificationStatus(Map<String, dynamic>? user) {
+  if (user == null || !user.containsKey('phone_verified_at')) return null;
   final v = user['phone_verified_at'];
+  return v != null && v.toString().isNotEmpty && v.toString() != 'null';
+}
+
+/// حالة تأكيد البريد (`email_verified_at`) بنفس منطق الهاتف: null إن لم يُرسل الخادم الحقل.
+bool? emailVerificationStatus(Map<String, dynamic>? user) {
+  if (user == null || !user.containsKey('email_verified_at')) return null;
+  final v = user['email_verified_at'];
   return v != null && v.toString().isNotEmpty && v.toString() != 'null';
 }
 
@@ -165,9 +179,7 @@ List<int> extractPreferredCategoryIds(dynamic preferred) {
           continue;
         }
       }
-      final id = JsonHelpers.parseIntOrNull(
-        map['id'] ?? map['tag_id'] ?? map['category_id'],
-      );
+      final id = JsonHelpers.parseIntOrNull(map['id'] ?? map['tag_id'] ?? map['category_id']);
       if (id != null && id > 0) ids.add(id);
       continue;
     }
@@ -177,20 +189,10 @@ List<int> extractPreferredCategoryIds(dynamic preferred) {
   return ids;
 }
 
-/// يستخرج معرّفات الاهتمامات (tags) من استجابة الملف الشخصي.
+/// يستخرج معرّفات الاهتمامات (تصنيفات) من استجابة الملف الشخصي.
+/// مفاتيح الـ tags لا تُقرأ: معرّفاتها قائمة مختلفة عن التصنيفات.
 List<int> extractPreferredInterestIds(Map<String, dynamic> source) {
-  for (final key in [
-    'preferred_tags',
-    'preferred_tag_ids',
-    'tag_ids',
-    'tags',
-    'interests',
-    'interest_ids',
-    'preferred_categories',
-    'preferred_category_ids',
-    'category_ids',
-    'categories',
-  ]) {
+  for (final key in ['preferred_categories', 'preferred_category_ids', 'category_ids', 'categories']) {
     final ids = extractPreferredCategoryIds(source[key]);
     if (ids.isNotEmpty) return ids;
   }
@@ -255,14 +257,28 @@ String? extractUserDisplayName(dynamic body) {
   return user['name']?.toString();
 }
 
-String messageFromErrorBody(dynamic body, {String fallback = 'حدث خطأ غير متوقع'}) {
+String messageFromErrorBody(dynamic body, {String? fallback}) {
   final fields = fieldErrorsFromBody(body);
   if (fields.isNotEmpty) return fields.values.first;
   if (body is Map) {
-    final map = Map<String, dynamic>.from(body);
-    if (map['message'] is String) return map['message'] as String;
+    final message = body['message'];
+    if (message is String && isDisplayableServerMessage(message)) return message.trim();
   }
-  return fallback;
+  return fallback ?? 'error_unexpected'.tr;
+}
+
+/// رسالة الخادم صالحة للعرض؟ الفارغة (`{"message":""}`) تُظهر تنبيهاً بلا نص، و
+/// `No query results for model [App\Models\Course] 99` (404 من Laravel) نص تقني بالإنجليزية —
+/// في الحالتين نعرض النص الاحتياطي.
+bool isDisplayableServerMessage(String? message) {
+  final text = message?.trim() ?? '';
+  return text.isNotEmpty && !text.startsWith('No query results');
+}
+
+String? errorCodeFromBody(dynamic body) {
+  if (body is! Map) return null;
+  final code = body['code'];
+  return code is String && code.isNotEmpty ? code : null;
 }
 
 Map<String, String> fieldErrorsFromBody(dynamic body) {
@@ -273,11 +289,14 @@ Map<String, String> fieldErrorsFromBody(dynamic body) {
   final result = <String, String>{};
   for (final entry in errors.entries) {
     final value = entry.value;
+    String? text;
     if (value is List && value.isNotEmpty) {
-      result[entry.key.toString()] = value.first.toString();
-    } else if (value is String && value.isNotEmpty) {
-      result[entry.key.toString()] = value;
+      text = value.first?.toString().trim();
+    } else if (value is String) {
+      text = value.trim();
     }
+    // رسالة فارغة لا تُعرض (تبقى رسالة الخادم العامة أو النص الاحتياطي).
+    if (text != null && text.isNotEmpty) result[entry.key.toString()] = text;
   }
   return result;
 }

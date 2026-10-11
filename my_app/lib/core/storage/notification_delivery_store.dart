@@ -44,8 +44,17 @@ class NotificationDeliveryStore extends GetxService {
       if (_deliveredIds.add(id)) changed = true;
     }
     if (!changed) return;
+    // نحتفظ بأحدث [_maxStoredIds] فقط — كانت القائمة تكبر للأبد.
+    if (_deliveredIds.length > _maxStoredIds) {
+      final newest = (_deliveredIds.toList()..sort()).sublist(_deliveredIds.length - _maxStoredIds);
+      _deliveredIds
+        ..clear()
+        ..addAll(newest);
+    }
     await _box.write(_storageKey(studentId), _deliveredIds.toList());
   }
+
+  static const _maxStoredIds = 500;
 
   String _storageKey(int studentId) => 'push_delivered_notification_ids_$studentId';
 }

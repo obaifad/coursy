@@ -8,9 +8,12 @@ import 'package:get_storage/get_storage.dart';
 
 import '../config/app_debug_log.dart';
 import '../data/repositories/device_repository.dart';
+import '../models/json_helpers.dart';
 import '../navigation/push_navigation.dart';
 import '../push/push_local_notifications.dart';
+import '../session/enrollment_status_coordinator.dart';
 import '../session/remote_notification_sync.dart';
+import '../storage/notification_delivery_store.dart';
 import '../storage/token_storage.dart';
 
 /// FCM: أذونات، تسجيل التوكن، عرض الإشعارات، والتوجيه عند الضغط.
@@ -22,7 +25,8 @@ class PushNotificationService extends GetxService {
 
   static const _storageKey = 'push_notifications_enabled';
 
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  // getter وليس حقلاً: على الويب/Windows لا يُهيّأ Firebase، والوصول المبكر لـ instance يُسقط التطبيق عند الإقلاع.
+  FirebaseMessaging get _messaging => FirebaseMessaging.instance;
 
   late final GetStorage _prefs;
 
@@ -38,49 +42,53 @@ class PushNotificationService extends GetxService {
 
     _prefs = GetStorage();
     notificationsEnabled.value = _prefs.read<bool>(_storageKey) ?? true;
+    // نسخة للـ isolate الخلفي (لمن أوقف الإشعارات في إصدار سابق قبل وجود هذه النسخة).
+    await PushLocalNotifications.saveUserEnabled(notificationsEnabled.value);
 
     await PushLocalNotifications.ensureInitialized(onTap: _openFromPayload);
 
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
-      await _messaging.setForegroundNotificationPresentationOptions(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
+      await _messaging.setForegroundNotificationPresentationOptions(alert: true, badge: true, sound: true);
     }
 
     _tokenRefreshSub = _messaging.onTokenRefresh.listen(_onTokenRefresh);
     _listenForegroundMessages();
     _listenOpenedFromBackground();
     await _handleInitialMessage();
+    await _handleLaunchPayload();
 
+    // لا نطلب الإذن عند الإقلاع (إرشادات Apple وGoogle): يُطلب بعد أول حجز، حيث للإشعارات سبب واضح
+    // (قبول التسجيل وتأكيد الدفع)، أو من الإعدادات. هنا نقرأ الحالة ونسجّل التوكن فقط.
     if (notificationsEnabled.value) {
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-        // Android 13+: طلب الإذن بعد ظهور الواجهة لضمان ظهور نافذة النظام.
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          unawaited(ensurePermissionsAndSyncToken());
-        });
-      } else {
-        await ensurePermissionsAndSyncToken();
-      }
+      unawaited(ensurePermissionsAndSyncToken(requestPermission: false));
     }
   }
 
+  /// بعد حجز ناجح: يطلب الإذن مرة واحدة إن لم يكن ممنوحاً (نافذة النظام لا تظهر إن رُفض نهائياً).
+  Future<void> requestPermissionAfterBooking() async {
+    if (kIsWeb || !notificationsEnabled.value) return;
+    if (await _hasPermission()) return;
+    // بعد ظهور الإطار التالي: نافذة النظام على Android لا تظهر أثناء انتقال الصفحات.
+    final shown = Completer<void>();
+    WidgetsBinding.instance.addPostFrameCallback((_) => shown.complete());
+    await shown.future;
+    await ensurePermissionsAndSyncToken();
+  }
+
   /// يطلب إذن الإشعارات (Android 13+) ثم يسجّل توكن FCM.
-  Future<void> ensurePermissionsAndSyncToken() async {
-    if (!notificationsEnabled.value) return;
+  ///
+  /// [requestPermission] = false (عند العودة للتطبيق): نقرأ حالة الإذن فقط بدون إظهار نافذة النظام.
+  /// التوكن يُرسل للخادم فقط إذا تغيّر منذ آخر تسجيل ناجح.
+  Future<void> ensurePermissionsAndSyncToken({bool requestPermission = true}) async {
+    if (kIsWeb || !notificationsEnabled.value) return;
 
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      notificationsPermissionGranted.value = await PushLocalNotifications.hasAndroidPermission();
-    }
-
-    final granted = await _requestPermissions();
+    final granted = requestPermission ? await _requestPermissions() : await _hasPermission();
     notificationsPermissionGranted.value = granted;
     AppDebugLog.fcm('notifications enabled=${notificationsEnabled.value} permission=$granted');
     if (!granted) {
       AppDebugLog.fcm('notification permission not granted — token sync only');
     }
-    await syncDeviceTokenIfLoggedIn(force: true);
+    await syncDeviceTokenIfLoggedIn();
   }
 
   Future<void> syncDeviceTokenIfLoggedIn({bool force = false}) async {
@@ -116,6 +124,7 @@ class PushNotificationService extends GetxService {
           return;
         }
         await _prefs.write(_storageKey, true);
+        await PushLocalNotifications.saveUserEnabled(true);
         notificationsEnabled.value = true;
         notificationsPermissionGranted.value = true;
         clearSyncedToken();
@@ -124,12 +133,18 @@ class PushNotificationService extends GetxService {
         return;
       }
 
-      await _unregisterCurrentToken();
-      await _messaging.deleteToken();
+      // الإيقاف محلياً أولاً: إن فشل إلغاء التسجيل (بلا إنترنت) يبقى المفتاح مطفأً ولا تُعرض إشعارات.
       await _prefs.write(_storageKey, false);
+      await PushLocalNotifications.saveUserEnabled(false);
+      await _unregisterCurrentToken();
       notificationsEnabled.value = false;
       notificationsPermissionGranted.value = false;
       _lastSyncedToken = null;
+      try {
+        await _messaging.deleteToken();
+      } catch (e) {
+        AppDebugLog.fcm('deleteToken failed: $e');
+      }
       Get.snackbar('notifications_setting'.tr, 'notifications_disabled_msg'.tr);
     } catch (e) {
       AppDebugLog.fcm('toggle failed: $e');
@@ -152,9 +167,9 @@ class PushNotificationService extends GetxService {
 
   Future<void> _unregisterCurrentToken() async {
     if (!_tokenStorage.isLoggedIn) return;
-    final token = _lastSyncedToken ?? await _messaging.getToken();
-    if (token == null || token.isEmpty) return;
     try {
+      final token = _lastSyncedToken ?? await _messaging.getToken();
+      if (token == null || token.isEmpty) return;
       await _deviceRepository.unregisterDeviceToken(token);
       AppDebugLog.fcm('device token unregistered');
     } catch (e) {
@@ -162,10 +177,20 @@ class PushNotificationService extends GetxService {
     }
   }
 
-  Future<void> _registerToken(String token, {bool force = false}) async {
-    if (!_tokenStorage.isLoggedIn || !notificationsEnabled.value) return;
-    if (!force && _lastSyncedToken == token) return;
+  Future<void> _registerToken(String token, {bool force = false}) {
+    if (!_tokenStorage.isLoggedIn || !notificationsEnabled.value) return Future<void>.value();
+    if (!force && _lastSyncedToken == token) return Future<void>.value();
+    // طلبات متزامنة (init + post-launch + resume) تشترك في نفس التسجيل الجاري.
+    final running = _registering;
+    if (running != null) return running;
+    final future = _registerWithRetry(token);
+    _registering = future;
+    return future.whenComplete(() => _registering = null);
+  }
 
+  Future<void>? _registering;
+
+  Future<void> _registerWithRetry(String token) async {
     for (var attempt = 1; attempt <= 3; attempt++) {
       try {
         AppDebugLog.fcm('registering device token (${token.length} chars) attempt=$attempt');
@@ -187,6 +212,15 @@ class PushNotificationService extends GetxService {
 
   Future<void> _onTokenRefresh(String token) => _registerToken(token, force: true);
 
+  Future<bool> _hasPermission() async {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return PushLocalNotifications.hasAndroidPermission();
+    }
+    final settings = await _messaging.getNotificationSettings();
+    return settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
+  }
+
   Future<bool> _requestPermissions() async {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       final granted = await PushLocalNotifications.requestAndroidPermission();
@@ -194,12 +228,7 @@ class PushNotificationService extends GetxService {
       return granted;
     }
 
-    final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
+    final settings = await _messaging.requestPermission(alert: true, badge: true, sound: true, provisional: false);
     AppDebugLog.fcm('ios permission: ${settings.authorizationStatus}');
     return settings.authorizationStatus == AuthorizationStatus.authorized ||
         settings.authorizationStatus == AuthorizationStatus.provisional;
@@ -213,46 +242,56 @@ class PushNotificationService extends GetxService {
         'title=${message.notification?.title ?? message.data['title']} '
         'data=${message.data}',
       );
-      await RemoteNotificationSync.onMessageReceived(Map<String, dynamic>.from(message.data));
+      final data = Map<String, dynamic>.from(message.data);
+      await _recordDelivered(data);
+      await RemoteNotificationSync.onMessageReceived(data);
       await PushLocalNotifications.showRemoteMessage(message);
     });
+  }
+
+  /// FCM أوصل الإشعار: لا يعيد عرضَه فحصُ إشعارات الخادم الدوري، ولا مراقبُ حالة التسجيل بإشعار محلي ثانٍ
+  /// عند اكتشاف التغيّر نفسه (كان قبول التسجيل يظهر مرتين والتطبيق مفتوح).
+  Future<void> _recordDelivered(Map<String, dynamic> data) async {
+    try {
+      final notificationId = JsonHelpers.parseIntOrNull(data['notification_id']);
+      if (notificationId != null && Get.isRegistered<NotificationDeliveryStore>()) {
+        await Get.find<NotificationDeliveryStore>().markDelivered([notificationId]);
+      }
+      if (Get.isRegistered<EnrollmentStatusCoordinator>()) {
+        await Get.find<EnrollmentStatusCoordinator>().recordServerPush(data);
+      }
+    } catch (e) {
+      AppDebugLog.fcm('record delivered failed: $e');
+    }
   }
 
   void _listenOpenedFromBackground() {
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageNavigation);
   }
 
+  /// فُتح التطبيق بالضغط على إشعار FCM وهو مغلق. شاشة البداية ما زالت ظاهرة: PushNavigation يؤجّل
+  /// الوجهة حتى تنتقل (كان التأخير الثابت 600ms يفتحها قبل ذلك فيمسحها offAllNamed).
   Future<void> _handleInitialMessage() async {
     final message = await _messaging.getInitialMessage();
     if (message == null) return;
-    _scheduleNavigation(message);
+    _handleMessageNavigation(message);
   }
 
-  void _scheduleNavigation(RemoteMessage message) {
-    Future<void>.delayed(const Duration(milliseconds: 600), () {
-      _handleMessageNavigation(message);
-    });
+  /// أو بالضغط على إشعار محلي (عُرض والتطبيق مفتوح ثم أُغلق) — معالج الضغط لا يُستدعى في هذه الحالة.
+  Future<void> _handleLaunchPayload() async {
+    final payload = await PushLocalNotifications.launchPayload();
+    if (payload != null) _openFromPayload(payload);
   }
 
   void _handleMessageNavigation(RemoteMessage message) {
-    final data = Map<String, dynamic>.from(message.data);
-    unawaited(RemoteNotificationSync.onMessageReceived(data));
-    if (data.isEmpty && message.notification != null) {
-      PushNavigation.openFromMessageData(const {});
-      return;
-    }
-    PushNavigation.openFromMessageData(data);
+    _open(Map<String, dynamic>.from(message.data));
   }
 
-  void _openFromPayload(String payload) {
-    final data = <String, dynamic>{};
-    for (final part in payload.split('&')) {
-      final idx = part.indexOf('=');
-      if (idx <= 0) continue;
-      data[part.substring(0, idx)] = part.substring(idx + 1);
-    }
-    unawaited(RemoteNotificationSync.onMessageReceived(data));
-    PushNavigation.openFromMessageData(data);
+  void _openFromPayload(String payload) => _open(PushLocalNotifications.decodePayload(payload));
+
+  void _open(Map<String, dynamic> data) {
+    unawaited(_recordDelivered(data).then((_) => RemoteNotificationSync.onMessageReceived(data)));
+    PushNavigation.open(data);
   }
 
   void clearSyncedToken() {

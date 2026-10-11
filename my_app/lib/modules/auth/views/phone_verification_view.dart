@@ -6,6 +6,7 @@ import '../../../core/responsive/responsive.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/design_system.dart';
 import '../controllers/phone_verification_controller.dart';
+import '../widgets/register_form_widgets.dart';
 
 class PhoneVerificationView extends GetView<PhoneVerificationController> {
   const PhoneVerificationView({super.key});
@@ -52,7 +53,10 @@ class _StepIndicator extends StatelessWidget {
             CircleAvatar(
               radius: 16,
               backgroundColor: active ? AppColors.primary : AppColors.indicatorFill,
-              child: Text(n, style: TextStyle(color: active ? Colors.white : AppColors.textSecondary, fontWeight: FontWeight.w800)),
+              child: Text(
+                n,
+                style: TextStyle(color: active ? Colors.white : AppColors.textSecondary, fontWeight: FontWeight.w800),
+              ),
             ),
             const SizedBox(height: 6),
             Text(
@@ -101,9 +105,10 @@ class _SendStep extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         Obx(
-          () => FilledButton(
+          () => RegisterGradientButton(
+            label: 'send_otp'.tr,
+            loading: controller.isSending.value,
             onPressed: controller.isSending.value ? null : controller.sendCode,
-            child: Text(controller.isSending.value ? 'sending_otp'.tr : 'send_otp'.tr),
           ),
         ),
       ],
@@ -122,7 +127,10 @@ class _VerifyStep extends StatelessWidget {
       children: [
         Text('enter_otp'.tr, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
         const SizedBox(height: 8),
-        Text('otp_sent_to'.trParams({'phone': controller.phone}), style: const TextStyle(color: AppColors.textSecondary)),
+        Text(
+          'otp_sent_to'.trParams({'phone': controller.phone}),
+          style: const TextStyle(color: AppColors.textSecondary),
+        ),
         const SizedBox(height: 16),
         TextField(
           controller: controller.otpController,
@@ -131,25 +139,26 @@ class _VerifyStep extends StatelessWidget {
           maxLength: 6,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: 8),
-          decoration: const InputDecoration(
-            counterText: '',
-            hintText: '••••••',
-            border: OutlineInputBorder(),
-          ),
+          decoration: const InputDecoration(counterText: '', hintText: '••••••', border: OutlineInputBorder()),
         ),
         Obx(() {
           final hint = controller.debugOtpHint.value;
           if (hint == null) return const SizedBox.shrink();
           return Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text(hint, textAlign: TextAlign.center, style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.w600)),
+            child: Text(
+              hint,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.successText, fontWeight: FontWeight.w700),
+            ),
           );
         }),
         const SizedBox(height: 12),
         Obx(
-          () => FilledButton(
+          () => RegisterGradientButton(
+            label: 'confirm_code'.tr,
+            loading: controller.isLoading.value,
             onPressed: controller.isLoading.value ? null : controller.verifyCode,
-            child: Text(controller.isLoading.value ? 'verifying'.tr : 'confirm_code'.tr),
           ),
         ),
         const SizedBox(height: 8),

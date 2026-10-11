@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../config/app_debug_log.dart';
 import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
+import '../../network/api_exception.dart';
 import '../../network/json_parser.dart';
 
 class DeviceRepository extends GetxService {
@@ -16,25 +17,24 @@ class DeviceRepository extends GetxService {
     return 'unknown';
   }
 
+  /// لغة إشعارات هذا الجهاز (تُرسل أيضاً في Accept-Language).
+  String get _language => Get.locale?.languageCode ?? 'ar';
+
   Future<void> registerDeviceToken(String deviceToken) async {
     final token = deviceToken.trim();
     if (token.isEmpty) return;
 
-    // Postman يستخدم query — نجرّبها أولاً ثم body كاحتياط.
+    // التوكن في جسم الطلب أولاً — الـ query يُحفظ في سجلات الخوادم. query احتياط فقط
+    // (Laravel يقرأ الاثنين عبر $request->input).
     try {
-      await _register(query: {'token': token, 'platform': _platform});
+      await _register(data: {'token': token, 'device_token': token, 'platform': _platform, 'language': _language});
       return;
-    } catch (e) {
-      AppDebugLog.fcm('device register via query failed: $e');
+    } on ApiException catch (e) {
+      if (e.statusCode != 404 && e.statusCode != 405 && e.statusCode != 422) rethrow;
+      AppDebugLog.fcm('device register via body failed (${e.statusCode}) — retrying via query');
     }
 
-    await _register(
-      data: {
-        'token': token,
-        'device_token': token,
-        'platform': _platform,
-      },
-    );
+    await _register(query: {'token': token, 'platform': _platform, 'language': _language});
   }
 
   Future<void> unregisterDeviceToken(String deviceToken) async {
@@ -42,44 +42,32 @@ class DeviceRepository extends GetxService {
     if (token.isEmpty) return;
 
     try {
-      await _unregister(query: {'token': token});
+      await _unregister(data: {'token': token, 'device_token': token});
       return;
-    } catch (_) {}
+    } on ApiException catch (e) {
+      if (e.statusCode != 404 && e.statusCode != 405 && e.statusCode != 422) rethrow;
+    }
 
-    await _unregister(
-      data: {
-        'token': token,
-        'device_token': token,
-      },
-    );
+    await _unregister(query: {'token': token});
   }
 
   Future<void> _register({Map<String, dynamic>? query, Map<String, dynamic>? data}) async {
-    await _client.handle(
-      () => _client.post(
-        ApiEndpoints.studentDevices,
-        query: query,
-        data: data,
-      ),
-      _parseResponse,
-    );
+    await _client.handle(() => _client.post(ApiEndpoints.studentDevices, query: query, data: data), _parseResponse);
   }
 
   Future<void> _unregister({Map<String, dynamic>? query, Map<String, dynamic>? data}) async {
-    await _client.handle(
-      () => _client.delete(
-        ApiEndpoints.studentDevices,
-        query: query,
-        data: data,
-      ),
-      (_) => null,
-    );
+    await _client.handle(() => _client.delete(ApiEndpoints.studentDevices, query: query, data: data), (_) => null);
   }
 
+  /// الاستجابة قد تكون فارغة (204) — لا نفترض وجود id، وإلا اعتُبر النجاح فشلاً وأُعيد الإرسال.
   Null _parseResponse(dynamic data) {
     final body = normalizeApiBody(data);
-    final id = body['id'] ?? body['data']?['id'];
-    AppDebugLog.fcm('device saved on server id=$id platform=$_platform');
+    Object? id;
+    if (body is Map) {
+      final nested = body['data'];
+      id = body['id'] ?? (nested is Map ? nested['id'] : null);
+    }
+    AppDebugLog.fcm('device saved on server id=${id ?? '-'} platform=$_platform');
     return null;
   }
 }

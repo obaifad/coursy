@@ -9,7 +9,12 @@ import '../../../theme/app_colors.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/design_system.dart';
+import '../../../theme/app_fonts.dart';
+import '../../../core/locale/plural.dart';
 import '../controllers/home_controller.dart';
+import '../widgets/featured_course_carousel.dart';
+import '../widgets/home_categories_grid.dart';
+import '../widgets/home_status_banner.dart';
 
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
@@ -32,15 +37,17 @@ class HomeView extends GetView<HomeController> {
         final privateInstructors = controller.privateInstructors.toList(growable: false);
         final instructorSubjects = controller.instructorSubjects.toList(growable: false);
         final scrollReset = controller.horizontalScrollReset.value;
+        final bannerCourses = controller.bannerCourses;
+        final upcomingLecture = controller.upcomingLecture.value;
+        final isGuest = !controller.isLoggedIn;
         return RefreshIndicator(
-          onRefresh: () => controller.loadHome(forceRefresh: true),
+          color: AppColors.primary,
+          onRefresh: () => controller.loadHome(forceRefresh: true, refreshStatic: true),
           child: ListView(
             controller: controller.scrollController,
             primary: false,
-            padding: EdgeInsetsDirectional.only(
-              top: 4,
-              bottom: AppLayout.scrollBottomInset(context, rootTab: true),
-            ),
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsetsDirectional.only(top: 4, bottom: AppLayout.scrollBottomInset(context, rootTab: true)),
             children: [
               Padding(
                 padding: _sectionPad(context),
@@ -53,16 +60,13 @@ class HomeView extends GetView<HomeController> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const AppHomeBrandLogo(height: 80),
+                          const AppHomeBrandLogo(height: 56),
                           _HomeSettingsButton(onTap: () => Get.toNamed(AppRoutes.settings)),
                         ],
                       ),
                     ),
                     const SizedBox(height: 10),
-                    AppHomeSearchBar(
-                      onTap: () => Get.toNamed(AppRoutes.search),
-                      hint: 'home_search_hint'.tr,
-                    ),
+                    AppHomeSearchBar(onTap: () => Get.toNamed(AppRoutes.search), hint: 'home_search_hint'.tr),
                   ],
                 ),
               ),
@@ -70,42 +74,71 @@ class HomeView extends GetView<HomeController> {
               if (controller.errorMessage.value != null) ...[
                 Padding(
                   padding: _sectionPad(context),
-                  child: Material(
-                    color: Colors.orange.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.cloud_off_outlined, color: Colors.orange),
-                          const SizedBox(width: 10),
-                          Expanded(child: Text(controller.errorMessage.value!, style: const TextStyle(fontSize: 13))),
-                          TextButton(
-                            onPressed: () => controller.loadHome(forceRefresh: true),
-                            child: Text('retry'.tr),
+                  child: Container(
+                    padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 10, 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.cloud_off_outlined, color: AppColors.primary, size: 22),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            controller.errorMessage.value!,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textBody,
+                            ),
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 8),
+                        OutlinedButton(
+                          onPressed: () => controller.loadHome(forceRefresh: true, refreshStatic: true),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+                            minimumSize: const Size(0, 40),
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text(
+                            'retry_action'.tr,
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 12),
               ],
-              Padding(
-                padding: _sectionPad(context),
-                child: const _HomeHeroBanner(),
-              ),
+              // ضيف → دعوة للتسجيل؛ طالب بمحاضرة قادمة → بطاقتها؛ وإلا → عروض الدورات.
+              if (isGuest)
+                Padding(padding: _sectionPad(context), child: const GuestSignUpBanner())
+              else if (upcomingLecture != null)
+                Padding(
+                  padding: _sectionPad(context),
+                  child: UpcomingLectureCard(lecture: upcomingLecture),
+                )
+              else if (bannerCourses.isEmpty)
+                Padding(padding: _sectionPad(context), child: const _HomeHeroBanner())
+              else
+                FeaturedCourseCarousel(courses: bannerCourses),
               const SizedBox(height: 22),
               Padding(
                 padding: _sectionPad(context),
                 child: AppSectionHeader(
                   title: 'section_categories'.tr,
-                  actionLabel: 'view_all'.tr,
+                  actionLabel: 'show_all'.tr,
                   onAction: () => AppNavigation.switchToTab(0),
                 ),
               ),
               const SizedBox(height: 10),
-              _CategoriesRow(categories: categories, scrollReset: scrollReset),
+              _CategoriesSection(categories: categories),
               const SizedBox(height: 22),
               Padding(
                 padding: _sectionPad(context),
@@ -120,10 +153,7 @@ class HomeView extends GetView<HomeController> {
                 Padding(
                   padding: _sectionPad(context),
                   child: SoftCard(
-                    child: AppEmptyState.inline(
-                      message: 'no_courses_now'.tr,
-                      icon: Icons.menu_book_outlined,
-                    ),
+                    child: AppEmptyState.inline(message: 'no_courses_now'.tr, icon: Icons.menu_book_outlined),
                   ),
                 )
               else
@@ -139,7 +169,6 @@ class HomeView extends GetView<HomeController> {
                       width: cardWidth,
                       child: CourseCard(
                         course: course,
-                        showActionButton: false,
                         onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
                       ),
                     );
@@ -169,7 +198,6 @@ class HomeView extends GetView<HomeController> {
                       width: cardWidth,
                       child: CourseCard(
                         course: course,
-                        showActionButton: false,
                         onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
                       ),
                     );
@@ -193,7 +221,8 @@ class HomeView extends GetView<HomeController> {
                 const SizedBox(height: 10),
                 AppHorizontalListView(
                   resetToken: scrollReset,
-                  height: 120,
+                  // ارتفاع ثابت للبطاقة × تكبير الخط — وإلا يفيض اسم المدرّب عند تكبير الخط.
+                  height: 120 * CourseCardMetrics.textScaleOf(context),
                   bottomInset: AppHorizontalListView.cardShadowBottomInset,
                   itemCount: privateInstructors.length,
                   itemBuilder: (_, i) {
@@ -204,15 +233,6 @@ class HomeView extends GetView<HomeController> {
                     );
                   },
                 ),
-              ],
-              if (cities.isNotEmpty) ...[
-                const SizedBox(height: 22),
-                Padding(
-                  padding: _sectionPad(context),
-                  child: AppSectionHeader(title: 'section_cities'.tr),
-                ),
-                const SizedBox(height: 10),
-                _CitiesRow(cities: cities, scrollReset: scrollReset),
               ],
               const SizedBox(height: 22),
               Padding(
@@ -228,16 +248,13 @@ class HomeView extends GetView<HomeController> {
                 Padding(
                   padding: _sectionPad(context),
                   child: SoftCard(
-                    child: AppEmptyState.inline(
-                      message: 'no_institutes_now'.tr,
-                      icon: Icons.apartment_outlined,
-                    ),
+                    child: AppEmptyState.inline(message: 'no_institutes_now'.tr, icon: Icons.apartment_outlined),
                   ),
                 )
               else
                 AppHorizontalListView(
                   resetToken: scrollReset,
-                  height: 200,
+                  height: InstituteMiniCard.railHeight(context),
                   bottomInset: AppHorizontalListView.cardShadowBottomInset,
                   itemCount: institutes.length,
                   itemBuilder: (_, i) {
@@ -248,6 +265,16 @@ class HomeView extends GetView<HomeController> {
                     );
                   },
                 ),
+              // محافظة واحدة فقط: القسم بلا فائدة تصفّحية فنخفيه.
+              if (cities.length >= 2) ...[
+                const SizedBox(height: 22),
+                Padding(
+                  padding: _sectionPad(context),
+                  child: AppSectionHeader(title: 'section_cities'.tr, subtitle: 'section_cities_subtitle'.tr),
+                ),
+                const SizedBox(height: 12),
+                _CitiesRow(cities: cities, scrollReset: scrollReset),
+              ],
             ],
           ),
         );
@@ -256,10 +283,9 @@ class HomeView extends GetView<HomeController> {
   }
 }
 
-class _CategoriesRow extends StatelessWidget {
-  const _CategoriesRow({required this.categories, required this.scrollReset});
+class _CategoriesSection extends StatelessWidget {
+  const _CategoriesSection({required this.categories});
   final List<CategoryModel> categories;
-  final int scrollReset;
 
   @override
   Widget build(BuildContext context) {
@@ -267,36 +293,56 @@ class _CategoriesRow extends StatelessWidget {
       return Padding(
         padding: AppLayout.sectionHorizontal(context),
         child: SoftCard(
-          child: AppEmptyState.inline(
-            message: 'no_categories'.tr,
-            icon: Icons.category_outlined,
-          ),
+          child: AppEmptyState.inline(message: 'no_categories'.tr, icon: Icons.category_outlined),
         ),
       );
     }
-    return AppHorizontalListView(
-      resetToken: scrollReset,
-      height: _CategoryChip.height,
-      bottomInset: 12,
-      separatorWidth: 10,
-      itemCount: categories.length,
-      itemBuilder: (_, i) {
-        final cat = categories[i];
-        return _CategoryChip(
-          label: cat.name,
-          category: cat,
-          count: cat.coursesCount,
-          onTap: () => Get.toNamed(
-            AppRoutes.categoryCourses,
-            arguments: {
-              'id': cat.id,
-              'name': cat.name,
-              'icon': cat.icon,
-              'coursesCount': cat.coursesCount,
-            },
-          ),
-        );
-      },
+    return Padding(
+      padding: AppLayout.sectionHorizontal(context),
+      child: HomeCategoriesGrid(
+        categories: categories,
+        onShowAll: () => AppNavigation.switchToTab(0),
+        onOpenCategory: (cat) => Get.toNamed(
+          AppRoutes.categoryCourses,
+          arguments: {'id': cat.id, 'name': cat.name, 'icon': cat.icon, 'coursesCount': cat.coursesCount},
+        ),
+      ),
+    );
+  }
+}
+
+/// لوحة ألوان هادئة متناسقة مع الهوية — يُسند لون ثابت لكل تصنيف/محافظة حسب المعرّف.
+const _kAccentPalette = <Color>[
+  Color(0xFF6C63FF),
+  Color(0xFF2F80ED),
+  Color(0xFF14B8A6),
+  Color(0xFFEC4899),
+  Color(0xFFF59E0B),
+  Color(0xFF8B5CF6),
+  Color(0xFF10B981),
+  Color(0xFFEF6C57),
+];
+
+Color _accentFor(int id) => _kAccentPalette[id.abs() % _kAccentPalette.length];
+
+/// ظهور تدريجي (تلاشٍ + انزلاق صغير) — مدة أطول لكل عنصر لاحق فيتتابعون بصرياً.
+class _EntranceFade extends StatelessWidget {
+  const _EntranceFade({required this.index, required this.child});
+
+  final int index;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 240 + (index.clamp(0, 8)) * 45),
+      curve: Curves.easeOutCubic,
+      builder: (context, t, child) => Opacity(
+        opacity: t,
+        child: Transform.translate(offset: Offset(0, 10 * (1 - t)), child: child),
+      ),
+      child: child,
     );
   }
 }
@@ -310,16 +356,145 @@ class _CitiesRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppHorizontalListView(
       resetToken: scrollReset,
-      height: _CityChip.height,
-      separatorWidth: 10,
+      height: _CityCard.heightFor(context),
+      bottomInset: 4,
+      separatorWidth: 12,
       itemCount: cities.length,
       itemBuilder: (_, i) {
         final city = cities[i];
-        return _CityChip(
-          label: city.name,
-          onTap: () => Get.toNamed(AppRoutes.cityDetails, arguments: {'id': city.id, 'name': city.name}),
+        return _EntranceFade(
+          index: i,
+          child: _CityCard(
+            city: city,
+            onTap: () => Get.toNamed(AppRoutes.cityDetails, arguments: {'id': city.id, 'name': city.name}),
+          ),
         );
       },
+    );
+  }
+}
+
+/// محافظة كبطاقة متدرّجة: اسم عريض + إحصاءات (معاهد · دورات) + علامة موقع كبيرة شبه شفافة.
+class _CityCard extends StatefulWidget {
+  const _CityCard({required this.city, this.onTap});
+
+  static const double width = 158;
+
+  static double heightFor(BuildContext context) => 70 + 28 * CourseCardMetrics.textScaleOf(context);
+
+  final CityModel city;
+  final VoidCallback? onTap;
+
+  @override
+  State<_CityCard> createState() => _CityCardState();
+}
+
+class _CityCardState extends State<_CityCard> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final city = widget.city;
+    final accent = _accentFor(city.id);
+    final stats = <String>[
+      if (city.institutesCount > 0) pluralTr('city_institutes_count', city.institutesCount),
+      if (city.coursesCount > 0) pluralTr('category_courses_count', city.coursesCount),
+    ].join(' · ');
+
+    return Semantics(
+      button: true,
+      label: stats.isEmpty ? city.name : '${city.name}، $stats',
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _pressed ? 0.96 : 1,
+          duration: const Duration(milliseconds: 110),
+          child: Container(
+            width: _CityCard.width,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [accent, Color.lerp(accent, Colors.black, 0.28)!],
+              ),
+              boxShadow: [BoxShadow(color: accent.withValues(alpha: 0.28), blurRadius: 14, offset: const Offset(0, 6))],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              children: [
+                PositionedDirectional(
+                  end: -10,
+                  bottom: -14,
+                  child: Icon(Icons.location_on_rounded, size: 84, color: Colors.white.withValues(alpha: 0.16)),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        city.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppFonts.tajawal(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                          height: 1.2,
+                        ),
+                      ),
+                      if (stats.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          stats,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppFonts.tajawal(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11.5,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+const double _kSubjectChipHeight = 44;
+
+class _CategoryCountBadge extends StatelessWidget {
+  const _CategoryCountBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 20,
+      constraints: const BoxConstraints(minWidth: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 7),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '$count',
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary, height: 1),
+      ),
     );
   }
 }
@@ -333,7 +508,7 @@ class _InstructorSubjectsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppHorizontalListView(
       resetToken: scrollReset,
-      height: _CategoryChip.height,
+      height: _kSubjectChipHeight,
       separatorWidth: 10,
       itemCount: subjects.length,
       itemBuilder: (_, i) {
@@ -342,11 +517,7 @@ class _InstructorSubjectsRow extends StatelessWidget {
           subject: subject,
           onTap: () => Get.toNamed(
             AppRoutes.instructorSubjectInstructors,
-            arguments: {
-              'key': subject.key,
-              'name': subject.name,
-              'instructorsCount': subject.instructorsCount,
-            },
+            arguments: {'key': subject.key, 'name': subject.name, 'instructorsCount': subject.instructorsCount},
           ),
         );
       },
@@ -365,10 +536,10 @@ class _InstructorSubjectChip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        height: _CategoryChip.height,
+        height: _kSubjectChipHeight,
         padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 14, 0),
         decoration: BoxDecoration(
-          color: const Color(0xFFF7F6FF),
+          color: AppColors.surfaceSoft,
           borderRadius: BorderRadius.circular(16),
           boxShadow: const [BoxShadow(color: AppColors.shadowSoft, blurRadius: 8, offset: Offset(0, 4))],
         ),
@@ -398,144 +569,6 @@ class _InstructorSubjectChip extends StatelessWidget {
   }
 }
 
-class _CityChip extends StatelessWidget {
-  const _CityChip({required this.label, this.onTap});
-
-  static const double height = 44;
-  static const EdgeInsetsDirectional _padding = EdgeInsetsDirectional.fromSTEB(12, 0, 14, 0);
-
-  final String label;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        height: height,
-        padding: _padding,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF7F6FF),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [BoxShadow(color: AppColors.shadowSoft, blurRadius: 8, offset: Offset(0, 4))],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              alignment: Alignment.center,
-              child: const Icon(Icons.location_on_outlined, size: 15, color: AppColors.primary),
-            ),
-            const SizedBox(width: 8),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 120),
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({required this.label, required this.category, this.count = 0, this.onTap});
-
-  static const double height = 44;
-  static const double _iconSize = 26;
-  static const EdgeInsetsDirectional _padding = EdgeInsetsDirectional.fromSTEB(12, 0, 14, 0);
-
-  final String label;
-  final CategoryModel category;
-  final int count;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        height: height,
-        padding: _padding,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF7F6FF),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [BoxShadow(color: AppColors.shadowSoft, blurRadius: 8, offset: Offset(0, 4))],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            CategoryIcon(category: category, size: _iconSize),
-            const SizedBox(width: 8),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 120),
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.start,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                  height: 1.2,
-                ),
-              ),
-            ),
-            if (count > 0) ...[
-              const SizedBox(width: 6),
-              _CategoryCountBadge(count: count),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryCountBadge extends StatelessWidget {
-  const _CategoryCountBadge({required this.count});
-
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 20,
-      constraints: const BoxConstraints(minWidth: 20),
-      padding: const EdgeInsets.symmetric(horizontal: 7),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        '$count',
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          color: AppColors.primary,
-          height: 1,
-        ),
-      ),
-    );
-  }
-}
-
 /// زر إعدادات دائري متدرّج — أكثر حضورًا من الأيقونة الرمادية المسطّحة السابقة.
 class _HomeSettingsButton extends StatelessWidget {
   const _HomeSettingsButton({required this.onTap});
@@ -545,23 +578,23 @@ class _HomeSettingsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: Ink(
-          width: _size,
-          height: _size,
-          decoration: const BoxDecoration(
-            gradient: AppGradients.primary,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(color: Color(0x446C63FF), blurRadius: 16, offset: Offset(0, 8)),
-            ],
-          ),
-          child: const Icon(Icons.settings_rounded, color: Colors.white, size: 22),
+    // الظل على Container خارجي (دائري) والتأثير على Material مقصوص بدائرة — بلا خلفية مربعة حول الزر.
+    return Container(
+      width: _size,
+      height: _size,
+      decoration: const BoxDecoration(
+        gradient: AppGradients.primary,
+        shape: BoxShape.circle,
+        boxShadow: [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 16, offset: Offset(0, 8))],
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: const Center(child: Icon(Icons.settings_rounded, color: Colors.white, size: 22)),
         ),
       ),
     );
@@ -583,9 +616,7 @@ class _HomeHeroBanner extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
-          BoxShadow(color: AppColors.shadowPurple, blurRadius: 20, offset: Offset(0, 12)),
-        ],
+        boxShadow: const [BoxShadow(color: AppColors.shadowPurple, blurRadius: 20, offset: Offset(0, 12))],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(22),
@@ -628,7 +659,7 @@ class _HomeHeroBanner extends StatelessWidget {
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w700,
-                                      fontSize: 11.5,
+                                      fontSize: 12,
                                       height: 1.25,
                                     ),
                                   ),
@@ -671,10 +702,10 @@ class _HomeHeroBanner extends StatelessWidget {
                           side: BorderSide(color: Colors.white.withValues(alpha: 0.75)),
                           backgroundColor: Colors.white.withValues(alpha: 0.12),
                           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-                          minimumSize: const Size(0, 42),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          minimumSize: const Size(0, 44),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                          // textStyle يستبدل نمط الزر بالكامل — لذا الخط صريح وإلا يظهر بخط النظام.
+                          textStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13),
                         ),
                         child: Text('hero_cta'.tr),
                       ),
@@ -685,7 +716,7 @@ class _HomeHeroBanner extends StatelessWidget {
             ],
           ),
         ),
-        ),
+      ),
     );
   }
 }

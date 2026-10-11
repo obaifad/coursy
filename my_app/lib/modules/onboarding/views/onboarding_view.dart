@@ -7,6 +7,8 @@ import '../../../core/navigation/app_navigation.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/design_system.dart';
+import '../../../theme/app_motion.dart';
+import '../../auth/widgets/register_form_widgets.dart';
 
 class OnboardingView extends StatefulWidget {
   const OnboardingView({super.key});
@@ -19,23 +21,11 @@ class _OnboardingViewState extends State<OnboardingView> {
   final controller = PageController();
   int index = 0;
 
-  static const _pageIcons = [
-    Icons.apartment_rounded,
-    Icons.search_rounded,
-    Icons.rocket_launch_rounded,
-  ];
+  static const _pageIcons = [Icons.apartment_rounded, Icons.search_rounded, Icons.rocket_launch_rounded];
 
-  static const _pageTitleKeys = [
-    'onboarding_title_1',
-    'onboarding_title_2',
-    'onboarding_title_3',
-  ];
+  static const _pageTitleKeys = ['onboarding_title_1', 'onboarding_title_2', 'onboarding_title_3'];
 
-  static const _pageSubtitleKeys = [
-    'onboarding_subtitle_1',
-    'onboarding_subtitle_2',
-    'onboarding_subtitle_3',
-  ];
+  static const _pageSubtitleKeys = ['onboarding_subtitle_1', 'onboarding_subtitle_2', 'onboarding_subtitle_3'];
 
   void _finish() {
     if (AppFlags.requireLogin) {
@@ -84,11 +74,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                                   BoxShadow(color: AppColors.shadowPurple, blurRadius: 24, offset: Offset(0, 14)),
                                 ],
                               ),
-                              child: Icon(
-                                _pageIcons[i],
-                                size: 100,
-                                color: Colors.white.withValues(alpha: 0.95),
-                              ),
+                              child: Icon(_pageIcons[i], size: 100, color: Colors.white.withValues(alpha: 0.95)),
                             ),
                             const SizedBox(height: 32),
                             Text(
@@ -113,7 +99,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                   children: List.generate(
                     _pageIcons.length,
                     (dot) => AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
+                      duration: AppMotion.fast,
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       width: dot == index ? 22 : 8,
                       height: 8,
@@ -127,15 +113,15 @@ class _OnboardingViewState extends State<OnboardingView> {
                 const SizedBox(height: 18),
                 Padding(
                   padding: const EdgeInsets.all(16),
-                  child: FilledButton(
+                  child: RegisterGradientButton(
+                    label: index == _pageIcons.length - 1 ? 'onboarding_start'.tr : 'next'.tr,
                     onPressed: () {
                       if (index == _pageIcons.length - 1) {
                         _finish();
                         return;
                       }
-                      controller.nextPage(duration: const Duration(milliseconds: 320), curve: Curves.easeOutCubic);
+                      controller.nextPage(duration: AppMotion.normal, curve: Curves.easeOutCubic);
                     },
-                    child: Text(index == _pageIcons.length - 1 ? 'onboarding_start'.tr : 'next'.tr),
                   ),
                 ),
               ],

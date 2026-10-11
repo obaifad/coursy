@@ -9,10 +9,13 @@ import '../../network/json_parser.dart';
 import '../../storage/token_storage.dart';
 
 class OtpSendResult {
-  OtpSendResult({required this.message, this.expiresInSeconds, this.debugCode});
+  OtpSendResult({required this.message, this.expiresInSeconds, this.resendAfterSeconds, this.debugCode});
 
   final String message;
   final int? expiresInSeconds;
+
+  /// متى يُسمح بطلب رمز جديد (عدّاد «إعادة الإرسال»).
+  final int? resendAfterSeconds;
   final String? debugCode;
 }
 
@@ -39,20 +42,13 @@ class AuthRepository extends GetxService {
   }
 
   /// تسجيل دخول بالبريد ورقم الهاتف وكلمة المرور.
-  Future<Map<String, dynamic>?> login({
-    required String email,
-    required String phone,
-    required String password,
-  }) async {
+  /// [login] بريد إلكتروني أو رقم هاتف بأي صيغة شائعة (`0912345678` · `+963912345678` · `00963…`).
+  /// الخادم يحدد الحساب بكلمة المرور (الهاتف غير فريد). الأخطاء: 422 `errors.login[0]`، 403 حساب موقوف، 429.
+  Future<Map<String, dynamic>?> login({required String login, required String password}) async {
     final body = await _client.handle(
       () => _client.post(
         ApiEndpoints.studentLogin,
-        data: {
-          'email': email.trim(),
-          'phone': phone.trim(),
-          'password': password,
-          'device_name': _deviceName(),
-        },
+        data: {'login': login.trim(), 'password': password, 'device_name': _deviceName()},
       ),
       (data) => normalizeApiBody(data),
     );
@@ -61,66 +57,11 @@ class AuthRepository extends GetxService {
     return extractUserMap(body);
   }
 
-  Future<bool> isEmailTaken(String email) async {
-    final normalized = email.trim().toLowerCase();
-    return _searchUserExists(
-      (user) => user['email']?.toString().trim().toLowerCase() == normalized,
-      query: normalized,
-    );
-  }
-
-  Future<bool> isPhoneTaken(String phone) async {
-    final normalized = _normalizePhone(phone);
-    return _searchUserExists(
-      (user) => _normalizePhone(user['phone']?.toString() ?? '') == normalized,
-      query: normalized,
-    );
-  }
-
-  Future<bool> _searchUserExists(
-    bool Function(Map<String, dynamic> user) matches, {
-    required String query,
-  }) async {
-    if (query.isEmpty) return false;
-    try {
-      final body = await _client.handle(
-        () => _client.get(
-          ApiEndpoints.users,
-          query: {'search': query, 'per_page': 25},
-        ),
-        (data) => normalizeApiBody(data),
-      );
-      final users = extractListMap(body);
-      return users.any(matches);
-    } catch (_) {
-      return false;
-    }
-  }
-
-  static String _normalizePhone(String phone) {
-    final digits = phone.replaceAll(RegExp(r'\D'), '');
-    if (digits.length == 10 && digits.startsWith('09')) return digits;
-    if (digits.length == 11 && digits.startsWith('0')) return digits.substring(0, 10);
-    return digits;
-  }
-
   Future<bool> register(RegisterPayload payload) async {
-    dynamic body;
-    try {
-      body = await _client.handle(
-        () => _client.post(ApiEndpoints.studentRegister, data: payload.toJson()),
-        (data) => normalizeApiBody(data),
-      );
-    } on ApiException catch (e) {
-      if (e.statusCode == 404) {
-        body = await _client.handle(
-          () => _client.post(ApiEndpoints.users, data: payload.toJson()),
-          (data) => normalizeApiBody(data),
-        );
-      } else {
-        rethrow;
-      }
-    }
+    final body = await _client.handle(
+      () => _client.post(ApiEndpoints.studentRegister, data: payload.toJson()),
+      (data) => normalizeApiBody(data),
+    );
 
     final token = extractToken(body);
     if (token != null && token.isNotEmpty) {
@@ -132,37 +73,28 @@ class AuthRepository extends GetxService {
   }
 
   Future<OtpSendResult> sendMobileVerificationCode() async {
-    return _client.handle(
-      () => _client.post(ApiEndpoints.studentMobileVerificationSend),
-      (data) {
-        final map = normalizeApiBody(data);
-        if (map is! Map<String, dynamic>) {
-          return OtpSendResult(message: 'otp_sent_default'.tr);
-        }
-        final debugCode = map['verification_code']?.toString();
-        if (debugCode != null && debugCode.isNotEmpty) {
-          printOtpToTerminal(
-            code: debugCode,
-            phone: _tokenStorage.userPhone.value,
-          );
-        }
-        return OtpSendResult(
-          message: map['message']?.toString() ?? 'otp_sent_success'.tr,
-          expiresInSeconds: map['expires_in_seconds'] is int
-              ? map['expires_in_seconds'] as int
-              : int.tryParse(map['expires_in_seconds']?.toString() ?? ''),
-          debugCode: debugCode,
-        );
-      },
-    );
+    return _client.handle(() => _client.post(ApiEndpoints.studentMobileVerificationSend), (data) {
+      final map = normalizeApiBody(data);
+      if (map is! Map<String, dynamic>) {
+        return OtpSendResult(message: 'otp_sent_default'.tr);
+      }
+      final debugCode = map['verification_code']?.toString();
+      if (debugCode != null && debugCode.isNotEmpty) {
+        printOtpToTerminal(code: debugCode, phone: _tokenStorage.userPhone.value);
+      }
+      return OtpSendResult(
+        message: map['message']?.toString() ?? 'otp_sent_success'.tr,
+        expiresInSeconds: map['expires_in_seconds'] is int
+            ? map['expires_in_seconds'] as int
+            : int.tryParse(map['expires_in_seconds']?.toString() ?? ''),
+        debugCode: debugCode,
+      );
+    });
   }
 
   Future<Map<String, dynamic>?> verifyMobileCode(String code) async {
     return _client.handle(
-      () => _client.post(
-        ApiEndpoints.studentMobileVerificationVerify,
-        data: {'code': code.trim()},
-      ),
+      () => _client.post(ApiEndpoints.studentMobileVerificationVerify, data: {'code': code.trim()}),
       (data) {
         final normalized = normalizeApiBody(data);
         final user = extractUserMap(normalized);
@@ -177,37 +109,93 @@ class AuthRepository extends GetxService {
     );
   }
 
+  /// يرسل رمز تأكيد من 6 أرقام إلى بريد الطالب المسجّل (التوكن يحدد الطالب، بلا جسم).
+  Future<OtpSendResult> sendEmailVerificationCode() {
+    return _client.handle(() => _client.post(ApiEndpoints.studentEmailVerificationSend), (data) {
+      final map = normalizeApiBody(data);
+      if (map is! Map) return OtpSendResult(message: 'email_code_sent'.tr);
+      int? seconds(String key) => map[key] is int ? map[key] as int : int.tryParse(map[key]?.toString() ?? '');
+      final debugCode = map['verification_code']?.toString();
+      if (debugCode != null && debugCode.isNotEmpty) AppDebugLog.otp('EMAIL OTP code=$debugCode');
+      return OtpSendResult(
+        message: map['message']?.toString() ?? 'email_code_sent'.tr,
+        expiresInSeconds: seconds('expires_in_seconds'),
+        resendAfterSeconds: seconds('resend_after_seconds'),
+        debugCode: debugCode,
+      );
+    });
+  }
+
+  /// يتحقق من الرمز. 422 = رمز خاطئ أو منتهٍ. يحفظ الحالة محلياً عند النجاح.
+  Future<void> verifyEmailCode(String code) async {
+    await _client.handle(
+      () => _client.post(ApiEndpoints.studentEmailVerificationVerify, data: {'code': code.trim()}),
+      (data) => normalizeApiBody(data),
+    );
+    await _tokenStorage.saveEmailVerified(true);
+  }
+
   Future<void> _saveSessionFromBody(dynamic body) async {
     final token = extractToken(body);
     if (token == null || token.isEmpty) {
-      throw ApiException('لم يتم استلام رمز الدخول من الخادم');
+      throw ApiException('error_no_login_token'.tr);
     }
     final user = extractUserMap(body);
     final name = extractUserDisplayName(body);
     final phone = user?['phone']?.toString();
     final studentId = extractStudentIdFromBody(body) ?? extractStudentId(user);
+    // الحالة الفعلية من الخادم (null = لم يُرسلها) — كانت تُحفظ true دائماً فيتعطّل التحقق.
     await _tokenStorage.saveSession(
       token: token,
       name: name,
       phone: phone,
-      verifiedPhone: true,
+      verifiedPhone: phoneVerificationStatus(user),
       studentId: studentId,
     );
     _printTokenForDebug('auth', token);
   }
 
+  /// يرسل رمز إعادة تعيين كلمة المرور (6 أرقام) إلى البريد. يُرجع رسالة الخادم إن وُجدت.
+  Future<String?> requestPasswordReset(String email) {
+    return _client.handle(() => _client.post(ApiEndpoints.studentPasswordForgot, data: {'email': email}), (data) {
+      final body = normalizeApiBody(data);
+      return body is Map ? body['message']?.toString() : null;
+    });
+  }
+
+  /// يعيّن كلمة مرور جديدة بالرمز. الخادم يسجّل خروج الطالب من كل الأجهزة.
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    await _client.handle(
+      () => _client.post(
+        ApiEndpoints.studentPasswordReset,
+        data: {'email': email, 'code': code, 'password': password, 'password_confirmation': passwordConfirmation},
+      ),
+      (data) => data,
+    );
+  }
+
+  /// حذف الحساب نهائياً بعد التحقق من كلمة المرور. الخادم يلغي كل الجلسات ويحذف توكنات الأجهزة.
+  /// يرمي فقط إن رفض الخادم الحذف؛ مسح الجلسة المحلية بعده في [clearLocalSession] (فشله لا يعني فشل الحذف).
+  Future<void> deleteAccount(String password) async {
+    await _client.handle(
+      () => _client.delete(ApiEndpoints.studentAccount, data: {'password': password}),
+      (data) => null,
+    );
+  }
+
+  Future<void> clearLocalSession() => _tokenStorage.clearSession();
+
   Future<void> logout() async {
     try {
-      await _client.handle(
-        () => _client.post(ApiEndpoints.studentLogout),
-        (data) => normalizeApiBody(data),
-      );
+      await _client.handle(() => _client.post(ApiEndpoints.studentLogout), (data) => normalizeApiBody(data));
     } catch (_) {
       try {
-        await _client.handle(
-          () => _client.post(ApiEndpoints.logout),
-          (data) => normalizeApiBody(data),
-        );
+        await _client.handle(() => _client.post(ApiEndpoints.logout), (data) => normalizeApiBody(data));
       } catch (_) {}
     } finally {
       await _tokenStorage.clearSession();

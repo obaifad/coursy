@@ -1,99 +1,90 @@
 import 'package:get/get.dart';
 
 import '../models/app_models.dart';
-import '../models/json_helpers.dart';
 import '../models/paginated_result.dart';
 import '../network/api_client.dart';
 import '../network/api_endpoints.dart';
 import '../network/json_parser.dart';
 
-/// يكمّل تقييم الدورات عندما لا يُرجعه endpoint القائمة (/courses).
+/// يكمّل تقييم الدورات (من تقييم المعهد) وبيانات المعاهد الناقصة من كاش قائمة المعاهد.
 class CourseRatingService extends GetxService {
   CourseRatingService(this._client);
 
   final ApiClient _client;
 
-  Map<int, double>? _reviewAverages;
+  /// أقصى عدد صفحات لقائمة المعاهد — حماية من حلقة لا تنتهي إن أعاد الخادم next_page_url دائماً.
+  static const _maxInstitutePages = 10;
+
+  /// مدة صلاحية الكاش قبل إعادة الجلب.
+  static const _cacheTtl = Duration(minutes: 30);
+
   Map<int, double>? _instituteRatings;
   Map<int, int>? _instituteCoursesCounts;
   Map<int, InstituteModel>? _instituteProfiles;
+  Map<int, CityModel>? _cities;
+  Map<int, CategoryModel>? _categories;
   Future<void>? _loading;
+  DateTime? _loadedAt;
 
   void invalidateCache() {
-    _reviewAverages = null;
     _instituteRatings = null;
     _instituteCoursesCounts = null;
     _instituteProfiles = null;
+    _cities = null;
+    _categories = null;
     _loading = null;
+    _loadedAt = null;
   }
 
   Future<void> _ensureLoaded() {
-    return _loading ??= _loadCaches();
+    final loadedAt = _loadedAt;
+    if (loadedAt != null && DateTime.now().difference(loadedAt) > _cacheTtl) {
+      invalidateCache();
+    }
+    return _loading ??= _loadCaches().catchError((Object e) {
+      // لا نحتفظ بمستقبل فاشل — المحاولة التالية تعيد الجلب.
+      _loading = null;
+      throw e;
+    });
   }
 
+  /// تقييم الدورة يأتي من الخادم (`average_rating`) — لا ننزّل كل تقييمات المنصة لحسابه محلياً.
   Future<void> _loadCaches() async {
-    final reviewAverages = await _fetchReviewAverages();
     final instituteStats = await _fetchInstituteStats();
-    _reviewAverages = reviewAverages;
     _instituteRatings = instituteStats.ratings;
     _instituteCoursesCounts = instituteStats.coursesCounts;
-    _instituteProfiles = instituteStats.profiles;
+    _cities = await _fetchMap<CityModel>(ApiEndpoints.cities, CityModel.fromJson, (c) => c.id);
+    _categories = await _fetchMap<CategoryModel>(ApiEndpoints.categories, CategoryModel.fromJson, (c) => c.id);
+    _instituteProfiles = {for (final entry in instituteStats.profiles.entries) entry.key: _withCity(entry.value)};
+    _loadedAt = DateTime.now();
   }
 
-  Future<Map<int, double>> _fetchReviewAverages() async {
-    final sums = <int, double>{};
-    final counts = <int, int>{};
-    var page = 1;
-
-    while (true) {
-      try {
-        final pageResult = await _client.handle(
-          () => _client.get(ApiEndpoints.reviews, query: {'page': page, 'per_page': 100}),
-          (data) {
-            final parsed = PaginatedResult<Map<String, dynamic>>.fromBody(
-              data,
-              (json) => json,
-            );
-            if (parsed.items.isNotEmpty) return parsed;
-            final items = extractListMap(data);
-            return PaginatedResult<Map<String, dynamic>>(
-              items: items,
-              currentPage: page,
-              lastPage: page,
-              total: items.length,
-              hasMore: false,
-            );
-          },
-        );
-
-        for (final item in pageResult.items) {
-          final courseId = JsonHelpers.parseIntOrNull(item['course_id']);
-          if (courseId == null || courseId <= 0) continue;
-          sums[courseId] = (sums[courseId] ?? 0) + JsonHelpers.parseDouble(item['rating']);
-          counts[courseId] = (counts[courseId] ?? 0) + 1;
-        }
-
-        if (!pageResult.hasMore) break;
-        page++;
-      } catch (_) {
-        break;
-      }
+  /// قوائم مرجعية صغيرة (مدن/تصنيفات) — فشلها لا يمنع باقي الكاش.
+  Future<Map<int, T>> _fetchMap<T>(String path, T Function(Map<String, dynamic>) parse, int Function(T) idOf) async {
+    try {
+      final items = await _client.handle(() => _client.get(path), (data) => extractListMap(data).map(parse).toList());
+      return {for (final item in items) idOf(item): item};
+    } catch (_) {
+      return {};
     }
+  }
 
-    return {
-      for (final id in sums.keys)
-        if (counts[id] != null && counts[id]! > 0) id: sums[id]! / counts[id]!,
-    };
+  /// الخادم يعيد city_id فقط في قائمة المعاهد — نحوّله إلى اسم المدينة.
+  InstituteModel _withCity(InstituteModel institute) {
+    if (institute.cityAr.isNotEmpty || institute.cityEn.isNotEmpty) return institute;
+    final city = _cities?[institute.cityId];
+    if (city == null) return institute;
+    return institute.copyWith(cityAr: city.nameAr, cityEn: city.nameEn);
   }
 
   Future<({Map<int, double> ratings, Map<int, int> coursesCounts, Map<int, InstituteModel> profiles})>
-      _fetchInstituteStats() async {
+  _fetchInstituteStats() async {
     final ratings = <int, double>{};
     final coursesCounts = <int, int>{};
     final profiles = <int, InstituteModel>{};
     var page = 1;
 
-    while (true) {
+    while (page <= _maxInstitutePages) {
       try {
         final pageResult = await _client.handle(
           () => _client.get(ApiEndpoints.institutes, query: {'page': page, 'per_page': 100}),
@@ -121,10 +112,9 @@ class CourseRatingService extends GetxService {
   }
 
   double resolve(CourseModel course) {
-    final reviewAvg = _reviewAverages?[course.id];
-    if (reviewAvg != null && reviewAvg > 0) return reviewAvg;
-
     if (course.rating > 0) return course.rating;
+    // الخادم أرسل عدد تقييمات الدورة: صفر يعني «لا تقييم بعد»، لا تقييم المعهد.
+    if (course.reviewsCount != null) return course.rating;
 
     final instituteId = course.instituteId;
     if (instituteId != null) {
@@ -147,7 +137,21 @@ class CourseRatingService extends GetxService {
     return courses
         .map((course) {
           final rating = resolve(course);
-          return rating > 0 && rating != course.rating ? course.copyWith(rating: rating) : course;
+          var updated = rating > 0 && rating != course.rating ? course.copyWith(rating: rating) : course;
+          final institute = _instituteProfiles?[updated.instituteId];
+          if (institute != null) {
+            updated = updated.copyWith(
+              instituteAr: updated.instituteAr.isEmpty ? institute.nameAr : null,
+              instituteEn: updated.instituteEn.isEmpty ? institute.nameEn : null,
+              instituteCityAr: updated.instituteCity == null && institute.cityAr.isNotEmpty ? institute.cityAr : null,
+              instituteCityEn: updated.instituteCity == null && institute.cityEn.isNotEmpty ? institute.cityEn : null,
+            );
+          }
+          final category = _categories?[updated.categoryId];
+          if (category != null && (updated.categoryName ?? '').isEmpty) {
+            updated = updated.copyWith(categoryName: category.name);
+          }
+          return updated;
         })
         .toList(growable: false);
   }
@@ -176,6 +180,11 @@ class CourseRatingService extends GetxService {
       isVerified: institute.isVerified || cached.isVerified,
       logoUrl: institute.logoUrl ?? cached.logoUrl,
       coverImageUrl: institute.coverImageUrl ?? cached.coverImageUrl,
+      phone: institute.phone ?? cached.phone,
+      whatsapp: institute.whatsapp ?? cached.whatsapp,
+      website: institute.website ?? cached.website,
+      facebook: institute.facebook ?? cached.facebook,
+      instagram: institute.instagram ?? cached.instagram,
     );
   }
 
@@ -190,7 +199,7 @@ class CourseRatingService extends GetxService {
 
     return institutes
         .map((institute) {
-          var updated = _mergeInstituteFromCache(institute);
+          var updated = _withCity(_mergeInstituteFromCache(institute));
           final rating = resolveInstituteRating(updated);
           if (rating > 0 && rating != updated.rating) {
             updated = updated.copyWith(rating: rating);

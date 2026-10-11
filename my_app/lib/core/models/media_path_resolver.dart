@@ -58,14 +58,7 @@ abstract final class MediaPathResolver {
     'poster_url',
   ];
 
-  static const nestedContainers = [
-    'media',
-    'attachments',
-    'files',
-    'images',
-    'gallery',
-    'uploads',
-  ];
+  static const nestedContainers = ['media', 'attachments', 'files', 'images', 'gallery', 'uploads'];
 
   static String? extractCourseImage(Map<String, dynamic> json) {
     final direct = extract(json, courseImageKeys);

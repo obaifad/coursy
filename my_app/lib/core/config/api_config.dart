@@ -8,14 +8,20 @@ abstract final class ApiConfig {
   /// الموقع والداشبورد (الدومين الرئيسي).
   static const String siteUrl = 'https://coursy.sy';
 
+  /// صفحة التواصل والدعم على الموقع.
+  static const String contactUrl = '$siteUrl/contact';
+
+  /// صفحات الموقع العامة بلغة التطبيق (?lang=ar|en).
+  static String privacyUrl(String lang) => '$siteUrl/privacy?lang=$lang';
+  static String termsUrl(String lang) => '$siteUrl/terms?lang=$lang';
+
   /// منفذ بروكسي التطوير — يجب أن يطابق `tool/dev_cors_proxy.dart`.
   static const int webDevProxyPort = 5478;
 
   static const String _apiBaseUrlOverride = String.fromEnvironment('API_BASE_URL');
 
   /// على الويب في وضع التطوير نستخدم بروكسي محلياً لتجاوز CORS (localhost → coursy.sy).
-  static bool get usesWebDevProxy =>
-      kIsWeb && kDebugMode && _apiBaseUrlOverride.isEmpty;
+  static bool get usesWebDevProxy => kIsWeb && kDebugMode && _apiBaseUrlOverride.isEmpty;
 
   static String get baseUrl {
     if (_apiBaseUrlOverride.isNotEmpty) return _apiBaseUrlOverride;
@@ -25,7 +31,7 @@ abstract final class ApiConfig {
     return '$siteUrl/api';
   }
 
-  static const Duration connectTimeout = Duration(seconds: 30);
+  static const Duration connectTimeout = Duration(seconds: 15);
 
   static const Duration receiveTimeout = Duration(seconds: 30);
 

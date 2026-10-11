@@ -4,6 +4,7 @@ import '../../models/app_models.dart';
 import '../../models/paginated_result.dart';
 import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
+import '../../network/api_exception.dart';
 import '../../network/json_parser.dart';
 
 class InstituteRepository extends GetxService {
@@ -31,15 +32,12 @@ class InstituteRepository extends GetxService {
   }
 
   Future<InstituteModel> fetchInstituteById(int id) async {
-    return _client.handle(
-      () => _client.get(ApiEndpoints.resourceById(ApiEndpoints.institutes, id)),
-      (data) {
-        final map = extractObjectMap(data);
-        if (map == null) {
-          throw Exception('بيانات المعهد غير صالحة');
-        }
-        return InstituteModel.fromJson(map);
-      },
-    );
+    return _client.handle(() => _client.get(ApiEndpoints.resourceById(ApiEndpoints.institutes, id)), (data) {
+      final map = extractObjectMap(data);
+      if (map == null) {
+        throw ApiException('error_invalid_data'.tr);
+      }
+      return InstituteModel.fromJson(map);
+    });
   }
 }
