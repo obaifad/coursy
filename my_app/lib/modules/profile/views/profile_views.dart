@@ -587,33 +587,32 @@ class SettingsView extends GetView<LocaleController> {
               ),
               const SizedBox(height: 12),
               SoftCard(
-                child: Obx(() {
-                  if (kIsWeb) {
-                    return SwitchListTile(
-                      value: false,
-                      onChanged: null,
-                      title: Text('notifications_setting'.tr, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      subtitle: Text('notifications_web_unavailable'.tr),
-                    );
-                  }
-                  final push = Get.find<PushNotificationService>();
-                  final enabled = push.notificationsEnabled.value;
-                  final permitted = push.notificationsPermissionGranted.value;
-                  String subtitle;
-                  if (!enabled) {
-                    subtitle = 'notifications_setting_off'.tr;
-                  } else if (!permitted) {
-                    subtitle = 'notifications_permission_denied'.tr;
-                  } else {
-                    subtitle = 'notifications_setting_on'.tr;
-                  }
-                  return SwitchListTile(
-                    value: enabled && permitted,
-                    onChanged: push.isToggling.value ? null : push.setNotificationsEnabled,
-                    title: Text('notifications_setting'.tr, style: const TextStyle(fontWeight: FontWeight.w700)),
-                    subtitle: Text(subtitle),
-                  );
-                }),
+                child: kIsWeb
+                    ? SwitchListTile(
+                        value: false,
+                        onChanged: null,
+                        title: Text('notifications_setting'.tr, style: const TextStyle(fontWeight: FontWeight.w700)),
+                        subtitle: Text('notifications_web_unavailable'.tr),
+                      )
+                    : Obx(() {
+                        final push = Get.find<PushNotificationService>();
+                        final enabled = push.notificationsEnabled.value;
+                        final permitted = push.notificationsPermissionGranted.value;
+                        String subtitle;
+                        if (!enabled) {
+                          subtitle = 'notifications_setting_off'.tr;
+                        } else if (!permitted) {
+                          subtitle = 'notifications_permission_denied'.tr;
+                        } else {
+                          subtitle = 'notifications_setting_on'.tr;
+                        }
+                        return SwitchListTile(
+                          value: enabled && permitted,
+                          onChanged: push.isToggling.value ? null : push.setNotificationsEnabled,
+                          title: Text('notifications_setting'.tr, style: const TextStyle(fontWeight: FontWeight.w700)),
+                          subtitle: Text(subtitle),
+                        );
+                      }),
               ),
               const SizedBox(height: 12),
               SoftCard(
