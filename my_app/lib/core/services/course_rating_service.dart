@@ -113,6 +113,8 @@ class CourseRatingService extends GetxService {
 
   double resolve(CourseModel course) {
     if (course.rating > 0) return course.rating;
+    // الخادم أرسل عدد تقييمات الدورة: صفر يعني «لا تقييم بعد»، لا تقييم المعهد.
+    if (course.reviewsCount != null) return course.rating;
 
     final instituteId = course.instituteId;
     if (instituteId != null) {

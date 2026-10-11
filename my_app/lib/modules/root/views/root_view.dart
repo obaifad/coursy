@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_system_ui.dart';
 import '../../../widgets/design_system.dart';
 import '../../courses/views/courses_views.dart';
 import '../../home/views/home_view.dart';
@@ -32,16 +33,20 @@ class RootView extends GetView<RootController> {
             controller.changeTab(2);
           }
         },
-        child: Scaffold(
-          extendBody: false,
-          backgroundColor: AppColors.surface,
-          body: PageStorage(
-            bucket: controller.pageStorageBucket,
-            child: IndexedStack(index: controller.currentIndex.value, children: screens),
-          ),
-          bottomNavigationBar: _RootBottomNav(
-            currentIndex: controller.currentIndex.value,
-            onChanged: controller.changeTab,
+        // رأس الملف الشخصي البنفسجي يمتد تحت شريط الحالة؛ بقية التبويبات فاتحة.
+        child: AppStatusBar(
+          lightIcons: controller.currentIndex.value == 4,
+          child: Scaffold(
+            extendBody: false,
+            backgroundColor: AppColors.surface,
+            body: PageStorage(
+              bucket: controller.pageStorageBucket,
+              child: IndexedStack(index: controller.currentIndex.value, children: screens),
+            ),
+            bottomNavigationBar: _RootBottomNav(
+              currentIndex: controller.currentIndex.value,
+              onChanged: controller.changeTab,
+            ),
           ),
         ),
       ),

@@ -39,21 +39,28 @@ abstract final class PushLocalNotifications {
   static AndroidFlutterLocalNotificationsPlugin? get _android =>
       _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
 
+  static PushNotificationTapHandler? _onTap;
+  static bool _tapRegistered = false;
+
+  /// [onTap] يُسجَّل حتى لو سبقت التهيئةُ (bootstrapFirebase يهيّئ بلا معالج قبل PushNotificationService) —
+  /// كان يُتجاهل فلا يفعل الضغط على الإشعار المحلي شيئاً.
   static Future<void> ensureInitialized({PushNotificationTapHandler? onTap}) async {
-    if (_initialized) return;
+    if (onTap != null) _onTap = onTap;
+    if (_initialized && (_onTap == null || _tapRegistered)) return;
 
     const androidSettings = AndroidInitializationSettings('@drawable/ic_notification');
-    const iosSettings = DarwinInitializationSettings();
+    // لا نطلب الإذن عند التهيئة على iOS: يُطلب بعد أول حجز أو من الإعدادات (PushNotificationService).
+    const iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
     await _plugin.initialize(
       settings: const InitializationSettings(android: androidSettings, iOS: iosSettings),
-      onDidReceiveNotificationResponse: onTap == null
-          ? null
-          : (response) {
-              final payload = response.payload;
-              if (payload == null || payload.isEmpty) return;
-              onTap(payload);
-            },
+      onDidReceiveNotificationResponse: _onTap == null ? null : _onResponse,
     );
+    _tapRegistered = _onTap != null;
+    if (_initialized) return;
 
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       await _android?.createNotificationChannel(
@@ -70,6 +77,36 @@ abstract final class PushLocalNotifications {
     }
 
     _initialized = true;
+  }
+
+  static void _onResponse(NotificationResponse response) {
+    final payload = response.payload;
+    if (payload == null || payload.isEmpty) return;
+    _onTap?.call(payload);
+  }
+
+  /// الإشعار المحلي الذي فتح التطبيق وهو مُغلق — في هذه الحالة لا يُستدعى معالج الضغط.
+  static Future<String?> launchPayload() async {
+    if (kIsWeb) return null;
+    try {
+      final details = await _plugin.getNotificationAppLaunchDetails();
+      if (details == null || !details.didNotificationLaunchApp) return null;
+      final payload = details.notificationResponse?.payload;
+      return payload == null || payload.isEmpty ? null : payload;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// `type=enrollment_approved&course_id=5` → خريطة بيانات مثل `RemoteMessage.data`.
+  static Map<String, dynamic> decodePayload(String payload) {
+    final data = <String, dynamic>{};
+    for (final part in payload.split('&')) {
+      final idx = part.indexOf('=');
+      if (idx <= 0) continue;
+      data[part.substring(0, idx)] = part.substring(idx + 1);
+    }
+    return data;
   }
 
   static Future<bool> requestAndroidPermission() async {

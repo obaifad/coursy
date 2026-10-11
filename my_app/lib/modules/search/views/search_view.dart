@@ -59,6 +59,7 @@ class SearchView extends GetView<SearchPageController> {
           final hasActiveFilters = city != null || category != null || level.isNotEmpty || study.isNotEmpty;
           final hasQuery = query.isNotEmpty || hasActiveFilters;
           final hasResults = controller.hasAnyResults;
+          final error = controller.errorMessage.value;
 
           final recent = controller.recentQueries.toList(growable: false);
 
@@ -73,6 +74,12 @@ class SearchView extends GetView<SearchPageController> {
                 child: Center(child: AppPageLoader()),
               ),
             );
+          } else if (!hasResults && error != null) {
+            // بلا اتصال: رسالة الخطأ مع «إعادة المحاولة» بدل «لا نتائج».
+            resultChildren.addAll([
+              const SizedBox(height: 8),
+              AppLoadErrorState(message: error, onRetry: () => controller.runSearch(saveRecent: false)),
+            ]);
           } else if (!hasResults) {
             resultChildren.addAll(_emptyResultWidgets());
           } else {
@@ -443,13 +450,15 @@ class _CourseSearchTile extends StatelessWidget {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 15),
-                          const SizedBox(width: 3),
-                          Text(
-                            course.rating.toStringAsFixed(1),
-                            style: AppFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(width: 10),
+                          if (course.hasRating) ...[
+                            const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 15),
+                            const SizedBox(width: 3),
+                            Text(
+                              course.rating.toStringAsFixed(1),
+                              style: AppFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(width: 10),
+                          ],
                           Expanded(
                             child: Align(
                               alignment: AlignmentDirectional.centerStart,

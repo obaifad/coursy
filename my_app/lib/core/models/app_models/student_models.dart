@@ -21,7 +21,21 @@ class NotificationModel {
   final String? createdAt;
   final int? courseId;
   final int? enrollmentId;
+
+  /// بيانات الوجهة كما في إشعار FCM (`{"course_id":"41","enrollment_id":"7"}`) — null للإشعارات القديمة.
   final Map<String, dynamic>? data;
+
+  NotificationModel copyWith({bool? isRead}) => NotificationModel(
+    id: id,
+    title: title,
+    subtitle: subtitle,
+    type: type,
+    isRead: isRead ?? this.isRead,
+    createdAt: createdAt,
+    courseId: courseId,
+    enrollmentId: enrollmentId,
+    data: data,
+  );
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     Map<String, dynamic>? extra;
@@ -108,6 +122,7 @@ class EnrollmentModel {
     this.courseId,
     this.courseTitle,
     this.course,
+    this.institute,
   });
 
   final int id;
@@ -117,15 +132,22 @@ class EnrollmentModel {
   final String? courseTitle;
   final CourseModel? course;
 
+  /// معهد الدورة (`course.institute`) — منه `accepts_shamcash` (هل يمكن الدفع داخل التطبيق).
+  final InstituteModel? institute;
+
   factory EnrollmentModel.fromJson(Map<String, dynamic> json) {
     var title = '';
     int? courseId = JsonHelpers.parseIntOrNull(json['course_id']);
     CourseModel? courseModel;
+    InstituteModel? institute;
     if (json['course'] is Map<String, dynamic>) {
       final course = json['course'] as Map<String, dynamic>;
       title = course['title']?.toString() ?? '';
       courseId ??= JsonHelpers.parseIntOrNull(course['id']);
       courseModel = CourseModel.fromJson(course);
+      if (course['institute'] is Map) {
+        institute = InstituteModel.fromJson(Map<String, dynamic>.from(course['institute'] as Map));
+      }
     }
     return EnrollmentModel(
       id: JsonHelpers.parseInt(json['id']),
@@ -134,6 +156,7 @@ class EnrollmentModel {
       courseId: courseId,
       courseTitle: title,
       course: courseModel,
+      institute: institute,
     );
   }
 

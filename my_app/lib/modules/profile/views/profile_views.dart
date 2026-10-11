@@ -572,7 +572,8 @@ class SettingsView extends GetView<LocaleController> {
         appBar: AppBar(title: Text('settings'.tr)),
         body: AppMaxWidth(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            // آخر صف («حذف الحساب») لا يختفي خلف شريط التنقّل (Android 15+ يرسم التطبيق حتى حافة الشاشة).
+            padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
             children: [
               SoftCard(
                 padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
@@ -695,7 +696,7 @@ class _SettingsDocumentView extends StatelessWidget {
       appBar: AppBar(title: Text(title)),
       body: AppMaxWidth(
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.fromLTRB(20, 20, 20, AppLayout.scrollBottomInset(context)),
           children: [
             SoftCard(
               padding: const EdgeInsets.all(20),

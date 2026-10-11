@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import './app_fonts.dart';
 import 'app_colors.dart';
+import 'app_system_ui.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {
@@ -26,6 +27,8 @@ class AppTheme {
         elevation: 0,
         titleTextStyle: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textPrimary),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        // أيقونات داكنة لكل AppBar — الشفاف منها (تعديل الملف الشخصي) كان يُحسب داكناً فتظهر الأيقونات بيضاء.
+        systemOverlayStyle: AppSystemUi.darkIcons,
       ),
       // نصف القطر واللون هنا يطابقان SoftCard (design_system.dart) لضمان
       // أن أي استخدام مستقبلي لـ Card() لا يبدو مختلفًا عن باقي كروت التطبيق.

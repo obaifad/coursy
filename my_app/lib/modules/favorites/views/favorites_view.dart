@@ -10,6 +10,7 @@ import '../../../core/services/favorites_service.dart';
 import '../../../modules/auth/widgets/register_form_widgets.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_system_ui.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/design_system.dart';
@@ -25,29 +26,33 @@ class FavoritesView extends GetView<FavoritesController> {
     return Obx(() {
       final _ = localeRebuildToken;
       final count = controller.courses.length;
-      return Scaffold(
-        backgroundColor: AppColors.surface,
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AppHeroHeader(
-              title: 'favorites_title'.tr,
-              subtitle: 'favorites_subtitle'.tr,
-              badge: count > 0 ? pluralTr('category_courses_count', count) : null,
-              onBack: Navigator.canPop(context) ? Get.back : null,
-            ),
-            Expanded(
-              child: GuestGate(
-                message: 'guest_favorites_hint'.tr,
-                exploreCta: 'favorites_explore'.tr,
-                onExplore: () {
-                  AppNavigation.switchToTab(0);
-                  Get.back();
-                },
-                child: _FavoritesBody(controller: controller),
+      // الرأس البنفسجي يمتد تحت شريط الحالة.
+      return AppStatusBar(
+        lightIcons: true,
+        child: Scaffold(
+          backgroundColor: AppColors.surface,
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AppHeroHeader(
+                title: 'favorites_title'.tr,
+                subtitle: 'favorites_subtitle'.tr,
+                badge: count > 0 ? pluralTr('category_courses_count', count) : null,
+                onBack: Navigator.canPop(context) ? Get.back : null,
               ),
-            ),
-          ],
+              Expanded(
+                child: GuestGate(
+                  message: 'guest_favorites_hint'.tr,
+                  exploreCta: 'favorites_explore'.tr,
+                  onExplore: () {
+                    AppNavigation.switchToTab(0);
+                    Get.back();
+                  },
+                  child: _FavoritesBody(controller: controller),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     });
@@ -63,12 +68,14 @@ class _FavoritesBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final hPad = AppLayout.horizontalPage(context);
+      // لقطة واحدة لكل بناء: الشبكة تبني عناصرها لاحقاً، وقراءة القائمة الحية بعد تغيّرها ترمي RangeError.
+      final courses = controller.courses.toList(growable: false);
 
       if (controller.isLoading.value) {
         return AppGridSkeleton(padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 8));
       }
 
-      if (controller.courses.isEmpty && controller.errorMessage.value != null) {
+      if (courses.isEmpty && controller.errorMessage.value != null) {
         return RefreshIndicator(
           color: AppColors.primary,
           onRefresh: controller.loadFavorites,
@@ -81,7 +88,7 @@ class _FavoritesBody extends StatelessWidget {
         );
       }
 
-      if (controller.courses.isEmpty) {
+      if (courses.isEmpty) {
         return RefreshIndicator(
           color: AppColors.primary,
           onRefresh: controller.loadFavorites,
@@ -128,10 +135,10 @@ class _FavoritesBody extends StatelessWidget {
         child: GridView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.fromLTRB(hPad, 16, hPad, AppLayout.scrollBottomInset(context)),
-          itemCount: controller.courses.length,
+          itemCount: courses.length,
           gridDelegate: AppGridLayouts.courseGridFor(context),
           itemBuilder: (_, i) {
-            final course = controller.courses[i];
+            final course = courses[i];
             return _FavoriteGridItem(key: ValueKey(course.id), course: course, controller: controller);
           },
         ),

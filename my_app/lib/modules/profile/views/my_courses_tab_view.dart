@@ -137,6 +137,20 @@ class _EnrollmentList extends GetView<MyCoursesController> {
   Widget build(BuildContext context) {
     return Obx(() {
       final items = _itemsForStatus();
+      final error = controller.errorMessage.value;
+      // بلا اتصال: رسالة الخطأ مع «إعادة المحاولة» بدل «لا حجوزات».
+      if (items.isEmpty && controller.enrollments.isEmpty && error != null) {
+        return RefreshIndicator(
+          onRefresh: controller.load,
+          color: AppColors.primary,
+          child: AppEmptyState.scrollable(
+            context: context,
+            message: error,
+            icon: Icons.cloud_off_outlined,
+            action: FilledButton(onPressed: controller.load, child: Text('retry'.tr)),
+          ),
+        );
+      }
       if (items.isEmpty) {
         return RefreshIndicator(
           onRefresh: controller.load,
@@ -438,12 +452,13 @@ class _BookingActions extends StatelessWidget {
   }
 
   Widget _buildRow(bool canPay, bool canCancel, TextStyle label) {
+    // يصغر النص بدل قصّه: «عرض التفاصيل» كان يظهر «عرض التفاصـ…» بجانب «ادفع الآن» على هاتف 1080px.
+    Widget fitted(String text) => FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(text, style: label, maxLines: 1),
+    );
     final details = canPay
-        ? OutlinedButton(
-            onPressed: onDetails,
-            style: _outlined(AppColors.primary),
-            child: Text('view_details'.tr, style: label, maxLines: 1, overflow: TextOverflow.ellipsis),
-          )
+        ? OutlinedButton(onPressed: onDetails, style: _outlined(AppColors.primary), child: fitted('view_details'.tr))
         : SizedBox(
             height: _height,
             child: RegisterGradientButton(label: 'view_details'.tr, onPressed: onDetails),
@@ -451,9 +466,9 @@ class _BookingActions extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        // عرضان متساويان: «عرض التفاصيل» أطول من «ادفع الآن»، وكانت حصته 2 من 5 فقط.
         if (canPay)
           Expanded(
-            flex: 3,
             child: SizedBox(
               height: _height,
               child: ElevatedButton.icon(
@@ -466,12 +481,12 @@ class _BookingActions extends StatelessWidget {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 icon: const Icon(Icons.account_balance_wallet_rounded, size: 18),
-                label: Text('payment_pay_now'.tr, style: label, maxLines: 1, overflow: TextOverflow.ellipsis),
+                label: fitted('payment_pay_now'.tr),
               ),
             ),
           ),
         if (canPay) const SizedBox(width: 8),
-        Expanded(flex: canPay ? 2 : 3, child: details),
+        Expanded(child: details),
         if (canCancel) ...[
           const SizedBox(width: 8),
           Obx(() {

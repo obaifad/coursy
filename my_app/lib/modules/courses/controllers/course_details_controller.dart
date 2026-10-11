@@ -17,6 +17,10 @@ import '../../../core/utils/auth_guard.dart';
 import '../../profile/controllers/my_courses_controller.dart';
 
 class CourseDetailsController extends GetxController {
+  /// صفحات تفاصيل الدورات المفتوحة الآن — لكلٍّ متحكّمها بوسمٍ خاص، فلا يصلح Get.find بدون وسم.
+  static final Set<CourseDetailsController> _open = {};
+  static List<CourseDetailsController> get open => List.of(_open);
+
   final CourseRepository _courseRepository = Get.find();
   final ReviewRepository _reviewRepository = Get.find();
   final EnrollmentRepository _enrollmentRepository = Get.find();
@@ -48,6 +52,7 @@ class CourseDetailsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _open.add(this);
     final arg = Get.arguments;
     if (arg is CourseModel) {
       _seedEnrollmentFromCache(arg.id);
@@ -96,7 +101,7 @@ class CourseDetailsController extends GetxController {
       institutePhone: details.institutePhone ?? previous.institutePhone,
       instituteWhatsapp: details.instituteWhatsapp ?? previous.instituteWhatsapp,
       instituteWebsite: details.instituteWebsite ?? previous.instituteWebsite,
-      rating: details.rating > 0 ? details.rating : previous.rating,
+      rating: details.rating > 0 || details.reviewsCount != null ? details.rating : previous.rating,
     );
     if (!hadSeed) return merged;
     // القائمة (Home/Courses) غالباً أحدث من /courses/{id} — لا نستبدل العدد بقيمة أقدم.
@@ -279,6 +284,7 @@ class CourseDetailsController extends GetxController {
 
   @override
   void onClose() {
+    _open.remove(this);
     final latest = course.value;
     if (latest != null) {
       CourseCatalogSync.patchCourse(latest);
@@ -293,8 +299,9 @@ class CourseDetailsController extends GetxController {
       return;
     }
     try {
-      final studentId = await _studentIdResolver.resolve();
-      hasSubmittedReview.value = reviews.any((review) => review.studentId == studentId);
+      // التقييم يخزّن users.id في student_id، لا معرّف ملف الطالب.
+      final userId = await _studentIdResolver.resolveUserId();
+      hasSubmittedReview.value = userId != null && reviews.any((review) => review.studentId == userId);
     } catch (_) {
       hasSubmittedReview.value = false;
     }

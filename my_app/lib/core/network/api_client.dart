@@ -19,6 +19,13 @@ class ApiClient extends GetxService {
   /// يُستدعى عند 401 على طلب كان يحمل توكن (الجلسة أُلغيت من الخادم). يُضبط في main.
   static void Function()? onUnauthorized;
 
+  /// يُستدعى عند 403 `{"code": "account_inactive"}` على طلب كان يحمل توكن (الإدارة أوقفت حساب الطالب)
+  /// مع رسالة الخادم: مثل 401 — مسح الجلسة وشاشة الدخول — لكن بنص الخادم بدل «انتهت الجلسة».
+  /// يُضبط في main (SessionRefresh.onAccountInactive)؛ إن لم يُضبط يُستخدم مسار 401 ([onUnauthorized]).
+  static void Function(String message)? onAccountInactive;
+
+  static const accountInactiveCode = 'account_inactive';
+
   /// مسارات تُرجع 401 كجزء طبيعي من عملها (دخول/خروج/كلمة مرور) فلا تعني انتهاء الجلسة.
   static const _authFlowPaths = <String>[
     '/student/login',
@@ -57,10 +64,13 @@ class ApiClient extends GetxService {
       InterceptorsWrapper(
         onResponse: (response, handler) {
           if (response.statusCode == 401) _maybeSessionExpired(response.requestOptions);
+          if (response.statusCode == 403) _maybeAccountInactive(response);
           handler.next(response);
         },
         onError: (e, handler) {
-          if (e.response?.statusCode == 401) _maybeSessionExpired(e.requestOptions);
+          final response = e.response;
+          if (response?.statusCode == 401) _maybeSessionExpired(e.requestOptions);
+          if (response != null && response.statusCode == 403) _maybeAccountInactive(response);
           handler.next(e);
         },
         onRequest: (options, handler) {
@@ -171,11 +181,29 @@ class ApiClient extends GetxService {
   }
 
   void _maybeSessionExpired(RequestOptions options) {
-    final hadToken = options.headers['Authorization']?.toString().startsWith('Bearer ') ?? false;
-    if (!hadToken) return;
-    final path = options.path;
-    if (_authFlowPaths.any(path.startsWith)) return;
+    if (!_endsSession(options)) return;
     onUnauthorized?.call();
+  }
+
+  /// حساب موقوف: الجلسة لم تعد صالحة لأي طلب — نعاملها مثل 401 ونعرض رسالة الخادم.
+  void _maybeAccountInactive(Response<dynamic> response) {
+    if (!isAccountInactiveBody(response.data) || !_endsSession(response.requestOptions)) return;
+    final message = messageFromErrorBody(response.data, fallback: 'account_inactive_msg'.tr);
+    final handler = onAccountInactive;
+    if (handler != null) {
+      handler(message);
+    } else {
+      onUnauthorized?.call();
+    }
+  }
+
+  static bool isAccountInactiveBody(dynamic body) => errorCodeFromBody(body) == accountInactiveCode;
+
+  /// طلب كان يحمل توكن وليس من مسارات الدخول/الخروج (التي تُرجع 401/403 كجزء طبيعي من عملها).
+  bool _endsSession(RequestOptions options) {
+    final hadToken = options.headers['Authorization']?.toString().startsWith('Bearer ') ?? false;
+    if (!hadToken) return false;
+    return !_authFlowPaths.any(options.path.startsWith);
   }
 
   bool _isHostingChallengeHtml(dynamic body) {

@@ -20,7 +20,10 @@ abstract final class ApiEndpoints {
   static String courseReviews(int courseId) => '/courses/$courseId/reviews';
   static String instructorReviews(int instructorId) => '/instructors/$instructorId/reviews';
   static String instituteReviews(int instituteId) => '/institutes/$instituteId/reviews';
+  static String reviewReport(int reviewId) => '/reviews/$reviewId/report';
   static const studentNotifications = '/student/notifications';
+  static const studentNotificationsReadAll = '/student/notifications/read-all';
+  static String studentNotificationRead(int notificationId) => '/student/notifications/$notificationId/read';
   static const studentMobileVerificationSend = '/student/mobile-verification/send';
   static const studentMobileVerificationVerify = '/student/mobile-verification/verify';
   static const studentEmailVerificationSend = '/student/email-verification/send';

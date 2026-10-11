@@ -10,7 +10,9 @@ import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/services/app_config_service.dart';
 import '../../../core/storage/token_storage.dart';
+import '../../../core/navigation/push_navigation.dart';
 import '../../../routes/app_routes.dart';
+import '../../../theme/app_system_ui.dart';
 import '../../../widgets/design_system.dart';
 import '../widgets/splash_logo_animation.dart';
 
@@ -64,11 +66,14 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
 
   void _navigateAway() {
     if (!mounted) return;
-    if (!AppFlags.requireLogin || Get.find<TokenStorage>().isLoggedIn) {
+    final loggedIn = Get.find<TokenStorage>().isLoggedIn;
+    if (!AppFlags.requireLogin || loggedIn) {
       AppNavigation.goToRoot();
     } else {
       Get.offAllNamed(AppRoutes.login);
     }
+    // إشعار فتح التطبيق وهو مغلق: يُفتح الآن فوق الرئيسية/الدخول — قبل ذلك كان offAllNamed يمسحه.
+    PushNavigation.completeLaunch(loggedIn: loggedIn);
     // بعد الانتقال: offAll كان سيُزيل أي حوار يُفتح فوق شاشة البداية.
     if (Get.isRegistered<AppConfigService>()) {
       unawaited(Get.find<AppConfigService>().presentIfNeeded());
@@ -85,40 +90,43 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Obx(() {
       final _ = localeRebuildToken;
-      return Scaffold(
-        body: DecoratedBox(
-          decoration: const BoxDecoration(gradient: AppGradients.splash),
-          child: SafeArea(
-            child: Center(
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) {
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SplashLogoAnimation(progress: _controller),
-                      const SizedBox(height: 8),
-                      Opacity(
-                        opacity: _taglineOpacity.value,
-                        child: Text(
-                          'app_tagline'.tr,
-                          textAlign: TextAlign.center,
-                          style: AppFonts.tajawal(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            height: 1.4,
+      return AppStatusBar(
+        lightIcons: true,
+        child: Scaffold(
+          body: DecoratedBox(
+            decoration: const BoxDecoration(gradient: AppGradients.splash),
+            child: SafeArea(
+              child: Center(
+                child: AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, _) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SplashLogoAnimation(progress: _controller),
+                        const SizedBox(height: 8),
+                        Opacity(
+                          opacity: _taglineOpacity.value,
+                          child: Text(
+                            'app_tagline'.tr,
+                            textAlign: TextAlign.center,
+                            style: AppFonts.tajawal(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              height: 1.4,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 44),
-                      Opacity(
-                        opacity: _loaderOpacity.value,
-                        child: const AppDotsLoader(color: Colors.white, size: AppLoaderSize.large),
-                      ),
-                    ],
-                  );
-                },
+                        const SizedBox(height: 44),
+                        Opacity(
+                          opacity: _loaderOpacity.value,
+                          child: const AppDotsLoader(color: Colors.white, size: AppLoaderSize.large),
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
           ),

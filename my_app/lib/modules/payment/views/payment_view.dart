@@ -52,7 +52,10 @@ class PaymentView extends GetView<PaymentController> {
                         const SizedBox(height: 16),
                         const _SubmitCard(),
                       ] else
-                        _UnavailableCard(advanceRequired: data.advanceRequiredButUnavailable),
+                        _UnavailableCard(
+                          advanceRequired: data.advanceRequiredButUnavailable,
+                          onlineCourse: data.shamcash.isOnlineCourse,
+                        ),
                       if (data.payments.isNotEmpty) ...[const SizedBox(height: 16), _HistoryCard(data: data)],
                       const _BottomAction(),
                     ],
@@ -412,13 +415,23 @@ class _PaidCard extends StatelessWidget {
 }
 
 class _UnavailableCard extends StatelessWidget {
-  const _UnavailableCard({required this.advanceRequired});
+  const _UnavailableCard({required this.advanceRequired, this.onlineCourse = false});
 
   /// الدورة تتطلب دفعة مقدّمة لكن حساب شام كاش غير مفعّل لدى المعهد.
   final bool advanceRequired;
 
+  /// دورة أونلاين: تُدفع للمعهد مباشرة، لا داخل التطبيق.
+  final bool onlineCourse;
+
   @override
   Widget build(BuildContext context) {
+    if (onlineCourse) {
+      return _InfoBanner(
+        icon: Icons.storefront_rounded,
+        title: 'payment_online_direct'.tr,
+        body: 'payment_online_direct_hint'.tr,
+      );
+    }
     return _InfoBanner(
       icon: advanceRequired ? Icons.link_off_rounded : Icons.storefront_rounded,
       title: (advanceRequired ? 'payment_shamcash_not_connected' : 'payment_unavailable').tr,

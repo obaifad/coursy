@@ -9,10 +9,13 @@ import 'design_system.dart';
 /// بطاقة تقييم موحّدة (صفحة الدورة وصفحة المدرّس): صورة صاحب التقييم أو أول حرف من اسمه،
 /// الاسم، النجوم، واسم الدورة إن وُجد (تقييمات المدرّس تشمل كل دوراته)، ثم التعليق.
 class ReviewCard extends StatelessWidget {
-  const ReviewCard({super.key, required this.review, this.showCourse = false});
+  const ReviewCard({super.key, required this.review, this.showCourse = false, this.onReport});
 
   final ReviewModel review;
   final bool showCourse;
+
+  /// يُظهر قائمة «إبلاغ» على البطاقة (للطالب المسجّل فقط).
+  final VoidCallback? onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +61,25 @@ class ReviewCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (onReport != null)
+                PopupMenuButton<int>(
+                  tooltip: 'review_report_title'.tr,
+                  icon: const Icon(Icons.more_vert_rounded, size: 20, color: AppColors.textSecondary),
+                  padding: EdgeInsets.zero,
+                  onSelected: (_) => onReport!(),
+                  itemBuilder: (_) => [
+                    PopupMenuItem<int>(
+                      value: 0,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.flag_outlined, size: 18, color: AppColors.textSecondary),
+                          const SizedBox(width: 8),
+                          Text('review_report_action'.tr),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
           if (showCourse && course != null && course.isNotEmpty) ...[

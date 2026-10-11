@@ -58,22 +58,10 @@ class AuthRepository extends GetxService {
   }
 
   Future<bool> register(RegisterPayload payload) async {
-    dynamic body;
-    try {
-      body = await _client.handle(
-        () => _client.post(ApiEndpoints.studentRegister, data: payload.toJson()),
-        (data) => normalizeApiBody(data),
-      );
-    } on ApiException catch (e) {
-      if (e.statusCode == 404) {
-        body = await _client.handle(
-          () => _client.post(ApiEndpoints.users, data: payload.toJson()),
-          (data) => normalizeApiBody(data),
-        );
-      } else {
-        rethrow;
-      }
-    }
+    final body = await _client.handle(
+      () => _client.post(ApiEndpoints.studentRegister, data: payload.toJson()),
+      (data) => normalizeApiBody(data),
+    );
 
     final token = extractToken(body);
     if (token != null && token.isNotEmpty) {
@@ -192,13 +180,15 @@ class AuthRepository extends GetxService {
   }
 
   /// حذف الحساب نهائياً بعد التحقق من كلمة المرور. الخادم يلغي كل الجلسات ويحذف توكنات الأجهزة.
+  /// يرمي فقط إن رفض الخادم الحذف؛ مسح الجلسة المحلية بعده في [clearLocalSession] (فشله لا يعني فشل الحذف).
   Future<void> deleteAccount(String password) async {
     await _client.handle(
       () => _client.delete(ApiEndpoints.studentAccount, data: {'password': password}),
       (data) => null,
     );
-    await _tokenStorage.clearSession();
   }
+
+  Future<void> clearLocalSession() => _tokenStorage.clearSession();
 
   Future<void> logout() async {
     try {

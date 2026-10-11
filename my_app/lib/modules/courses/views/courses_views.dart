@@ -18,6 +18,11 @@ class CoursesView extends GetView<CoursesController> {
     return AppTabSafeArea(
       child: Obx(() {
         final _ = localeRebuildToken;
+        // لقطة واحدة لكل بناء: عدد العناصر والعناصر نفسها من القائمة ذاتها — قراءة القائمة الحية داخل
+        // itemBuilder بعد تغيّرها كانت ترمي RangeError.
+        final courses = controller.sortedCourses.toList(growable: false);
+        final loadingMore = controller.isLoadingMore.value;
+        final error = controller.errorMessage.value;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -44,7 +49,14 @@ class CoursesView extends GetView<CoursesController> {
                 onRefresh: controller.loadCourses,
                 child: controller.isLoading.value && controller.courses.isEmpty
                     ? const AppGridSkeleton(padding: EdgeInsets.fromLTRB(16, 16, 16, 8))
-                    : controller.courses.isEmpty
+                    : courses.isEmpty && error != null
+                    ? AppEmptyState.scrollable(
+                        context: context,
+                        message: error,
+                        icon: Icons.cloud_off_outlined,
+                        action: FilledButton(onPressed: controller.loadCourses, child: Text('retry'.tr)),
+                      )
+                    : courses.isEmpty
                     ? AppEmptyState.scrollable(
                         context: context,
                         message: 'no_courses'.tr,
@@ -59,15 +71,15 @@ class CoursesView extends GetView<CoursesController> {
                           AppLayout.horizontalPage(context),
                           AppLayout.scrollBottomInset(context, rootTab: true),
                         ),
-                        itemCount: controller.sortedCourses.length + (controller.isLoadingMore.value ? 1 : 0),
+                        itemCount: courses.length + (loadingMore ? 1 : 0),
                         gridDelegate: AppGridLayouts.courseGridFor(context),
                         itemBuilder: (_, i) {
-                          if (i >= controller.sortedCourses.length) {
+                          if (i >= courses.length) {
                             return const Center(
                               child: Padding(padding: EdgeInsets.symmetric(vertical: 20), child: AppInlineLoader()),
                             );
                           }
-                          final course = controller.sortedCourses[i];
+                          final course = courses[i];
                           return CourseCard(
                             course: course,
                             onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),

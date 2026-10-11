@@ -25,6 +25,7 @@ class InstituteModel {
     this.website,
     this.facebook,
     this.instagram,
+    this.acceptsShamcash,
   }) : nameAr = nameAr ?? name ?? '',
        nameEn = nameEn ?? name ?? '',
        cityAr = cityAr ?? city ?? '',
@@ -55,6 +56,10 @@ class InstituteModel {
   final String? website;
   final String? facebook;
   final String? instagram;
+
+  /// هل يقبل المعهد الدفع عبر شام كاش داخل التطبيق (`accepts_shamcash`).
+  /// null = الخادم لم يرسل الحقل (نسخة أقدم) — يبقى السلوك السابق.
+  final bool? acceptsShamcash;
 
   bool get hasContact => [phone, whatsapp, website, facebook, instagram].any((v) => v != null);
 
@@ -91,6 +96,7 @@ class InstituteModel {
     String? website,
     String? facebook,
     String? instagram,
+    bool? acceptsShamcash,
   }) {
     return InstituteModel(
       id: id,
@@ -114,6 +120,7 @@ class InstituteModel {
       website: website ?? this.website,
       facebook: facebook ?? this.facebook,
       instagram: instagram ?? this.instagram,
+      acceptsShamcash: acceptsShamcash ?? this.acceptsShamcash,
     );
   }
 
@@ -165,6 +172,7 @@ class InstituteModel {
       website: _contact(json['website']),
       facebook: _contact(json['facebook']),
       instagram: _contact(json['instagram']),
+      acceptsShamcash: json['accepts_shamcash'] == null ? null : JsonHelpers.parseBool(json['accepts_shamcash']),
     );
   }
 

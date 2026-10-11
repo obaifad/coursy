@@ -56,10 +56,22 @@ android {
             signingConfig = if (keystorePropertiesFile.exists()) {
                 signingConfigs.getByName("release")
             } else {
-                // لا يصلح للنشر على Google Play — أنشئ key.properties أولاً.
+                // APK تجريبي فقط — حزمة Google Play (AAB) ترفض البناء بدون مفتاح الرفع (انظر أدناه).
                 signingConfigs.getByName("debug")
             }
         }
+    }
+}
+
+// Google Play يرفض الحزم الموقّعة بمفتاح debug: لا نبني AAB للإصدار بدون key.properties.
+gradle.taskGraph.whenReady {
+    val buildsReleaseBundle = allTasks.any { it.project == project && it.name.startsWith("bundle") && it.name.endsWith("Release") }
+    if (buildsReleaseBundle && !keystorePropertiesFile.exists()) {
+        throw GradleException(
+            "android/key.properties غير موجود: حزمة Google Play يجب أن توقَّع بمفتاح الرفع " +
+                "(scripts/create_release_keystore.ps1). / android/key.properties is missing: " +
+                "a Google Play bundle must be signed with the upload key.",
+        )
     }
 }
 

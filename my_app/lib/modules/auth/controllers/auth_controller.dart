@@ -67,6 +67,9 @@ class AuthController extends GetxController {
 
   final isAdvancingStep = false.obs;
   final isSubmittingRegister = false.obs;
+
+  /// الموافقة على شروط الاستخدام وسياسة الخصوصية — شرط لإنشاء الحساب (والتقييمات محتوى ينشره المستخدم).
+  final acceptedTerms = false.obs;
   final registerReferenceReady = false.obs;
   final registerStep1Validated = false.obs;
   final registerStep0Validated = false.obs;
@@ -304,6 +307,11 @@ class AuthController extends GetxController {
 
     final step2Errors = _collectRegisterStepErrors(2);
     if (!_applyRegisterFieldErrors(step2Errors)) return;
+
+    if (!acceptedTerms.value) {
+      registerStepError.value = 'terms_required'.tr;
+      return;
+    }
 
     isSubmittingRegister.value = true;
     try {

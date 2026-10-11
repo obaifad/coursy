@@ -9,6 +9,7 @@ import '../locale/locale_controller.dart';
 import '../push/push_local_notifications.dart';
 import '../storage/enrollment_status_store.dart';
 import '../storage/session_keys.dart';
+import 'enrollment_status_change.dart';
 
 const enrollmentBackgroundTask = 'enrollmentBackgroundCheck';
 
@@ -59,10 +60,10 @@ abstract final class BackgroundEnrollmentChecker {
     final delivered = await EnrollmentStatusStore.loadDelivered(studentId);
     final texts = await _loadTexts();
 
-    String text(String key, String courseTitle) {
-      final generic = texts['${key}_body_generic'] ?? '';
+    String text(EnrollmentStatusChange change, String courseTitle) {
+      final generic = texts[change.genericBodyKey] ?? '';
       if (courseTitle.isEmpty) return generic;
-      return (texts['${key}_body'] ?? generic).replaceAll('@course', '"$courseTitle"');
+      return (texts[change.bodyKey] ?? generic).replaceAll('@course', '"$courseTitle"');
     }
 
     for (final row in enrollments) {
@@ -70,37 +71,21 @@ abstract final class BackgroundEnrollmentChecker {
       if (id == null || id <= 0) continue;
 
       final next = row['status']?.toString().toLowerCase() ?? '';
-      final previous = statuses[id];
-      final courseTitle = _courseTitle(row);
-      final courseId =
-          _parseInt(row['course_id']) ?? (row['course'] is Map ? _parseInt((row['course'] as Map)['id']) : null);
-      final coursePart = courseId == null ? '' : '&course_id=$courseId';
-
-      if (previous != null) {
-        if (previous == 'pending' && _isApproved(next)) {
-          final key = 'approved:$id';
-          if (!delivered.contains(key)) {
-            delivered.add(key);
-            await PushLocalNotifications.showRaw(
-              id: id,
-              title: texts['enrollment_approved_title'] ?? '',
-              body: text('enrollment_approved', courseTitle),
-              payload: 'type=enrollment_approved&enrollment_id=$id$coursePart',
-              requirePermission: false,
-            );
-          }
-        } else if (previous == 'pending' && _isRejected(next)) {
-          final key = 'rejected:$id';
-          if (!delivered.contains(key)) {
-            delivered.add(key);
-            await PushLocalNotifications.showRaw(
-              id: id + 100000,
-              title: texts['enrollment_rejected_title'] ?? '',
-              body: text('enrollment_rejected', courseTitle),
-              payload: 'type=enrollment_rejected&enrollment_id=$id$coursePart',
-              requirePermission: false,
-            );
-          }
+      final change = EnrollmentStatusChange.detect(statuses[id], next);
+      if (change != null) {
+        final key = change.deliveredKey(id);
+        if (!delivered.contains(key)) {
+          delivered.add(key);
+          final courseId =
+              _parseInt(row['course_id']) ?? (row['course'] is Map ? _parseInt((row['course'] as Map)['id']) : null);
+          final coursePart = courseId == null ? '' : '&course_id=$courseId';
+          await PushLocalNotifications.showRaw(
+            id: change.notificationId(id),
+            title: texts[change.titleKey] ?? '',
+            body: text(change, _courseTitle(row)),
+            payload: 'type=${change.type}&enrollment_id=$id$coursePart',
+            requirePermission: false,
+          );
         }
       }
 
@@ -109,6 +94,17 @@ abstract final class BackgroundEnrollmentChecker {
 
     await EnrollmentStatusStore.persistStatuses(statuses, studentId);
     await EnrollmentStatusStore.persistDelivered(delivered, studentId);
+  }
+
+  /// وصل إشعار FCM بتغيّر الحالة والتطبيق في الخلفية (النظام عرضه): نسجّله «مُبلَّغاً عنه» كي لا يكرره
+  /// هذا الفحص أو التطبيق عند فتحه بإشعار محلي ثانٍ لنفس التغيّر.
+  static Future<void> recordDeliveredPush(Map<String, dynamic> data) async {
+    final change = EnrollmentStatusChange.fromNotificationType(data['type']?.toString());
+    final enrollmentId = _parseInt(data['enrollment_id']);
+    if (change == null || enrollmentId == null || enrollmentId <= 0) return;
+    final studentId = int.tryParse(await _secure.read(key: SessionKeys.studentId) ?? '');
+    if (studentId == null || studentId <= 0) return;
+    await EnrollmentStatusStore.persistDelivered({change.deliveredKey(enrollmentId)}, studentId);
   }
 
   /// نصوص الإشعارات بلغة التطبيق — لا توجد ترجمات GetX داخل الـ isolate الخلفي،
@@ -147,8 +143,4 @@ abstract final class BackgroundEnrollmentChecker {
     if (value is int) return value;
     return int.tryParse(value?.toString() ?? '');
   }
-
-  static bool _isApproved(String status) => status == 'approved' || status == 'confirmed';
-
-  static bool _isRejected(String status) => status == 'rejected' || status == 'cancelled';
 }

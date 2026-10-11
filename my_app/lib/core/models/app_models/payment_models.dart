@@ -2,12 +2,18 @@ part of '../app_models.dart';
 
 /// بيانات حساب شام كاش الخاص بالمعهد (لا تُخزَّن — تُجلب في كل مرة تُفتح فيها شاشة الدفع).
 class ShamCashInfo {
-  const ShamCashInfo({this.available = false, this.accountName, this.address, this.qrPayload});
+  const ShamCashInfo({this.available = false, this.accountName, this.address, this.qrPayload, this.reason});
 
   final bool available;
   final String? accountName;
   final String? address;
   final String? qrPayload;
+
+  /// سبب عدم الإتاحة إن أرسله الخادم — `online_course`: الدورات الأونلاين تُدفع للمعهد مباشرة
+  /// خارج التطبيق (سياسة Google Play للدفع داخل التطبيقات).
+  final String? reason;
+
+  bool get isOnlineCourse => reason == 'online_course';
 
   factory ShamCashInfo.fromJson(Map<String, dynamic>? json) {
     if (json == null) return const ShamCashInfo();
@@ -21,6 +27,7 @@ class ShamCashInfo {
       accountName: text(json['account_name']),
       address: text(json['address']),
       qrPayload: text(json['qr_payload']),
+      reason: text(json['reason']),
     );
   }
 

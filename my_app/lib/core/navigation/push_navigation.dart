@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 import '../../routes/app_routes.dart';
@@ -6,6 +7,43 @@ import '../navigation/app_navigation.dart';
 
 /// توجيه المستخدم عند الضغط على إشعار FCM حسب `data` القادمة من الخادم.
 abstract final class PushNavigation {
+  /// إشعار ضُغط عليه والتطبيق مغلق: شاشة البداية ما زالت ظاهرة، وانتقالها بـ offAllNamed كان يمسح
+  /// الصفحة التي يفتحها الإشعار (فيصل الطالب للرئيسية). يُحفظ هنا ويُفتح في [completeLaunch].
+  static Map<String, dynamic>? _pending;
+  static bool _launched = false;
+
+  /// يفتح وجهة الإشعار الآن، أو يؤجّلها حتى تنتقل شاشة البداية.
+  static void open(Map<String, dynamic> data) {
+    if (!_launched) {
+      _pending = Map<String, dynamic>.from(data);
+      return;
+    }
+    openFromMessageData(data);
+  }
+
+  /// تستدعيها شاشة البداية بعد انتقالها إلى الرئيسية أو شاشة الدخول.
+  /// بلا جلسة نفتح الوجهات العامة فقط (دورة، معهد، مدرّس) — الباقي (حجوزاتي، الإشعارات…) يحتاج حساباً.
+  static void completeLaunch({required bool loggedIn}) {
+    _launched = true;
+    final data = _pending;
+    _pending = null;
+    if (data == null) return;
+    if (!loggedIn && !isPublicTarget(data)) return;
+    openFromMessageData(data);
+  }
+
+  @visibleForTesting
+  static void resetLaunchState() {
+    _pending = null;
+    _launched = false;
+  }
+
+  /// وجهة تُفتح بلا تسجيل دخول.
+  static bool isPublicTarget(Map<String, dynamic> data) =>
+      _readId(data, const ['course_id', 'courseId']) != null ||
+      _readId(data, const ['institute_id', 'instituteId']) != null ||
+      _readId(data, const ['instructor_id', 'instructorId']) != null;
+
   static void openFromMessageData(Map<String, dynamic> data) {
     if (data.isEmpty) {
       _openNotifications();
@@ -19,7 +57,9 @@ abstract final class PushNavigation {
     // «notification» قبلها كانت تفتح قائمة الإشعارات بدل الدورة.
     final courseId = _readId(data, const ['course_id', 'courseId']);
     if (courseId != null) {
-      Get.toNamed(AppRoutes.courseDetails, arguments: courseId);
+      // صفحة الدورة تقبل عدة نسخ في المكدّس؛ وGetX يتجاهل فتح المسار نفسه وهو في الأعلى (ولو لدورة أخرى)،
+      // فكان الضغط لا يفعل شيئاً وصفحة دورة مفتوحة.
+      Get.toNamed(AppRoutes.courseDetails, arguments: courseId, preventDuplicates: false);
       return;
     }
 

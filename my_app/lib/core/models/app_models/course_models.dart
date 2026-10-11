@@ -86,6 +86,12 @@ class CourseModel {
   /// عدد التقييمات إن أرسله الخادم (`reviews_count` أو قائمة `reviews`) — null = غير معروف فلا يُعرض.
   final int? reviewsCount;
 
+  /// تقييم يستحق العرض: من تقييمات فعلية (لا نجمة «0.0» لدورة لم يقيّمها أحد).
+  bool get hasRating => rating > 0 && (reviewsCount == null || reviewsCount! > 0);
+
+  /// دورة أونلاين: لا دفع داخل التطبيق (سياسة Google Play)، تُدفع للمعهد مباشرة.
+  bool get isOnline => studyTypeCode?.trim().toLowerCase() == 'online';
+
   /// القيمة الخام من الـ API (beginner / intermediate / advanced) — النص المترجم في [level].
   final String? levelCode;
   final int? instituteId;
@@ -398,7 +404,11 @@ class CourseModel {
       rawPrice: json['price']?.toString(),
       discountPrice: json['discount_price']?.toString(),
       imageUrl: _extractCourseImagePath(json),
-      rating: JsonHelpers.resolveCourseRating(json, fallback: instituteRating),
+      // الخادم يرسل تقييم الدورة نفسها مع عدد تقييماتها: دورة بلا تقييمات تبقى بلا تقييم،
+      // ولا نستعير تقييم المعهد إلا من خادم قديم لا يرسل `reviews_count`.
+      rating: json.containsKey('reviews_count')
+          ? JsonHelpers.parseDouble(json['average_rating'])
+          : JsonHelpers.resolveCourseRating(json, fallback: instituteRating),
       reviewsCount: _parseReviewsCount(json),
       levelCode: levelRaw,
       description: description.isNotEmpty ? description : json['description']?.toString(),

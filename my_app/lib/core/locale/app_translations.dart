@@ -735,6 +735,33 @@ class AppTranslations extends Translations {
     'undo': 'تراجع',
     'favorite_saved_local_title': 'حُفظت محليًا',
     'favorite_saved_local_msg': 'المفضلة محفوظة على جهازك (مسار API غير متوفر على الخادم حالياً)',
+    // — إصلاحات الإصدار: الإشعارات والجلسة والقوائم —
+    'enrollment_cancelled_title': 'تم إلغاء التسجيل',
+    'enrollment_cancelled_body': 'تم إلغاء تسجيلك في @course',
+    'enrollment_cancelled_body_generic': 'تم إلغاء تسجيلك في الدورة',
+    'notifications_mark_all_read': 'تعليم الكل كمقروء',
+    'login_identifier_short': 'البريد أو رقم الهاتف *',
+    'login_identifier_hint_short': 'you@mail.com أو 0912345678',
+    'account_inactive_title': 'الحساب موقوف',
+    'account_inactive_msg': 'تم إيقاف حسابك. تواصل معنا للمساعدة.',
+    // — إصلاحات الإصدار: الحجز والتقييمات والدفع —
+    'review_report_action': 'إبلاغ عن التقييم',
+    'review_report_title': 'الإبلاغ عن تقييم',
+    'review_report_reason_offensive': 'محتوى مسيء أو غير لائق',
+    'review_report_reason_spam': 'إعلان أو محتوى مزعج',
+    'review_report_reason_misleading': 'معلومات كاذبة أو مضلّلة',
+    'review_report_reason_other': 'سبب آخر',
+    'review_report_own': 'لا يمكنك الإبلاغ عن تقييمك.',
+    'review_report_sent_title': 'تم إرسال البلاغ',
+    'review_report_sent_msg': 'شكراً لك، سنراجع هذا التقييم.',
+    'review_report_failed': 'تعذّر إرسال البلاغ. حاول مرة أخرى.',
+    'terms_agree_prefix': 'أوافق على',
+    'and_word': 'و',
+    'terms_required': 'يجب الموافقة على شروط الاستخدام وسياسة الخصوصية لإنشاء الحساب.',
+    'after_booking_advance': 'تتطلب هذه الدورة دفعة مقدّمة: بعد التأكيد تظهر لك قيمتها وطريقة دفعها',
+    'after_booking_advance_online': 'تتطلب هذه الدورة دفعة مقدّمة تُدفع للمعهد مباشرة — تواصل معه بعد التأكيد',
+    'payment_online_direct': 'تُدفع هذه الدورة للمعهد مباشرة',
+    'payment_online_direct_hint': 'الدورات الأونلاين لا تُدفع داخل التطبيق. تواصل مع المعهد لإتمام الدفعة المقدّمة.',
   };
 
   static final Map<String, String> _en = {
@@ -1441,5 +1468,34 @@ class AppTranslations extends Translations {
     'undo': 'Undo',
     'favorite_saved_local_title': 'Saved locally',
     'favorite_saved_local_msg': 'Saved on device (favorites API route not available on server)',
+    // — release fixes: notifications, session and lists —
+    'enrollment_cancelled_title': 'Enrollment cancelled',
+    'enrollment_cancelled_body': 'Your enrollment in @course has been cancelled',
+    'enrollment_cancelled_body_generic': 'Your course enrollment has been cancelled',
+    'notifications_mark_all_read': 'Mark all as read',
+    'login_identifier_short': 'Email or phone *',
+    'login_identifier_hint_short': 'you@mail.com or 0912345678',
+    'account_inactive_title': 'Account deactivated',
+    'account_inactive_msg': 'Your account has been deactivated. Contact us for help.',
+    // — release fixes: booking, reviews and payment —
+    'review_report_action': 'Report review',
+    'review_report_title': 'Report a review',
+    'review_report_reason_offensive': 'Offensive or inappropriate',
+    'review_report_reason_spam': 'Spam or advertising',
+    'review_report_reason_misleading': 'False or misleading',
+    'review_report_reason_other': 'Something else',
+    'review_report_own': "You can't report your own review.",
+    'review_report_sent_title': 'Report sent',
+    'review_report_sent_msg': 'Thank you. We will review it.',
+    'review_report_failed': 'Could not send the report. Please try again.',
+    'terms_agree_prefix': 'I agree to the',
+    'and_word': 'and',
+    'terms_required': 'Please accept the Terms of use and Privacy policy to create your account.',
+    'after_booking_advance':
+        'This course needs an advance payment: after confirming you will see the amount and how to pay',
+    'after_booking_advance_online':
+        'This course needs an advance payment, paid to the institute directly. Contact them after confirming',
+    'payment_online_direct': 'Pay the institute directly for this course',
+    'payment_online_direct_hint': 'Online courses are not paid in the app. Contact the institute to pay the advance.',
   };
 }

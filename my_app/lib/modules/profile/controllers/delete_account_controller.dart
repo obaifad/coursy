@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/config/app_debug_log.dart';
 import '../../../core/data/repositories/auth_repository.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/network/api_exception.dart';
@@ -36,9 +39,8 @@ class DeleteAccountController extends GetxController {
     try {
       await _authRepository.deleteAccount(password);
       // الخادم ألغى كل الجلسات وحذف توكنات الأجهزة؛ هنا ننظّف ما بقي محلياً فقط.
-      await SessionRefresh.onLogout();
-      AppNavigation.enterAsGuest();
-      SessionRefresh.reloadAsGuest();
+      // الحذف نجح: أي فشل في التنظيف بعده لا يُعرض كخطأ — المستخدم يصل خارج الحساب دائماً.
+      await _cleanUpAfterDeletion();
       Get.snackbar('account_deleted_title'.tr, 'account_deleted_msg'.tr);
     } on ApiException catch (e) {
       switch (e.statusCode) {
@@ -54,6 +56,21 @@ class DeleteAccountController extends GetxController {
     } finally {
       isDeleting.value = false;
     }
+  }
+
+  Future<void> _cleanUpAfterDeletion() async {
+    Future<void> step(String name, FutureOr<void> Function() run) async {
+      try {
+        await run();
+      } catch (e) {
+        AppDebugLog.repo('DeleteAccount', '$name failed after deletion: $e');
+      }
+    }
+
+    await step('session', _authRepository.clearLocalSession);
+    await step('logout', SessionRefresh.onLogout);
+    await step('navigation', AppNavigation.enterAsGuest);
+    await step('reload', SessionRefresh.reloadAsGuest);
   }
 
   Future<bool> _confirm() async {

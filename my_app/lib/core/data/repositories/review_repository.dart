@@ -66,4 +66,15 @@ class ReviewRepository extends GetxService {
       },
     );
   }
+
+  /// إبلاغ عن تقييم مسيء (سياسة Google Play للمحتوى من المستخدمين). يُرجع رسالة الخادم إن وُجدت.
+  Future<String?> reportReview(int reviewId, {required String reason}) {
+    final path = ApiEndpoints.reviewReport(reviewId);
+    return _client.handle(() => _client.post(path, data: {'reason': reason}), (raw) {
+      final body = normalizeApiBody(raw);
+      _log('REPORT', body, path: path);
+      final message = body is Map ? body['message']?.toString().trim() : null;
+      return (message == null || message.isEmpty) ? null : message;
+    });
+  }
 }

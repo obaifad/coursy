@@ -92,10 +92,9 @@ abstract final class RemoteNotificationSync {
   static int? readEnrollmentId(Map<String, dynamic> data) => _readId(data, const ['enrollment_id', 'enrollmentId']);
 
   static Future<void> refreshCourseDetailsIfVisible(int courseId) async {
-    if (!Get.isRegistered<CourseDetailsController>()) return;
-    final details = Get.find<CourseDetailsController>();
-    if (details.course.value?.id != courseId) return;
-    await details.refreshEnrollment();
+    for (final details in CourseDetailsController.open) {
+      if (details.course.value?.id == courseId) await details.refreshEnrollment();
+    }
   }
 
   static Future<void> _refreshNotifications() async {

@@ -21,17 +21,13 @@ class ProfileRepository extends GetxService {
 
   Future<Map<String, dynamic>> fetchMe() => fetchFullStudentUser();
 
-  /// `/student/me` + `/student/profile` + الكاش المحلي.
+  /// `/student/me` (يحمل الملف الأكاديمي `student_profile`) + الكاش المحلي.
+  /// (`GET /student/profile` غير موجود على الخادم — المسار للتعديل فقط — فكان كل تحميل يفشل بـ 405.)
   Future<Map<String, dynamic>> fetchFullStudentUser() async {
-    final meFuture = _client.handle(
+    final meMap = await _client.handle(
       () => _client.get(ApiEndpoints.studentMe),
       (data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{},
     );
-    final profileFuture = _tryFetchStudentProfileRecord();
-
-    late Map<String, dynamic> meMap;
-    Map<String, dynamic>? profileRecord;
-    await Future.wait([meFuture.then((value) => meMap = value), profileFuture.then((value) => profileRecord = value)]);
 
     final studentId = extractStudentId(meMap) ?? extractStudentId(extractUserMap(meMap));
     if (studentId != null && studentId > 0) {
@@ -47,14 +43,6 @@ class ProfileRepository extends GetxService {
     }
 
     var user = mergeProfileUserData(meMap);
-    final profile = profileRecord;
-    if (profile != null && profile.isNotEmpty) {
-      final existing = extractNestedStudentProfile(user) ?? <String, dynamic>{};
-      user = {
-        ...user,
-        'student_profile': {...existing, ...profile},
-      };
-    }
 
     final cached = await _tokenStorage.loadAcademicCache();
     if (cached != null && !cached.isEmpty) {
@@ -150,17 +138,6 @@ class ProfileRepository extends GetxService {
     final hasSpecialization = profile['specialization_id'] != null;
     final hasTags = extractPreferredInterestIds({...profile, ...user}).isNotEmpty;
     return hasEducation || hasUniversity || hasSpecialization || hasTags;
-  }
-
-  Future<Map<String, dynamic>?> _tryFetchStudentProfileRecord() async {
-    try {
-      return await _client.handle(
-        () => _client.get(ApiEndpoints.studentProfile),
-        (data) => extractObjectMap(normalizeApiBody(data)),
-      );
-    } catch (_) {
-      return null;
-    }
   }
 
   Future<Map<String, dynamic>> updateProfile(StudentProfilePayload payload) async {

@@ -50,6 +50,11 @@ class CourseBookingView extends GetView<BookingController> {
                 Text('• ${'after_booking_1'.tr}', style: const TextStyle(height: 1.5)),
                 Text('• ${'after_booking_2'.tr}', style: const TextStyle(height: 1.5)),
                 Text('• ${'after_booking_3'.tr}', style: const TextStyle(height: 1.5)),
+                if (c.requiresAdvancePayment)
+                  Text(
+                    '• ${(c.isOnline ? 'after_booking_advance_online' : 'after_booking_advance').tr}',
+                    style: const TextStyle(height: 1.5, fontWeight: FontWeight.w700),
+                  ),
               ],
             ),
           ),

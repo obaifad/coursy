@@ -35,6 +35,7 @@ import '../modules/profile/controllers/profile_controller.dart';
 import '../modules/profile/views/delete_account_view.dart';
 import '../modules/profile/views/profile_views.dart';
 import '../core/bindings/root_binding.dart';
+import '../core/navigation/route_scoped_tag.dart';
 import '../modules/root/views/root_view.dart';
 import '../modules/payment/controllers/payment_controller.dart';
 import '../modules/payment/views/payment_view.dart';
@@ -90,8 +91,13 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.courseDetails,
-      page: () => const CourseDetailsView(),
-      binding: BindingsBuilder(() => Get.lazyPut<CourseDetailsController>(() => CourseDetailsController())),
+      page: () => CourseDetailsView(controllerTag: RouteScopedTag.take()),
+      binding: BindingsBuilder(
+        () => Get.lazyPut<CourseDetailsController>(
+          () => CourseDetailsController(),
+          tag: RouteScopedTag.reserve('course'),
+        ),
+      ),
     ),
     GetPage(
       name: AppRoutes.categoryCourses,
@@ -112,8 +118,13 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.instructorDetails,
-      page: () => const InstructorDetailsView(),
-      binding: BindingsBuilder(() => Get.lazyPut<InstructorDetailsController>(() => InstructorDetailsController())),
+      page: () => InstructorDetailsView(controllerTag: RouteScopedTag.take()),
+      binding: BindingsBuilder(
+        () => Get.lazyPut<InstructorDetailsController>(
+          () => InstructorDetailsController(),
+          tag: RouteScopedTag.reserve('instructor'),
+        ),
+      ),
     ),
     GetPage(
       name: AppRoutes.instructorSubjectInstructors,
@@ -124,8 +135,13 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.instituteDetails,
-      page: () => const InstituteDetailsView(),
-      binding: BindingsBuilder(() => Get.lazyPut<InstituteDetailsController>(() => InstituteDetailsController())),
+      page: () => InstituteDetailsView(controllerTag: RouteScopedTag.take()),
+      binding: BindingsBuilder(
+        () => Get.lazyPut<InstituteDetailsController>(
+          () => InstituteDetailsController(),
+          tag: RouteScopedTag.reserve('institute'),
+        ),
+      ),
     ),
     GetPage(
       name: AppRoutes.notifications,

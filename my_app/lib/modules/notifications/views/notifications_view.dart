@@ -4,10 +4,7 @@ import 'package:get/get.dart';
 import '../../../theme/app_colors.dart';
 
 import '../../../core/locale/locale_rebuild.dart';
-import '../../../core/navigation/push_navigation.dart';
 import '../../../core/responsive/responsive.dart';
-import '../../../core/session/remote_notification_sync.dart';
-import '../../../core/models/app_models.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/design_system.dart';
 import '../controllers/notifications_controller.dart';
@@ -40,12 +37,6 @@ class NotificationsView extends GetView<NotificationsController> {
     }
   }
 
-  Future<void> _onNotificationTap(NotificationModel notification) async {
-    final data = RemoteNotificationSync.notificationToPushData(notification);
-    await RemoteNotificationSync.onMessageReceived(data);
-    PushNavigation.openFromMessageData(data);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Obx(() {
@@ -54,6 +45,14 @@ class NotificationsView extends GetView<NotificationsController> {
         appBar: AppBar(
           title: Text('notifications'.tr),
           actions: [
+            Obx(() {
+              if (!controller.hasUnread) return const SizedBox.shrink();
+              return IconButton(
+                tooltip: 'notifications_mark_all_read'.tr,
+                onPressed: controller.isMarkingAllRead.value ? null : controller.markAllRead,
+                icon: const Icon(Icons.done_all_rounded),
+              );
+            }),
             IconButton(
               tooltip: 'refresh'.tr,
               onPressed: controller.loadNotifications,
@@ -65,7 +64,23 @@ class NotificationsView extends GetView<NotificationsController> {
           if (controller.isLoading.value) {
             return const AppListSkeleton();
           }
-          if (controller.items.isEmpty) {
+          // لقطة واحدة لكل بناء: القائمة تُبنى لاحقاً أثناء التمرير، وقراءة القائمة الحية بعد تغيّرها ترمي RangeError.
+          final items = controller.items.toList(growable: false);
+          final hasMore = controller.hasMore.value;
+          final loadingMore = controller.isLoadingMore.value;
+          final error = controller.errorMessage.value;
+          if (items.isEmpty && error != null) {
+            return RefreshIndicator(
+              onRefresh: controller.loadNotifications,
+              child: AppEmptyState.scrollable(
+                context: context,
+                message: error,
+                icon: Icons.cloud_off_outlined,
+                action: FilledButton(onPressed: controller.loadNotifications, child: Text('retry'.tr)),
+              ),
+            );
+          }
+          if (items.isEmpty) {
             return RefreshIndicator(
               onRefresh: controller.loadNotifications,
               child: AppEmptyState.scrollable(
@@ -82,20 +97,20 @@ class NotificationsView extends GetView<NotificationsController> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
                 itemBuilder: (_, i) {
-                  if (i == controller.items.length) {
-                    if (!controller.hasMore.value) return const SizedBox.shrink();
+                  if (i == items.length) {
+                    if (!hasMore) return const SizedBox.shrink();
                     return OutlinedButton.icon(
-                      onPressed: controller.isLoadingMore.value ? null : controller.loadMoreNotifications,
-                      icon: controller.isLoadingMore.value
-                          ? const AppInlineLoader()
-                          : const Icon(Icons.expand_more_rounded),
+                      onPressed: loadingMore ? null : controller.loadMoreNotifications,
+                      icon: loadingMore ? const AppInlineLoader() : const Icon(Icons.expand_more_rounded),
                       label: Text('load_more'.tr),
                     );
                   }
-                  final n = controller.items[i];
+                  final n = items[i];
                   return Dismissible(
                     key: ValueKey(n.id),
                     direction: DismissDirection.horizontal,
+                    // بدونه يبقى العنصر المسحوب في الشجرة (خطأ Flutter في وضع التطوير).
+                    onDismissed: (_) => controller.dismiss(n),
                     background: Container(
                       alignment: AlignmentDirectional.centerEnd,
                       padding: const EdgeInsetsDirectional.only(end: 20),
@@ -107,7 +122,7 @@ class NotificationsView extends GetView<NotificationsController> {
                     ),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(20),
-                      onTap: () => _onNotificationTap(n),
+                      onTap: () => controller.openNotification(n),
                       child: NotificationCard(
                         title: n.title.trim().isEmpty ? 'notification_default_title'.tr : n.title,
                         subtitle: n.subtitle,
@@ -118,7 +133,7 @@ class NotificationsView extends GetView<NotificationsController> {
                   );
                 },
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemCount: controller.items.length + 1,
+                itemCount: items.length + 1,
               ),
             ),
           );

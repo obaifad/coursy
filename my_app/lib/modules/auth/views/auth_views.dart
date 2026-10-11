@@ -10,6 +10,7 @@ import '../../../core/responsive/responsive.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_system_ui.dart';
 import '../../../widgets/design_system.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/forgot_password_controller.dart';
@@ -31,65 +32,67 @@ class LoginView extends GetView<AuthController> {
 
     return Obx(() {
       final _ = localeRebuildToken;
-      return Theme(
-        data: Theme.of(context).copyWith(textTheme: AppFonts.tajawalTextTheme(Theme.of(context).textTheme)),
-        child: Scaffold(
-          backgroundColor: const Color(0xFFF3F1FF),
-          resizeToAvoidBottomInset: true,
-          body: Stack(
-            children: [
-              SafeArea(
-                child: Builder(
-                  builder: (context) {
-                    final metrics = LoginPageMetrics.of(context);
-                    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-                    final bottomPad = keyboardInset > 0 ? keyboardInset + 12 : 32.0;
+      return AppStatusBar(
+        child: Theme(
+          data: Theme.of(context).copyWith(textTheme: AppFonts.tajawalTextTheme(Theme.of(context).textTheme)),
+          child: Scaffold(
+            backgroundColor: const Color(0xFFF3F1FF),
+            resizeToAvoidBottomInset: true,
+            body: Stack(
+              children: [
+                SafeArea(
+                  child: Builder(
+                    builder: (context) {
+                      final metrics = LoginPageMetrics.of(context);
+                      final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+                      final bottomPad = keyboardInset > 0 ? keyboardInset + 12 : 32.0;
 
-                    if (metrics.useSplitLayout) {
-                      return AuthSplitLayout(
-                        metrics: metrics,
-                        heroVariant: AuthSplitHeroVariant.login,
-                        bottomInset: keyboardInset,
-                        form: _LoginSplitFormBody(metrics: metrics),
-                      );
-                    }
+                      if (metrics.useSplitLayout) {
+                        return AuthSplitLayout(
+                          metrics: metrics,
+                          heroVariant: AuthSplitHeroVariant.login,
+                          bottomInset: keyboardInset,
+                          form: _LoginSplitFormBody(metrics: metrics),
+                        );
+                      }
 
-                    return LayoutBuilder(
-                      builder: (context, viewport) {
-                        return SingleChildScrollView(
-                          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                          padding: EdgeInsets.only(bottom: bottomPad),
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(minHeight: viewport.maxHeight),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                LoginHeroHeader(metrics: metrics),
-                                Center(
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(maxWidth: metrics.maxContentWidth),
-                                    child: Container(
-                                      width: double.infinity,
-                                      decoration: const BoxDecoration(gradient: RegisterDecor.background),
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: metrics.horizontalPadding,
-                                        vertical: metrics.formVerticalPadding,
+                      return LayoutBuilder(
+                        builder: (context, viewport) {
+                          return SingleChildScrollView(
+                            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                            padding: EdgeInsets.only(bottom: bottomPad),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(minHeight: viewport.maxHeight),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  LoginHeroHeader(metrics: metrics),
+                                  Center(
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(maxWidth: metrics.maxContentWidth),
+                                      child: Container(
+                                        width: double.infinity,
+                                        decoration: const BoxDecoration(gradient: RegisterDecor.background),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: metrics.horizontalPadding,
+                                          vertical: metrics.formVerticalPadding,
+                                        ),
+                                        child: _LoginFormBody(metrics: metrics),
                                       ),
-                                      child: _LoginFormBody(metrics: metrics),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                    );
-                  },
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
-              ),
-              const _AuthBackButton(),
-            ],
+                const _AuthBackButton(),
+              ],
+            ),
           ),
         ),
       );
@@ -169,13 +172,17 @@ class _LoginFormBody extends GetView<AuthController> {
           elevated: !flatCard,
           child: Column(
             children: [
-              RegisterFloatingField(
-                controller: controller.loginIdController,
-                label: 'login_identifier'.tr,
-                hint: 'login_identifier_hint'.tr,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-                prefixIcon: Icons.person_outline_rounded,
+              // «البريد الإلكتروني أو رقم الهاتف» ومثاله كانا يُقصّان («…الهـ») على هاتف 1080px:
+              // نص أقصر ومثال أقصر بخط أصغر قليلاً.
+              _CompactHint(
+                child: RegisterFloatingField(
+                  controller: controller.loginIdController,
+                  label: 'login_identifier_short'.tr,
+                  hint: 'login_identifier_hint_short'.tr,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  prefixIcon: Icons.person_outline_rounded,
+                ),
               ),
               SizedBox(height: metrics.fieldGap),
               Obx(
@@ -213,6 +220,24 @@ class _LoginFormBody extends GetView<AuthController> {
         SizedBox(height: metrics.sectionGap),
         Center(child: _CreateAccountLink()),
       ],
+    );
+  }
+}
+
+/// مثال الحقل (يظهر عند التركيز والحقل فارغ) بخط 13 بدل 15 كي يتسع في عرض الحقل على الهواتف الشائعة.
+class _CompactHint extends StatelessWidget {
+  const _CompactHint({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Theme(
+      data: theme.copyWith(
+        inputDecorationTheme: theme.inputDecorationTheme.copyWith(hintStyle: const TextStyle(fontSize: 13)),
+      ),
+      child: child,
     );
   }
 }

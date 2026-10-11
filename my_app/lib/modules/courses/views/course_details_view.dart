@@ -16,6 +16,7 @@ import '../../../modules/auth/widgets/register_form_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/registration_closed_dialog.dart';
 import '../../../widgets/review_card.dart';
+import '../../../widgets/review_report.dart';
 import '../controllers/course_details_controller.dart';
 import '../../../core/locale/plural.dart';
 import '../../../theme/app_motion.dart';
@@ -26,7 +27,13 @@ part 'course_details/reviews_tab.dart';
 part 'course_details/enroll_bar.dart';
 
 class CourseDetailsView extends GetView<CourseDetailsController> {
-  const CourseDetailsView({super.key});
+  const CourseDetailsView({super.key, required this.controllerTag});
+
+  /// وسم متحكّم هذه الصفحة (انظر RouteScopedTag).
+  final String controllerTag;
+
+  @override
+  String? get tag => controllerTag;
 
   @override
   Widget build(BuildContext context) {
@@ -188,9 +195,9 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
                             enabled: controller.isLoading.value,
                             child: switch (_tabController.index) {
                               0 => _OverviewTab(item: item),
-                              1 => _ScheduleTab(item: item),
+                              1 => _ScheduleTab(item: item, controller: controller),
                               2 => _InstructorTab(item: item),
-                              _ => _ReviewsTab(item: item),
+                              _ => _ReviewsTab(item: item, controller: controller),
                             },
                           ),
                         ),
@@ -301,13 +308,15 @@ SliverAppBar _buildCourseHeroSliver({
                 const SizedBox(height: 14),
                 Row(
                   children: [
-                    const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 20),
-                    const SizedBox(width: 4),
-                    Text(
-                      item.rating.toStringAsFixed(1),
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(width: 16),
+                    if (item.hasRating) ...[
+                      const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 20),
+                      const SizedBox(width: 4),
+                      Text(
+                        item.rating.toStringAsFixed(1),
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(width: 16),
+                    ],
                     const Icon(Icons.people_alt_outlined, color: Colors.white70, size: 18),
                     const SizedBox(width: 4),
                     Expanded(

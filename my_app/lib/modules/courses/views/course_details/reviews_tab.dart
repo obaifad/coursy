@@ -1,8 +1,9 @@
 part of '../course_details_view.dart';
 
-class _ReviewsTab extends GetView<CourseDetailsController> {
-  const _ReviewsTab({required this.item});
+class _ReviewsTab extends StatelessWidget {
+  const _ReviewsTab({required this.item, required this.controller});
   final CourseModel item;
+  final CourseDetailsController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +92,10 @@ class _ReviewsTab extends GetView<CourseDetailsController> {
                 .map(
                   (r) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: ReviewCard(review: r),
+                    child: ReviewCard(
+                      review: r,
+                      onReport: controller.isLoggedIn ? () => ReviewReportFlow.start(context, r) : null,
+                    ),
                   ),
                 ),
           ] else
@@ -100,16 +104,17 @@ class _ReviewsTab extends GetView<CourseDetailsController> {
               child: Text('no_reviews_yet'.tr, style: const TextStyle(color: AppColors.textSecondary)),
             ),
           const SizedBox(height: 16),
-          _ReviewFormSection(item: item),
+          _ReviewFormSection(item: item, controller: controller),
         ],
       );
     });
   }
 }
 
-class _ReviewFormSection extends GetView<CourseDetailsController> {
-  const _ReviewFormSection({required this.item});
+class _ReviewFormSection extends StatelessWidget {
+  const _ReviewFormSection({required this.item, required this.controller});
   final CourseModel item;
+  final CourseDetailsController controller;
 
   @override
   Widget build(BuildContext context) {

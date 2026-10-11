@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../../../core/data/repositories/auth_repository.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../routes/app_routes.dart';
+import 'auth_controller.dart';
 
 /// استعادة كلمة المرور: رمز من 6 أرقام يصل بالبريد، ثم كلمة مرور جديدة.
 class ForgotPasswordController extends GetxController {
@@ -72,7 +73,8 @@ class ForgotPasswordController extends GetxController {
     final password = passwordController.text;
     errors.clear();
     if (!_codePattern.hasMatch(code)) errors['code'] = 'reset_code_invalid'.tr;
-    if (password.isEmpty) errors['password'] = 'reset_password_required'.tr;
+    final passwordError = passwordRuleError(password);
+    if (passwordError != null) errors['password'] = passwordError;
     if (password.isNotEmpty && password != confirmController.text) {
       errors['password_confirmation'] = 'passwords_do_not_match'.tr;
     }
@@ -96,6 +98,13 @@ class ForgotPasswordController extends GetxController {
     } finally {
       isResetting.value = false;
     }
+  }
+
+  /// نفس شرط التسجيل: 6 خانات على الأقل ([AuthController.minPasswordLength]).
+  static String? passwordRuleError(String password) {
+    if (password.isEmpty) return 'reset_password_required'.tr;
+    if (password.length < AuthController.minPasswordLength) return 'password_min_6'.tr;
+    return null;
   }
 
   /// يعود لتعديل البريد (إن كُتب خطأً).

@@ -9,12 +9,20 @@ import '../../../theme/app_colors.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/design_system.dart';
+import '../../../core/storage/token_storage.dart';
 import '../../../widgets/review_card.dart';
+import '../../../widgets/review_report.dart';
 import '../controllers/instructor_details_controller.dart';
 import '../../../core/locale/plural.dart';
 
 class InstructorDetailsView extends GetView<InstructorDetailsController> {
-  const InstructorDetailsView({super.key});
+  const InstructorDetailsView({super.key, required this.controllerTag});
+
+  /// وسم متحكّم هذه الصفحة (انظر RouteScopedTag).
+  final String controllerTag;
+
+  @override
+  String? get tag => controllerTag;
 
   @override
   Widget build(BuildContext context) {
@@ -369,7 +377,12 @@ class _InstructorReviewsTab extends StatelessWidget {
               ],
             );
           }
-          return ReviewCard(review: reviews[i - 1], showCourse: true);
+          final review = reviews[i - 1];
+          return ReviewCard(
+            review: review,
+            showCourse: true,
+            onReport: Get.find<TokenStorage>().isLoggedIn ? () => ReviewReportFlow.start(context, review) : null,
+          );
         },
       );
     });

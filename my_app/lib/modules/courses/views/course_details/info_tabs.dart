@@ -35,9 +35,10 @@ class _OverviewTab extends StatelessWidget {
 
 bool _hasText(String? value) => value != null && value.trim().isNotEmpty;
 
-class _ScheduleTab extends GetView<CourseDetailsController> {
-  const _ScheduleTab({required this.item});
+class _ScheduleTab extends StatelessWidget {
+  const _ScheduleTab({required this.item, required this.controller});
   final CourseModel item;
+  final CourseDetailsController controller;
 
   @override
   Widget build(BuildContext context) {

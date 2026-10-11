@@ -14,8 +14,10 @@ class InstructorCoursesView extends GetView<InstructorCoursesController> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => Scaffold(
+    return Obx(() {
+      // لقطة ثابتة لهذا البناء: الشبكة تبني عناصرها لاحقاً، وقراءة القائمة الحية بعد تغيّرها ترمي RangeError.
+      final courses = controller.courses.toList(growable: false);
+      return Scaffold(
         appBar: AppBar(
           title: Text(
             'instructor_courses_title'.trParams({'name': controller.instructorName.value}),
@@ -31,7 +33,7 @@ class InstructorCoursesView extends GetView<InstructorCoursesController> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
                     SliverToBoxAdapter(child: _InstructorHeader(controller: controller)),
-                    if (controller.courses.isEmpty && controller.errorMessage.value != null)
+                    if (courses.isEmpty && controller.errorMessage.value != null)
                       SliverFillRemaining(
                         hasScrollBody: false,
                         child: AppLoadErrorState(
@@ -39,7 +41,7 @@ class InstructorCoursesView extends GetView<InstructorCoursesController> {
                           onRetry: controller.loadCourses,
                         ),
                       )
-                    else if (controller.courses.isEmpty)
+                    else if (courses.isEmpty)
                       SliverFillRemaining(
                         hasScrollBody: false,
                         child: AppEmptyState(message: 'no_courses_for_instructor'.tr, icon: Icons.menu_book_outlined),
@@ -54,9 +56,9 @@ class InstructorCoursesView extends GetView<InstructorCoursesController> {
                         ),
                         sliver: SliverGrid.builder(
                           gridDelegate: AppGridLayouts.courseGridFor(context),
-                          itemCount: controller.courses.length,
+                          itemCount: courses.length,
                           itemBuilder: (_, i) {
-                            final course = controller.courses[i];
+                            final course = courses[i];
                             return CourseCard(
                               course: course,
                               onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
@@ -84,8 +86,8 @@ class InstructorCoursesView extends GetView<InstructorCoursesController> {
                   ],
                 ),
               ),
-      ),
-    );
+      );
+    });
   }
 }
 

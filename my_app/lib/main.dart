@@ -17,6 +17,7 @@ import 'core/services/enrollment_watch_scheduler.dart';
 import 'core/services/favorites_service.dart';
 import 'core/services/push_notification_service.dart';
 import 'core/session/session_expiry.dart';
+import 'core/session/session_refresh.dart';
 import 'core/storage/token_storage.dart';
 import 'core/storage/recent_search_storage.dart';
 
@@ -30,6 +31,8 @@ Future<void> main() async {
   await _step('storage', GetStorage.init);
   AppBindings().dependencies();
   ApiClient.onUnauthorized = () => unawaited(SessionExpiry.handle());
+  // حساب أوقفه المشرف (403 account_inactive): خروج مع رسالة الخادم بدل «انتهت الجلسة».
+  ApiClient.onAccountInactive = (message) => unawaited(SessionRefresh.onAccountInactive(message));
   // يبدأ جلب إعدادات التطبيق مبكراً؛ يُعرض أي تنبيه بعد الانتقال من شاشة البداية.
   unawaited(_step('app-config', Get.find<AppConfigService>().load));
   await _step('locale', Get.find<LocaleController>().init);

@@ -261,10 +261,18 @@ String messageFromErrorBody(dynamic body, {String? fallback}) {
   final fields = fieldErrorsFromBody(body);
   if (fields.isNotEmpty) return fields.values.first;
   if (body is Map) {
-    final map = Map<String, dynamic>.from(body);
-    if (map['message'] is String) return map['message'] as String;
+    final message = body['message'];
+    if (message is String && isDisplayableServerMessage(message)) return message.trim();
   }
   return fallback ?? 'error_unexpected'.tr;
+}
+
+/// رسالة الخادم صالحة للعرض؟ الفارغة (`{"message":""}`) تُظهر تنبيهاً بلا نص، و
+/// `No query results for model [App\Models\Course] 99` (404 من Laravel) نص تقني بالإنجليزية —
+/// في الحالتين نعرض النص الاحتياطي.
+bool isDisplayableServerMessage(String? message) {
+  final text = message?.trim() ?? '';
+  return text.isNotEmpty && !text.startsWith('No query results');
 }
 
 String? errorCodeFromBody(dynamic body) {
@@ -281,11 +289,14 @@ Map<String, String> fieldErrorsFromBody(dynamic body) {
   final result = <String, String>{};
   for (final entry in errors.entries) {
     final value = entry.value;
+    String? text;
     if (value is List && value.isNotEmpty) {
-      result[entry.key.toString()] = value.first.toString();
-    } else if (value is String && value.isNotEmpty) {
-      result[entry.key.toString()] = value;
+      text = value.first?.toString().trim();
+    } else if (value is String) {
+      text = value.trim();
     }
+    // رسالة فارغة لا تُعرض (تبقى رسالة الخادم العامة أو النص الاحتياطي).
+    if (text != null && text.isNotEmpty) result[entry.key.toString()] = text;
   }
   return result;
 }

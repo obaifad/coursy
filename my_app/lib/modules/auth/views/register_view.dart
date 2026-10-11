@@ -4,7 +4,9 @@ import 'package:get/get.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../theme/app_fonts.dart';
+import '../../../core/config/api_config.dart';
 import '../../../core/locale/locale_rebuild.dart';
+import '../../../core/utils/external_launcher.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../routes/app_routes.dart';
@@ -17,6 +19,55 @@ import '../../../widgets/app_select_field.dart';
 import '../../../widgets/app_selection_sheet.dart';
 import '../../../widgets/design_system.dart';
 import '../../../theme/app_motion.dart';
+
+/// خانة الموافقة على شروط الاستخدام وسياسة الخصوصية (روابط صفحات الموقع بلغة التطبيق).
+class _TermsAgreement extends GetView<AuthController> {
+  const _TermsAgreement();
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = Get.locale?.languageCode == 'en' ? 'en' : 'ar';
+    const linkStyle = TextStyle(
+      color: AppColors.primary,
+      fontWeight: FontWeight.w700,
+      decoration: TextDecoration.underline,
+      decorationColor: AppColors.primary,
+    );
+    return Obx(
+      () => Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Checkbox(
+            value: controller.acceptedTerms.value,
+            onChanged: (value) {
+              controller.acceptedTerms.value = value ?? false;
+              if (controller.acceptedTerms.value) controller.registerStepError.value = null;
+            },
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Wrap(
+                children: [
+                  Text('${'terms_agree_prefix'.tr} '),
+                  InkWell(
+                    onTap: () => ExternalLauncher.openWebPage(ApiConfig.termsUrl(lang)),
+                    child: Text('terms_of_use'.tr, style: linkStyle),
+                  ),
+                  Text(' ${'and_word'.tr} '),
+                  InkWell(
+                    onTap: () => ExternalLauncher.openWebPage(ApiConfig.privacyUrl(lang)),
+                    child: Text('privacy_policy'.tr, style: linkStyle),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 final List<TextInputFormatter> _phoneInputFormatters = [
   FilteringTextInputFormatter.digitsOnly,
@@ -128,6 +179,7 @@ class _RegisterViewState extends State<RegisterView> {
                     ),
                   ),
                 ),
+                if (step == 2) ...[SizedBox(height: metrics.fieldGap), const _TermsAgreement()],
                 SizedBox(height: metrics.sectionGap),
                 Row(
                   children: [

@@ -64,7 +64,8 @@ class BookingController extends GetxController {
       }
       AppNavigation.goToRoot(tab: 3);
       // بعد التسجيل فقط يُعرض عنوان شام كاش (التحويل قبل التسجيل يُرفض من الخادم).
-      if (course.requiresAdvancePayment || enrollment.canPay) {
+      // الدورات الأونلاين لا تُدفع داخل التطبيق: تُدفع للمعهد مباشرة.
+      if (!course.isOnline && (course.requiresAdvancePayment || enrollment.canPay)) {
         unawaited(Get.toNamed(AppRoutes.payment, arguments: enrollment));
       }
     } on ApiException catch (e) {

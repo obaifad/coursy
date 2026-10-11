@@ -130,10 +130,10 @@ void main() {
       await auditScene(
         tester,
         'course-details',
-        () => const CourseDetailsView(),
+        () => const CourseDetailsView(controllerTag: 'course-test'),
         beforeEach: () async {
           await registerFakes(loggedIn: true, locale: Get.locale?.languageCode ?? locale);
-          final c = Get.put(CourseDetailsController());
+          final c = Get.put(CourseDetailsController(), tag: 'course-test');
           c.course.value = sampleCourses().first;
           c.schedules.assignAll(sampleSchedules());
           c.reviews.assignAll(sampleReviews());
@@ -147,10 +147,10 @@ void main() {
       await auditScene(
         tester,
         'institute-details',
-        () => const InstituteDetailsView(),
+        () => const InstituteDetailsView(controllerTag: 'institute-test'),
         beforeEach: () async {
           await registerFakes(loggedIn: true, locale: Get.locale?.languageCode ?? locale);
-          Get.put(InstituteDetailsController()).institute.value = sampleInstitutes().first;
+          Get.put(InstituteDetailsController(), tag: 'institute-test').institute.value = sampleInstitutes().first;
         },
       ),
     );

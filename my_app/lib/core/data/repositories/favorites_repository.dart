@@ -4,7 +4,6 @@ import '../../config/app_debug_log.dart';
 import '../../models/favorite_model.dart';
 import '../../network/api_client.dart';
 import '../../network/api_endpoints.dart';
-import '../../network/api_exception.dart';
 import '../../network/json_parser.dart';
 import '../../network/paginated_fetch.dart';
 import '../../services/student_id_resolver.dart';
@@ -50,64 +49,26 @@ class FavoritesRepository extends GetxService {
     });
   }
 
+  /// الدورة: `DELETE /courses/{id}/favorite` فقط (كانت تُجرَّب بعده مسارات غير موجودة عند 404/405).
+  /// غير الدورات (معهد/مدرّس) تُحذف بمعرّف المفضلة.
   Future<void> removeFavorite(int favoriteId, {int? courseId}) async {
-    ApiException? lastError;
-
-    if (courseId != null) {
-      final paths = [ApiEndpoints.courseFavorite(courseId), ApiEndpoints.studentCourseFavorite(courseId)];
-      for (final path in paths) {
-        try {
-          await _client.handle(() => _client.delete(path), (raw) {
-            _log('REMOVE', normalizeApiBody(raw), path: path);
-            return null;
-          });
-          return;
-        } on ApiException catch (e) {
-          lastError = e;
-          if (e.statusCode == 404 || e.statusCode == 405) continue;
-          rethrow;
-        }
-      }
-    }
-
-    final paths = [ApiEndpoints.resourceById(ApiEndpoints.studentFavorites, favoriteId)];
-
-    for (final path in paths) {
-      try {
-        await _client.handle(() => _client.delete(path), (raw) {
-          _log('REMOVE', normalizeApiBody(raw), path: path);
-          return null;
-        });
-        return;
-      } on ApiException catch (e) {
-        lastError = e;
-        if (e.statusCode == 404 || e.statusCode == 405) continue;
-        rethrow;
-      }
-    }
-
-    throw lastError ?? ApiException('error_favorite_remove'.tr);
+    final path = courseId != null
+        ? ApiEndpoints.courseFavorite(courseId)
+        : ApiEndpoints.resourceById(ApiEndpoints.studentFavorites, favoriteId);
+    await _client.handle(() => _client.delete(path), (raw) {
+      _log('REMOVE', normalizeApiBody(raw), path: path);
+      return null;
+    });
   }
 
-  Future<Map<String, dynamic>> _postCourseFavorite(int courseId) async {
-    final paths = [ApiEndpoints.courseFavorite(courseId), ApiEndpoints.studentCourseFavorite(courseId)];
-    ApiException? lastError;
-
-    for (final path in paths) {
-      try {
-        return await _client.handle(() => _client.post(path, data: const <String, dynamic>{}), (raw) {
-          final body = normalizeApiBody(raw);
-          _log('ADD', body, path: path);
-          if (body is Map<String, dynamic>) return body;
-          return <String, dynamic>{'data': body};
-        });
-      } on ApiException catch (e) {
-        lastError = e;
-        if (e.statusCode == 404 || e.statusCode == 405) continue;
-        rethrow;
-      }
-    }
-
-    throw lastError ?? ApiException('error_favorite_add'.tr);
+  /// `POST /courses/{id}/favorite` فقط (المسار البديل `/student/courses/{id}/favorite` غير موجود على الخادم).
+  Future<Map<String, dynamic>> _postCourseFavorite(int courseId) {
+    final path = ApiEndpoints.courseFavorite(courseId);
+    return _client.handle(() => _client.post(path, data: const <String, dynamic>{}), (raw) {
+      final body = normalizeApiBody(raw);
+      _log('ADD', body, path: path);
+      if (body is Map<String, dynamic>) return body;
+      return <String, dynamic>{'data': body};
+    });
   }
 }

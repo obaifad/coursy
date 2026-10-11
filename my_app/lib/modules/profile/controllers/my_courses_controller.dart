@@ -73,7 +73,7 @@ class MyCoursesController extends GetxController with LatestLoadGuard, InitialLo
   Future<void> _refreshPaymentAvailability(List<EnrollmentModel> items) async {
     if (!Get.isRegistered<PaymentRepository>()) return;
     final repo = Get.find<PaymentRepository>();
-    final candidates = items.where((e) => e.canPay).toList();
+    final candidates = items.where((e) => e.canPay && !inAppPaymentBlocked(e)).toList();
     await Future.wait(
       candidates.map((e) async {
         try {
@@ -88,8 +88,13 @@ class MyCoursesController extends GetxController with LatestLoadGuard, InitialLo
     );
   }
 
-  /// هل نعرض «ادفع الآن»؟ مطلوب من الخادم + لم يثبت أن الدفع الإلكتروني غير متاح.
-  bool showPayButton(EnrollmentModel e) => e.canPay && paymentAvailable[e.id] != false;
+  /// هل نعرض «ادفع الآن»؟ مطلوب من الخادم + مسموح داخل التطبيق + لم يثبت أن الدفع الإلكتروني غير متاح.
+  bool showPayButton(EnrollmentModel e) => e.canPay && !inAppPaymentBlocked(e) && paymentAvailable[e.id] != false;
+
+  /// لا دفع داخل التطبيق: الدورات الأونلاين (سياسة الفوترة في Google Play)، أو معهد لا يقبل شام كاش
+  /// (`accepts_shamcash: false` — غيابه من خادم قديم يُبقي السلوك السابق). «عرض التفاصيل» يبقى.
+  static bool inAppPaymentBlocked(EnrollmentModel e) =>
+      e.course?.isOnline == true || e.institute?.acceptsShamcash == false;
 
   /// يدمج نتيجة الفحص الدوري مع القائمة الحالية بدون حذف عناصر غير موجودة في الصفحة المُرجعة
   /// (الفحص الدوري قد يُرجع الصفحة الأولى فقط من الخادم).
@@ -127,6 +132,7 @@ class MyCoursesController extends GetxController with LatestLoadGuard, InitialLo
     cancellingIds.add(enrollment.id);
     try {
       final updated = await _repository.cancelEnrollment(enrollment.id);
+      await _rememberCancelledByStudent(enrollment.id);
       final index = enrollments.indexWhere((item) => item.id == enrollment.id);
       if (index >= 0) {
         enrollments[index] = updated;
@@ -139,6 +145,16 @@ class MyCoursesController extends GetxController with LatestLoadGuard, InitialLo
       Get.snackbar('error'.tr, userErrorMessage(e));
     } finally {
       cancellingIds.remove(enrollment.id);
+    }
+  }
+
+  /// إلغاء من الطالب نفسه: لا يظهر له إشعار محلي «تم إلغاء التسجيل» حين يكتشف الفحص الدوري التغيّر.
+  Future<void> _rememberCancelledByStudent(int enrollmentId) async {
+    if (!Get.isRegistered<EnrollmentStatusCoordinator>()) return;
+    try {
+      await Get.find<EnrollmentStatusCoordinator>().markCancelledByStudent(enrollmentId);
+    } catch (_) {
+      // الإلغاء نجح على الخادم — فشل الحفظ المحلي لا يُعرض كخطأ.
     }
   }
 

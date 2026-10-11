@@ -103,6 +103,10 @@ class InstitutesController extends GetxController with LatestLoadGuard, InitialL
 }
 
 class InstituteDetailsController extends GetxController {
+  /// صفحات تفاصيل المعاهد المفتوحة الآن — لكلٍّ متحكّمها بوسمٍ خاص، فلا يصلح Get.find بدون وسم.
+  static final Set<InstituteDetailsController> _open = {};
+  static List<InstituteDetailsController> get open => List.of(_open);
+
   final InstituteRepository _instituteRepository = Get.find();
   final CourseRepository _courseRepository = Get.find();
   final InstructorRepository _instructorRepository = Get.find();
@@ -117,6 +121,7 @@ class InstituteDetailsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _open.add(this);
     final arg = Get.arguments;
     if (arg is InstituteModel) {
       instituteId = arg.id;
@@ -127,6 +132,12 @@ class InstituteDetailsController extends GetxController {
       instituteId = 0;
     }
     loadDetails();
+  }
+
+  @override
+  void onClose() {
+    _open.remove(this);
+    super.onClose();
   }
 
   int get displayedCoursesCount {

@@ -18,6 +18,20 @@ class NotificationRepository extends GetxService {
     );
   }
 
+  Future<void> markRead(int notificationId) {
+    return _client.handle(
+      () => _client.post(ApiEndpoints.studentNotificationRead(notificationId), data: const <String, dynamic>{}),
+      (_) {},
+    );
+  }
+
+  Future<void> markAllRead() {
+    return _client.handle(
+      () => _client.post(ApiEndpoints.studentNotificationsReadAll, data: const <String, dynamic>{}),
+      (_) {},
+    );
+  }
+
   Future<List<NotificationModel>> fetchNotifications() async {
     return _client.handle(
       () => _client.get(ApiEndpoints.studentNotifications),
