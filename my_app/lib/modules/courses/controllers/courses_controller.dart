@@ -52,17 +52,36 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
     super.onClose();
   }
 
-  void _resort() => sortedCourses.assignAll(sortCourses(courses, selectedSort.value));
+  /// أثناء تحميل كل الصفحات للترتيب لا نعيد الترتيب مع كل صفحة (كانت البطاقات تتبدّل تحت إصبع
+  /// المستخدم وهو يمرّر) — نرتّب مرة واحدة في النهاية.
+  int _fullLoads = 0;
+
+  void _resort() {
+    if (_fullLoads > 0) return;
+    sortedCourses.assignAll(sortCourses(courses, selectedSort.value));
+  }
 
   bool get _needsFullList =>
       selectedSort.value != CourseSortOption.newest && hasMore.value && totalCount.value <= _maxCoursesForFullSort;
 
   Future<void> _loadAllRemaining() async {
-    while (_needsFullList && !isLoading.value) {
-      final before = courses.length;
-      await loadMoreCourses();
-      if (courses.length == before) break;
+    if (!_needsFullList) return;
+    _fullLoads++;
+    try {
+      while (_needsFullList && !isLoading.value) {
+        final before = courses.length;
+        await loadMoreCourses();
+        if (courses.length == before) break;
+      }
+    } finally {
+      _fullLoads--;
+      _resort();
     }
+  }
+
+  /// قائمة جديدة (تصنيف أو ترتيب آخر) تبدأ من أولها، لا من موضع القائمة السابقة.
+  void _scrollToTop() {
+    if (scrollController.hasClients && scrollController.offset > 0) scrollController.jumpTo(0);
   }
 
   void _onScrollNearEnd() {
@@ -92,6 +111,7 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
 
   void selectCategory(int? id) {
     selectedCategoryId.value = id;
+    _scrollToTop();
     resetInitialLoad();
     loadCourses();
   }
@@ -99,6 +119,7 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
   void selectSort(CourseSortOption sort) {
     if (selectedSort.value == sort) return;
     selectedSort.value = sort;
+    _scrollToTop();
     _loadAllRemaining();
   }
 

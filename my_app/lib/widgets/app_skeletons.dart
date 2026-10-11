@@ -106,6 +106,29 @@ class AppGridSkeleton extends StatelessWidget {
   }
 }
 
+/// نفس [AppGridSkeleton] لكن كـ sliver، داخل CustomScrollView لصفحة يتحرك هيدرها مع المحتوى.
+class AppSliverGridSkeleton extends StatelessWidget {
+  const AppSliverGridSkeleton({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16)});
+
+  final int itemCount;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer.sliver(
+      enabled: true,
+      child: SliverPadding(
+        padding: padding,
+        sliver: SliverGrid.builder(
+          itemCount: itemCount,
+          gridDelegate: AppGridLayouts.courseGridFor(context),
+          itemBuilder: (_, __) => const _SkeletonCourseCard(),
+        ),
+      ),
+    );
+  }
+}
+
 class AppListSkeleton extends StatelessWidget {
   const AppListSkeleton({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16)});
 
