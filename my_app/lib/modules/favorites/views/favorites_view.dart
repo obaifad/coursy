@@ -203,9 +203,10 @@ class _FavoriteGridItemState extends State<_FavoriteGridItem> {
                 onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
               ),
             ),
+            // في زاوية البداية: زاوية النهاية فيها شارة البطاقة («جديدة»، «الأكثر طلباً»…) فكان القلب يغطيها.
             PositionedDirectional(
               top: 8,
-              end: 8,
+              start: 8,
               child: Material(
                 color: Colors.white.withValues(alpha: 0.94),
                 shape: const CircleBorder(),
