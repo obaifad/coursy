@@ -39,12 +39,21 @@ class CourseFavoriteButton extends StatefulWidget {
 }
 
 class _CourseFavoriteButtonState extends State<CourseFavoriteButton> with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 450));
-  late final Animation<double> _scale = TweenSequence<double>([
-    TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.3).chain(CurveTween(curve: Curves.easeOut)), weight: 40),
-    TweenSequenceItem(tween: Tween(begin: 1.3, end: 0.92).chain(CurveTween(curve: Curves.easeInOut)), weight: 30),
-    TweenSequenceItem(tween: Tween(begin: 0.92, end: 1.0).chain(CurveTween(curve: Curves.easeOut)), weight: 30),
-  ]).animate(_pulse);
+  // يُنشأ في initState لا عند أول استعمال: بطاقة لم يُرسم قلبها بعد كانت تنشئه لأول مرة داخل dispose،
+  // فيبحث الـ Ticker عن TickerMode في شجرة معطّلة (assertion «Looking up a deactivated widget's ancestor»).
+  late final AnimationController _pulse;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 450));
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.3).chain(CurveTween(curve: Curves.easeOut)), weight: 40),
+      TweenSequenceItem(tween: Tween(begin: 1.3, end: 0.92).chain(CurveTween(curve: Curves.easeInOut)), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 0.92, end: 1.0).chain(CurveTween(curve: Curves.easeOut)), weight: 30),
+    ]).animate(_pulse);
+  }
 
   /// الحالة المعروضة أثناء الطلب (null = حالة الخادم).
   bool? _optimistic;
@@ -148,7 +157,10 @@ class _GlassCircle extends StatelessWidget {
         gradient: LinearGradient(
           begin: AlignmentDirectional.topStart,
           end: AlignmentDirectional.bottomEnd,
-          colors: [Colors.white.withValues(alpha: blur ? 0.78 : 0.92), Colors.white.withValues(alpha: blur ? 0.58 : 0.8)],
+          colors: [
+            Colors.white.withValues(alpha: blur ? 0.78 : 0.92),
+            Colors.white.withValues(alpha: blur ? 0.58 : 0.8),
+          ],
         ),
         border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1),
       ),
