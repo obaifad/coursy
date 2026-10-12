@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import '../../../theme/app_colors.dart';
 
 import '../../../core/locale/locale_rebuild.dart';
+import '../../../core/navigation/app_navigation.dart';
+import '../../auth/widgets/register_form_widgets.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/design_system.dart';
@@ -86,7 +88,12 @@ class NotificationsView extends GetView<NotificationsController> {
               child: AppEmptyState.scrollable(
                 context: context,
                 message: 'notifications_empty'.tr,
+                subtitle: 'notifications_empty_hint'.tr,
                 icon: Icons.notifications_none_rounded,
+                action: SizedBox(
+                  width: 220,
+                  child: RegisterGradientButton(label: 'browse_courses'.tr, onPressed: AppNavigation.openCoursesTab),
+                ),
               ),
             );
           }

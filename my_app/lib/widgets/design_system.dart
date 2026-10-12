@@ -14,5 +14,6 @@ part 'design_system/foundations.dart';
 part 'design_system/course_card_metrics.dart';
 part 'design_system/branding.dart';
 part 'design_system/layout_widgets.dart';
+part 'design_system/scroll_away_header.dart';
 part 'design_system/hero_header.dart';
 part 'design_system/entity_cards.dart';

@@ -29,6 +29,15 @@ abstract final class AppNavigation {
     Get.find<RootController>().changeTab(index);
   }
 
+  /// «استكشف الدورات» من صفحة فوق الرئيسية (البحث، الإشعارات…): نرجع إلى الرئيسية الموجودة
+  /// (بلا إعادة بنائها) ثم تبويب الدورات.
+  static void openCoursesTab() {
+    if (Get.currentRoute != AppRoutes.root) {
+      Get.until((route) => route.settings.name == AppRoutes.root || route.isFirst);
+    }
+    switchToTab(0);
+  }
+
   /// تصفّح التطبيق كضيف بدون تسجيل — يفتح الصفحة الرئيسية دائماً.
   static void enterAsGuest() => goToRoot(tab: 2);
 }

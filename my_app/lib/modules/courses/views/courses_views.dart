@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../routes/app_routes.dart';
-import '../../../theme/app_colors.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/design_system.dart';
@@ -79,7 +78,7 @@ class _CoursesScrollViewState extends State<_CoursesScrollView> {
               ),
             ),
             PinnedHeaderSliver(
-              child: _PinnedFiltersBar(
+              child: AppPinnedBar(
                 scrollController: c.scrollController,
                 pinOffset: _pinOffset,
                 child: Obx(
@@ -159,69 +158,6 @@ class _CoursesScrollViewState extends State<_CoursesScrollView> {
           );
         },
       ),
-    );
-  }
-}
-
-/// خلفية الصفحة تحت شريط الفلاتر (فلا تظهر البطاقات من خلفه)، وظل خفيف فقط حين يلتصق بالأعلى
-/// والدورات تمرّ تحته — فيبدو الفاصل مقصوداً بدل حافة مقطوعة.
-class _PinnedFiltersBar extends StatefulWidget {
-  const _PinnedFiltersBar({required this.scrollController, required this.pinOffset, required this.child});
-
-  final ScrollController scrollController;
-  final double Function() pinOffset;
-  final Widget child;
-
-  @override
-  State<_PinnedFiltersBar> createState() => _PinnedFiltersBarState();
-}
-
-class _PinnedFiltersBarState extends State<_PinnedFiltersBar> {
-  bool _pinned = false;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.scrollController.addListener(_update);
-  }
-
-  @override
-  void didUpdateWidget(_PinnedFiltersBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.scrollController != widget.scrollController) {
-      oldWidget.scrollController.removeListener(_update);
-      widget.scrollController.addListener(_update);
-    }
-  }
-
-  @override
-  void dispose() {
-    widget.scrollController.removeListener(_update);
-    super.dispose();
-  }
-
-  void _update() {
-    final sc = widget.scrollController;
-    final pinned = sc.hasClients && sc.offset >= widget.pinOffset() - 0.5;
-    if (pinned != _pinned) setState(() => _pinned = pinned);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      padding: const EdgeInsets.only(top: 8, bottom: 10),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: _pinned ? 0.10 : 0),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: widget.child,
     );
   }
 }

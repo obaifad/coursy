@@ -32,9 +32,7 @@ class MyCoursesTabView extends GetView<MyCoursesController> {
       if (!Get.find<TokenStorage>().isLoggedIn) {
         return const _MyCoursesLoginPrompt();
       }
-      if (controller.isLoading.value) {
-        return const AppListSkeleton(itemCount: 5);
-      }
+      // أثناء التحميل الأول: الرأس والتبويبات ظاهرة وتحتها هيكل القائمة (بدل هيكل يملأ الشاشة).
       return _MyCoursesShell(controller: controller);
     });
   }
@@ -66,51 +64,99 @@ class _MyCoursesShellState extends State<_MyCoursesShell> with SingleTickerProvi
     super.dispose();
   }
 
+  /// الرأس يختفي عند النزول وشريط التبويبات يلتصق بالأعلى — كتبويب الدورات. لكل تبويب قائمته
+  /// وسحب التحديث الخاص به؛ SliverOverlapAbsorber/Injector يمنعان مرور البطاقات تحت الشريط الملتصق.
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
       color: AppColors.surface,
       child: SafeArea(
         bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Obx(
-              () => AppHeroHeader(
-                title: 'my_courses'.tr,
-                subtitle: 'my_courses_subtitle'.tr,
-                badge: controller.enrollments.isEmpty
-                    ? null
-                    : pluralTr('bookings_count', controller.enrollments.length),
+        child: NestedScrollView(
+          key: const PageStorageKey('my_courses_tab'),
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Obx(
+                  () => AppHeroHeader(
+                    title: 'my_courses'.tr,
+                    subtitle: 'my_courses_subtitle'.tr,
+                    badge: controller.enrollments.isEmpty
+                        ? null
+                        : pluralTr('bookings_count', controller.enrollments.length),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 10),
-            AppTabBarSection(
-              controller: _tabController,
-              tabs: [
-                Tab(text: 'tab_pending'.tr),
-                Tab(text: 'tab_confirmed'.tr),
-                Tab(text: 'tab_done'.tr),
-                Tab(text: 'tab_cancelled'.tr),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                physics: const ClampingScrollPhysics(),
-                children: const [
-                  _EnrollmentList(status: _EnrollmentListStatus.pending),
-                  _EnrollmentList(status: _EnrollmentListStatus.confirmed),
-                  _EnrollmentList(status: _EnrollmentListStatus.completed),
-                  _EnrollmentList(status: _EnrollmentListStatus.cancelled),
-                ],
+            SliverOverlapAbsorber(
+              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+              sliver: SliverPersistentHeader(
+                pinned: true,
+                delegate: _PinnedTabsDelegate(
+                  shadow: innerBoxIsScrolled,
+                  child: AppTabBarSection(
+                    controller: _tabController,
+                    tabs: [
+                      Tab(text: 'tab_pending'.tr),
+                      Tab(text: 'tab_confirmed'.tr),
+                      Tab(text: 'tab_done'.tr),
+                      Tab(text: 'tab_cancelled'.tr),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
+          body: TabBarView(
+            controller: _tabController,
+            physics: const ClampingScrollPhysics(),
+            children: const [
+              _EnrollmentList(status: _EnrollmentListStatus.pending),
+              _EnrollmentList(status: _EnrollmentListStatus.confirmed),
+              _EnrollmentList(status: _EnrollmentListStatus.completed),
+              _EnrollmentList(status: _EnrollmentListStatus.cancelled),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+/// شريط التبويبات الملتصق: خلفية الصفحة تحته، وظل خفيف حين تمرّ البطاقات تحته.
+class _PinnedTabsDelegate extends SliverPersistentHeaderDelegate {
+  _PinnedTabsDelegate({required this.child, required this.shadow});
+
+  final Widget child;
+  final bool shadow;
+
+  @override
+  double get minExtent => AppTabBarSection.sectionHeight;
+
+  @override
+  double get maxExtent => AppTabBarSection.sectionHeight;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: shadow ? 0.10 : 0),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_PinnedTabsDelegate oldDelegate) => oldDelegate.child != child || oldDelegate.shadow != shadow;
 }
 
 enum _EnrollmentListStatus { pending, confirmed, completed, cancelled }
@@ -138,27 +184,33 @@ class _EnrollmentList extends GetView<MyCoursesController> {
     return Obx(() {
       final items = _itemsForStatus();
       final error = controller.errorMessage.value;
-      // بلا اتصال: رسالة الخطأ مع «إعادة المحاولة» بدل «لا حجوزات».
-      if (items.isEmpty && controller.enrollments.isEmpty && error != null) {
-        return RefreshIndicator(
-          onRefresh: controller.load,
-          color: AppColors.primary,
-          child: AppEmptyState.scrollable(
-            context: context,
+      final padding = AppLayout.scrollPadding(context, rootTab: true, top: 8);
+
+      final Widget content;
+      if (controller.isLoading.value && controller.enrollments.isEmpty) {
+        content = AppSliverListSkeleton(itemCount: 5, padding: padding);
+      } else if (items.isEmpty && controller.enrollments.isEmpty && error != null) {
+        // بلا اتصال: رسالة الخطأ مع «إعادة المحاولة» بدل «لا حجوزات».
+        content = SliverFillRemaining(
+          hasScrollBody: false,
+          child: AppEmptyState(
             message: error,
             icon: Icons.cloud_off_outlined,
             action: FilledButton(onPressed: controller.load, child: Text('retry'.tr)),
           ),
         );
-      }
-      if (items.isEmpty) {
-        return RefreshIndicator(
-          onRefresh: controller.load,
-          color: AppColors.primary,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: AppLayout.scrollPadding(context, rootTab: true, top: 8),
-            children: [_MyCoursesEmptyState(status: status)],
+      } else if (items.isEmpty) {
+        content = SliverPadding(
+          padding: padding,
+          sliver: SliverToBoxAdapter(child: _MyCoursesEmptyState(status: status)),
+        );
+      } else {
+        content = SliverPadding(
+          padding: padding,
+          sliver: SliverList.separated(
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (_, i) => _EnrollmentCard(enrollment: items[i], controller: controller),
           ),
         );
       }
@@ -166,12 +218,14 @@ class _EnrollmentList extends GetView<MyCoursesController> {
       return RefreshIndicator(
         onRefresh: controller.load,
         color: AppColors.primary,
-        child: ListView.separated(
+        child: CustomScrollView(
+          key: PageStorageKey('my_courses_${status.name}'),
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: AppLayout.scrollPadding(context, rootTab: true, top: 8),
-          itemCount: items.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (_, i) => _EnrollmentCard(enrollment: items[i], controller: controller),
+          slivers: [
+            // السياق داخل NestedScrollView: مقبض التداخل نفسه الذي سجّله شريط التبويبات.
+            SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+            content,
+          ],
         ),
       );
     });
@@ -583,20 +637,17 @@ class _MyCoursesEmptyState extends StatelessWidget {
       _EnrollmentListStatus.completed => 'my_courses_empty_completed'.tr,
       _EnrollmentListStatus.cancelled => 'my_courses_empty_cancelled'.tr,
     };
-    final showBrowse = status == _EnrollmentListStatus.pending;
-
+    // كل التبويبات الفارغة تقود إلى خطوة تالية — لا شاشة بلا مخرج.
     return AppEmptyState(
       message: title,
       subtitle: message,
       icon: theme.icon,
       iconColor: AppColors.primary,
       iconBackgroundColor: AppColors.primary.withValues(alpha: 0.1),
-      action: showBrowse
-          ? SizedBox(
-              width: 220,
-              child: RegisterGradientButton(label: 'browse_courses'.tr, onPressed: () => AppNavigation.switchToTab(0)),
-            )
-          : null,
+      action: SizedBox(
+        width: 220,
+        child: RegisterGradientButton(label: 'browse_courses'.tr, onPressed: () => AppNavigation.switchToTab(0)),
+      ),
     );
   }
 }

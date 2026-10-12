@@ -28,82 +28,80 @@ class InstitutesView extends GetView<InstitutesController> {
         final hasMore = controller.hasMore.value;
         final loadingMore = controller.isLoadingMore.value;
         final error = controller.errorMessage.value;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppHeroHeader(
+        final cities = controller.cities.toList(growable: false);
+        final selectedCityId = controller.selectedCityId.value;
+        final padding = AppLayout.scrollPadding(context, rootTab: true, top: 8);
+        // الرأس يختفي عند النزول وشريط المدن يلتصق بالأعلى — كتبويب الدورات.
+        return AppScrollAwayHeaderView(
+          storageKey: const PageStorageKey('institutes_tab'),
+          onRefresh: controller.loadInstitutes,
+          header: Padding(
+            padding: const EdgeInsets.only(bottom: 2),
+            child: AppHeroHeader(
               title: 'institutes_title'.tr,
               subtitle: 'institutes_subtitle'.tr,
               badge: institutes.isEmpty ? null : pluralTr('city_institutes_count', institutes.length),
             ),
-            const SizedBox(height: 10),
-            Obx(
-              () => HorizontalCityFilters(
-                cities: controller.cities,
-                selectedId: controller.selectedCityId.value,
-                onSelected: controller.selectCity,
-              ),
-            ),
-            const SizedBox(height: 8),
-            if (controller.selectedCityId.value != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: TextButton.icon(
-                    onPressed: () {
-                      final city = controller.cities.firstWhereOrNull((c) => c.id == controller.selectedCityId.value);
-                      if (city != null) {
-                        Get.toNamed(AppRoutes.cityDetails, arguments: {'id': city.id, 'name': city.name});
-                      }
-                    },
-                    icon: const Icon(Icons.map_outlined, size: 18),
-                    label: Text('city_details_btn'.tr),
+          ),
+          pinned: cities.length < 2
+              ? null
+              : HorizontalCityFilters(cities: cities, selectedId: selectedCityId, onSelected: controller.selectCity),
+          slivers: [
+            if (selectedCityId != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton.icon(
+                      onPressed: () {
+                        final city = cities.firstWhereOrNull((c) => c.id == selectedCityId);
+                        if (city != null) {
+                          Get.toNamed(AppRoutes.cityDetails, arguments: {'id': city.id, 'name': city.name});
+                        }
+                      },
+                      icon: const Icon(Icons.map_outlined, size: 18),
+                      label: Text('city_details_btn'.tr),
+                    ),
                   ),
                 ),
               ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: controller.loadInstitutes,
-                child: controller.isLoading.value && institutes.isEmpty
-                    ? const AppListSkeleton(padding: EdgeInsets.fromLTRB(16, 0, 16, 24))
-                    : institutes.isEmpty && error != null
-                    ? AppEmptyState.scrollable(
-                        context: context,
+            if (controller.isLoading.value && institutes.isEmpty)
+              const AppSliverListSkeleton(padding: EdgeInsets.fromLTRB(16, 8, 16, 24))
+            else if (institutes.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: error != null
+                    ? AppEmptyState(
                         message: error,
                         icon: Icons.cloud_off_outlined,
                         action: FilledButton(onPressed: controller.loadInstitutes, child: Text('retry'.tr)),
                       )
-                    : institutes.isEmpty
-                    ? AppEmptyState.scrollable(
-                        context: context,
-                        message: 'no_institutes'.tr,
-                        icon: Icons.apartment_outlined,
-                      )
-                    : ListView.separated(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        key: const PageStorageKey('institutes_tab'),
-                        padding: AppLayout.scrollPadding(context, rootTab: true),
-                        itemBuilder: (_, i) {
-                          if (i == institutes.length) {
-                            if (!hasMore) return const SizedBox.shrink();
-                            return OutlinedButton.icon(
-                              onPressed: loadingMore ? null : controller.loadMoreInstitutes,
-                              icon: loadingMore ? const AppInlineLoader() : const Icon(Icons.expand_more_rounded),
-                              label: Text('load_more'.tr),
-                            );
-                          }
-                          final institute = institutes[i];
-                          return InstituteListCard(
-                            institute: institute,
-                            onTap: () => Get.toNamed(AppRoutes.instituteDetails, arguments: institute),
-                          );
-                        },
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemCount: institutes.length + 1,
-                      ),
+                    : AppEmptyState(message: 'no_institutes'.tr, icon: Icons.apartment_outlined),
+              )
+            else
+              SliverPadding(
+                padding: padding,
+                sliver: SliverList.separated(
+                  itemCount: institutes.length + 1,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (_, i) {
+                    if (i == institutes.length) {
+                      if (!hasMore) return const SizedBox.shrink();
+                      return OutlinedButton.icon(
+                        onPressed: loadingMore ? null : controller.loadMoreInstitutes,
+                        icon: loadingMore ? const AppInlineLoader() : const Icon(Icons.expand_more_rounded),
+                        label: Text('load_more'.tr),
+                      );
+                    }
+                    final institute = institutes[i];
+                    return InstituteListCard(
+                      institute: institute,
+                      onTap: () => Get.toNamed(AppRoutes.instituteDetails, arguments: institute),
+                    );
+                  },
+                ),
               ),
-            ),
           ],
         );
       }),

@@ -129,6 +129,29 @@ class AppSliverGridSkeleton extends StatelessWidget {
   }
 }
 
+/// نسخة sliver من [AppListSkeleton] — تحت رأس الصفحة داخل CustomScrollView.
+class AppSliverListSkeleton extends StatelessWidget {
+  const AppSliverListSkeleton({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16)});
+
+  final int itemCount;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer.sliver(
+      enabled: true,
+      child: SliverPadding(
+        padding: padding,
+        sliver: SliverList.separated(
+          itemCount: itemCount,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (_, __) => const _SkeletonListTile(),
+        ),
+      ),
+    );
+  }
+}
+
 class AppListSkeleton extends StatelessWidget {
   const AppListSkeleton({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16)});
 

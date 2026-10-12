@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../theme/app_fonts.dart';
 import '../../../core/data/repositories/search_repository.dart';
 import '../../../core/locale/locale_rebuild.dart';
+import '../../../core/navigation/app_navigation.dart';
 import '../../../core/models/app_models.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
@@ -176,9 +177,22 @@ class SearchView extends GetView<SearchPageController> {
   }
 
   List<Widget> _emptyResultWidgets() {
+    final filtered = controller.hasActiveFilters;
     return [
       const SizedBox(height: 8),
-      AppEmptyState(message: 'search_no_results'.tr, subtitle: 'search_try_tags'.tr, icon: Icons.search_off_rounded),
+      AppEmptyState(
+        message: 'search_no_results'.tr,
+        subtitle: 'search_try_tags'.tr,
+        icon: Icons.search_off_rounded,
+        // بفلاتر: مسحها أقرب حل؛ وإلا تصفّح كل الدورات.
+        action: SizedBox(
+          width: 220,
+          child: RegisterGradientButton(
+            label: filtered ? 'search_clear_filters'.tr : 'browse_courses'.tr,
+            onPressed: filtered ? controller.clearFilters : AppNavigation.openCoursesTab,
+          ),
+        ),
+      ),
     ];
   }
 
