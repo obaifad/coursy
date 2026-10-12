@@ -69,6 +69,7 @@ class _FeaturedCourseCarouselState extends State<FeaturedCourseCarousel> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // الرئيسية داخل IndexedStack/تحت صفحات أخرى: TickerMode يتعطّل حين لا تكون ظاهرة، فلا نحرّك شيئاً حينها.
+    // ignore: deprecated_member_use -- TickerMode.valuesOf exists only from Flutter 3.35; the project supports 3.32.
     _tickerEnabled = TickerMode.of(context);
     _reduceMotion = MediaQuery.disableAnimationsOf(context);
     _restartTimer();
