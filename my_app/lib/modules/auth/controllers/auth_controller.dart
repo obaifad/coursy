@@ -15,6 +15,8 @@ import '../../../core/models/app_models.dart';
 import '../../../core/models/register_payload.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/session/session_refresh.dart';
+import '../../../core/storage/email_verification_prompt.dart';
+import '../../../core/storage/token_storage.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/utils/education_level_utils.dart';
 import '../../../routes/app_routes.dart';
@@ -234,6 +236,7 @@ class AuthController extends GetxController {
     try {
       await _authRepository.login(login: loginId, password: pass);
       await _afterAuthSuccess();
+      await _openPendingEmailVerification(loginId);
     } on ApiException catch (e) {
       errorMessage.value = e.message;
       Get.snackbar('login_failed'.tr, e.message);
@@ -254,6 +257,15 @@ class AuthController extends GetxController {
     }
     await SessionRefresh.onLoginSuccess();
     AppNavigation.goToRoot(tab: 2);
+  }
+
+  /// أول تسجيل دخول بعد إنشاء حساب لم يُسجَّل دخوله تلقائياً: تُعرض شاشة تأكيد البريد مرة واحدة
+  /// (مع «تخطي الآن») إن كان البريد ما زال غير مؤكد.
+  Future<void> _openPendingEmailVerification(String loginId) async {
+    if (!AppFlags.emailVerificationEnabled) return;
+    if (!await EmailVerificationPrompt.takeFor(loginId)) return;
+    if (!Get.isRegistered<TokenStorage>() || Get.find<TokenStorage>().emailVerified.value != false) return;
+    unawaited(Get.toNamed(AppRoutes.emailVerification, arguments: {'email': loginId, 'fromRegister': true}));
   }
 
   void clearRegisterValidation() {
@@ -359,6 +371,7 @@ class AuthController extends GetxController {
 
       Get.offAllNamed(AppRoutes.login);
       final registeredEmail = emailController.text.trim();
+      if (AppFlags.emailVerificationEnabled) await EmailVerificationPrompt.remember(registeredEmail);
       loginIdController.text = registeredEmail.isNotEmpty ? registeredEmail : phone;
       Get.snackbar('register_done'.tr, 'register_login_hint'.tr);
     } on ApiException catch (e) {
