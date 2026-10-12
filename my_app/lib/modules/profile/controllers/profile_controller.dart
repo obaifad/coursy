@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+import '../../../routes/app_routes.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/data/repositories/interest_repository.dart';
@@ -367,7 +369,8 @@ class ProfileController extends GetxController with LatestLoadGuard {
       _showSavedSnack();
       await SessionRefresh.afterProfileSaved();
       await Future<void>.delayed(const Duration(milliseconds: 700));
-      Get.back(result: true);
+      // المستخدم ربما رجع بنفسه خلال المهلة — لا نُغلق صفحة أخرى بدلها.
+      if (Get.currentRoute == AppRoutes.editProfile) Get.back(result: true);
     } on ApiException catch (e) {
       Get.snackbar('error'.tr, e.message);
     } catch (_) {

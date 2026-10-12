@@ -111,13 +111,17 @@ class _ReviewsTab extends StatelessWidget {
   }
 }
 
+/// داخل Obx خاص به: Obx الأب يتتبّع التقييمات فقط، فكان الهيكل (أو «غير مسجّل») يبقى بعد انتهاء
+/// التحقق من التسجيل حتى تبديل التبويب.
 class _ReviewFormSection extends StatelessWidget {
   const _ReviewFormSection({required this.item, required this.controller});
   final CourseModel item;
   final CourseDetailsController controller;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Obx(() => _build(context));
+
+  Widget _build(BuildContext context) {
     if (!controller.isLoggedIn) return const SizedBox.shrink();
 
     if (controller.isCheckingEnrollment.value) {
