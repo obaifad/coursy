@@ -288,6 +288,15 @@ class _InstructorCoursesTab extends StatelessWidget {
       if (controller.isLoadingCourses.value && controller.courses.isEmpty) {
         return const AppGridSkeleton();
       }
+      final error = controller.coursesError.value;
+      if (controller.courses.isEmpty && error != null) {
+        return AppEmptyState.scrollable(
+          context: context,
+          message: error,
+          icon: Icons.cloud_off_outlined,
+          action: FilledButton(onPressed: controller.retryCourses, child: Text('retry'.tr)),
+        );
+      }
       if (controller.courses.isEmpty) {
         return AppEmptyState.scrollable(
           context: context,

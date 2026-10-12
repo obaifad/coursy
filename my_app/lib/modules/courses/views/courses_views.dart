@@ -113,6 +113,24 @@ class _CoursesScrollViewState extends State<_CoursesScrollView> {
                         padding: EdgeInsets.symmetric(vertical: 16),
                         child: Center(child: AppInlineLoader()),
                       )
+                    : c.loadMoreFailed.value
+                    ? Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: Column(
+                          children: [
+                            Text(
+                              'error_load_more_failed'.tr,
+                              textAlign: TextAlign.center,
+                              style: AppTypography.cardSubtitle(),
+                            ),
+                            TextButton.icon(
+                              onPressed: c.loadMoreCourses,
+                              icon: const Icon(Icons.refresh_rounded),
+                              label: Text('retry'.tr),
+                            ),
+                          ],
+                        ),
+                      )
                     : const SizedBox.shrink(),
               ),
             ),

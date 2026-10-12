@@ -27,6 +27,10 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
 
   final ScrollController scrollController = ScrollController();
 
+  /// فشل جلب الصفحة التالية: نُبقي «المزيد» ونعرض «إعادة المحاولة» في آخر القائمة، ونوقف الجلب
+  /// التلقائي عند التمرير حتى يضغطها (كانت القائمة تنتهي بصمت كأنه لا توجد دورات أخرى).
+  final loadMoreFailed = false.obs;
+
   /// القائمة المرتّبة — تُحسب مرة عند تغيّر الدورات أو الترتيب (كانت تُرتّب مرتين لكل بطاقة تُرسم).
   final sortedCourses = <CourseModel>[].obs;
 
@@ -85,7 +89,7 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
   }
 
   void _onScrollNearEnd() {
-    if (!scrollController.hasClients) return;
+    if (!scrollController.hasClients || loadMoreFailed.value) return;
     final position = scrollController.position;
     if (position.maxScrollExtent <= 0) return;
     if (position.pixels < position.maxScrollExtent - 280) return;
@@ -127,6 +131,7 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
     final session = beginLoad();
     isLoading.value = isInitialLoad;
     errorMessage.value = null;
+    loadMoreFailed.value = false;
     _page = 1;
     try {
       final result = await _repository.fetchCoursesPage(
@@ -153,6 +158,7 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
   Future<void> loadMoreCourses() async {
     if (!hasMore.value || isLoadingMore.value || isLoading.value) return;
     isLoadingMore.value = true;
+    loadMoreFailed.value = false;
     // إن تغيّر التصنيف أثناء التحميل تُهمل الصفحة القديمة بدل خلطها بالقائمة الجديدة.
     final session = currentLoad();
     try {
@@ -168,7 +174,7 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
         hasMore.value = result.hasMore;
       });
     } catch (_) {
-      if (shouldApply(session)) hasMore.value = false;
+      if (shouldApply(session)) loadMoreFailed.value = true;
     } finally {
       isLoadingMore.value = false;
     }

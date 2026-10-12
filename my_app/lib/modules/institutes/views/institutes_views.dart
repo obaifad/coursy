@@ -126,6 +126,13 @@ class InstituteDetailsView extends GetView<InstituteDetailsController> {
       if (controller.isLoading.value && item == null) {
         return const Scaffold(body: AppDetailSkeleton());
       }
+      final detailsError = controller.detailsError.value;
+      if (item == null && detailsError != null) {
+        return Scaffold(
+          appBar: AppBar(title: Text('institute_details'.tr)),
+          body: AppLoadErrorState(message: detailsError, onRetry: controller.loadDetails),
+        );
+      }
       final name = item?.name ?? 'institute_details'.tr;
       return DefaultTabController(
         length: 3,
@@ -322,6 +329,15 @@ class _CoursesTab extends StatelessWidget {
       final _ = localeRebuildToken;
       // لقطة واحدة للعدد والعناصر (القائمة تُبنى أثناء التمرير وقد تتغير القائمة الأصلية بينهما).
       final courses = controller.courses.toList();
+      final error = controller.coursesError.value;
+      if (courses.isEmpty && error != null) {
+        return AppEmptyState.scrollable(
+          context: context,
+          message: error,
+          icon: Icons.cloud_off_outlined,
+          action: FilledButton(onPressed: controller.loadDetails, child: Text('retry'.tr)),
+        );
+      }
       if (courses.isEmpty) {
         return AppEmptyState.scrollable(
           context: context,
@@ -371,6 +387,15 @@ class _InstructorsTab extends StatelessWidget {
     return Obx(() {
       final _ = localeRebuildToken;
       final instructors = controller.instructors.toList();
+      final error = controller.instructorsError.value;
+      if (instructors.isEmpty && error != null) {
+        return AppEmptyState.scrollable(
+          context: context,
+          message: error,
+          icon: Icons.cloud_off_outlined,
+          action: FilledButton(onPressed: controller.loadDetails, child: Text('retry'.tr)),
+        );
+      }
       if (instructors.isEmpty) {
         return AppEmptyState.scrollable(
           context: context,

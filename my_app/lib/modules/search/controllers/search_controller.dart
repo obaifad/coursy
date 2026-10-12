@@ -103,8 +103,11 @@ class SearchPageController extends GetxController with LatestLoadGuard {
     final text = (overrideQuery ?? queryController.text).trim();
 
     if (text.isEmpty && !hasActiveFilters) {
+      // جلسة جديدة تُبطل بحثاً سابقاً ما زال جارياً — كانت نتائجه تعود بعد مسح الحقل.
+      beginLoad();
       _clearResults();
       errorMessage.value = null;
+      isSearching.value = false;
       return;
     }
 
