@@ -142,4 +142,20 @@ void main() {
     expect(theme.bodyMedium?.fontFamily, 'Tajawal');
     expect(theme.titleLarge?.fontFamily, 'Tajawal');
   });
+
+  test('city follows the current app language, even for a course loaded earlier', () {
+    final course = CourseModel.fromJson({
+      'id': 1,
+      'title_ar': 'بايثون للمبتدئين',
+      'institute': {
+        'id': 5,
+        'name_ar': 'معهد المسار للتدريب',
+        'city': {'id': 1, 'name_ar': 'دمشق', 'name_en': 'Damascus'},
+      },
+    });
+    expect(course.instituteCity, 'دمشق');
+    Get.locale = const Locale('en');
+    expect(course.instituteCity, 'Damascus');
+    expect(course.copyWith(rating: 4).instituteCity, 'Damascus');
+  });
 }

@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 
 import '../../../core/data/repositories/category_repository.dart';
 import '../../../core/data/repositories/course_repository.dart';
-import '../../../core/data/repositories/enrollment_repository.dart';
 import '../../../core/data/repositories/home_repository.dart';
 import '../../../core/data/repositories/instructor_repository.dart';
 import '../../../core/data/repositories/institute_repository.dart';
@@ -13,7 +12,6 @@ import '../../../core/models/app_models.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/services/course_rating_service.dart';
 import '../../../core/storage/token_storage.dart';
-import '../upcoming_lecture.dart';
 
 class HomeController extends GetxController with LatestLoadGuard {
   HomeController(this._tokenStorage);
@@ -39,9 +37,6 @@ class HomeController extends GetxController with LatestLoadGuard {
   final instructorSubjects = <InstructorSubjectModel>[].obs;
   final categories = <CategoryModel>[].obs;
   final cities = <CityModel>[].obs;
-
-  /// أقرب محاضرة للطالب المسجّل (تسجيل مؤكد + جدول معروف)؛ null = ضيف أو لا محاضرات قادمة.
-  final upcomingLecture = Rxn<UpcomingLecture>();
 
   /// يُزاد عند العودة للرئيسية لإعادة ضبط القوائم الأفقية من نقطة الصفر.
   final horizontalScrollReset = 0.obs;
@@ -158,7 +153,6 @@ class HomeController extends GetxController with LatestLoadGuard {
         _fetchInstitutes(errors, session, force: forceRefresh),
         _fetchPrivateInstructors(errors, session, force: forceRefresh),
         _fetchInstructorSubjects(errors, session, force: refreshStatic),
-        _fetchUpcomingLecture(session),
       ]);
 
       if (!shouldApply(session)) return;
@@ -212,37 +206,6 @@ class HomeController extends GetxController with LatestLoadGuard {
       if (same) return;
     }
     target.assignAll(fresh);
-  }
-
-  /// غير حرج: فشله لا يُظهر خطأ في الرئيسية — يبقى البانر العادي.
-  Future<void> _fetchUpcomingLecture(LoadSession session) async {
-    if (!isLoggedIn || !Get.isRegistered<EnrollmentRepository>()) {
-      upcomingLecture.value = null;
-      return;
-    }
-    try {
-      final enrollments = await Get.find<EnrollmentRepository>().fetchEnrollments();
-      final confirmed = enrollments
-          .where((e) => UpcomingLecture.isConfirmed(e.status) && e.course != null && e.courseId != null)
-          .take(6)
-          .toList();
-      // جدول الدورة إن جاء مع التسجيل، وإلا من /course-schedules (طلب لكل دورة مؤكدة، 6 كحد أقصى).
-      final schedules = <int, List<ScheduleModel>>{};
-      await Future.wait(
-        confirmed.map((e) async {
-          final own = e.course!.schedules;
-          schedules[e.id] = own.isNotEmpty
-              ? own
-              : await _courseRepository.fetchCourseSchedules(e.courseId!).catchError((Object _) => <ScheduleModel>[]);
-        }),
-      );
-      if (!shouldApply(session)) return;
-      upcomingLecture.value = UpcomingLecture.find(confirmed, (e) => schedules[e.id] ?? const [], DateTime.now());
-    } on ApiCancelledException {
-      return;
-    } catch (_) {
-      // نُبقي آخر قيمة معروفة.
-    }
   }
 
   Future<void> _fetchCategories(List<String> errors, LoadSession session, {bool force = false}) async {
