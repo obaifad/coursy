@@ -384,7 +384,7 @@ class PrivateInstructorListCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 BidiText(
-                  instructor.specialization ?? 'instructor_default'.tr,
+                  instructor.specializationLabel ?? 'instructor_default'.tr,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: _TutorText.specialization(12.5),
@@ -455,7 +455,7 @@ class PrivateInstructorMiniCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   BidiText(
-                    instructor.specialization ?? 'instructor_default'.tr,
+                    instructor.specializationLabel ?? 'instructor_default'.tr,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: _TutorText.specialization(11.5),

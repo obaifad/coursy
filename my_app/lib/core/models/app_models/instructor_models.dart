@@ -180,6 +180,17 @@ class InstructorModel {
 
   String get name => JsonHelpers.pickLocalized(ar: nameAr, en: nameEn);
 
+  /// التخصص بلغة الواجهة الحالية — يُختار عند العرض مثل [name]. [specialization] يُثبَّت بلغة لحظة
+  /// القراءة (ويقدّم حقل `specialization` العادي، عربياً غالباً، على `_en`)، فكان يظهر عربياً بالإنجليزية.
+  String? get specializationLabel {
+    final picked = JsonHelpers.pickLocalized(
+      ar: specializationAr ?? '',
+      en: specializationEn ?? '',
+      fallback: specialization ?? '',
+    );
+    return picked.isEmpty ? null : picked;
+  }
+
   String? get resolvedImageUrl => ApiConfig.resolveMediaUrl(imageUrl);
 
   String get subjectKey =>

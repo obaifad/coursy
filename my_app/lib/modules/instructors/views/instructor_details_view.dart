@@ -167,7 +167,7 @@ class _InstructorInfoTab extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                instructor!.specialization ?? 'instructor_default'.tr,
+                instructor!.specializationLabel ?? 'instructor_default'.tr,
                 style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
               ),
               if (instructor!.experienceYears > 0) ...[

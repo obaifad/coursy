@@ -34,7 +34,7 @@ class InstructorCoursesController extends GetxController with InitialLoadState {
     if (arg is InstructorModel) {
       instructorId = arg.id;
       instructorName.value = arg.name;
-      specialization.value = arg.specialization;
+      specialization.value = arg.specializationLabel;
       experienceYears.value = arg.experienceYears;
       bio.value = arg.bio;
       return;
