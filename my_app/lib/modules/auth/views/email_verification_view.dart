@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../core/responsive/responsive.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_fonts.dart';
+import '../../../theme/app_system_ui.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/otp_code_field.dart';
 import '../controllers/email_verification_controller.dart';
@@ -17,6 +18,11 @@ class EmailVerificationView extends GetView<EmailVerificationController> {
 
   @override
   Widget build(BuildContext context) {
+    // الرأس البنفسجي يمتد تحت شريط الحالة: أيقونات فاتحة (كانت داكنة فوق البنفسجي).
+    return AppStatusBar(lightIcons: true, child: _page(context));
+  }
+
+  Widget _page(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surface,
       resizeToAvoidBottomInset: true,

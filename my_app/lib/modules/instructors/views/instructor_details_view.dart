@@ -38,53 +38,61 @@ class InstructorDetailsView extends GetView<InstructorDetailsController> {
       return DefaultTabController(
         length: 4,
         child: Scaffold(
-          body: NestedScrollView(
-            headerSliverBuilder: (context, inner) => [
-              SliverAppBar(
-                expandedHeight: 220,
-                pinned: true,
-                backgroundColor: AppColors.surface,
-                // مفضلة المدرّسين غير مدعومة في الخادم (POST /student/favorites يقبل الدورات فقط) — مخفية حتى تُضاف.
-                title: Text(name),
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      const DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.primary)),
-                      const BrandBannerPattern(),
-                      Center(child: _InstructorHeroAvatar(instructor: item)),
-                    ],
+          // الشريط أبيض فوق التدرّج البنفسجي وداكن بعد طيّه (كان داكناً فوق البنفسجي فلا يُقرأ).
+          body: CollapsingHeroScope(
+            collapseOffset: 220 - kToolbarHeight - 24,
+            builder: (context, collapsed) => NestedScrollView(
+              headerSliverBuilder: (context, inner) => [
+                SliverAppBar(
+                  expandedHeight: 220,
+                  pinned: true,
+                  backgroundColor: AppColors.surface,
+                  iconTheme: HeroAppBarStyle.icons(collapsed),
+                  actionsIconTheme: HeroAppBarStyle.icons(collapsed),
+                  titleTextStyle: HeroAppBarStyle.title(collapsed),
+                  systemOverlayStyle: HeroAppBarStyle.overlay(collapsed),
+                  // مفضلة المدرّسين غير مدعومة في الخادم (POST /student/favorites يقبل الدورات فقط) — مخفية حتى تُضاف.
+                  title: Text(name),
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        const DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.primary)),
+                        const BrandBannerPattern(),
+                        Center(child: _InstructorHeroAvatar(instructor: item)),
+                      ],
+                    ),
                   ),
-                ),
-                bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(60),
-                  child: ColoredBox(
-                    color: AppColors.surface,
-                    child: Builder(
-                      builder: (context) => Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
-                        child: AppSegmentedTabBar(
-                          controller: DefaultTabController.of(context),
-                          tabs: [
-                            Tab(text: 'tab_info'.tr),
-                            Tab(text: 'tab_courses'.tr),
-                            Tab(text: 'tab_institutes'.tr),
-                            Tab(text: 'tab_reviews'.tr),
-                          ],
+                  bottom: PreferredSize(
+                    preferredSize: const Size.fromHeight(60),
+                    child: ColoredBox(
+                      color: AppColors.surface,
+                      child: Builder(
+                        builder: (context) => Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+                          child: AppSegmentedTabBar(
+                            controller: DefaultTabController.of(context),
+                            tabs: [
+                              Tab(text: 'tab_info'.tr),
+                              Tab(text: 'tab_courses'.tr),
+                              Tab(text: 'tab_institutes'.tr),
+                              Tab(text: 'tab_reviews'.tr),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
-            body: TabBarView(
-              children: [
-                _InstructorInfoTab(instructor: item, totalCourses: controller.totalCourses.value),
-                _InstructorCoursesTab(controller: controller),
-                _InstructorInstitutesTab(instructor: item),
-                _InstructorReviewsTab(controller: controller),
               ],
+              body: TabBarView(
+                children: [
+                  _InstructorInfoTab(instructor: item, totalCourses: controller.totalCourses.value),
+                  _InstructorCoursesTab(controller: controller),
+                  _InstructorInstitutesTab(instructor: item),
+                  _InstructorReviewsTab(controller: controller),
+                ],
+              ),
             ),
           ),
         ),
@@ -490,7 +498,11 @@ class _InstructorInstitutesTab extends StatelessWidget {
                               const SizedBox(width: 4),
                               Text(
                                 'no_ratings_yet'.tr,
-                                style: const TextStyle(color: AppColors.textHint, fontWeight: FontWeight.w600, fontSize: 12.5),
+                                style: const TextStyle(
+                                  color: AppColors.textHint,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12.5,
+                                ),
                               ),
                             ],
                           ],

@@ -25,6 +25,9 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         backgroundColor: AppColors.surface,
         elevation: 0,
+        // ظل خفيف حين يمرّ المحتوى تحت الشريط (لون الظل الافتراضي في Material 3 شفاف فلا يتغيّر شيء).
+        scrolledUnderElevation: 2,
+        shadowColor: AppColors.primary.withValues(alpha: 0.18),
         titleTextStyle: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textPrimary),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
         // أيقونات داكنة لكل AppBar — الشفاف منها (تعديل الملف الشخصي) كان يُحسب داكناً فتظهر الأيقونات بيضاء.

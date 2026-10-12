@@ -137,45 +137,53 @@ class InstituteDetailsView extends GetView<InstituteDetailsController> {
       return DefaultTabController(
         length: 3,
         child: Scaffold(
-          body: NestedScrollView(
-            headerSliverBuilder: (context, inner) => [
-              SliverAppBar(
-                expandedHeight: 200,
-                pinned: true,
-                backgroundColor: AppColors.surface,
-                title: Text(name),
-                flexibleSpace: FlexibleSpaceBar(
-                  background: item != null
-                      ? InstituteDetailHero(institute: item)
-                      : const DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.category)),
-                ),
-                bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(60),
-                  child: ColoredBox(
-                    color: AppColors.surface,
-                    child: Builder(
-                      builder: (context) => Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
-                        child: AppSegmentedTabBar(
-                          controller: DefaultTabController.of(context),
-                          tabs: [
-                            Tab(text: 'tab_info'.tr),
-                            Tab(text: 'tab_courses'.tr),
-                            Tab(text: 'tab_instructors'.tr),
-                          ],
+          // الشريط أبيض فوق صورة الغلاف وداكن بعد طيّها (كان داكناً فوق الصورة فلا يُقرأ).
+          body: CollapsingHeroScope(
+            collapseOffset: 200 - kToolbarHeight - 24,
+            builder: (context, collapsed) => NestedScrollView(
+              headerSliverBuilder: (context, inner) => [
+                SliverAppBar(
+                  expandedHeight: 200,
+                  pinned: true,
+                  backgroundColor: AppColors.surface,
+                  iconTheme: HeroAppBarStyle.icons(collapsed),
+                  actionsIconTheme: HeroAppBarStyle.icons(collapsed),
+                  titleTextStyle: HeroAppBarStyle.title(collapsed),
+                  systemOverlayStyle: HeroAppBarStyle.overlay(collapsed),
+                  title: Text(name),
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: item != null
+                        ? InstituteDetailHero(institute: item)
+                        : const DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.category)),
+                  ),
+                  bottom: PreferredSize(
+                    preferredSize: const Size.fromHeight(60),
+                    child: ColoredBox(
+                      color: AppColors.surface,
+                      child: Builder(
+                        builder: (context) => Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+                          child: AppSegmentedTabBar(
+                            controller: DefaultTabController.of(context),
+                            tabs: [
+                              Tab(text: 'tab_info'.tr),
+                              Tab(text: 'tab_courses'.tr),
+                              Tab(text: 'tab_instructors'.tr),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
-            body: TabBarView(
-              children: [
-                _InfoTab(controller: controller),
-                _CoursesTab(controller: controller),
-                _InstructorsTab(controller: controller),
               ],
+              body: TabBarView(
+                children: [
+                  _InfoTab(controller: controller),
+                  _CoursesTab(controller: controller),
+                  _InstructorsTab(controller: controller),
+                ],
+              ),
             ),
           ),
         ),

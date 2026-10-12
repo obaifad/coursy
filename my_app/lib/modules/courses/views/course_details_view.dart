@@ -237,6 +237,13 @@ SliverAppBar _buildCourseHeroSliver({
     backgroundColor: AppColors.surface,
     surfaceTintColor: Colors.transparent,
     forceElevated: showTitleInBar,
+    // شريط التبويبات المثبّت تحته يرسم الظل — لا ظلّين متتاليين.
+    scrolledUnderElevation: 0,
+    // سهم الرجوع وأيقونات شريط الحالة بيضاء فوق صورة الغلاف، وداكنة بعد طيّها.
+    iconTheme: HeroAppBarStyle.icons(showTitleInBar),
+    actionsIconTheme: HeroAppBarStyle.icons(showTitleInBar),
+    titleTextStyle: HeroAppBarStyle.title(showTitleInBar),
+    systemOverlayStyle: HeroAppBarStyle.overlay(showTitleInBar),
     title: AnimatedOpacity(
       opacity: showTitleInBar ? 1 : 0,
       duration: AppMotion.fast,

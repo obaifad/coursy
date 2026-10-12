@@ -53,4 +53,38 @@ void main() {
     expect(find.text('HEADER'), findsNothing);
     expect(find.byType(AppPinnedBar), findsNothing);
   });
+  testWidgets('hero app bars are white over the hero and dark once it is folded away', (tester) async {
+    final seen = <bool>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CollapsingHeroScope(
+            collapseOffset: 140,
+            builder: (context, collapsed) {
+              seen.add(collapsed);
+              return CustomScrollView(
+                slivers: [
+                  SliverAppBar(
+                    pinned: true,
+                    expandedHeight: 220,
+                    iconTheme: HeroAppBarStyle.icons(collapsed),
+                    systemOverlayStyle: HeroAppBarStyle.overlay(collapsed),
+                    title: Text('T', style: HeroAppBarStyle.title(collapsed)),
+                  ),
+                  SliverList.builder(itemCount: 40, itemBuilder: (_, i) => SizedBox(height: 80, child: Text('$i'))),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    expect(seen.last, isFalse);
+    expect(tester.widget<Text>(find.text('T')).style!.color, Colors.white);
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -400));
+    await tester.pumpAndSettle();
+    expect(seen.last, isTrue);
+    expect(tester.widget<Text>(find.text('T')).style!.color, isNot(Colors.white));
+  });
 }

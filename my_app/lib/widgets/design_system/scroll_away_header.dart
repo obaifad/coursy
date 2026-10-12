@@ -132,3 +132,50 @@ class _AppPinnedBarState extends State<AppPinnedBar> {
     );
   }
 }
+
+/// يعرف متى طُوي الرأس (صورة / تدرّج) تحت شريط علوي مثبّت — من إشعارات التمرير الخارجي فقط
+/// (التبويبات والقوائم الداخلية أعمق فلا تُحسب). [collapseOffset] = ما يُمرَّر قبل اختفاء الرأس تقريباً.
+class CollapsingHeroScope extends StatefulWidget {
+  const CollapsingHeroScope({super.key, required this.collapseOffset, required this.builder});
+
+  final double collapseOffset;
+  final Widget Function(BuildContext context, bool collapsed) builder;
+
+  @override
+  State<CollapsingHeroScope> createState() => _CollapsingHeroScopeState();
+}
+
+class _CollapsingHeroScopeState extends State<CollapsingHeroScope> {
+  bool _collapsed = false;
+
+  bool _onScroll(ScrollUpdateNotification n) {
+    if (n.depth != 0 || n.metrics.axis != Axis.vertical) return false;
+    final collapsed = n.metrics.pixels >= widget.collapseOffset;
+    if (collapsed != _collapsed) setState(() => _collapsed = collapsed);
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollUpdateNotification>(
+      onNotification: _onScroll,
+      child: widget.builder(context, _collapsed),
+    );
+  }
+}
+
+/// ألوان شريط علوي فوق رأس داكن: أبيض (مع أيقونات شريط حالة فاتحة) فوق الغلاف، وداكن بعد طيّه على خلفية
+/// الصفحة. (ثيم AppBar يحدد ألواناً داكنة صريحة، فـ foregroundColor وحده لا يكفي.)
+abstract final class HeroAppBarStyle {
+  static Color foreground(bool collapsed) => collapsed ? AppColors.textPrimary : Colors.white;
+
+  static IconThemeData icons(bool collapsed) => IconThemeData(color: foreground(collapsed));
+
+  static TextStyle title(bool collapsed) => AppFonts.tajawal(
+    fontWeight: FontWeight.w800,
+    fontSize: 18,
+    color: foreground(collapsed),
+  ).copyWith(shadows: collapsed ? null : const [Shadow(color: Color(0x66000000), blurRadius: 8)]);
+
+  static SystemUiOverlayStyle overlay(bool collapsed) => collapsed ? AppSystemUi.darkIcons : AppSystemUi.lightIcons;
+}
