@@ -53,20 +53,12 @@ class AppPages {
     GetPage(
       name: AppRoutes.login,
       page: () => const LoginView(),
-      binding: BindingsBuilder(() {
-        if (!Get.isRegistered<AuthController>()) {
-          Get.lazyPut<AuthController>(() => AuthController());
-        }
-      }),
+      binding: BindingsBuilder(AuthController.ensureRegistered),
     ),
     GetPage(
       name: AppRoutes.register,
       page: () => const RegisterView(),
-      binding: BindingsBuilder(() {
-        if (!Get.isRegistered<AuthController>()) {
-          Get.lazyPut<AuthController>(() => AuthController());
-        }
-      }),
+      binding: BindingsBuilder(AuthController.ensureRegistered),
     ),
     GetPage(
       name: AppRoutes.forgotPassword,

@@ -22,6 +22,14 @@ import '../../../core/utils/education_level_utils.dart';
 import '../../../routes/app_routes.dart';
 
 class AuthController extends GetxController {
+  /// صفحتا الدخول والتسجيل تتشاركان هذا المتحكّم وتستبدل إحداهما الأخرى (offNamed / offAllNamed).
+  /// لو رُبط بالصفحة التي أنشأته (lazyPut) لحذفه GetX مع حقوله عند استبدالها، والصفحة الجديدة ما زالت
+  /// تستخدمه («AuthController not found» عند أول إعادة بناء). لذا يبقى مسجّلاً؛ وتُمسح كلمات المرور بعد
+  /// نجاح الدخول وكل الحقول عند تسجيل الخروج.
+  static void ensureRegistered() {
+    if (!Get.isRegistered<AuthController>()) Get.put(AuthController(), permanent: true);
+  }
+
   final AuthRepository _authRepository = Get.find();
   final CityRepository _cityRepository = Get.find();
   final InterestRepository _interestRepository = Get.find();
@@ -256,6 +264,10 @@ class AuthController extends GetxController {
       } catch (_) {}
     }
     await SessionRefresh.onLoginSuccess();
+    // المتحكّم يبقى بعد الدخول — لا نُبقي كلمات المرور في الذاكرة.
+    passwordController.clear();
+    registerPasswordController.clear();
+    confirmPasswordController.clear();
     AppNavigation.goToRoot(tab: 2);
   }
 
@@ -373,6 +385,8 @@ class AuthController extends GetxController {
       final registeredEmail = emailController.text.trim();
       if (AppFlags.emailVerificationEnabled) await EmailVerificationPrompt.remember(registeredEmail);
       loginIdController.text = registeredEmail.isNotEmpty ? registeredEmail : phone;
+      registerPasswordController.clear();
+      confirmPasswordController.clear();
       Get.snackbar('register_done'.tr, 'register_login_hint'.tr);
     } on ApiException catch (e) {
       _applyApiRegisterErrors(e);
@@ -595,6 +609,19 @@ class AuthController extends GetxController {
   String educationLevelLabel(String value) => EducationLevelUtils.label(value);
 
   void resetAfterLogout() {
+    // حساب آخر قد يستخدم الجهاز نفسه: لا نُبقي بياناته في نماذج الدخول والتسجيل.
+    for (final field in [
+      loginIdController,
+      passwordController,
+      firstNameController,
+      lastNameController,
+      emailController,
+      phoneController,
+      registerPasswordController,
+      confirmPasswordController,
+    ]) {
+      field.clear();
+    }
     errorMessage.value = null;
     registerStepError.value = null;
     registerFieldErrors.clear();
