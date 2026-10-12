@@ -407,6 +407,9 @@ class ProfileController extends GetxController with LatestLoadGuard {
 
   String educationLevelLabel(String value) => EducationLevelUtils.label(value);
 
+  /// البريد من آخر تحميل للملف الشخصي (فارغ إن لم يُحمَّل بعد).
+  String get currentEmail => _cachedProfileUser?['email']?.toString().trim() ?? '';
+
   static void ensureRegistered() {
     if (!Get.isRegistered<ProfileController>()) {
       Get.lazyPut<ProfileController>(() => ProfileController(), fenix: true);

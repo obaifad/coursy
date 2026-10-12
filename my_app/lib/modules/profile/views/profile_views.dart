@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../theme/app_fonts.dart';
 import '../../../core/data/repositories/auth_repository.dart';
+import '../../../core/data/repositories/profile_repository.dart';
+import '../../auth/widgets/change_email_sheet.dart';
 import '../../../core/config/app_flags.dart';
 import '../../../core/locale/locale_controller.dart';
 import '../../../core/locale/locale_rebuild.dart';
@@ -164,6 +168,8 @@ class ProfileView extends StatelessWidget {
               final needsPhoneVerification = AppFlags.phoneVerificationEnabled && storage.phoneVerified.value == false;
               // نفس المبدأ: يظهر فقط حين يؤكد الخادم أن البريد غير مؤكد.
               final needsEmailVerification = AppFlags.emailVerificationEnabled && storage.emailVerified.value == false;
+              // البريد غير المؤكد يُعدَّل من شاشة التأكيد نفسها؛ المؤكد من هنا.
+              final canChangeEmail = AppFlags.emailVerificationEnabled && storage.emailVerified.value == true;
               return Column(
                 children: [
                   if (needsEmailVerification)
@@ -183,6 +189,12 @@ class ProfileView extends StatelessWidget {
                     icon: Icons.edit_outlined,
                     onTap: () => Get.toNamed(AppRoutes.editProfile),
                   ),
+                  if (canChangeEmail)
+                    ProfileMenuTile(
+                      title: 'change_email'.tr,
+                      icon: Icons.alternate_email_rounded,
+                      onTap: () => _changeEmail(context),
+                    ),
                   ProfileMenuTile(
                     title: 'favorites_title'.tr,
                     icon: Icons.favorite_rounded,
@@ -209,6 +221,28 @@ class ProfileView extends StatelessWidget {
         ],
       );
     });
+  }
+}
+
+/// تغيير بريد مؤكد: كلمة المرور الحالية، ثم يصبح البريد الجديد غير مؤكد وتُفتح شاشة الرمز له.
+Future<void> _changeEmail(BuildContext context) async {
+  ProfileController.ensureRegistered();
+  final current = Get.find<ProfileController>().currentEmail;
+  var changedTo = '';
+  final saved = await showChangeEmailSheet(
+    context,
+    initialEmail: current,
+    onSubmit: (email, password) async {
+      final next = email.trim();
+      final invalid = ProfileRepository.emailChangeFieldErrors(next, password);
+      if (next.toLowerCase() == current.toLowerCase() && invalid?['email'] == null) return null;
+      final errors = await Get.find<ProfileRepository>().changeEmail(next, password);
+      if (errors == null) changedTo = next;
+      return errors;
+    },
+  );
+  if (saved && changedTo.isNotEmpty) {
+    unawaited(Get.toNamed(AppRoutes.emailVerification, arguments: {'email': changedTo}));
   }
 }
 
