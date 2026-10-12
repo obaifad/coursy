@@ -386,36 +386,40 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
   }
 }
 
+/// كل خطوة داخل Obx خاص بها: قراءات `.value` هنا لا يتتبّعها Obx الأب (يُبنى هذا الويدجت لاحقاً)،
+/// فكان الزر يبقى في حالة التحميل والأخطاء والعدّاد لا تتحدّث.
 class _EmailStep extends StatelessWidget {
   const _EmailStep({required this.controller});
   final ForgotPasswordController controller;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        TextField(
-          controller: controller.emailController,
-          keyboardType: TextInputType.emailAddress,
-          textInputAction: TextInputAction.done,
-          textDirection: TextDirection.ltr,
-          autofillHints: const [AutofillHints.email],
-          onChanged: (_) => controller.clearError('email'),
-          onSubmitted: (_) => controller.sendCode(),
-          decoration: RegisterDecor.fieldDecoration(
-            label: 'email'.tr,
-            errorText: controller.errors['email'],
-            prefixIcon: const Icon(Icons.mail_outline_rounded, color: AppColors.primary),
+    return Obx(
+      () => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: controller.emailController,
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.done,
+            textDirection: TextDirection.ltr,
+            autofillHints: const [AutofillHints.email],
+            onChanged: (_) => controller.clearError('email'),
+            onSubmitted: (_) => controller.sendCode(),
+            decoration: RegisterDecor.fieldDecoration(
+              label: 'email'.tr,
+              errorText: controller.errors['email'],
+              prefixIcon: const Icon(Icons.mail_outline_rounded, color: AppColors.primary),
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        RegisterGradientButton(
-          label: 'send_reset_code'.tr,
-          loading: controller.isSending.value,
-          onPressed: controller.isSending.value ? null : controller.sendCode,
-        ),
-      ],
+          const SizedBox(height: 16),
+          RegisterGradientButton(
+            label: 'send_reset_code'.tr,
+            loading: controller.isSending.value,
+            onPressed: controller.isSending.value ? null : controller.sendCode,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -425,7 +429,9 @@ class _ResetStep extends StatelessWidget {
   final ForgotPasswordController controller;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Obx(() => _build(context));
+
+  Widget _build(BuildContext context) {
     final hidden = controller.hidePassword.value;
     final waiting = controller.resendIn.value;
     return Column(
