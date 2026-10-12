@@ -117,8 +117,33 @@ class AppSegmentedTabBar extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry margin;
 
-  /// أقل عرض مقبول لكل تبويب في وضع التوزيع المتساوي (fill) قبل التحوّل للتمرير.
+  /// أقل عرض لتبويب لا نعرف نصّه (ليس Tab(text:)) في وضع التوزيع المتساوي قبل التحوّل للتمرير.
   static const double _minTabExtent = 84;
+
+  /// هامش حول النص داخل خلية التبويب (يشمل حشوة المؤشر) — كي لا يلامس النص حافة الكبسولة البيضاء.
+  static const double _labelGutter = 16;
+
+  static TextStyle get _labelStyle => AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 13);
+
+  /// أعرض تسمية بين التبويبات، مقاسة بالخط الفعلي وحجم الخط في الجهاز. null = تبويب بلا نص معروف.
+  static double? _widestLabel(BuildContext context, List<Widget> tabs) {
+    final scaler = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+    var widest = 0.0;
+    for (final tab in tabs) {
+      final text = tab is Tab ? tab.text : null;
+      if (text == null) return null;
+      final painter = TextPainter(
+        text: TextSpan(text: text, style: _labelStyle),
+        textDirection: direction,
+        textScaler: scaler,
+        maxLines: 1,
+      )..layout();
+      if (painter.width > widest) widest = painter.width;
+      painter.dispose();
+    }
+    return widest;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -128,11 +153,14 @@ class AppSegmentedTabBar extends StatelessWidget {
         decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(16)),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            // يتحوّل للتمرير تلقائياً عندما تضيق الخلايا (هواتف صغيرة + 4 تبويبات)
-            // لمنع تجاوز RenderFlex، مع الإبقاء على التوزيع المتساوي على الشاشات الأوسع.
+            // توزيع متساوٍ بعرض الشريط ما دام أعرض نص يتّسع في خليته؛ التمرير فقط حين لا يتّسع فعلاً
+            // (هاتف ضيق جداً أو خط كبير). كان الحد ثابتاً (84px) فتتحوّل 4 تبويبات قصيرة للتمرير على
+            // هاتف 360dp وتنكمش يميناً بمؤشر ضيق، مع أن نصوصها تتّسع.
             final available = constraints.maxWidth - padding.horizontal;
             final perTab = tabs.isEmpty ? available : available / tabs.length;
-            final scrollable = isScrollable || perTab < _minTabExtent;
+            final widest = _widestLabel(context, tabs);
+            final fits = widest != null ? widest + _labelGutter <= perTab : perTab >= _minTabExtent;
+            final scrollable = isScrollable || !fits;
             return TabBar(
               controller: controller,
               isScrollable: scrollable,
@@ -140,7 +168,7 @@ class AppSegmentedTabBar extends StatelessWidget {
               dividerColor: Colors.transparent,
               indicatorSize: TabBarIndicatorSize.tab,
               indicatorPadding: padding,
-              labelPadding: scrollable ? const EdgeInsets.symmetric(horizontal: 10) : EdgeInsets.zero,
+              labelPadding: scrollable ? const EdgeInsets.symmetric(horizontal: 16) : EdgeInsets.zero,
               overlayColor: WidgetStateProperty.all(Colors.transparent),
               splashBorderRadius: BorderRadius.circular(12),
               indicator: BoxDecoration(
@@ -150,7 +178,7 @@ class AppSegmentedTabBar extends StatelessWidget {
               ),
               labelColor: AppColors.primary,
               unselectedLabelColor: AppColors.textSecondary,
-              labelStyle: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 13),
+              labelStyle: _labelStyle,
               unselectedLabelStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13),
               tabs: tabs,
             );
