@@ -10,6 +10,7 @@ import 'routes/app_pages.dart';
 import 'routes/app_routes.dart';
 import 'theme/app_theme.dart';
 import 'theme/app_motion.dart';
+import 'widgets/dismiss_keyboard.dart';
 
 class SyrianEducationApp extends StatelessWidget {
   const SyrianEducationApp({super.key});
@@ -49,7 +50,7 @@ class SyrianEducationApp extends StatelessWidget {
               data: MediaQuery.of(
                 context,
               ).copyWith(textScaler: MediaQuery.textScalerOf(context).clamp(minScaleFactor: 1, maxScaleFactor: 1.3)),
-              child: child ?? const SizedBox.shrink(),
+              child: DismissKeyboardOnTapOutside(child: child ?? const SizedBox.shrink()),
             ),
           );
         },
