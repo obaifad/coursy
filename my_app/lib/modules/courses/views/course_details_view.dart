@@ -303,6 +303,11 @@ SliverAppBar _buildCourseHeroSliver({
                         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(width: 16),
+                    ] else ...[
+                      const Icon(Icons.star_outline_rounded, color: Colors.white70, size: 18),
+                      const SizedBox(width: 4),
+                      Text('no_ratings_yet'.tr, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
+                      const SizedBox(width: 16),
                     ],
                     const Icon(Icons.people_alt_outlined, color: Colors.white70, size: 18),
                     const SizedBox(width: 4),

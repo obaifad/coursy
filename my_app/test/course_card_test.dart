@@ -69,4 +69,26 @@ void main() {
     expect(find.textContaining('%'), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('a course without ratings says "No ratings yet" instead of empty stars', (tester) async {
+    Widget card(CourseModel course) => MaterialApp(
+      home: Scaffold(
+        body: Center(child: SizedBox(width: 170, child: CourseCard(course: course))),
+      ),
+    );
+
+    await tester.pumpWidget(card(_course({'average_rating': '0'})));
+    expect(find.text('no_ratings_yet'), findsOneWidget);
+    expect(find.byIcon(Icons.star_rounded), findsNothing);
+    expect(find.text('0.0'), findsNothing);
+
+    // تقييم بلا مراجعات فعلية (reviews_count = 0) لا يُعرض كذلك.
+    await tester.pumpWidget(card(_course({'reviews_count': 0})));
+    expect(find.text('no_ratings_yet'), findsOneWidget);
+
+    await tester.pumpWidget(card(_course({'reviews_count': 3})));
+    expect(find.text('no_ratings_yet'), findsNothing);
+    expect(find.text('4.3'), findsOneWidget);
+    expect(find.byIcon(Icons.star_rounded), findsNWidgets(5));
+  });
 }

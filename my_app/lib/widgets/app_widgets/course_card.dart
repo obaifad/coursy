@@ -362,7 +362,8 @@ class _InstituteLine extends StatelessWidget {
   }
 }
 
-/// نجوم صفراء + القيمة + عدد التقييمات بين قوسين (إن أرسله الخادم).
+/// نجوم صفراء + القيمة + عدد التقييمات بين قوسين (إن أرسله الخادم). دورة بلا تقييمات فعلية:
+/// «لا تقييمات بعد» بدل خمس نجوم رمادية توحي بتقييم 0.
 class _RatingLine extends StatelessWidget {
   const _RatingLine({required this.course});
 
@@ -370,6 +371,22 @@ class _RatingLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!course.hasRating) {
+      return Row(
+        children: [
+          const Icon(Icons.star_outline_rounded, size: 15, color: AppColors.textHint),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              'no_ratings_yet'.tr,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppFonts.tajawal(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.textHint, height: 1.2),
+            ),
+          ),
+        ],
+      );
+    }
     final rating = course.rating;
     final filled = rating.round().clamp(0, 5);
     final count = course.reviewsCount;

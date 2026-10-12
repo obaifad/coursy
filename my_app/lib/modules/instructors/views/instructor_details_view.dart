@@ -468,9 +468,22 @@ class _InstructorInstitutesTab extends StatelessWidget {
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 16),
-                            const SizedBox(width: 4),
-                            Text('${linked.rating}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                            if (linked.rating > 0) ...[
+                              const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 16),
+                              const SizedBox(width: 4),
+                              Text(
+                                linked.rating.toStringAsFixed(1),
+                                textDirection: TextDirection.ltr,
+                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                              ),
+                            ] else ...[
+                              const Icon(Icons.star_outline_rounded, color: AppColors.textHint, size: 16),
+                              const SizedBox(width: 4),
+                              Text(
+                                'no_ratings_yet'.tr,
+                                style: const TextStyle(color: AppColors.textHint, fontWeight: FontWeight.w600, fontSize: 12.5),
+                              ),
+                            ],
                           ],
                         ),
                       ],

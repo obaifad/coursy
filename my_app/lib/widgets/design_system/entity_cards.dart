@@ -242,14 +242,21 @@ class _InstituteHeroFooter extends StatelessWidget {
               alignment: AlignmentDirectional.centerStart,
               child: Row(
                 children: [
-                  const Icon(Icons.star_rounded, size: 17, color: AppColors.ratingStar),
-                  const SizedBox(width: 3),
-                  Text(
-                    institute.rating > 0 ? institute.rating.toStringAsFixed(1) : '—',
-                    textDirection: TextDirection.ltr,
-                    style: meta.copyWith(fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-                  ),
-                  if (count != null && count > 0) ...[
+                  if (institute.rating > 0) ...[
+                    const Icon(Icons.star_rounded, size: 17, color: AppColors.ratingStar),
+                    const SizedBox(width: 3),
+                    Text(
+                      institute.rating.toStringAsFixed(1),
+                      textDirection: TextDirection.ltr,
+                      style: meta.copyWith(fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                    ),
+                  ] else ...[
+                    // بلا تقييمات: نص واضح بدل نجمة صفراء و«—».
+                    const Icon(Icons.star_outline_rounded, size: 17, color: AppColors.textHint),
+                    const SizedBox(width: 3),
+                    Text('no_ratings_yet'.tr, style: meta.copyWith(fontWeight: FontWeight.w600, color: AppColors.textHint)),
+                  ],
+                  if (institute.rating > 0 && count != null && count > 0) ...[
                     const SizedBox(width: 3),
                     Text(
                       '($count)',
