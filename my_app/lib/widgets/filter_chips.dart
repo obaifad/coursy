@@ -8,60 +8,6 @@ import 'app_widgets.dart';
 import 'design_system.dart';
 import '../theme/app_motion.dart';
 
-class CourseFiltersPanel extends StatelessWidget {
-  const CourseFiltersPanel({
-    super.key,
-    required this.categories,
-    required this.selectedCategoryId,
-    required this.onCategorySelected,
-    required this.selectedSort,
-    required this.onSortSelected,
-  });
-
-  final List<CategoryModel> categories;
-  final int? selectedCategoryId;
-  final ValueChanged<int?> onCategorySelected;
-  final CourseSortOption selectedSort;
-  final ValueChanged<CourseSortOption> onSortSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final inset = AppLayout.horizontalPage(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (categories.isNotEmpty) ...[
-          Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(inset, 0, inset, 8),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text('filter_categories'.tr, style: AppTypography.filterSectionLabel()),
-            ),
-          ),
-          HorizontalCategoryFilters(
-            categories: categories,
-            selectedId: selectedCategoryId,
-            onSelected: onCategorySelected,
-          ),
-          const SizedBox(height: 14),
-          Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(inset, 0, inset, 0),
-            child: Divider(height: 1, color: AppColors.primary.withValues(alpha: 0.12)),
-          ),
-          const SizedBox(height: 14),
-        ],
-        Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(inset, 0, inset, 0),
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: CourseSortDropdown(selected: selectedSort, onSelected: onSortSelected),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class HorizontalCategoryFilters extends StatelessWidget {
   const HorizontalCategoryFilters({
     super.key,
