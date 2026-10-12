@@ -191,6 +191,10 @@ class _LoginFormBody extends GetView<AuthController> {
                   label: 'password_required'.tr,
                   obscureText: controller.hidePassword.value,
                   textInputAction: TextInputAction.done,
+                  // «تم» يسجّل الدخول (كان لا يفعل شيئاً)؛ نفس قفل الزر أثناء الطلب.
+                  onSubmitted: (_) {
+                    if (!controller.isLoading.value) controller.login();
+                  },
                   prefixIcon: Icons.lock_outline_rounded,
                   suffixIcon: IconButton(
                     tooltip: 'toggle_password_visibility'.tr,

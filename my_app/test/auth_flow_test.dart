@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:my_app/modules/auth/controllers/auth_controller.dart';
 import 'package:my_app/modules/auth/controllers/forgot_password_controller.dart';
+import 'package:my_app/modules/courses/controllers/category_courses_controller.dart';
 import 'package:my_app/modules/auth/views/auth_views.dart';
 import 'package:my_app/routes/app_pages.dart';
 import 'package:my_app/routes/app_routes.dart';
@@ -126,5 +127,31 @@ void main() {
     await tester.pump();
     expect(FocusManager.instance.primaryFocus?.context?.widget is EditableText, isFalse);
     expect(tester.testTextInput.isVisible, isFalse);
+  });
+  testWidgets('"Done" on the login password submits the form', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.625;
+    addTearDown(tester.view.reset);
+    await registerFakes(loggedIn: false, locale: 'ar');
+    AuthController.ensureRegistered();
+    await tester.pumpWidget(const GetMaterialApp(home: LoginView()));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, 'not-a-login');
+    await tester.enterText(find.byType(TextField).last, 'secret');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    // التحقق من المعرّف يعمل — أي أن login() استُدعي.
+    expect(find.text('enter_valid_login'), findsOneWidget);
+    await tester.pumpAndSettle(const Duration(seconds: 4));
+  });
+
+  testWidgets('category page accepts an id sent as text', (tester) async {
+    await registerFakes(loggedIn: true, locale: 'ar');
+    await tester.pumpWidget(const GetMaterialApp(home: Scaffold(body: SizedBox())));
+    Get.routing.args = <String, dynamic>{'id': '3', 'name': 'البرمجة'};
+    final c = Get.put(CategoryCoursesController());
+    await tester.pump();
+    expect(c.categoryId, 3);
   });
 }

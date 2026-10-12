@@ -33,9 +33,10 @@ Future<void> main() async {
   ApiClient.onUnauthorized = () => unawaited(SessionExpiry.handle());
   // حساب أوقفه المشرف (403 account_inactive): خروج مع رسالة الخادم بدل «انتهت الجلسة».
   ApiClient.onAccountInactive = (message) => unawaited(SessionRefresh.onAccountInactive(message));
+  // اللغة أولاً: تضبط Accept-Language، وإلا طُلبت إعدادات التطبيق (ورسالة الصيانة) بالعربية دائماً.
+  await _step('locale', Get.find<LocaleController>().init);
   // يبدأ جلب إعدادات التطبيق مبكراً؛ يُعرض أي تنبيه بعد الانتقال من شاشة البداية.
   unawaited(_step('app-config', Get.find<AppConfigService>().load));
-  await _step('locale', Get.find<LocaleController>().init);
   await _step('session', Get.find<TokenStorage>().init);
   await _step('recent-search', Get.find<RecentSearchStorage>().init);
   if (Get.isRegistered<PushNotificationService>()) {

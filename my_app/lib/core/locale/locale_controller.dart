@@ -74,7 +74,11 @@ class LocaleController extends GetxService {
       if (Get.isRegistered<LocaleRequestGuard>()) {
         Get.find<LocaleRequestGuard>().bump();
       }
-      await LocaleRefresh.reloadAll();
+      try {
+        await LocaleRefresh.reloadAll();
+      } catch (_) {
+        // شاشة فشل تحديثها (انقطاع مثلاً) تعرض خطأها بنفسها؛ تغيير اللغة نفسه تمّ — لا نُسقط تأكيده.
+      }
       // الخادم يحفظ لغة كل جهاز ليرسل إشعاراته بها: نعيد تسجيل التوكن باللغة الجديدة.
       if (Get.isRegistered<PushNotificationService>()) {
         unawaited(Get.find<PushNotificationService>().syncDeviceTokenIfLoggedIn(force: true));

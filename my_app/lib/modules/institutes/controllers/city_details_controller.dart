@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 
+import '../../../core/models/json_helpers.dart';
 import '../../../core/data/repositories/city_repository.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/network/api_exception.dart';
@@ -28,7 +29,7 @@ class CityDetailsController extends GetxController {
     final arg = Get.arguments;
     String? name;
     if (arg is Map<String, dynamic>) {
-      cityId = (arg['id'] as int?) ?? 0;
+      cityId = JsonHelpers.parseInt(arg['id']);
       name = arg['name']?.toString();
     } else if (arg is CityModel) {
       cityId = arg.id;

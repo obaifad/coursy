@@ -244,6 +244,7 @@ class RegisterFloatingField extends StatefulWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.onChanged,
+    this.onSubmitted,
     this.readOnly = false,
   });
 
@@ -258,6 +259,9 @@ class RegisterFloatingField extends StatefulWidget {
   final IconData? prefixIcon;
   final Widget? suffixIcon;
   final ValueChanged<String>? onChanged;
+
+  /// زر «تم» في لوحة المفاتيح (مثلاً كلمة مرور الدخول ترسل النموذج).
+  final ValueChanged<String>? onSubmitted;
   final bool readOnly;
 
   @override
@@ -293,6 +297,7 @@ class _RegisterFloatingFieldState extends State<RegisterFloatingField> {
       inputFormatters: widget.inputFormatters,
       textInputAction: widget.textInputAction,
       onChanged: widget.onChanged,
+      onSubmitted: widget.onSubmitted,
       readOnly: widget.readOnly,
       style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 15),
       decoration: RegisterDecor.fieldDecoration(

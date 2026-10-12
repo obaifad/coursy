@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 
+import '../../../core/models/json_helpers.dart';
 import '../../../core/data/repositories/instructor_repository.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/network/api_exception.dart';
@@ -28,7 +29,7 @@ class InstructorSubjectInstructorsController extends GetxController with Initial
     if (arg is Map<String, dynamic>) {
       subjectKey = arg['key']?.toString() ?? '';
       title.value = arg['name']?.toString() ?? 'instructor_subject_default'.tr;
-      instructorsCount.value = (arg['instructorsCount'] as int?) ?? 0;
+      instructorsCount.value = JsonHelpers.parseInt(arg['instructorsCount']);
     } else if (arg is InstructorSubjectModel) {
       subjectKey = arg.key;
       title.value = arg.name;
