@@ -6,12 +6,12 @@ import '../../../core/config/api_config.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/models/json_helpers.dart';
-import '../../../core/services/favorites_service.dart';
 import '../../../core/utils/course_registration_guard.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/app_widgets.dart';
+import '../../../widgets/course_favorite_button.dart';
 import '../../../modules/auth/widgets/register_form_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/registration_closed_dialog.dart';
@@ -166,7 +166,6 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
                 context: context,
                 item: item,
                 showTitleInBar: _showTitleInBar,
-                onFavorite: controller.toggleFavorite,
               ),
               SliverPersistentHeader(
                 pinned: true,
@@ -216,7 +215,6 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
             enrollmentResolved: controller.enrollmentResolved.value,
             onBook: _openBooking,
             onRegistrationClosed: _onRegistrationClosedTap,
-            onFavorite: controller.toggleFavorite,
           ),
         ),
       );
@@ -229,7 +227,6 @@ SliverAppBar _buildCourseHeroSliver({
   required BuildContext context,
   required CourseModel item,
   required bool showTitleInBar,
-  required VoidCallback onFavorite,
 }) {
   // ارتفاع الغلاف يكبر مع تكبير الخط (إعدادات الجهاز، حتى 1.3×) — وإلا يفيض عنوان
   // من ثلاثة أسطر + اسم المعهد + صف التقييم عن الارتفاع الثابت.
@@ -246,19 +243,9 @@ SliverAppBar _buildCourseHeroSliver({
       child: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
     ),
     actions: [
-      Obx(() {
-        final fav = Get.find<FavoritesService>();
-        final isFav = fav.isCourseFavorite(item.id);
-        return IconButton(
-          tooltip: isFav ? 'favorite_remove'.tr : 'favorite_add'.tr,
-          onPressed: onFavorite,
-          icon: Icon(
-            isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-            color: isFav ? AppColors.danger : null,
-          ),
-        );
-      }),
-      const SizedBox(width: 4),
+      // نفس زر بطاقات الدورات (دائرة زجاجية + نبضة)، بتمويه حقيقي هنا فوق صورة الغلاف.
+      CourseFavoriteButton(courseId: item.id, diameter: 38, blurBackground: true),
+      const SizedBox(width: 6),
     ],
     flexibleSpace: FlexibleSpaceBar(
       background: Stack(

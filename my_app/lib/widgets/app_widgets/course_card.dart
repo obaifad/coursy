@@ -3,11 +3,16 @@ part of '../app_widgets.dart';
 /// بطاقة الدورة بتصميم التذكرة: صورة داخلية بشارة، التصنيف والمستوى، العنوان، المعهد والمدينة،
 /// التقييم، ثم خط متقطع بقصّتين جانبيتين، وتحته السعر والمدة ونوع الحضور.
 /// تُستخدم في كل القوائم (الرئيسية، الشبكات، المفضلة، صفحة المدرّس) والضغط في أي مكان يفتح الدورة.
+/// زر المفضلة على زاوية البداية من الصورة، والشارة على زاوية النهاية — لا يغطي أحدهما الآخر.
 class CourseCard extends StatelessWidget {
-  const CourseCard({super.key, required this.course, this.onTap});
+  const CourseCard({super.key, required this.course, this.onTap, this.showFavorite = true, this.onFavoritePressed});
 
   final CourseModel course;
   final VoidCallback? onTap;
+  final bool showFavorite;
+
+  /// بديل لتبديل المفضلة الافتراضي (شاشة المفضلة: إزالة مع تلاشٍ وتراجع).
+  final Future<void> Function()? onFavoritePressed;
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +45,17 @@ class CourseCard extends StatelessWidget {
                   onTap: onTap,
                   splashColor: AppColors.primary.withValues(alpha: 0.08),
                   highlightColor: AppColors.primary.withValues(alpha: 0.04),
-                  child: _TicketContent(course: course, spec: spec),
+                  child: _TicketContent(
+                    course: course,
+                    spec: spec,
+                    favorite: showFavorite
+                        ? CourseFavoriteButton(
+                            courseId: course.id,
+                            diameter: spec.compact ? 32 : 34,
+                            onPressed: onFavoritePressed,
+                          )
+                        : null,
+                  ),
                 ),
               ),
             ),
@@ -52,10 +67,11 @@ class CourseCard extends StatelessWidget {
 }
 
 class _TicketContent extends StatelessWidget {
-  const _TicketContent({required this.course, required this.spec});
+  const _TicketContent({required this.course, required this.spec, this.favorite});
 
   final CourseModel course;
   final CourseTicketSpec spec;
+  final Widget? favorite;
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +83,7 @@ class _TicketContent extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(CourseTicketSpec.inset, CourseTicketSpec.inset, CourseTicketSpec.inset, 0),
           child: SizedBox(
             height: spec.imageHeight,
-            child: _TicketImage(course: course, compact: spec.compact),
+            child: _TicketImage(course: course, compact: spec.compact, favorite: favorite),
           ),
         ),
         const SizedBox(height: CourseTicketSpec.gapAfterImage),
@@ -212,12 +228,17 @@ class _DashPainter extends CustomPainter {
   bool shouldRepaint(covariant _DashPainter oldDelegate) => oldDelegate.color != color;
 }
 
-/// الصورة داخل البطاقة بزوايا مدوّرة، مع شارة داكنة (الأكثر طلباً / مقاعد محدودة / جديدة…) في الزاوية.
+/// الصورة داخل البطاقة بزوايا مدوّرة، مع شارة داكنة (الأكثر طلباً / مقاعد محدودة / جديدة…) في زاوية
+/// النهاية وزر المفضلة في زاوية البداية.
 class _TicketImage extends StatelessWidget {
-  const _TicketImage({required this.course, required this.compact});
+  const _TicketImage({required this.course, required this.compact, this.favorite});
 
   final CourseModel course;
   final bool compact;
+  final Widget? favorite;
+
+  /// مساحة اللمس (44) تبدأ قبل الدائرة بـ 5؛ فتبعد الدائرة عن حافة الصورة كما تبعد الشارة (8).
+  static const _favoriteInset = 2.0;
 
   @override
   Widget build(BuildContext context) {
@@ -234,7 +255,8 @@ class _TicketImage extends StatelessWidget {
           PositionedDirectional(
             top: 8,
             end: 8,
-            start: 40,
+            // لا تمتد الشارة الطويلة تحت زر المفضلة.
+            start: favorite != null ? _favoriteInset + CourseFavoriteButton.tapTarget : 40,
             child: Align(
               alignment: AlignmentDirectional.topEnd,
               child: DecoratedBox(
@@ -259,6 +281,8 @@ class _TicketImage extends StatelessWidget {
               ),
             ),
           ),
+        if (favorite != null)
+          PositionedDirectional(top: _favoriteInset, start: _favoriteInset, child: favorite!),
       ],
     );
   }

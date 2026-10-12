@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../../core/locale/locale_rebuild.dart';
@@ -147,7 +146,7 @@ class _FavoritesBody extends StatelessWidget {
   }
 }
 
-/// بطاقة الدورة الموحّدة + زر قلب دائري فوق الغلاف لإزالتها (مع تلاشٍ وتراجع).
+/// بطاقة الدورة الموحّدة؛ قلبها هنا يزيل الدورة (مع تلاشٍ وتراجع).
 class _FavoriteGridItem extends StatefulWidget {
   const _FavoriteGridItem({super.key, required this.course, required this.controller});
 
@@ -164,7 +163,6 @@ class _FavoriteGridItemState extends State<_FavoriteGridItem> {
   Future<void> _remove() async {
     if (_leaving) return;
     final messenger = ScaffoldMessenger.maybeOf(context);
-    HapticFeedback.selectionClick();
     setState(() => _leaving = true);
     // ندع التلاشي يظهر قبل حذف العنصر من القائمة.
     await Future<void>.delayed(const Duration(milliseconds: 240));
@@ -179,7 +177,7 @@ class _FavoriteGridItemState extends State<_FavoriteGridItem> {
           content: Text('favorite_removed'.tr),
           action: SnackBarAction(
             label: 'undo'.tr,
-            onPressed: () => Get.find<FavoritesService>().toggleCourse(course.id),
+            onPressed: () => Get.find<FavoritesService>().toggleCourse(course.id, showFeedback: false),
           ),
         ),
       );
@@ -195,35 +193,10 @@ class _FavoriteGridItemState extends State<_FavoriteGridItem> {
         scale: _leaving ? 0.92 : 1,
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeIn,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: CourseCard(
-                course: course,
-                onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
-              ),
-            ),
-            // في زاوية البداية: زاوية النهاية فيها شارة البطاقة («جديدة»، «الأكثر طلباً»…) فكان القلب يغطيها.
-            PositionedDirectional(
-              top: 8,
-              start: 8,
-              child: Material(
-                color: Colors.white.withValues(alpha: 0.94),
-                shape: const CircleBorder(),
-                elevation: 2,
-                shadowColor: Colors.black26,
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: _leaving ? null : _remove,
-                  child: const SizedBox(
-                    width: 36,
-                    height: 36,
-                    child: Icon(Icons.favorite_rounded, color: AppColors.danger, size: 20),
-                  ),
-                ),
-              ),
-            ),
-          ],
+        child: CourseCard(
+          course: course,
+          onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
+          onFavoritePressed: _remove,
         ),
       ),
     );

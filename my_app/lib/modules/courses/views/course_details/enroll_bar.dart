@@ -7,7 +7,6 @@ class _StickyEnrollBar extends StatelessWidget {
     required this.enrollmentResolved,
     required this.onBook,
     required this.onRegistrationClosed,
-    required this.onFavorite,
   });
 
   final CourseModel item;
@@ -15,7 +14,6 @@ class _StickyEnrollBar extends StatelessWidget {
   final bool enrollmentResolved;
   final VoidCallback onBook;
   final VoidCallback onRegistrationClosed;
-  final VoidCallback onFavorite;
 
   @override
   Widget build(BuildContext context) {
@@ -34,33 +32,13 @@ class _StickyEnrollBar extends StatelessWidget {
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          // السعر في جهة البداية والزر في جهة النهاية — يتبع اتجاه اللغة (كان مثبتاً على RTL حتى بالإنجليزية).
+          // المفضلة في شريط الغلاف المثبّت فوق، بنفس زر البطاقات.
           child: Row(
-            textDirection: TextDirection.rtl,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _StickyPriceColumn(item: item),
-              const SizedBox(width: 10),
-              Obx(() {
-                final fav = Get.find<FavoritesService>();
-                final isFav = fav.isCourseFavorite(item.id);
-                return Material(
-                  color: isFav ? AppColors.danger.withValues(alpha: 0.12) : AppColors.indicatorFill,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  child: InkWell(
-                    onTap: onFavorite,
-                    borderRadius: BorderRadius.circular(14),
-                    child: SizedBox(
-                      width: 52,
-                      height: 52,
-                      child: Icon(
-                        isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        color: isFav ? AppColors.danger : AppColors.primary,
-                      ),
-                    ),
-                  ),
-                );
-              }),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: registrationClosed
                     ? OutlinedButton(
