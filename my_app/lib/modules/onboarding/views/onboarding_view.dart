@@ -27,6 +27,12 @@ class _OnboardingViewState extends State<OnboardingView> {
 
   static const _pageSubtitleKeys = ['onboarding_subtitle_1', 'onboarding_subtitle_2', 'onboarding_subtitle_3'];
 
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
   void _finish() {
     if (AppFlags.requireLogin) {
       Get.offAllNamed(AppRoutes.login);

@@ -63,6 +63,9 @@ class ProfileController extends GetxController with LatestLoadGuard {
 
   Map<String, dynamic>? _cachedProfileUser;
 
+  /// مراقبات «هل تغيّر شيء؟» — تُلغى في onClose كباقي المتحكّمات.
+  final _changeWorkers = <Worker>[];
+
   @override
   void onInit() {
     super.onInit();
@@ -70,13 +73,15 @@ class ProfileController extends GetxController with LatestLoadGuard {
     _applySessionSeed();
     firstNameController.addListener(_recomputeHasChanges);
     lastNameController.addListener(_recomputeHasChanges);
-    ever(selectedGender, (_) => _recomputeHasChanges());
-    ever(birthDate, (_) => _recomputeHasChanges());
-    ever(selectedCityId, (_) => _recomputeHasChanges());
-    ever(selectedEducationLevel, (_) => _recomputeHasChanges());
-    ever(selectedUniversityId, (_) => _recomputeHasChanges());
-    ever(selectedSpecializationId, (_) => _recomputeHasChanges());
-    ever(selectedCategoryIds, (_) => _recomputeHasChanges());
+    _changeWorkers.addAll([
+      ever(selectedGender, (_) => _recomputeHasChanges()),
+      ever(birthDate, (_) => _recomputeHasChanges()),
+      ever(selectedCityId, (_) => _recomputeHasChanges()),
+      ever(selectedEducationLevel, (_) => _recomputeHasChanges()),
+      ever(selectedUniversityId, (_) => _recomputeHasChanges()),
+      ever(selectedSpecializationId, (_) => _recomputeHasChanges()),
+      ever(selectedCategoryIds, (_) => _recomputeHasChanges()),
+    ]);
     _bootstrapProfileForm();
   }
 
@@ -441,6 +446,11 @@ class ProfileController extends GetxController with LatestLoadGuard {
 
   @override
   void onClose() {
+    for (final worker in _changeWorkers) {
+      worker.dispose();
+    }
+    firstNameController.removeListener(_recomputeHasChanges);
+    lastNameController.removeListener(_recomputeHasChanges);
     firstNameController.dispose();
     lastNameController.dispose();
     phoneController.dispose();
