@@ -400,7 +400,7 @@ class PrivateInstructorListCard extends StatelessWidget {
               ],
             ),
           ),
-          Icon(appIsRtl(context) ? Icons.chevron_left_rounded : Icons.chevron_right_rounded, color: AppColors.textHint),
+          const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
         ],
       ),
     );
@@ -713,6 +713,7 @@ class ProfileMenuTile extends StatelessWidget {
       child: SoftCard(
         padding: EdgeInsets.zero,
         child: ListTile(
+          shape: SoftCard.shape,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           leading: Container(
             padding: const EdgeInsets.all(8),
@@ -726,7 +727,7 @@ class ProfileMenuTile extends StatelessWidget {
             title,
             style: TextStyle(fontWeight: FontWeight.w700, color: destructive ? AppColors.danger : null),
           ),
-          trailing: trailing ?? const Icon(Icons.chevron_left_rounded, color: AppColors.textSecondary),
+          trailing: trailing ?? const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
           onTap: onTap,
         ),
       ),

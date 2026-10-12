@@ -7,16 +7,20 @@ class SoftCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
 
+  static const radius = BorderRadius.all(Radius.circular(20));
+
+  /// شكل ListTile/InkWell داخل البطاقة — ليتبع أثر الضغط زواياها.
+  static const shape = RoundedRectangleBorder(borderRadius: radius);
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: padding ?? const EdgeInsets.all(14),
-      decoration: const BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.all(Radius.circular(20)),
-        boxShadow: AppShadows.card,
+    return DecoratedBox(
+      decoration: const BoxDecoration(color: AppColors.card, borderRadius: radius, boxShadow: AppShadows.card),
+      // Material شفافة فوق الخلفية: أثر الضغط في ListTile يُرسم عليها (كان يُرسم تحت الخلفية البيضاء فلا يظهر).
+      child: Material(
+        type: MaterialType.transparency,
+        child: Padding(padding: padding ?? const EdgeInsets.all(14), child: child),
       ),
-      child: child,
     );
   }
 }

@@ -340,6 +340,7 @@ class _CoursesTab extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 12),
             child: SoftCard(
               child: ListTile(
+                shape: SoftCard.shape,
                 contentPadding: EdgeInsets.zero,
                 leading: Container(
                   width: 56,
@@ -352,7 +353,7 @@ class _CoursesTab extends StatelessWidget {
                   c.hasRating ? '${c.rating.toStringAsFixed(1)} ★ · ${c.level}' : c.level,
                   style: const TextStyle(fontSize: 12),
                 ),
-                trailing: const Icon(Icons.chevron_left_rounded),
+                trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: c),
               ),
             ),

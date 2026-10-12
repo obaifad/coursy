@@ -239,7 +239,7 @@ class _InstituteCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (item.instituteId != null) const Icon(Icons.chevron_left_rounded, color: AppColors.textSecondary),
+                if (item.instituteId != null) const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
               ],
             ),
             if (item.instituteAddress != null && item.instituteAddress!.isNotEmpty) ...[

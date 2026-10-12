@@ -699,12 +699,13 @@ class SettingsView extends GetView<LocaleController> {
                 SoftCard(
                   padding: EdgeInsets.zero,
                   child: ListTile(
+                    shape: SoftCard.shape,
                     leading: const Icon(Icons.delete_forever_rounded, color: AppColors.danger),
                     title: Text(
                       'delete_account'.tr,
                       style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.danger),
                     ),
-                    trailing: const Icon(Icons.chevron_left_rounded, color: AppColors.textSecondary),
+                    trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
                     onTap: () => Get.toNamed(AppRoutes.deleteAccount),
                   ),
                 ),
