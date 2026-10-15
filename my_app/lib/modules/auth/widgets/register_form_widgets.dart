@@ -586,6 +586,9 @@ class RegisterInterestPicker extends StatelessWidget {
         }
 
         if (categories.isEmpty) {
+          // لا تصنيفات في الخادم بعد (والحقل اختياري): نخفيه بدل «تعذر الاتصال بالخادم» — الخطأ يظهر
+          // فقط حين فشل التحميل فعلاً.
+          if (errorText == null && selectedIds.isEmpty) return const SizedBox.shrink();
           final summary = selectedIds.isEmpty ? 'pick_interests'.tr : interestSelectionSummary(categories, selectedIds);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -593,7 +596,7 @@ class RegisterInterestPicker extends StatelessWidget {
               InputDecorator(
                 decoration: RegisterDecor.fieldDecoration(
                   label: 'interests_optional'.tr,
-                  errorText: selectedIds.isEmpty ? (errorText ?? 'connection_error'.tr) : errorText,
+                  errorText: errorText,
                   prefixIcon: const Icon(Icons.interests_rounded, color: AppColors.primary),
                 ),
                 child: Text(

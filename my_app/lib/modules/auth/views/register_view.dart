@@ -492,13 +492,13 @@ class _RegisterStepBody extends GetView<AuthController> {
                 );
               }
               if (controller.cities.isEmpty) {
+                // لا مدن في الخادم بعد: لا شيء يُختار والحقل غير مطلوب — لا نعرضه كخطأ اتصال.
+                final error = controller.citiesError.value;
+                if (error == null) return const SizedBox.shrink();
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      controller.citiesError.value ?? 'connection_error'.tr,
-                      style: AppFonts.tajawal(color: AppColors.dangerText, height: 1.4),
-                    ),
+                    Text(error, style: AppFonts.tajawal(color: AppColors.dangerText, height: 1.4)),
                     const SizedBox(height: 8),
                     RegisterGhostButton(label: 'reload_cities'.tr, onPressed: () => controller.loadCities(force: true)),
                   ],

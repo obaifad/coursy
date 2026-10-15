@@ -362,24 +362,29 @@ class EditProfileView extends GetView<ProfileController> {
                             },
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        // لا مدن في الخادم: الحقل يفتح قائمة فارغة — نخفيه كما في إنشاء الحساب.
                         Obx(
-                          () => _ProfileDropdown<int>(
-                            label: 'city'.tr,
-                            icon: Icons.location_city_rounded,
-                            value: controller.selectedCityId.value,
-                            hint: 'pick_city'.tr,
-                            options: controller.cities
-                                .map(
-                                  (c) => AppSheetOption<int>(
-                                    value: c.id,
-                                    label: c.name,
+                          () => controller.cities.isEmpty
+                              ? const SizedBox.shrink()
+                              : Padding(
+                                  padding: const EdgeInsets.only(top: 12),
+                                  child: _ProfileDropdown<int>(
+                                    label: 'city'.tr,
                                     icon: Icons.location_city_rounded,
+                                    value: controller.selectedCityId.value,
+                                    hint: 'pick_city'.tr,
+                                    options: controller.cities
+                                        .map(
+                                          (c) => AppSheetOption<int>(
+                                            value: c.id,
+                                            label: c.name,
+                                            icon: Icons.location_city_rounded,
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: (v) => controller.selectedCityId.value = v,
                                   ),
-                                )
-                                .toList(),
-                            onChanged: (v) => controller.selectedCityId.value = v,
-                          ),
+                                ),
                         ),
                       ],
                     ),

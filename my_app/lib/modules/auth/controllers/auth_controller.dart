@@ -347,7 +347,7 @@ class AuthController extends GetxController {
         phone: phone,
         password: registerPasswordController.text,
         passwordConfirmation: confirmPasswordController.text,
-        cityId: selectedCityId.value!,
+        cityId: selectedCityId.value,
         gender: selectedGender.value,
         birthDate: birthDate.value != null ? formatBirthDate(birthDate.value!) : null,
         educationLevel: selectedEducationLevel.value,
@@ -444,10 +444,14 @@ class AuthController extends GetxController {
         }
         break;
       case 2:
-        if (selectedCityId.value == null) errors['city'] = 'pick_city_validation'.tr;
+        // قائمة فارغة (لا بيانات في الخادم بعد) أو فشل تحميلها لا يجوز أن يمنع إنشاء الحساب:
+        // الحقل إجباري فقط حين توجد خيارات يمكن اختيارها. الخادم نفسه لا يشترط المدينة.
+        if (cities.isNotEmpty && selectedCityId.value == null) errors['city'] = 'pick_city_validation'.tr;
         if (requiresUniversityFields) {
-          if (selectedUniversityId.value == null) errors['university'] = 'pick_university'.tr;
-          if (selectedSpecializationId.value == null) {
+          if (universities.isNotEmpty && selectedUniversityId.value == null) {
+            errors['university'] = 'pick_university'.tr;
+          }
+          if (specializations.isNotEmpty && selectedSpecializationId.value == null) {
             errors['specialization'] = 'pick_specialization'.tr;
           }
         }

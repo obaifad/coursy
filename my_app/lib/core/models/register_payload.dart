@@ -6,7 +6,7 @@ class RegisterPayload {
     required this.email,
     required this.password,
     required this.passwordConfirmation,
-    required this.cityId,
+    this.cityId,
     this.phone,
     this.gender,
     this.birthDate,
@@ -25,7 +25,9 @@ class RegisterPayload {
   final String email;
   final String password;
   final String passwordConfirmation;
-  final int cityId;
+
+  /// اختياري في الخادم؛ يُرسل فقط إن اختار الطالب مدينة (قد لا تكون في الخادم مدن بعد).
+  final int? cityId;
   final String? phone;
   final String? gender;
   final String? birthDate;
@@ -72,7 +74,7 @@ class RegisterPayload {
       'password': password,
       'password_confirmation': passwordConfirmation,
       'role': role,
-      'city_id': cityId,
+      if (cityId != null) 'city_id': cityId,
       'device_name': deviceName,
       'is_active': isActive ? 1 : 0,
       if (phone != null && phone!.isNotEmpty) 'phone': phone,
