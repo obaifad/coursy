@@ -371,7 +371,6 @@ class AuthController extends GetxController {
           specializationId: payload.specializationId,
           preferredCategories: payload.preferredCategories,
         );
-        Get.snackbar('welcome'.tr, 'account_created_ok'.tr);
         await _afterAuthSuccess();
         // تأكيد البريد اختياري: يُعرض مرة بعد إنشاء الحساب مع «تخطي الآن».
         final email = payload.email.trim();
