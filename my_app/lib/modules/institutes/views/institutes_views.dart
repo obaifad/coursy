@@ -14,100 +14,106 @@ import '../../../widgets/design_system.dart';
 import '../../../widgets/filter_chips.dart';
 import '../controllers/institutes_controller.dart';
 
+/// رأس العلامة ينطوي مع التمرير وشريط المحافظات يلتصق تحته؛ المعاهد بطاقات صفّية مضغوطة.
 class InstitutesView extends GetView<InstitutesController> {
   const InstitutesView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return AppTabSafeArea(
-      child: Obx(() {
-        final _ = localeRebuildToken;
-        // لقطة واحدة لكل بناء يُحسب منها itemCount وتُقرأ منها العناصر: القائمة تُبنى لاحقاً أثناء التمرير،
-        // وقراءة controller.institutes[i] بعد تغيّرها كانت ترمي RangeError (سجلّ نسخة الإصدار).
-        final institutes = controller.institutes.toList(growable: false);
-        final hasMore = controller.hasMore.value;
-        final loadingMore = controller.isLoadingMore.value;
-        final error = controller.errorMessage.value;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppHeroHeader(
+    return Obx(() {
+      final _ = localeRebuildToken;
+      // لقطة واحدة لكل بناء يُحسب منها itemCount وتُقرأ منها العناصر: القائمة تُبنى لاحقاً أثناء التمرير،
+      // وقراءة controller.institutes[i] بعد تغيّرها كانت ترمي RangeError (سجلّ نسخة الإصدار).
+      final institutes = controller.institutes.toList(growable: false);
+      final hasMore = controller.hasMore.value;
+      final loadingMore = controller.isLoadingMore.value;
+      final error = controller.errorMessage.value;
+      final selectedCityId = controller.selectedCityId.value;
+      final hPad = AppLayout.readableInset(context);
+      return RefreshIndicator(
+        onRefresh: controller.loadInstitutes,
+        edgeOffset: MediaQuery.paddingOf(context).top + AppBrandSliverAppBar.toolbarHeight,
+        child: CustomScrollView(
+          key: const PageStorageKey('institutes_tab'),
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            AppBrandSliverAppBar(
               title: 'institutes_title'.tr,
               subtitle: 'institutes_subtitle'.tr,
               badge: institutes.isEmpty ? null : pluralTr('city_institutes_count', institutes.length),
             ),
-            const SizedBox(height: 10),
-            Obx(
-              () => HorizontalCityFilters(
-                cities: controller.cities,
-                selectedId: controller.selectedCityId.value,
-                onSelected: controller.selectCity,
-              ),
-            ),
-            const SizedBox(height: 8),
-            if (controller.selectedCityId.value != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: TextButton.icon(
-                    onPressed: () {
-                      final city = controller.cities.firstWhereOrNull((c) => c.id == controller.selectedCityId.value);
-                      if (city != null) {
-                        Get.toNamed(AppRoutes.cityDetails, arguments: {'id': city.id, 'name': city.name});
-                      }
-                    },
-                    icon: const Icon(Icons.map_outlined, size: 18),
-                    label: Text('city_details_btn'.tr),
+            PinnedHeaderSliver(
+              child: ColoredBox(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 10, bottom: 8),
+                  child: HorizontalCityFilters(
+                    // نسخة تُقرأ داخل Obx: وصول المدن لاحقاً يعيد البناء.
+                    cities: controller.cities.toList(growable: false),
+                    selectedId: selectedCityId,
+                    onSelected: controller.selectCity,
                   ),
                 ),
               ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: controller.loadInstitutes,
-                child: controller.isLoading.value && institutes.isEmpty
-                    ? const AppListSkeleton(padding: EdgeInsets.fromLTRB(16, 0, 16, 24))
-                    : institutes.isEmpty && error != null
-                    ? AppEmptyState.scrollable(
-                        context: context,
-                        message: error,
-                        icon: Icons.cloud_off_outlined,
-                        action: FilledButton(onPressed: controller.loadInstitutes, child: Text('retry'.tr)),
-                      )
-                    : institutes.isEmpty
-                    ? AppEmptyState.scrollable(
-                        context: context,
-                        message: 'no_institutes'.tr,
-                        icon: Icons.apartment_outlined,
-                      )
-                    : ListView.separated(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        key: const PageStorageKey('institutes_tab'),
-                        padding: AppLayout.scrollPadding(context, rootTab: true),
-                        itemBuilder: (_, i) {
-                          if (i == institutes.length) {
-                            if (!hasMore) return const SizedBox.shrink();
-                            return OutlinedButton.icon(
-                              onPressed: loadingMore ? null : controller.loadMoreInstitutes,
-                              icon: loadingMore ? const AppInlineLoader() : const Icon(Icons.expand_more_rounded),
-                              label: Text('load_more'.tr),
-                            );
-                          }
-                          final institute = institutes[i];
-                          return InstituteListCard(
-                            institute: institute,
-                            onTap: () => Get.toNamed(AppRoutes.instituteDetails, arguments: institute),
-                          );
-                        },
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemCount: institutes.length + 1,
-                      ),
-              ),
             ),
+            if (selectedCityId != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: hPad),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton.icon(
+                      onPressed: () {
+                        final city = controller.cities.firstWhereOrNull((c) => c.id == selectedCityId);
+                        if (city != null) {
+                          Get.toNamed(AppRoutes.cityDetails, arguments: {'id': city.id, 'name': city.name});
+                        }
+                      },
+                      icon: const Icon(Icons.map_outlined, size: 18),
+                      label: Text('city_details_btn'.tr),
+                    ),
+                  ),
+                ),
+              ),
+            if (controller.isLoading.value && institutes.isEmpty)
+              AppSliverRowListSkeleton(padding: EdgeInsets.fromLTRB(hPad, 4, hPad, 24))
+            else if (institutes.isEmpty && error != null)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: AppLoadErrorState(message: error, onRetry: controller.loadInstitutes),
+              )
+            else if (institutes.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: AppEmptyState(message: 'no_institutes'.tr, icon: Icons.apartment_outlined),
+              )
+            else
+              SliverPadding(
+                padding: AppLayout.scrollPadding(context, rootTab: true, top: 4),
+                sliver: SliverList.separated(
+                  itemCount: institutes.length + 1,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (_, i) {
+                    if (i == institutes.length) {
+                      if (!hasMore) return const SizedBox.shrink();
+                      return OutlinedButton.icon(
+                        onPressed: loadingMore ? null : controller.loadMoreInstitutes,
+                        icon: loadingMore ? const AppInlineLoader() : const Icon(Icons.expand_more_rounded),
+                        label: Text('load_more'.tr),
+                      );
+                    }
+                    final institute = institutes[i];
+                    return InstituteListCard(
+                      institute: institute,
+                      onTap: () => Get.toNamed(AppRoutes.instituteDetails, arguments: institute),
+                    );
+                  },
+                ),
+              ),
           ],
-        );
-      }),
-    );
+        ),
+      );
+    });
   }
 }
 

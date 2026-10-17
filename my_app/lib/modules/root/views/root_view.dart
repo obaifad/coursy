@@ -33,9 +33,9 @@ class RootView extends GetView<RootController> {
             controller.changeTab(2);
           }
         },
-        // رأس الملف الشخصي البنفسجي يمتد تحت شريط الحالة؛ بقية التبويبات فاتحة.
+        // رؤوس بنفسجية تمتد تحت شريط الحالة: الدورات، المعاهد، دوراتي (للمسجّل) والملف الشخصي؛ الرئيسية فاتحة.
         child: AppStatusBar(
-          lightIcons: controller.currentIndex.value == 4,
+          lightIcons: _hasPurpleHeader(controller.currentIndex.value),
           child: Scaffold(
             extendBody: false,
             backgroundColor: AppColors.surface,
@@ -52,6 +52,11 @@ class RootView extends GetView<RootController> {
       ),
     );
   }
+}
+
+bool _hasPurpleHeader(int tab) {
+  if (tab == 3) return Get.find<TokenStorage>().isLoggedIn;
+  return tab != 2;
 }
 
 class _RootBottomNav extends StatelessWidget {

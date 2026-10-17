@@ -32,9 +32,6 @@ class MyCoursesTabView extends GetView<MyCoursesController> {
       if (!Get.find<TokenStorage>().isLoggedIn) {
         return const _MyCoursesLoginPrompt();
       }
-      if (controller.isLoading.value) {
-        return const AppListSkeleton(itemCount: 5);
-      }
       return _MyCoursesShell(controller: controller);
     });
   }
@@ -66,47 +63,49 @@ class _MyCoursesShellState extends State<_MyCoursesShell> with SingleTickerProvi
     super.dispose();
   }
 
+  /// رأس العلامة ينطوي مع التمرير وتبويبات الحالة تبقى مثبّتة تحته؛ الرأس يمتد تحت شريط الحالة بنفسه.
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
       color: AppColors.surface,
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Obx(
-              () => AppHeroHeader(
-                title: 'my_courses'.tr,
-                subtitle: 'my_courses_subtitle'.tr,
-                badge: controller.enrollments.isEmpty
-                    ? null
-                    : pluralTr('bookings_count', controller.enrollments.length),
+      child: NestedScrollView(
+        headerSliverBuilder: (context, _) => [
+          Obx(
+            () => AppBrandSliverAppBar(
+              title: 'my_courses'.tr,
+              subtitle: 'my_courses_subtitle'.tr,
+              badge: controller.enrollments.isEmpty ? null : pluralTr('bookings_count', controller.enrollments.length),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(AppTabBarSection.sectionHeight + 6),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: AppTabBarSection(
+                    controller: _tabController,
+                    tabs: [
+                      Tab(text: 'tab_pending'.tr),
+                      Tab(text: 'tab_confirmed'.tr),
+                      Tab(text: 'tab_done'.tr),
+                      Tab(text: 'tab_cancelled'.tr),
+                    ],
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 10),
-            AppTabBarSection(
-              controller: _tabController,
-              tabs: [
-                Tab(text: 'tab_pending'.tr),
-                Tab(text: 'tab_confirmed'.tr),
-                Tab(text: 'tab_done'.tr),
-                Tab(text: 'tab_cancelled'.tr),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                physics: const ClampingScrollPhysics(),
-                children: const [
-                  _EnrollmentList(status: _EnrollmentListStatus.pending),
-                  _EnrollmentList(status: _EnrollmentListStatus.confirmed),
-                  _EnrollmentList(status: _EnrollmentListStatus.completed),
-                  _EnrollmentList(status: _EnrollmentListStatus.cancelled),
-                ],
-              ),
-            ),
-          ],
+          ),
+        ],
+        body: Obx(
+          () => controller.isLoading.value
+              ? AppRowListSkeleton(itemCount: 4, padding: AppLayout.scrollPadding(context, rootTab: true, top: 8))
+              : TabBarView(
+                  controller: _tabController,
+                  physics: const ClampingScrollPhysics(),
+                  children: const [
+                    _EnrollmentList(status: _EnrollmentListStatus.pending),
+                    _EnrollmentList(status: _EnrollmentListStatus.confirmed),
+                    _EnrollmentList(status: _EnrollmentListStatus.completed),
+                    _EnrollmentList(status: _EnrollmentListStatus.cancelled),
+                  ],
+                ),
         ),
       ),
     );
@@ -190,66 +189,25 @@ class _EnrollmentCard extends StatelessWidget {
     final theme = _EnrollmentStatusTheme.fromStatus(enrollment.status);
     final meta = _EnrollmentMeta.from(enrollment);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(CourseCardMetrics.cardRadius),
-        border: Border.all(color: AppColors.borderSoft),
-        boxShadow: AppShadows.card,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _CourseThumb(imagePath: course?.imageUrl),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        enrollment.courseTitle ?? course?.title ?? 'course_details'.tr,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.cardTitle(size: 16),
-                      ),
-                      if (course?.institute.isNotEmpty == true) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          course!.institute,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.cardSubtitle(size: 12),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                _StatusBadge(theme: theme, label: enrollment.statusLabel),
-              ],
-            ),
-            if (meta.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [for (final m in meta.rows) _MetaChip(icon: m.icon, label: m.label)],
-              ),
-            ],
-            const SizedBox(height: 14),
-            _BookingActions(
-              enrollment: enrollment,
-              controller: controller,
-              onDetails: () => _openCourseDetails(enrollment),
-              onCancel: () => _confirmCancel(context, enrollment),
-            ),
-          ],
-        ),
+    final institute = course?.institute.trim() ?? '';
+
+    // بطاقة صفّية: الصورة، العنوان وشارة الحالة، المعهد، سطر البيانات؛ وتحتها أزرار الحجز.
+    return AppRowCard(
+      onTap: () => _openCourseDetails(enrollment),
+      leading: _CourseThumb(imagePath: course?.imageUrl),
+      title: AppRowTitle(enrollment.courseTitle ?? course?.title ?? 'course_details'.tr),
+      trailing: _StatusBadge(theme: theme, label: enrollment.statusLabel),
+      subtitle: institute.isEmpty ? null : AppRowMeta(icon: Icons.apartment_rounded, text: institute),
+      footer: meta.isNotEmpty
+          ? AppRowMetaLine(
+              items: [for (final m in meta.rows.take(2)) AppRowMeta(icon: m.icon, text: m.label)],
+            )
+          : null,
+      below: _BookingActions(
+        enrollment: enrollment,
+        controller: controller,
+        onDetails: () => _openCourseDetails(enrollment),
+        onCancel: () => _confirmCancel(context, enrollment),
       ),
     );
   }
@@ -293,20 +251,14 @@ class _CourseThumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // المقاس والزوايا من AppRowCard.
     final url = ApiConfig.resolveMediaUrl(imagePath);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: SizedBox(
-        width: 72,
-        height: 72,
-        child: url != null
-            ? AppNetworkImage(url: url, fit: BoxFit.cover, ignorePointer: true)
-            : Container(
-                decoration: const BoxDecoration(gradient: AppGradients.cardPlaceholder),
-                child: const Icon(Icons.school_rounded, color: Colors.white, size: 28),
-              ),
-      ),
-    );
+    return url != null
+        ? AppNetworkImage(url: url, fit: BoxFit.cover, ignorePointer: true)
+        : const DecoratedBox(
+            decoration: BoxDecoration(gradient: AppGradients.cardPlaceholder),
+            child: Center(child: Icon(Icons.school_rounded, color: Colors.white, size: 32)),
+          );
   }
 }
 
@@ -340,32 +292,6 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-class _MetaChip extends StatelessWidget {
-  const _MetaChip({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: AppColors.primary),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textBody),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _MetaRow {
   const _MetaRow({required this.icon, required this.label});
   final IconData icon;
@@ -382,6 +308,7 @@ class _EnrollmentMeta {
     return e.course?.requiresAdvancePayment == true || status == 'paid' || status == 'partial';
   }
 
+  /// سطر البطاقة الصفّية بتسميات قصيرة: أهم معلومة (الدفع، ثم موعد البدء، ثم الجدول) ورقم الحجز.
   final List<_MetaRow> rows;
 
   bool get isNotEmpty => rows.isNotEmpty;
@@ -389,24 +316,16 @@ class _EnrollmentMeta {
   factory _EnrollmentMeta.from(EnrollmentModel enrollment) {
     final course = enrollment.course;
     final rows = <_MetaRow>[
-      _MetaRow(icon: Icons.confirmation_number_outlined, label: '${'booking_id'.tr} #${enrollment.id}'),
       if (_showsPaymentStatus(enrollment))
-        _MetaRow(
-          icon: Icons.payments_outlined,
-          label: '${'payment_status'.tr}: ${JsonHelpers.paymentStatusLabel(enrollment.paymentStatus)}',
-        ),
-      if (course?.instructor?.name.isNotEmpty == true)
-        _MetaRow(icon: Icons.person_outline_rounded, label: course!.instructor!.name),
-      if (course?.startDate != null)
-        _MetaRow(
-          icon: Icons.event_rounded,
-          label: '${'starts_on'.tr}: ${JsonHelpers.formatDisplayDate(course!.startDate)}',
-        ),
-      if (course != null && course.schedules.isNotEmpty)
+        _MetaRow(icon: Icons.payments_outlined, label: JsonHelpers.paymentStatusLabel(enrollment.paymentStatus))
+      else if (course?.startDate != null)
+        _MetaRow(icon: Icons.event_rounded, label: JsonHelpers.formatDisplayDate(course!.startDate))
+      else if (course != null && course.schedules.isNotEmpty)
         _MetaRow(
           icon: Icons.schedule_rounded,
           label: '${JsonHelpers.weekdayLabel(course.schedules.first.dayOfWeek)} · ${course.schedules.first.startTime}',
         ),
+      _MetaRow(icon: Icons.confirmation_number_outlined, label: '#${enrollment.id}'),
     ];
     return _EnrollmentMeta(rows);
   }
