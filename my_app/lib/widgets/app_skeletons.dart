@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_fonts.dart';
 import 'design_system.dart';
 
 class AppHomeSkeleton extends StatelessWidget {
@@ -86,10 +87,13 @@ class AppHomeSkeleton extends StatelessWidget {
 }
 
 class AppGridSkeleton extends StatelessWidget {
-  const AppGridSkeleton({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16)});
+  const AppGridSkeleton({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16), this.poster = false});
 
   final int itemCount;
   final EdgeInsetsGeometry padding;
+
+  /// هيكل بطاقات «الملصق» ([CoursePosterCard]) بدل بطاقة التذكرة.
+  final bool poster;
 
   @override
   Widget build(BuildContext context) {
@@ -99,8 +103,8 @@ class AppGridSkeleton extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: padding,
         itemCount: itemCount,
-        gridDelegate: AppGridLayouts.courseGridFor(context),
-        itemBuilder: (_, __) => const _SkeletonCourseCard(),
+        gridDelegate: poster ? AppGridLayouts.posterGridFor(context) : AppGridLayouts.courseGridFor(context),
+        itemBuilder: (_, __) => poster ? const _SkeletonPosterCard() : const _SkeletonCourseCard(),
       ),
     );
   }
@@ -108,7 +112,60 @@ class AppGridSkeleton extends StatelessWidget {
 
 /// نفس [AppGridSkeleton] لكن كـ sliver، داخل CustomScrollView لصفحة يتحرك هيدرها مع المحتوى.
 class AppSliverGridSkeleton extends StatelessWidget {
-  const AppSliverGridSkeleton({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16)});
+  const AppSliverGridSkeleton({
+    super.key,
+    this.itemCount = 6,
+    this.padding = const EdgeInsets.all(16),
+    this.poster = false,
+  });
+
+  final int itemCount;
+  final EdgeInsetsGeometry padding;
+
+  /// هيكل بطاقات «الملصق» ([CoursePosterCard]) بدل بطاقة التذكرة.
+  final bool poster;
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer.sliver(
+      enabled: true,
+      child: SliverPadding(
+        padding: padding,
+        sliver: SliverGrid.builder(
+          itemCount: itemCount,
+          gridDelegate: poster ? AppGridLayouts.posterGridFor(context) : AppGridLayouts.courseGridFor(context),
+          itemBuilder: (_, __) => poster ? const _SkeletonPosterCard() : const _SkeletonCourseCard(),
+        ),
+      ),
+    );
+  }
+}
+
+/// هيكل قوائم البطاقات الصفّية ([AppRowCard]) — نفس الارتفاع والصورة في جهة البداية.
+class AppRowListSkeleton extends StatelessWidget {
+  const AppRowListSkeleton({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16)});
+
+  final int itemCount;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer(
+      enabled: true,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: padding,
+        itemCount: itemCount,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (_, __) => const _SkeletonRowCard(),
+      ),
+    );
+  }
+}
+
+/// نفس [AppRowListSkeleton] كـ sliver، داخل CustomScrollView برأس ينطوي.
+class AppSliverRowListSkeleton extends StatelessWidget {
+  const AppSliverRowListSkeleton({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16)});
 
   final int itemCount;
   final EdgeInsetsGeometry padding;
@@ -119,10 +176,10 @@ class AppSliverGridSkeleton extends StatelessWidget {
       enabled: true,
       child: SliverPadding(
         padding: padding,
-        sliver: SliverGrid.builder(
+        sliver: SliverList.separated(
           itemCount: itemCount,
-          gridDelegate: AppGridLayouts.courseGridFor(context),
-          itemBuilder: (_, __) => const _SkeletonCourseCard(),
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (_, __) => const _SkeletonRowCard(),
         ),
       ),
     );
@@ -380,6 +437,89 @@ class _SkeletonCourseCard extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _SkeletonPosterCard extends StatelessWidget {
+  const _SkeletonPosterCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final spec = CourseCardMetrics.posterSpec(constraints.maxWidth);
+        return DecoratedBox(
+          decoration: const BoxDecoration(color: AppColors.card, borderRadius: AppCorners.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Expanded(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.md)),
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: spec.stripHeight,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: CoursePosterSpec.padding),
+                  child: Row(
+                    children: [
+                      Text('350,000', style: TextStyle(fontSize: AppTextSize.lg, fontWeight: FontWeight.w800)),
+                      Spacer(),
+                      Text('4.8', style: TextStyle(fontSize: AppTextSize.sm)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SkeletonRowCard extends StatelessWidget {
+  const _SkeletonRowCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: AppCorners.md,
+        border: Border.all(color: AppColors.borderNeutral),
+      ),
+      child: const Padding(
+        padding: EdgeInsets.all(AppRowCard.padding),
+        child: Row(
+          children: [
+            SizedBox.square(
+              dimension: AppRowCard.thumbSize,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: AppColors.primary, borderRadius: AppCorners.sm),
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Course title placeholder text', style: TextStyle(fontSize: AppTextSize.lg)),
+                  SizedBox(height: 6),
+                  Text('Institute name', style: TextStyle(fontSize: AppTextSize.sm)),
+                  SizedBox(height: 20),
+                  Text('12 weeks · 350,000', style: TextStyle(fontSize: AppTextSize.sm)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

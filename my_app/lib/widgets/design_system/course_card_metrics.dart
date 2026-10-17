@@ -46,6 +46,16 @@ abstract final class CourseCardMetrics {
     );
   }
 
+  /// مقاسات بطاقة «الملصق» (شبكة كل الدورات وصفحات التصنيف) لعرض [width]: غلاف كامل يعلوه العنوان،
+  /// وتحته شريط أبيض للسعر والتقييم. الشريط يطول مع تكبير الخط، والغلاف ثابت لعرض البطاقة.
+  static CoursePosterSpec posterSpec(double width, {double textScale = 1}) {
+    return CoursePosterSpec(
+      compact: isCompactTile(width),
+      coverHeight: (width * 1.05).clamp(150.0, 240.0).roundToDouble(),
+      stripHeight: (20 + 22 * textScale).ceilToDouble(),
+    );
+  }
+
   static double gridTileWidth(BuildContext context) => courseGridTileWidth(context);
 
   static int courseGridCrossAxisCount(BuildContext context) {
@@ -158,6 +168,20 @@ class CourseTicketSpec {
   double get notchFromBottom => bottomPadding + footerHeight + dividerHeight / 2;
 }
 
+/// مقاسات بطاقة «الملصق»: غلاف بارتفاع [coverHeight] ثم شريط السعر والتقييم.
+class CoursePosterSpec {
+  const CoursePosterSpec({required this.compact, required this.coverHeight, required this.stripHeight});
+
+  /// هامش المحتوى فوق الغلاف وداخل الشريط.
+  static const double padding = 10;
+
+  final bool compact;
+  final double coverHeight;
+  final double stripHeight;
+
+  double get totalHeight => coverHeight + stripHeight;
+}
+
 class CourseCardLayout {
   const CourseCardLayout({
     required this.cardHeight,
@@ -206,6 +230,18 @@ abstract final class AppGridLayouts {
       // هامش 2 لكسور البكسل في مقاييس الخط.
       mainAxisExtent:
           CourseCardMetrics.gridCardHeightForWidth(tileWidth, textScale: CourseCardMetrics.textScaleOf(context)) + 2,
+      crossAxisSpacing: CourseCardMetrics.gridSpacing,
+      mainAxisSpacing: CourseCardMetrics.gridSpacing,
+    );
+  }
+
+  /// شبكة بطاقات «الملصق» — نفس عدد الأعمدة والتباعد، بارتفاع الملصق.
+  static SliverGridDelegateWithFixedCrossAxisCount posterGridFor(BuildContext context) {
+    final tileWidth = CourseCardMetrics.courseGridTileWidth(context);
+    return SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: CourseCardMetrics.courseGridCrossAxisCount(context),
+      mainAxisExtent:
+          CourseCardMetrics.posterSpec(tileWidth, textScale: CourseCardMetrics.textScaleOf(context)).totalHeight + 2,
       crossAxisSpacing: CourseCardMetrics.gridSpacing,
       mainAxisSpacing: CourseCardMetrics.gridSpacing,
     );

@@ -560,11 +560,19 @@ class _StrikethroughPrice extends StatelessWidget {
 }
 
 class _CourseCardImage extends StatelessWidget {
-  const _CourseCardImage({required this.course, required this.borderRadius, required this.fallbackSize});
+  const _CourseCardImage({
+    required this.course,
+    required this.borderRadius,
+    required this.fallbackSize,
+    this.fallbackIconAlignment = const Alignment(0, 0.3),
+  });
 
   final CourseModel course;
   final BorderRadius borderRadius;
   final double fallbackSize;
+
+  /// موضع أيقونة البديل (بلا صورة) — أسفل المركز افتراضياً كي لا تغطيها الشارة.
+  final Alignment fallbackIconAlignment;
 
   @override
   Widget build(BuildContext context) {
@@ -609,9 +617,8 @@ class _CourseCardImage extends StatelessWidget {
             start: -fallbackSize * 0.5,
             child: _SoftCircle(size: fallbackSize * 2, alpha: 0.09),
           ),
-          // أسفل المركز قليلاً كي لا تغطيها الشارة في البطاقات الضيقة.
           Align(
-            alignment: const Alignment(0, 0.3),
+            alignment: fallbackIconAlignment,
             child: Container(
               width: fallbackSize * 1.7,
               height: fallbackSize * 1.7,

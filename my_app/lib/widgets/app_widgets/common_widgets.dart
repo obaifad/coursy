@@ -32,12 +32,12 @@ class CoursePriceText extends StatelessWidget {
         children: [
           TextSpan(
             text: amount,
-            style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: amountSize, height: 1.1),
+            style: TextStyle(color: AppColors.primaryInk, fontWeight: FontWeight.w800, fontSize: amountSize, height: 1.1),
           ),
           if (currency.isNotEmpty)
             TextSpan(
               text: ' $currency',
-              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: currencySize),
+              style: TextStyle(color: AppColors.primaryInk, fontWeight: FontWeight.w700, fontSize: currencySize),
             ),
         ],
       ),

@@ -1,6 +1,6 @@
 part of '../design_system.dart';
 
-/// بطاقة معهد في القائمة الأفقية للرئيسية — نفس تصميم [InstituteListCard] بعرض ثابت.
+/// بطاقة معهد في القائمة الأفقية للرئيسية: غلاف بنفسجي (أو صورة الغلاف) وشريط أبيض، بعرض ثابت.
 class InstituteMiniCard extends StatelessWidget {
   const InstituteMiniCard({super.key, required this.institute, this.onTap});
 
@@ -21,7 +21,8 @@ class InstituteMiniCard extends StatelessWidget {
   }
 }
 
-/// بطاقة معهد في القوائم (تبويب المعاهد، المحافظة، البحث) — بعرض الشاشة.
+/// بطاقة معهد في القوائم (تبويب المعاهد، المحافظة، البحث) — بطاقة صفّية مضغوطة ([AppRowCard]):
+/// الشعار في جهة البداية، الاسم وشارة «الأعلى تقييماً»، المدينة وعلامة الاعتماد، ثم التقييم وعدد الدورات.
 class InstituteListCard extends StatelessWidget {
   const InstituteListCard({super.key, required this.institute, this.onTap});
 
@@ -29,7 +30,92 @@ class InstituteListCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => _InstituteHeroCard(institute: institute, onTap: onTap);
+  Widget build(BuildContext context) {
+    final city = institute.city.trim();
+    final count = institute.reviewsCount;
+    final rating = institute.rating > 0
+        ? AppRowMeta(
+            icon: Icons.star_rounded,
+            iconColor: AppColors.ratingStar,
+            emphasized: true,
+            text: count != null && count > 0
+                ? '${institute.rating.toStringAsFixed(1)} ($count)'
+                : institute.rating.toStringAsFixed(1),
+          )
+        : AppRowMeta(icon: Icons.star_outline_rounded, text: 'rating_none_short'.tr);
+
+    return AppRowCard(
+      onTap: onTap,
+      leading: _InstituteRowThumb(institute: institute),
+      title: AppRowTitle(institute.name),
+      trailing: institute.rating >= 4.5
+          ? Tooltip(
+              message: 'institute_top_rated_badge'.tr,
+              child: Semantics(
+                label: 'institute_top_rated_badge'.tr,
+                child: const Icon(Icons.emoji_events_rounded, size: 20, color: AppColors.ratingStar),
+              ),
+            )
+          : null,
+      subtitle: city.isEmpty && !institute.isVerified
+          ? null
+          : Row(
+              children: [
+                if (city.isNotEmpty) Flexible(child: AppRowMeta(icon: Icons.location_on_outlined, text: city)),
+                if (institute.isVerified) ...[
+                  const SizedBox(width: 6),
+                  Tooltip(
+                    message: 'institute_verified_badge'.tr,
+                    child: Semantics(
+                      label: 'institute_verified_badge'.tr,
+                      child: const Icon(Icons.verified_rounded, size: 16, color: AppColors.info),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+      footer: Row(
+        children: [
+          Expanded(
+            child: AppRowMetaLine(
+              items: [
+                rating,
+                AppRowMeta(
+                  icon: Icons.menu_book_outlined,
+                  iconColor: AppColors.primary,
+                  text: pluralTr('category_courses_count', institute.coursesCount),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(appIsRtl(context) ? Icons.chevron_left_rounded : Icons.chevron_right_rounded, color: AppColors.textHint),
+        ],
+      ),
+    );
+  }
+}
+
+/// الشعار (أو صورة الغلاف) بخلفية بيضاء، أو تدرّج الهوية بأيقونة مبنى.
+class _InstituteRowThumb extends StatelessWidget {
+  const _InstituteRowThumb({required this.institute});
+
+  final InstituteModel institute;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = institute.resolvedLogoUrl ?? institute.resolvedCoverImageUrl;
+    if (url != null) {
+      return ColoredBox(
+        color: Colors.white,
+        child: AppNetworkImage(url: url, fit: BoxFit.cover, ignorePointer: true),
+      );
+    }
+    return const DecoratedBox(
+      decoration: BoxDecoration(gradient: AppGradients.category),
+      child: Center(child: Icon(Icons.apartment_rounded, color: Colors.white, size: 40)),
+    );
+  }
 }
 
 /// غلاف بنفسجي (أو صورة غلاف المعهد) عليه الشارات والشعار والاسم والمدينة،
@@ -340,7 +426,8 @@ class _GlowCircle extends StatelessWidget {
   }
 }
 
-/// بطاقة مدرّس أفقية: الصورة في جهة البداية، ثم الاسم وشارة «خصوصي»، التخصص، الخبرة، سعر الساعة، العنوان.
+/// بطاقة مدرّس صفّية ([AppRowCard]): الصورة في جهة البداية، الاسم وشارة «خصوصي»، التخصص،
+/// ثم الخبرة والعنوان في جهة البداية وسعر الساعة في جهة النهاية.
 class PrivateInstructorListCard extends StatelessWidget {
   const PrivateInstructorListCard({super.key, required this.instructor, this.onTap});
 
@@ -350,59 +437,61 @@ class PrivateInstructorListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final address = instructor.address?.trim() ?? '';
-    return _TutorCardShell(
+    final price = instructor.hourlyPrice;
+    return AppRowCard(
       onTap: onTap,
-      padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 8, 12),
-      child: Row(
+      leading: _InstructorRowThumb(imageUrl: instructor.resolvedImageUrl),
+      title: AppRowTitle(instructor.name),
+      trailing: instructor.isPrivate ? const _PrivateBadge() : null,
+      subtitle: BidiText(
+        instructor.specialization ?? 'instructor_default'.tr,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: _TutorText.specialization(AppTextSize.sm),
+      ),
+      footer: Row(
         children: [
-          _InstructorAvatarBox(imageUrl: instructor.resolvedImageUrl, size: 72),
-          const SizedBox(width: 14),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: BidiText(
-                        instructor.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: _TutorText.name(15),
-                      ),
-                    ),
-                    if (instructor.isPrivate) ...[const SizedBox(width: 6), const _PrivateBadge()],
-                  ],
-                ),
-                const SizedBox(height: 3),
-                BidiText(
-                  instructor.specialization ?? 'instructor_default'.tr,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: _TutorText.specialization(12.5),
-                ),
-                if (instructor.experienceYears > 0) ...[
-                  const SizedBox(height: 5),
-                  _TutorMeta(
-                    icon: Icons.workspace_premium_rounded,
+            flex: 5,
+            child: AppRowMetaLine(
+              items: [
+                if (instructor.experienceYears > 0)
+                  AppRowMeta(
+                    icon: Icons.workspace_premium_outlined,
                     text: pluralTr('instructor_experience', instructor.experienceYears),
                   ),
-                ],
-                if (address.isNotEmpty) ...[
-                  const SizedBox(height: 3),
-                  _TutorMeta(icon: Icons.location_on_outlined, text: address),
-                ],
-                if (instructor.hourlyPrice != null) ...[
-                  const SizedBox(height: 7),
-                  _HourlyPrice(price: instructor.hourlyPrice!, size: 13),
-                ],
+                if (address.isNotEmpty) AppRowMeta(icon: Icons.location_on_outlined, text: address),
               ],
             ),
           ),
-          Icon(appIsRtl(context) ? Icons.chevron_left_rounded : Icons.chevron_right_rounded, color: AppColors.textHint),
+          const SizedBox(width: 8),
+          if (price != null)
+            Flexible(
+              flex: 4,
+              child: Align(alignment: AlignmentDirectional.centerEnd, child: _HourlyPrice(price: price)),
+            )
+          else
+            Icon(
+              appIsRtl(context) ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+              color: AppColors.textHint,
+            ),
         ],
       ),
+    );
+  }
+}
+
+class _InstructorRowThumb extends StatelessWidget {
+  const _InstructorRowThumb({required this.imageUrl});
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl != null) return AppNetworkImage(url: imageUrl!, fit: BoxFit.cover, ignorePointer: true);
+    return const DecoratedBox(
+      decoration: BoxDecoration(gradient: AppGradients.primary),
+      child: Center(child: Icon(Icons.person_rounded, color: Colors.white, size: 40)),
     );
   }
 }
@@ -462,7 +551,7 @@ class PrivateInstructorMiniCard extends StatelessWidget {
                   ],
                   if (instructor.hourlyPrice != null) ...[
                     const SizedBox(height: 5),
-                    _HourlyPrice(price: instructor.hourlyPrice!, size: 12),
+                    _HourlyPrice(price: instructor.hourlyPrice!, compact: true),
                   ],
                 ],
               ),
@@ -540,10 +629,12 @@ class _TutorMeta extends StatelessWidget {
 
 /// «سعر الساعة» صغير رمادي ثم المبلغ بالبنفسجي العريض.
 class _HourlyPrice extends StatelessWidget {
-  const _HourlyPrice({required this.price, required this.size});
+  const _HourlyPrice({required this.price, this.compact = false});
 
   final String price;
-  final double size;
+
+  /// بطاقة الرئيسية الأفقية: مبلغ أصغر درجة.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -555,10 +646,18 @@ class _HourlyPrice extends StatelessWidget {
         children: [
           Text(
             'hourly_rate_label'.tr,
-            style: AppFonts.tajawal(fontSize: size - 1.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+            style: AppFonts.tajawal(
+              fontSize: AppTextSize.xs,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(width: 6),
-          CoursePriceText(price: price, amountSize: size + 2, currencySize: size - 2),
+          CoursePriceText(
+            price: price,
+            amountSize: compact ? AppTextSize.md : AppTextSize.lg,
+            currencySize: AppTextSize.xs,
+          ),
         ],
       ),
     );

@@ -36,6 +36,40 @@ void main() {
     );
   });
 
+  testWidgets('poster grid (All courses / category)', (tester) async {
+    allIssues.addAll(
+      await auditScene(tester, 'course-poster-grid', () {
+        final courses = sampleCourses();
+        return Builder(
+          builder: (context) => GridView.builder(
+            padding: EdgeInsets.all(AppLayout.horizontalPage(context)),
+            gridDelegate: AppGridLayouts.posterGridFor(context),
+            itemCount: courses.length,
+            itemBuilder: (_, i) => CoursePosterCard(course: courses[i], onTap: () {}),
+          ),
+        );
+      }),
+    );
+  });
+
+  testWidgets('compact course rows (favorites / search)', (tester) async {
+    allIssues.addAll(
+      await auditScene(tester, 'course-rows', () {
+        return Builder(
+          builder: (context) => ListView(
+            padding: EdgeInsets.all(AppLayout.horizontalPage(context)),
+            children: [
+              for (final course in sampleCourses()) ...[
+                CourseRowCard(course: course, onTap: () {}),
+                const SizedBox(height: 12),
+              ],
+            ],
+          ),
+        );
+      }),
+    );
+  });
+
   testWidgets('featured course rail (Home)', (tester) async {
     allIssues.addAll(
       await auditScene(tester, 'course-featured', () {

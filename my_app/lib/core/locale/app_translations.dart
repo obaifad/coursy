@@ -762,6 +762,8 @@ class AppTranslations extends Translations {
     'after_booking_advance_online': 'تتطلب هذه الدورة دفعة مقدّمة تُدفع للمعهد مباشرة — تواصل معه بعد التأكيد',
     'payment_online_direct': 'تُدفع هذه الدورة للمعهد مباشرة',
     'payment_online_direct_hint': 'الدورات الأونلاين لا تُدفع داخل التطبيق. تواصل مع المعهد لإتمام الدفعة المقدّمة.',
+    // البطاقات (الملصق والصف المضغوط).
+    'rating_none_short': 'بلا تقييم',
   };
 
   static final Map<String, String> _en = {
@@ -1497,5 +1499,7 @@ class AppTranslations extends Translations {
         'This course needs an advance payment, paid to the institute directly. Contact them after confirming',
     'payment_online_direct': 'Pay the institute directly for this course',
     'payment_online_direct_hint': 'Online courses are not paid in the app. Contact the institute to pay the advance.',
+    // Cards (poster and compact row).
+    'rating_none_short': 'No ratings',
   };
 }
