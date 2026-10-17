@@ -764,6 +764,17 @@ class AppTranslations extends Translations {
     'payment_online_direct_hint': 'الدورات الأونلاين لا تُدفع داخل التطبيق. تواصل مع المعهد لإتمام الدفعة المقدّمة.',
     // البطاقات (الملصق والصف المضغوط).
     'rating_none_short': 'بلا تقييم',
+    // البحث: تبويبات النطاق، الفلاتر النشطة، زر النتائج الحيّ.
+    'search_clear_all': 'مسح الكل',
+    'remove_filter': 'إزالة الفلتر',
+    'search_show_results_unknown': 'عرض النتائج',
+    'search_show_results_none': 'لا توجد نتائج مطابقة',
+    'search_show_results': 'عرض @n نتيجة',
+    'search_show_results_one': 'عرض نتيجة واحدة',
+    'search_show_results_two': 'عرض نتيجتين',
+    'search_show_results_few': 'عرض @n نتائج',
+    'search_show_results_many': 'عرض @n نتيجة',
+    'search_show_results_other': 'عرض @n نتيجة',
   };
 
   static final Map<String, String> _en = {
@@ -1501,5 +1512,13 @@ class AppTranslations extends Translations {
     'payment_online_direct_hint': 'Online courses are not paid in the app. Contact the institute to pay the advance.',
     // Cards (poster and compact row).
     'rating_none_short': 'No ratings',
+    // Search: scope tabs, active filters, live results button.
+    'search_clear_all': 'Clear all',
+    'remove_filter': 'Remove filter',
+    'search_show_results_unknown': 'Show results',
+    'search_show_results_none': 'No matching results',
+    'search_show_results': 'Show @n results',
+    'search_show_results_one': 'Show 1 result',
+    'search_show_results_other': 'Show @n results',
   };
 }
