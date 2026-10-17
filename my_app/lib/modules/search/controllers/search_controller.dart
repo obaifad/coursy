@@ -108,6 +108,9 @@ class SearchPageController extends GetxController with LatestLoadGuard {
 
   bool get hasAnyResults => courses.isNotEmpty || institutes.isNotEmpty || instructors.isNotEmpty;
 
+  /// هناك ما يُبحث عنه: نص أو فلتر — وإلا تعرض الشاشة آخر عمليات البحث.
+  bool get hasQuery => queryText.value.trim().isNotEmpty || hasActiveFilters;
+
   @override
   void onInit() {
     super.onInit();

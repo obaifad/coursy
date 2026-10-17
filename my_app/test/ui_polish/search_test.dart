@@ -6,6 +6,7 @@ import 'package:my_app/core/data/repositories/search_repository.dart';
 import 'package:my_app/core/locale/plural.dart';
 import 'package:my_app/modules/search/controllers/search_controller.dart';
 import 'package:my_app/modules/search/views/search_view.dart';
+import 'package:my_app/theme/app_colors.dart';
 import 'package:my_app/widgets/app_widgets.dart';
 import 'package:my_app/widgets/design_system.dart';
 
@@ -220,6 +221,73 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       expect(c.hasActiveFilters, isFalse);
       expect(find.text('مسح الكل'), findsNothing);
+    });
+
+    testWidgets('the header is the Brand Bar of the list screens, its pill shows the result count', (tester) async {
+      final (c, _) = await _setUp();
+      await _pumpView(tester);
+      expect(find.byType(AppBrandSliverAppBar), findsOneWidget);
+      expect(find.text('search_subtitle'.tr), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'فلاتر');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 100));
+      final total = _courses + _institutes + _instructors;
+      expect(c.countFor(SearchScope.all), total);
+      expect(find.text(pluralTr('search_results_count', total)), findsOneWidget);
+    });
+
+    testWidgets('the filter button sits inside the search bar and counts the active filters', (tester) async {
+      final (c, _) = await _setUp();
+      await _pumpView(tester);
+      final bar = tester.getRect(
+        find.ancestor(of: find.byType(TextField), matching: find.byType(AnimatedContainer)).first,
+      );
+      final button = tester.getRect(find.byTooltip('search_filters'.tr));
+      expect(bar.contains(button.center), isTrue);
+      expect(button.height, lessThanOrEqualTo(bar.height));
+
+      c.applyFilters(level: 'beginner', cityId: 1);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.descendant(of: find.byTooltip('search_filters'.tr), matching: find.text('2')), findsOneWidget);
+    });
+
+    testWidgets('scope tabs use the segmented-tab colours of the rest of the app', (tester) async {
+      await _setUp();
+      await _pumpView(tester);
+      expect(tester.widget<Text>(find.text('الكل')).style?.color, AppColors.primaryInk);
+      expect(tester.widget<Text>(find.text('دورات')).style?.color, AppColors.textSecondary);
+    });
+
+    testWidgets('the field, tabs and chips stay pinned under the collapsed header', (tester) async {
+      final (c, _) = await _setUp();
+      await _pumpView(tester);
+      c.applyFilters(level: 'beginner');
+      await tester.enterText(find.byType(TextField), 'فلاتر');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // أكثر من مسافة انطواء الرأس وأقل من نهاية القائمة (بلا تمدد الحافة).
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -250));
+      await tester.pump(const Duration(milliseconds: 600));
+      final field = tester.getRect(find.byType(TextField));
+      expect(field.top, greaterThanOrEqualTo(AppBrandSliverAppBar.toolbarHeight));
+      expect(field.top, lessThan(AppBrandSliverAppBar.toolbarHeight + 40));
+      expect(find.text('مسح الكل'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('recent searches are app chips that run the search when tapped', (tester) async {
+      final (c, repo) = await _setUp();
+      await _pumpView(tester);
+      expect(find.text('عمليات بحث حديثة'), findsOneWidget);
+      expect(find.byType(ActionChip), findsNothing);
+
+      await tester.tap(find.text('Business English'));
+      // بعد مهلة البحث التلقائي أيضاً — لا مؤقّت معلّق.
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(c.queryText.value, 'Business English');
+      expect(repo.calls.last.query, 'Business English');
     });
 
     testWidgets('the filter sheet is one level of chip groups with a live "show X results" button', (tester) async {
