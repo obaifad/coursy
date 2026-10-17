@@ -23,7 +23,7 @@ class InstructorRepository extends GetxService {
   Future<List<InstructorSubjectModel>> fetchInstructorSubjectFilters() async {
     try {
       final specs = await _referenceRepository.fetchInstructorSpecializations();
-      if (specs.isEmpty) return fetchInstructorSubjects();
+      if (specs.isEmpty) return await fetchInstructorSubjects();
 
       final counts = await _countPrivateInstructorsBySpecializationId();
       return specs.map((spec) => spec.toSubjectFilter().copyWith(instructorsCount: counts[spec.id] ?? 0)).toList();

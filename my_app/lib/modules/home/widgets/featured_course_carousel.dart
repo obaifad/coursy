@@ -69,7 +69,7 @@ class _FeaturedCourseCarouselState extends State<FeaturedCourseCarousel> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // الرئيسية داخل IndexedStack/تحت صفحات أخرى: TickerMode يتعطّل حين لا تكون ظاهرة، فلا نحرّك شيئاً حينها.
-    _tickerEnabled = TickerMode.of(context);
+    _tickerEnabled = TickerMode.valuesOf(context).enabled;
     _reduceMotion = MediaQuery.disableAnimationsOf(context);
     _restartTimer();
   }
