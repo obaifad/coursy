@@ -209,6 +209,17 @@ class CourseModel {
     return JsonHelpers.parseDouble(rawPrice);
   }
 
+  /// المدة بالأسابيع من تاريخَي البدء والانتهاء (مقرّبة للأعلى)؛ null إن غاب أحدهما.
+  int? get durationWeeks {
+    final start = JsonHelpers.tryParseDateOnly(startDate);
+    final end = JsonHelpers.tryParseDateOnly(endDate);
+    if (start == null || end == null || !end.isAfter(start)) return null;
+    return (end.difference(start).inDays / 7).ceil();
+  }
+
+  /// موعد البدء كـ «22 تشرين الأول» (null إن لم يُرسل الخادم تاريخاً صالحاً).
+  String? get startDayMonth => JsonHelpers.formatDayMonth(startDate);
+
   String get seatsLabel {
     final current = enrolledCountForCapacity;
     final max = maxStudents;

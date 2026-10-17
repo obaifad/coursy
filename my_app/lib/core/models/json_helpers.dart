@@ -182,6 +182,30 @@ abstract final class JsonHelpers {
     return '${parts[2]}/${parts[1]}/${parts[0]}';
   }
 
+  static const _monthsAr = [
+    'كانون الثاني',
+    'شباط',
+    'آذار',
+    'نيسان',
+    'أيار',
+    'حزيران',
+    'تموز',
+    'آب',
+    'أيلول',
+    'تشرين الأول',
+    'تشرين الثاني',
+    'كانون الأول',
+  ];
+  static const _monthsEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  /// «22 تشرين الأول» / «22 Oct» — اليوم واسم الشهر بلغة الواجهة (أسماء الأشهر الشامية بالعربية).
+  static String? formatDayMonth(String? value) {
+    final date = tryParseDateOnly(value);
+    if (date == null) return null;
+    final months = isArabicLocale() ? _monthsAr : _monthsEn;
+    return '${date.day} ${months[date.month - 1]}';
+  }
+
   /// يحلّل تاريخاً من API (YYYY-MM-DD أو ISO-8601) للمقارنة اليومية.
   static DateTime? tryParseDateOnly(String? value) {
     if (value == null || value.trim().isEmpty) return null;

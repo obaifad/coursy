@@ -3,6 +3,8 @@ import 'package:skeletonizer/skeletonizer.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_fonts.dart';
+import '../core/models/app_models.dart';
+import 'app_widgets.dart';
 import 'design_system.dart';
 
 class AppHomeSkeleton extends StatelessWidget {
@@ -135,6 +137,39 @@ class AppSliverGridSkeleton extends StatelessWidget {
           itemCount: itemCount,
           gridDelegate: poster ? AppGridLayouts.posterGridFor(context) : AppGridLayouts.courseGridFor(context),
           itemBuilder: (_, __) => poster ? const _SkeletonPosterCard() : const _SkeletonCourseCard(),
+        ),
+      ),
+    );
+  }
+}
+
+/// هيكل صفحة كل الدورات: البطاقة الأفقية نفسها مموّهة، فلا يقفز الارتفاع عند وصول البيانات.
+class AppSliverBoardingSkeleton extends StatelessWidget {
+  const AppSliverBoardingSkeleton({super.key, this.itemCount = 4, this.padding = const EdgeInsets.all(16)});
+
+  final int itemCount;
+  final EdgeInsetsGeometry padding;
+
+  static final CourseModel _placeholder = CourseModel.fromJson({
+    'id': 0,
+    'title_ar': 'دورة تدريبية بعنوان من سطرين',
+    'title_en': 'A training course with a two-line title',
+    'price': '100000',
+    'institute_name': 'Institute name',
+    'start_date': '2026-10-22',
+    'duration_hours': 8,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer.sliver(
+      enabled: true,
+      child: SliverPadding(
+        padding: padding,
+        sliver: SliverList.separated(
+          itemCount: itemCount,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (_, __) => CourseBoardingCard(course: _placeholder),
         ),
       ),
     );

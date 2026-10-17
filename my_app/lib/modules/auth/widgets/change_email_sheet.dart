@@ -79,7 +79,11 @@ class _ChangeEmailSheetState extends State<ChangeEmailSheet> {
         children: [
           Text(
             'edit_email_title'.tr,
-            style: AppFonts.tajawal(fontSize: AppTextSize.xl, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+            style: AppFonts.tajawal(
+              fontSize: AppTextSize.xl,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 6),
           Text(

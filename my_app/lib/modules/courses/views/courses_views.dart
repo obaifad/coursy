@@ -151,7 +151,7 @@ class _CoursesScrollViewState extends State<_CoursesScrollView> {
     final gridPadding = EdgeInsets.fromLTRB(hPad, 12, hPad, 0);
 
     if (c.isLoading.value && c.courses.isEmpty) {
-      return AppSliverGridSkeleton(padding: gridPadding, poster: true);
+      return AppSliverBoardingSkeleton(padding: gridPadding);
     }
     if (courses.isEmpty) {
       return SliverFillRemaining(
@@ -167,12 +167,12 @@ class _CoursesScrollViewState extends State<_CoursesScrollView> {
     }
     return SliverPadding(
       padding: gridPadding,
-      sliver: SliverGrid.builder(
+      sliver: SliverList.separated(
         itemCount: courses.length,
-        gridDelegate: AppGridLayouts.posterGridFor(context),
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (_, i) {
           final course = courses[i];
-          return CoursePosterCard(
+          return CourseBoardingCard(
             course: course,
             onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
           );
