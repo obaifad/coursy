@@ -19,6 +19,7 @@ import '../services/push_notification_service.dart';
 import '../config/app_debug_log.dart';
 import '../navigation/app_navigation.dart';
 import '../storage/recent_search_storage.dart';
+import '../storage/home_cache.dart';
 import '../storage/token_storage.dart';
 import '../../routes/app_routes.dart';
 import 'enrollment_status_coordinator.dart';
@@ -72,6 +73,9 @@ abstract final class SessionRefresh {
   static Future<void> onLogout() async {
     if (Get.isRegistered<RecentSearchStorage>()) {
       await Get.find<RecentSearchStorage>().clear();
+    }
+    if (Get.isRegistered<HomeCache>()) {
+      await Get.find<HomeCache>().clearStudentEntries();
     }
     if (Get.isRegistered<FavoritesService>()) {
       Get.find<FavoritesService>().clearForLogout();

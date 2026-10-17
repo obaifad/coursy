@@ -37,8 +37,6 @@ class HomeView extends GetView<HomeController> {
         final privateInstructors = controller.privateInstructors.toList(growable: false);
         final instructorSubjects = controller.instructorSubjects.toList(growable: false);
         final scrollReset = controller.horizontalScrollReset.value;
-        final bannerCourses = controller.bannerCourses;
-        final isGuest = !controller.isLoggedIn;
         return RefreshIndicator(
           color: AppColors.primary,
           onRefresh: () => controller.loadHome(forceRefresh: true, refreshStatic: true),
@@ -115,13 +113,7 @@ class HomeView extends GetView<HomeController> {
                 ),
                 const SizedBox(height: 12),
               ],
-              // ضيف → دعوة للتسجيل؛ وإلا → عروض الدورات.
-              if (isGuest)
-                Padding(padding: _sectionPad(context), child: const GuestSignUpBanner())
-              else if (bannerCourses.isEmpty)
-                Padding(padding: _sectionPad(context), child: const _HomeHeroBanner())
-              else
-                FeaturedCourseCarousel(courses: bannerCourses),
+              _HomeBannerSlot(controller: controller),
               const SizedBox(height: 22),
               Padding(
                 padding: _sectionPad(context),
@@ -274,6 +266,50 @@ class HomeView extends GetView<HomeController> {
         );
       }),
     );
+  }
+}
+
+/// مكان البانر أعلى الرئيسية: زائر → دعوة التسجيل؛ وإلا → الدورات المميزة (أو بطاقة الترحيب إن لم توجد
+/// دورات مفتوحة).
+///
+/// له Obx خاص: تغيّر دورات البانر لا يعيد بناء الرئيسية كلها. حالة الدخول معروفة قبل أول إطار
+/// (TokenStorage يُقرأ قبل runApp)، والدورات من كاش الجهاز — فالنسخة الصحيحة تظهر فوراً. وإن تغيّرت
+/// الحالة لاحقاً تتلاشى وتتغيّر المساحة بنعومة بدل القفز.
+class _HomeBannerSlot extends StatelessWidget {
+  const _HomeBannerSlot({required this.controller});
+
+  final HomeController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final pad = AppLayout.sectionHorizontal(context);
+    return Obx(() {
+      final (variant, child) = _variant(pad);
+      return AnimatedSize(
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+        alignment: Alignment.topCenter,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          layoutBuilder: (current, previous) =>
+              Stack(alignment: Alignment.topCenter, children: [...previous, if (current != null) current]),
+          child: KeyedSubtree(key: ValueKey(variant), child: child),
+        ),
+      );
+    });
+  }
+
+  (String, Widget) _variant(EdgeInsetsDirectional pad) {
+    if (!controller.isLoggedIn) {
+      return ('guest', Padding(padding: pad, child: const GuestSignUpBanner()));
+    }
+    final banner = controller.bannerCourses.toList(growable: false);
+    if (banner.isEmpty) {
+      return ('hero', Padding(padding: pad, child: const _HomeHeroBanner()));
+    }
+    return ('carousel', FeaturedCourseCarousel(courses: banner));
   }
 }
 

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/config/app_flags.dart';
+import '../../../core/data/repositories/home_repository.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/services/app_config_service.dart';
@@ -59,9 +60,18 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
     if (MediaQuery.disableAnimationsOf(context)) {
       _controller.duration = _kSplashReducedMotionDuration;
     }
+    _prefetchHome();
     _controller.forward().then((_) {
       Future<void>.delayed(_kPostAnimationHold, _navigateAway);
     });
+  }
+
+  /// الرئيسية تُجلب أثناء أنيميشن الشعار (≈2 ث) فتفتح محمّلة — فقط حين ستكون الوجهة التالية.
+  void _prefetchHome() {
+    final goesHome = !AppFlags.requireLogin || Get.find<TokenStorage>().isLoggedIn;
+    if (goesHome && Get.isRegistered<HomeRepository>()) {
+      Get.find<HomeRepository>().prefetchHomepage();
+    }
   }
 
   void _navigateAway() {
