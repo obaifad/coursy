@@ -89,13 +89,22 @@ class AppHomeSkeleton extends StatelessWidget {
 }
 
 class AppGridSkeleton extends StatelessWidget {
-  const AppGridSkeleton({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16), this.poster = false});
+  const AppGridSkeleton({
+    super.key,
+    this.itemCount = 6,
+    this.padding = const EdgeInsets.all(16),
+    this.poster = false,
+    this.aurora = false,
+  });
 
   final int itemCount;
   final EdgeInsetsGeometry padding;
 
   /// هيكل بطاقات «الملصق» ([CoursePosterCard]) بدل بطاقة التذكرة.
   final bool poster;
+
+  /// هيكل بطاقات «Aurora Glass» ([CourseAuroraCard]) — يتقدّم على [poster].
+  final bool aurora;
 
   @override
   Widget build(BuildContext context) {
@@ -105,8 +114,8 @@ class AppGridSkeleton extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: padding,
         itemCount: itemCount,
-        gridDelegate: poster ? AppGridLayouts.posterGridFor(context) : AppGridLayouts.courseGridFor(context),
-        itemBuilder: (_, __) => poster ? const _SkeletonPosterCard() : const _SkeletonCourseCard(),
+        gridDelegate: _skeletonGridDelegate(context, aurora: aurora, poster: poster),
+        itemBuilder: (_, __) => _skeletonGridCard(aurora: aurora, poster: poster),
       ),
     );
   }
@@ -119,6 +128,7 @@ class AppSliverGridSkeleton extends StatelessWidget {
     this.itemCount = 6,
     this.padding = const EdgeInsets.all(16),
     this.poster = false,
+    this.aurora = false,
   });
 
   final int itemCount;
@@ -126,6 +136,9 @@ class AppSliverGridSkeleton extends StatelessWidget {
 
   /// هيكل بطاقات «الملصق» ([CoursePosterCard]) بدل بطاقة التذكرة.
   final bool poster;
+
+  /// هيكل بطاقات «Aurora Glass» ([CourseAuroraCard]) — يتقدّم على [poster].
+  final bool aurora;
 
   @override
   Widget build(BuildContext context) {
@@ -135,12 +148,23 @@ class AppSliverGridSkeleton extends StatelessWidget {
         padding: padding,
         sliver: SliverGrid.builder(
           itemCount: itemCount,
-          gridDelegate: poster ? AppGridLayouts.posterGridFor(context) : AppGridLayouts.courseGridFor(context),
-          itemBuilder: (_, __) => poster ? const _SkeletonPosterCard() : const _SkeletonCourseCard(),
+          gridDelegate: _skeletonGridDelegate(context, aurora: aurora, poster: poster),
+          itemBuilder: (_, __) => _skeletonGridCard(aurora: aurora, poster: poster),
         ),
       ),
     );
   }
+}
+
+/// نفس شبكة البطاقة الحقيقية (أعمدة وارتفاع) — لا قفزة عند وصول البيانات.
+SliverGridDelegate _skeletonGridDelegate(BuildContext context, {required bool aurora, required bool poster}) {
+  if (aurora) return AppGridLayouts.auroraGridFor(context);
+  return poster ? AppGridLayouts.posterGridFor(context) : AppGridLayouts.courseGridFor(context);
+}
+
+Widget _skeletonGridCard({required bool aurora, required bool poster}) {
+  if (aurora) return const _SkeletonAuroraCard();
+  return poster ? const _SkeletonPosterCard() : const _SkeletonCourseCard();
 }
 
 /// هيكل صفحة كل الدورات: البطاقة الأفقية نفسها مموّهة، فلا يقفز الارتفاع عند وصول البيانات.
@@ -552,6 +576,57 @@ class _SkeletonPosterCard extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// هيكل [CourseAuroraCard]: غلاف بزاوية lg ولوح سفلي بارتفاع اللوح الزجاجي الحقيقي.
+class _SkeletonAuroraCard extends StatelessWidget {
+  const _SkeletonAuroraCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final spec = CourseCardMetrics.auroraSpec(
+          constraints.maxWidth,
+          textScale: CourseCardMetrics.textScaleOf(context),
+        );
+        return DecoratedBox(
+          decoration: const BoxDecoration(color: AppColors.primary, borderRadius: AppCorners.lg),
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.all(CourseAuroraSpec.inset),
+              child: SizedBox(
+                height: spec.panelHeight,
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(color: AppColors.card, borderRadius: AppCorners.md),
+                  child: Padding(
+                    padding: EdgeInsets.all(spec.panelPadding),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('البرمجة • مبتدئ', style: TextStyle(fontSize: AppTextSize.xs)),
+                        SizedBox(height: 6),
+                        Text(
+                          'عنوان الدورة',
+                          style: TextStyle(fontSize: AppTextSize.md, fontWeight: FontWeight.w800),
+                        ),
+                        Spacer(),
+                        Text(
+                          '350,000',
+                          style: TextStyle(fontSize: AppTextSize.lg, fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         );
       },

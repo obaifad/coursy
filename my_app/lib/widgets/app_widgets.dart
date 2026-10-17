@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +19,7 @@ import 'design_system.dart'
         AppRowTitle,
         BidiText,
         BrandBannerPattern,
+        CourseAuroraSpec,
         CourseCardMetrics,
         CoursePosterSpec,
         CourseTicketSpec;
@@ -28,4 +31,5 @@ part 'app_widgets/common_widgets.dart';
 part 'app_widgets/course_card.dart';
 part 'app_widgets/course_poster_card.dart';
 part 'app_widgets/course_boarding_card.dart';
+part 'app_widgets/course_aurora_card.dart';
 part 'app_widgets/course_row_card.dart';

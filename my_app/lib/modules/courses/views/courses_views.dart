@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/locale/locale_rebuild.dart';
+import '../../../core/models/app_models.dart';
 import '../../../routes/app_routes.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/app_skeletons.dart';
@@ -14,16 +15,22 @@ import '../../../core/locale/plural.dart';
 /// يلتصق تحت الرأس المطوي. (كان كل الجزء العلوي ثابتاً ويأكل نحو 300px، فلا يبقى للدورات إلا نافذة صغيرة.)
 /// الرأس البنفسجي يمتد تحت شريط الحالة بنفسه — لذلك بلا SafeArea علوية.
 class CoursesView extends GetView<CoursesController> {
-  const CoursesView({super.key});
+  const CoursesView({super.key, this.cardStyle = defaultCardStyle});
+
+  /// تصميم بطاقات الدورات. للرجوع إلى بطاقات التذكرة الأفقية: [CourseCardStyle.boardingPass].
+  static const CourseCardStyle defaultCardStyle = CourseCardStyle.auroraGlass;
+
+  final CourseCardStyle cardStyle;
 
   @override
-  Widget build(BuildContext context) => _CoursesScrollView(controller: controller);
+  Widget build(BuildContext context) => _CoursesScrollView(controller: controller, cardStyle: cardStyle);
 }
 
 class _CoursesScrollView extends StatefulWidget {
-  const _CoursesScrollView({required this.controller});
+  const _CoursesScrollView({required this.controller, required this.cardStyle});
 
   final CoursesController controller;
+  final CourseCardStyle cardStyle;
 
   @override
   State<_CoursesScrollView> createState() => _CoursesScrollViewState();
@@ -150,8 +157,12 @@ class _CoursesScrollViewState extends State<_CoursesScrollView> {
     final error = c.errorMessage.value;
     final gridPadding = EdgeInsets.fromLTRB(hPad, 12, hPad, 0);
 
+    final aurora = widget.cardStyle == CourseCardStyle.auroraGlass;
+
     if (c.isLoading.value && c.courses.isEmpty) {
-      return AppSliverBoardingSkeleton(padding: gridPadding);
+      return aurora
+          ? AppSliverGridSkeleton(padding: gridPadding, aurora: true)
+          : AppSliverBoardingSkeleton(padding: gridPadding);
     }
     if (courses.isEmpty) {
       return SliverFillRemaining(
@@ -163,6 +174,20 @@ class _CoursesScrollViewState extends State<_CoursesScrollView> {
                 action: FilledButton(onPressed: c.loadCourses, child: Text('retry'.tr)),
               )
             : AppEmptyState(message: 'no_courses'.tr, icon: Icons.menu_book_outlined),
+      );
+    }
+    void open(CourseModel course) => Get.toNamed(AppRoutes.courseDetails, arguments: course);
+    if (aurora) {
+      return SliverPadding(
+        padding: gridPadding,
+        sliver: SliverGrid.builder(
+          itemCount: courses.length,
+          gridDelegate: AppGridLayouts.auroraGridFor(context),
+          itemBuilder: (_, i) {
+            final course = courses[i];
+            return CourseAuroraCard(course: course, onTap: () => open(course));
+          },
+        ),
       );
     }
     return SliverPadding(

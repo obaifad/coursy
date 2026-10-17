@@ -56,6 +56,39 @@ abstract final class CourseCardMetrics {
     );
   }
 
+  /// مقاسات بطاقة «Aurora Glass» لعرض [width]: الغلاف يملأ البطاقة، واللوح الزجاجي السفلي بأسطر ثابتة
+  /// الارتفاع (تطول مع تكبير الخط) فتتساوى مواضع العنوان والسعر بين بطاقات الصف الواحد.
+  static CourseAuroraSpec auroraSpec(double width, {double textScale = 1}) {
+    final s = textScale;
+    final compact = isCompactTile(width);
+    final titleSize = compact ? AppTextSize.md : AppTextSize.lg;
+    const lineHeight = 16.0;
+    final title = (titleSize * CourseAuroraSpec.titleLineHeight * 2).ceilToDouble() * s;
+    final panel =
+        CourseAuroraSpec.panelPaddingV * 2 +
+        lineHeight * s +
+        CourseAuroraSpec.gapAfterCategory +
+        title +
+        CourseAuroraSpec.gapAfterTitle +
+        lineHeight * s +
+        CourseAuroraSpec.dividerGap +
+        20 * s;
+    // أقل ارتفاع: صف الشارات + جزء ظاهر من الغلاف فوق اللوح.
+    final minHeight = CourseAuroraSpec.inset + 26 * s + 48 + panel + CourseAuroraSpec.inset;
+    final natural = (width * 1.42).clamp(220.0, 330.0);
+    return CourseAuroraSpec(
+      compact: compact,
+      height: (natural > minHeight ? natural : minHeight).ceilToDouble(),
+      panelHeight: panel.ceilToDouble(),
+      panelPadding: compact ? 8 : 12,
+      titleSize: titleSize,
+      categoryHeight: lineHeight * s,
+      titleHeight: title,
+      instituteHeight: lineHeight * s,
+      footerHeight: 20 * s,
+    );
+  }
+
   static double gridTileWidth(BuildContext context) => courseGridTileWidth(context);
 
   static int courseGridCrossAxisCount(BuildContext context) {
@@ -182,6 +215,46 @@ class CoursePosterSpec {
   double get totalHeight => coverHeight + stripHeight;
 }
 
+/// مقاسات بطاقة «Aurora Glass»: بطاقة بارتفاع [height]، ولوح زجاجي بارتفاع [panelHeight] على بُعد
+/// [inset] من حوافها الثلاث (زاويته md داخل زاوية البطاقة lg فتبقى الحافتان متوازيتين).
+class CourseAuroraSpec {
+  const CourseAuroraSpec({
+    required this.compact,
+    required this.height,
+    required this.panelHeight,
+    required this.panelPadding,
+    required this.titleSize,
+    required this.categoryHeight,
+    required this.titleHeight,
+    required this.instituteHeight,
+    required this.footerHeight,
+  });
+
+  /// بُعد اللوح وصف الشارات عن حواف البطاقة.
+  static const double inset = 8;
+  static const double panelPaddingV = 10;
+  static const double gapAfterCategory = 3;
+  static const double gapAfterTitle = 4;
+
+  /// المسافة بين سطر المعهد وسطر السعر، وفي منتصفها خط فاصل رفيع.
+  static const double dividerGap = 9;
+  static const double titleLineHeight = 1.3;
+
+  final bool compact;
+  final double height;
+  final double panelHeight;
+  final double panelPadding;
+  final double titleSize;
+  final double categoryHeight;
+  final double titleHeight;
+  final double instituteHeight;
+  final double footerHeight;
+}
+
+/// تصميم بطاقات صفحة «كل الدورات»: [auroraGlass] (الافتراضي) شبكة عمودين، و[boardingPass] قائمة بطاقات
+/// التذكرة الأفقية التي سبقته — محفوظة كما هي للرجوع إليها بتغيير قيمة واحدة: `CoursesView.defaultCardStyle`.
+enum CourseCardStyle { auroraGlass, boardingPass }
+
 class CourseCardLayout {
   const CourseCardLayout({
     required this.cardHeight,
@@ -242,6 +315,17 @@ abstract final class AppGridLayouts {
       crossAxisCount: CourseCardMetrics.courseGridCrossAxisCount(context),
       mainAxisExtent:
           CourseCardMetrics.posterSpec(tileWidth, textScale: CourseCardMetrics.textScaleOf(context)).totalHeight + 2,
+      crossAxisSpacing: CourseCardMetrics.gridSpacing,
+      mainAxisSpacing: CourseCardMetrics.gridSpacing,
+    );
+  }
+
+  /// شبكة بطاقات «Aurora Glass» — نفس عدد الأعمدة والتباعد، بارتفاع البطاقة.
+  static SliverGridDelegateWithFixedCrossAxisCount auroraGridFor(BuildContext context) {
+    final tileWidth = CourseCardMetrics.courseGridTileWidth(context);
+    return SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: CourseCardMetrics.courseGridCrossAxisCount(context),
+      mainAxisExtent: CourseCardMetrics.auroraSpec(tileWidth, textScale: CourseCardMetrics.textScaleOf(context)).height,
       crossAxisSpacing: CourseCardMetrics.gridSpacing,
       mainAxisSpacing: CourseCardMetrics.gridSpacing,
     );
