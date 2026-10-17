@@ -6,12 +6,12 @@ import '../../../core/config/api_config.dart';
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/models/json_helpers.dart';
-import '../../../core/services/favorites_service.dart';
 import '../../../core/utils/course_registration_guard.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/app_widgets.dart';
+import '../../../widgets/course_favorite_button.dart';
 import '../../../modules/auth/widgets/register_form_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/registration_closed_dialog.dart';
@@ -21,6 +21,7 @@ import '../controllers/course_details_controller.dart';
 import '../../../core/locale/plural.dart';
 import '../../../theme/app_motion.dart';
 
+import '../../../theme/app_fonts.dart';
 part 'course_details/header_widgets.dart';
 part 'course_details/info_tabs.dart';
 part 'course_details/reviews_tab.dart';
@@ -162,12 +163,7 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
             controller: _scrollController,
             physics: const ClampingScrollPhysics(),
             slivers: [
-              _buildCourseHeroSliver(
-                context: context,
-                item: item,
-                showTitleInBar: _showTitleInBar,
-                onFavorite: controller.toggleFavorite,
-              ),
+              _buildCourseHeroSliver(context: context, item: item, showTitleInBar: _showTitleInBar),
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _CourseTabBarHeaderDelegate(tabController: _tabController),
@@ -216,7 +212,6 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
             enrollmentResolved: controller.enrollmentResolved.value,
             onBook: _openBooking,
             onRegistrationClosed: _onRegistrationClosedTap,
-            onFavorite: controller.toggleFavorite,
           ),
         ),
       );
@@ -229,7 +224,6 @@ SliverAppBar _buildCourseHeroSliver({
   required BuildContext context,
   required CourseModel item,
   required bool showTitleInBar,
-  required VoidCallback onFavorite,
 }) {
   // ارتفاع الغلاف يكبر مع تكبير الخط (إعدادات الجهاز، حتى 1.3×) — وإلا يفيض عنوان
   // من ثلاثة أسطر + اسم المعهد + صف التقييم عن الارتفاع الثابت.
@@ -240,25 +234,22 @@ SliverAppBar _buildCourseHeroSliver({
     backgroundColor: AppColors.surface,
     surfaceTintColor: Colors.transparent,
     forceElevated: showTitleInBar,
+    // شريط التبويبات المثبّت تحته يرسم الظل — لا ظلّين متتاليين.
+    scrolledUnderElevation: 0,
+    // سهم الرجوع وأيقونات شريط الحالة بيضاء فوق صورة الغلاف، وداكنة بعد طيّها.
+    iconTheme: HeroAppBarStyle.icons(showTitleInBar),
+    actionsIconTheme: HeroAppBarStyle.icons(showTitleInBar),
+    titleTextStyle: HeroAppBarStyle.title(showTitleInBar),
+    systemOverlayStyle: HeroAppBarStyle.overlay(showTitleInBar),
     title: AnimatedOpacity(
       opacity: showTitleInBar ? 1 : 0,
       duration: AppMotion.fast,
       child: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
     ),
     actions: [
-      Obx(() {
-        final fav = Get.find<FavoritesService>();
-        final isFav = fav.isCourseFavorite(item.id);
-        return IconButton(
-          tooltip: isFav ? 'favorite_remove'.tr : 'favorite_add'.tr,
-          onPressed: onFavorite,
-          icon: Icon(
-            isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-            color: isFav ? AppColors.danger : null,
-          ),
-        );
-      }),
-      const SizedBox(width: 4),
+      // نفس زر بطاقات الدورات (دائرة زجاجية + نبضة)، بتمويه حقيقي هنا فوق صورة الغلاف.
+      CourseFavoriteButton(courseId: item.id, diameter: 38, blurBackground: true),
+      const SizedBox(width: 6),
     ],
     flexibleSpace: FlexibleSpaceBar(
       background: Stack(
@@ -291,7 +282,7 @@ SliverAppBar _buildCourseHeroSliver({
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: MediaQuery.sizeOf(context).width < 480 ? 22 : 26,
+                      fontSize: MediaQuery.sizeOf(context).width < 480 ? AppTextSize.xxl : AppTextSize.display,
                       fontWeight: FontWeight.w800,
                       height: 1.2,
                       shadows: const [Shadow(color: Colors.black45, blurRadius: 8)],
@@ -303,7 +294,7 @@ SliverAppBar _buildCourseHeroSliver({
                   item.institute,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  style: const TextStyle(color: Colors.white70, fontSize: AppTextSize.md),
                 ),
                 const SizedBox(height: 14),
                 Row(
@@ -314,6 +305,14 @@ SliverAppBar _buildCourseHeroSliver({
                       Text(
                         item.rating.toStringAsFixed(1),
                         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(width: 16),
+                    ] else ...[
+                      const Icon(Icons.star_outline_rounded, color: Colors.white70, size: 18),
+                      const SizedBox(width: 4),
+                      Text(
+                        'no_ratings_yet'.tr,
+                        style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(width: 16),
                     ],

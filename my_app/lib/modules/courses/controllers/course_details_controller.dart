@@ -237,25 +237,26 @@ class CourseDetailsController extends GetxController {
 
   Future<void> submitReviews() async {
     final item = course.value;
-    if (item == null) return;
-
-    if (!await AuthGuard.requireLogin(message: 'review_login_required'.tr)) return;
-
-    if (!isEnrolled.value) {
-      Get.snackbar(
-        'alert'.tr,
-        hasCourseEnrollment.value ? 'review_completed_required'.tr : 'review_enrollment_required'.tr,
-      );
-      return;
-    }
-    await _updateReviewPermission();
-    if (hasSubmittedReview.value) {
-      Get.snackbar('alert'.tr, 'review_once_only'.tr);
-      return;
-    }
-
+    if (item == null || isSubmittingReview.value) return;
+    // القفل قبل أي انتظار: التحقق من الدخول وصلاحية التقييم قد يطلب الخادم، وضغطة ثانية خلاله
+    // كانت ترسل تقييماً ثانياً.
     isSubmittingReview.value = true;
     try {
+      if (!await AuthGuard.requireLogin(message: 'review_login_required'.tr)) return;
+
+      if (!isEnrolled.value) {
+        Get.snackbar(
+          'alert'.tr,
+          hasCourseEnrollment.value ? 'review_completed_required'.tr : 'review_enrollment_required'.tr,
+        );
+        return;
+      }
+      await _updateReviewPermission();
+      if (hasSubmittedReview.value) {
+        Get.snackbar('alert'.tr, 'review_once_only'.tr);
+        return;
+      }
+
       await _reviewRepository.submitReview(
         courseId: item.id,
         rating: courseRating.value,

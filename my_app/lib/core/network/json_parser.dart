@@ -272,7 +272,9 @@ String messageFromErrorBody(dynamic body, {String? fallback}) {
 /// في الحالتين نعرض النص الاحتياطي.
 bool isDisplayableServerMessage(String? message) {
   final text = message?.trim() ?? '';
-  return text.isNotEmpty && !text.startsWith('No query results');
+  return text.isNotEmpty &&
+      !text.startsWith('No query results') &&
+      !_genericHttpPhrases.contains(text.toLowerCase().replaceAll('.', ''));
 }
 
 String? errorCodeFromBody(dynamic body) {
@@ -311,3 +313,12 @@ class PaginatedMeta {
 
   bool get hasMore => nextPageUrl != null && nextPageUrl!.isNotEmpty;
 }
+
+/// عبارات Laravel العامة لأخطاء 5xx (بالإنجليزية ولا تشرح شيئاً) — نعرض بدلها نصنا المترجم.
+const _genericHttpPhrases = {
+  'server error',
+  'internal server error',
+  'service unavailable',
+  'bad gateway',
+  'gateway timeout',
+};

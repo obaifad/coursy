@@ -27,6 +27,10 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
 
   final ScrollController scrollController = ScrollController();
 
+  /// فشل جلب الصفحة التالية: نُبقي «المزيد» ونعرض «إعادة المحاولة» في آخر القائمة، ونوقف الجلب
+  /// التلقائي عند التمرير حتى يضغطها (كانت القائمة تنتهي بصمت كأنه لا توجد دورات أخرى).
+  final loadMoreFailed = false.obs;
+
   /// القائمة المرتّبة — تُحسب مرة عند تغيّر الدورات أو الترتيب (كانت تُرتّب مرتين لكل بطاقة تُرسم).
   final sortedCourses = <CourseModel>[].obs;
 
@@ -52,21 +56,40 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
     super.onClose();
   }
 
-  void _resort() => sortedCourses.assignAll(sortCourses(courses, selectedSort.value));
+  /// أثناء تحميل كل الصفحات للترتيب لا نعيد الترتيب مع كل صفحة (كانت البطاقات تتبدّل تحت إصبع
+  /// المستخدم وهو يمرّر) — نرتّب مرة واحدة في النهاية.
+  int _fullLoads = 0;
+
+  void _resort() {
+    if (_fullLoads > 0) return;
+    sortedCourses.assignAll(sortCourses(courses, selectedSort.value));
+  }
 
   bool get _needsFullList =>
       selectedSort.value != CourseSortOption.newest && hasMore.value && totalCount.value <= _maxCoursesForFullSort;
 
   Future<void> _loadAllRemaining() async {
-    while (_needsFullList && !isLoading.value) {
-      final before = courses.length;
-      await loadMoreCourses();
-      if (courses.length == before) break;
+    if (!_needsFullList) return;
+    _fullLoads++;
+    try {
+      while (_needsFullList && !isLoading.value) {
+        final before = courses.length;
+        await loadMoreCourses();
+        if (courses.length == before) break;
+      }
+    } finally {
+      _fullLoads--;
+      _resort();
     }
   }
 
+  /// قائمة جديدة (تصنيف أو ترتيب آخر) تبدأ من أولها، لا من موضع القائمة السابقة.
+  void _scrollToTop() {
+    if (scrollController.hasClients && scrollController.offset > 0) scrollController.jumpTo(0);
+  }
+
   void _onScrollNearEnd() {
-    if (!scrollController.hasClients) return;
+    if (!scrollController.hasClients || loadMoreFailed.value) return;
     final position = scrollController.position;
     if (position.maxScrollExtent <= 0) return;
     if (position.pixels < position.maxScrollExtent - 280) return;
@@ -92,6 +115,7 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
 
   void selectCategory(int? id) {
     selectedCategoryId.value = id;
+    _scrollToTop();
     resetInitialLoad();
     loadCourses();
   }
@@ -99,6 +123,7 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
   void selectSort(CourseSortOption sort) {
     if (selectedSort.value == sort) return;
     selectedSort.value = sort;
+    _scrollToTop();
     _loadAllRemaining();
   }
 
@@ -106,6 +131,7 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
     final session = beginLoad();
     isLoading.value = isInitialLoad;
     errorMessage.value = null;
+    loadMoreFailed.value = false;
     _page = 1;
     try {
       final result = await _repository.fetchCoursesPage(
@@ -132,6 +158,7 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
   Future<void> loadMoreCourses() async {
     if (!hasMore.value || isLoadingMore.value || isLoading.value) return;
     isLoadingMore.value = true;
+    loadMoreFailed.value = false;
     // إن تغيّر التصنيف أثناء التحميل تُهمل الصفحة القديمة بدل خلطها بالقائمة الجديدة.
     final session = currentLoad();
     try {
@@ -147,7 +174,7 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
         hasMore.value = result.hasMore;
       });
     } catch (_) {
-      if (shouldApply(session)) hasMore.value = false;
+      if (shouldApply(session)) loadMoreFailed.value = true;
     } finally {
       isLoadingMore.value = false;
     }

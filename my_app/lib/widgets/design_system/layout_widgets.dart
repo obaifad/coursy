@@ -7,16 +7,23 @@ class SoftCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
 
+  static const radius = AppCorners.md;
+
+  /// شكل ListTile/InkWell داخل البطاقة — ليتبع أثر الضغط زواياها.
+  static const shape = RoundedRectangleBorder(borderRadius: radius);
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: padding ?? const EdgeInsets.all(14),
-      decoration: const BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.all(Radius.circular(20)),
-        boxShadow: AppShadows.card,
+    // Material شفاف داخل الخلفية: ListTile/InkWell يرسمان التموّج عليه بدل أن تخفيه الخلفية الملوّنة
+    // (Flutter يرفض ListTile تحت DecoratedBox ملوّن مباشرة).
+    return DecoratedBox(
+      decoration: const BoxDecoration(color: AppColors.card, borderRadius: AppCorners.md, boxShadow: AppShadows.card),
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: AppCorners.md,
+        clipBehavior: Clip.antiAlias,
+        child: Padding(padding: padding ?? const EdgeInsets.all(14), child: child),
       ),
-      child: child,
     );
   }
 }
@@ -42,7 +49,7 @@ class AppIconCircleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = size >= 40 ? 14.0 : 12.0;
+    const radius = AppRadius.sm;
     final resolvedIconColor = iconColor ?? (filled ? AppColors.textPrimary : AppColors.primary.withValues(alpha: 0.82));
     return Material(
       color: filled ? AppColors.card : Colors.transparent,
@@ -113,22 +120,50 @@ class AppSegmentedTabBar extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry margin;
 
-  /// أقل عرض مقبول لكل تبويب في وضع التوزيع المتساوي (fill) قبل التحوّل للتمرير.
+  /// أقل عرض لتبويب لا نعرف نصّه (ليس Tab(text:)) في وضع التوزيع المتساوي قبل التحوّل للتمرير.
   static const double _minTabExtent = 84;
+
+  /// هامش حول النص داخل خلية التبويب (يشمل حشوة المؤشر) — كي لا يلامس النص حافة الكبسولة البيضاء.
+  static const double _labelGutter = 16;
+
+  static TextStyle get _labelStyle => AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm);
+
+  /// أعرض تسمية بين التبويبات، مقاسة بالخط الفعلي وحجم الخط في الجهاز. null = تبويب بلا نص معروف.
+  static double? _widestLabel(BuildContext context, List<Widget> tabs) {
+    final scaler = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+    var widest = 0.0;
+    for (final tab in tabs) {
+      final text = tab is Tab ? tab.text : null;
+      if (text == null) return null;
+      final painter = TextPainter(
+        text: TextSpan(text: text, style: _labelStyle),
+        textDirection: direction,
+        textScaler: scaler,
+        maxLines: 1,
+      )..layout();
+      if (painter.width > widest) widest = painter.width;
+      painter.dispose();
+    }
+    return widest;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: margin,
       child: DecoratedBox(
-        decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(AppRadius.md)),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            // يتحوّل للتمرير تلقائياً عندما تضيق الخلايا (هواتف صغيرة + 4 تبويبات)
-            // لمنع تجاوز RenderFlex، مع الإبقاء على التوزيع المتساوي على الشاشات الأوسع.
+            // توزيع متساوٍ بعرض الشريط ما دام أعرض نص يتّسع في خليته؛ التمرير فقط حين لا يتّسع فعلاً
+            // (هاتف ضيق جداً أو خط كبير). كان الحد ثابتاً (84px) فتتحوّل 4 تبويبات قصيرة للتمرير على
+            // هاتف 360dp وتنكمش يميناً بمؤشر ضيق، مع أن نصوصها تتّسع.
             final available = constraints.maxWidth - padding.horizontal;
             final perTab = tabs.isEmpty ? available : available / tabs.length;
-            final scrollable = isScrollable || perTab < _minTabExtent;
+            final widest = _widestLabel(context, tabs);
+            final fits = widest != null ? widest + _labelGutter <= perTab : perTab >= _minTabExtent;
+            final scrollable = isScrollable || !fits;
             return TabBar(
               controller: controller,
               isScrollable: scrollable,
@@ -136,18 +171,18 @@ class AppSegmentedTabBar extends StatelessWidget {
               dividerColor: Colors.transparent,
               indicatorSize: TabBarIndicatorSize.tab,
               indicatorPadding: padding,
-              labelPadding: scrollable ? const EdgeInsets.symmetric(horizontal: 10) : EdgeInsets.zero,
+              labelPadding: scrollable ? const EdgeInsets.symmetric(horizontal: 16) : EdgeInsets.zero,
               overlayColor: WidgetStateProperty.all(Colors.transparent),
-              splashBorderRadius: BorderRadius.circular(12),
+              splashBorderRadius: BorderRadius.circular(AppRadius.sm),
               indicator: BoxDecoration(
                 color: AppColors.card,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
                 boxShadow: const [BoxShadow(color: AppColors.shadowPurple, blurRadius: 10, offset: Offset(0, 3))],
               ),
-              labelColor: AppColors.primary,
+              labelColor: AppColors.primaryInk,
               unselectedLabelColor: AppColors.textSecondary,
-              labelStyle: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 13),
-              unselectedLabelStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13),
+              labelStyle: _labelStyle,
+              unselectedLabelStyle: _labelStyle,
               tabs: tabs,
             );
           },
@@ -246,12 +281,12 @@ class _AppStatCell extends StatelessWidget {
       children: [
         Text(
           item.value,
-          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.primary),
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.xl, color: AppColors.primaryInk),
         ),
         const SizedBox(height: 4),
         Text(
           item.label,
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.xs),
           textAlign: TextAlign.center,
         ),
       ],
@@ -558,8 +593,8 @@ class AppEmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: compact
                   ? const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      fontSize: AppTextSize.md,
                       color: AppColors.textSecondary,
                       height: 1.45,
                     )

@@ -111,6 +111,8 @@ void main() {
     final (_, c) = await _open(tester, setup: (a) => a.sendError = ApiException('verified', statusCode: 409));
 
     expect(c.verified.value, isTrue);
+    // يُحفظ محلياً كذلك فيختفي خيار «تأكيد البريد» من «حسابي».
+    expect(Get.find<TokenStorage>().emailVerified.value, isTrue);
     await tester.pumpAndSettle(const Duration(seconds: 2));
   });
 

@@ -6,9 +6,9 @@ import 'package:get/get.dart';
 
 import '../../../core/data/repositories/auth_repository.dart';
 import '../../../core/data/repositories/profile_repository.dart';
-import '../../../core/models/student_profile_payload.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/storage/token_storage.dart';
 
 /// تأكيد البريد برمز من 6 أرقام. اختياري: يمكن تخطيه دائماً.
 ///
@@ -159,6 +159,8 @@ class EmailVerificationController extends GetxController {
 
   Future<void> _onVerified() async {
     verified.value = true;
+    // 409 (مؤكد مسبقاً) لا يمر بـ verifyEmailCode — فيُحفظ هنا ليختفي خيار «تأكيد البريد».
+    if (Get.isRegistered<TokenStorage>()) unawaited(Get.find<TokenStorage>().saveEmailVerified(true));
     _timer?.cancel();
     resendSeconds.value = 0;
     codeFocus.unfocus();
@@ -182,15 +184,15 @@ class EmailVerificationController extends GetxController {
   /// يُرجع أخطاء الحقول (`email` / `current_password`) أو null عند النجاح.
   Future<Map<String, String>?> changeEmail(String value, String currentPassword) async {
     final next = value.trim();
-    if (!RegExp(r'^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$').hasMatch(next)) return {'email': 'enter_valid_email'.tr};
-    if (next == email.value) return null;
-    if (currentPassword.isEmpty) return {'current_password': 'current_password_required'.tr};
+    final invalid = ProfileRepository.emailChangeFieldErrors(next, currentPassword);
+    // البريد نفسه: لا شيء يتغيّر (ولا حاجة لكلمة المرور).
+    if (next == email.value && invalid?['email'] == null) return null;
+    if (invalid != null) return invalid;
     if (!Get.isRegistered<ProfileRepository>()) return {'email': 'error_unexpected'.tr};
     isSavingEmail.value = true;
     try {
-      await Get.find<ProfileRepository>().updateProfile(
-        StudentProfilePayload(email: next, currentPassword: currentPassword),
-      );
+      final errors = await Get.find<ProfileRepository>().changeEmail(next, currentPassword);
+      if (errors != null) return errors;
       email.value = next;
       codeController.clear();
       errorMessage.value = null;
@@ -198,12 +200,6 @@ class EmailVerificationController extends GetxController {
       resendSeconds.value = 0;
       unawaited(sendCode());
       return null;
-    } on ApiException catch (e) {
-      final fields = e.fieldErrors ?? const {};
-      if (fields.containsKey('current_password')) return {'current_password': fields['current_password']!};
-      return {'email': fields['email'] ?? e.message};
-    } catch (_) {
-      return {'email': 'connection_error'.tr};
     } finally {
       isSavingEmail.value = false;
     }

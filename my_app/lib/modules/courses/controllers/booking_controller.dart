@@ -35,9 +35,11 @@ class BookingController extends GetxController {
   }
 
   Future<void> confirmBooking() async {
-    if (!await CourseRegistrationGuard.ensureOpen(course)) return;
+    if (isSubmitting.value) return;
+    // القفل قبل التحقق من فتح التسجيل (انتظار): ضغطتان سريعتان كانتا ترسلان حجزين.
     isSubmitting.value = true;
     try {
+      if (!await CourseRegistrationGuard.ensureOpen(course)) return;
       final enrollment = await _enrollmentRepository.enrollInCourse(course.id);
       // إعادة الحجز بعد الإلغاء/الرفض: الخادم يُرجع السجل القديم بحالته (200) ولا ينشئ طلباً جديداً.
       final status = enrollment.status.toLowerCase();

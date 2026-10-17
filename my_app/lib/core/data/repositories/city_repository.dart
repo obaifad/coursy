@@ -14,11 +14,8 @@ class CityRepository extends GetxService {
   final ApiClient _client;
 
   Future<List<CityModel>> fetchCities({int perPage = 100}) async {
-    final list = await fetchAllPages(_client, ApiEndpoints.cities, CityModel.fromJson, perPage: perPage);
-    if (list.isEmpty) {
-      throw ApiException('error_no_cities'.tr);
-    }
-    return list;
+    // قائمة فارغة ليست خطأ (لا مدن في الخادم بعد) — الواجهة تعرضها كحالة فارغة لا كفشل اتصال.
+    return fetchAllPages(_client, ApiEndpoints.cities, CityModel.fromJson, perPage: perPage);
   }
 
   Future<CityModel> fetchCityById(int id) async {

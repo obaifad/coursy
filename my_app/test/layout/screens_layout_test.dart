@@ -5,14 +5,18 @@ import 'package:my_app/modules/auth/controllers/auth_controller.dart';
 import 'package:my_app/modules/auth/controllers/forgot_password_controller.dart';
 import 'package:my_app/modules/auth/views/auth_views.dart';
 import 'package:my_app/modules/auth/views/register_view.dart';
+import 'package:my_app/modules/courses/controllers/category_courses_controller.dart';
 import 'package:my_app/modules/courses/controllers/course_details_controller.dart';
 import 'package:my_app/modules/courses/controllers/courses_controller.dart';
+import 'package:my_app/modules/courses/views/category_courses_view.dart';
 import 'package:my_app/modules/courses/views/course_details_view.dart';
 import 'package:my_app/modules/favorites/controllers/favorites_controller.dart';
 import 'package:my_app/modules/favorites/views/favorites_view.dart';
 import 'package:my_app/modules/home/controllers/home_controller.dart';
 import 'package:my_app/modules/institutes/controllers/institutes_controller.dart';
 import 'package:my_app/modules/institutes/views/institutes_views.dart';
+import 'package:my_app/modules/instructors/controllers/private_instructors_controller.dart';
+import 'package:my_app/modules/instructors/views/private_instructors_view.dart';
 import 'package:my_app/modules/notifications/controllers/notifications_controller.dart';
 import 'package:my_app/modules/notifications/views/notifications_view.dart';
 import 'package:my_app/modules/payment/controllers/payment_controller.dart';
@@ -78,6 +82,37 @@ void main() {
         beforeEach: () async {
           await registerFakes(loggedIn: true, locale: Get.locale?.languageCode ?? locale);
           Get.put(FavoritesController());
+        },
+      ),
+    );
+  });
+
+  // شاشات القوائم بنمط «الرأس يختفي والفلاتر تلتصق» — لم تكن في الفحص.
+  testWidgets('category courses', (tester) async {
+    allIssues.addAll(
+      await auditScene(
+        tester,
+        'category-courses',
+        () => const CategoryCoursesView(),
+        beforeEach: () async {
+          await registerFakes(loggedIn: true, locale: Get.locale?.languageCode ?? locale);
+          Get.routing.args = <String, dynamic>{'id': 3, 'name': 'البرمجة وتطوير التطبيقات'};
+          Get.put(CategoryCoursesController());
+        },
+      ),
+    );
+  });
+
+  testWidgets('private instructors', (tester) async {
+    allIssues.addAll(
+      await auditScene(
+        tester,
+        'private-instructors',
+        () => const PrivateInstructorsView(),
+        beforeEach: () async {
+          await registerFakes(loggedIn: true, locale: Get.locale?.languageCode ?? locale);
+          Get.routing.args = null;
+          Get.put(PrivateInstructorsController(Get.find()));
         },
       ),
     );

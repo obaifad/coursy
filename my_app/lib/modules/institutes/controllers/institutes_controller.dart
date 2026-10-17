@@ -95,7 +95,8 @@ class InstitutesController extends GetxController with LatestLoadGuard, InitialL
         hasMore.value = result.hasMore;
       });
     } catch (_) {
-      if (shouldApply(session)) hasMore.value = false;
+      // «تحميل المزيد» يبقى ظاهراً لإعادة المحاولة (كانت القائمة تنتهي بصمت عند انقطاع الشبكة).
+      if (shouldApply(session)) Get.snackbar('error'.tr, 'error_load_more_failed'.tr);
     } finally {
       isLoadingMore.value = false;
     }
@@ -115,6 +116,11 @@ class InstituteDetailsController extends GetxController {
   final institute = Rxn<InstituteModel>();
   final courses = <CourseModel>[].obs;
   final instructors = <InstructorModel>[].obs;
+
+  /// أخطاء التحميل: كانت تُبتلع فتظهر «لا دورات/لا مدرّسين» بدل «تعذّر التحميل» مع إعادة المحاولة.
+  final detailsError = RxnString();
+  final coursesError = RxnString();
+  final instructorsError = RxnString();
 
   late final int instituteId;
 
@@ -159,29 +165,36 @@ class InstituteDetailsController extends GetxController {
 
   Future<void> _fetchInstituteDetails() async {
     if (instituteId <= 0) return;
+    detailsError.value = null;
     try {
       final details = await _instituteRepository.fetchInstituteById(instituteId);
       institute.value = _mergeInstitute(institute.value, details);
-    } catch (_) {
-      // الإبقاء على بيانات الانتقال إن فشل التفاصيل
+    } catch (e) {
+      // بيانات الانتقال تكفي للعرض؛ بدونها نعرض الخطأ مع «إعادة المحاولة».
+      if (institute.value == null) detailsError.value = userErrorMessage(e);
     }
   }
 
   Future<void> _fetchCourses() async {
+    coursesError.value = null;
     var instituteCourses = <CourseModel>[];
     try {
       // يجرّب `/institutes/{id}/courses` ثم `/courses?institute_id=` بكل الصفحات.
       instituteCourses = await _courseRepository.fetchInstituteCourses(instituteId);
-    } catch (_) {}
+    } catch (e) {
+      coursesError.value = userErrorMessage(e);
+    }
     courses.assignAll(instituteCourses);
     _syncCoursesCount();
   }
 
   Future<void> _fetchInstructors() async {
+    instructorsError.value = null;
     try {
       instructors.assignAll(await _instructorRepository.fetchInstructors(instituteId: instituteId));
-    } catch (_) {
+    } catch (e) {
       instructors.clear();
+      instructorsError.value = userErrorMessage(e);
     }
   }
 

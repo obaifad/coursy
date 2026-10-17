@@ -138,7 +138,7 @@ class ApiClient extends GetxService {
 
       if (status >= 400) {
         throw ApiException(
-          messageFromErrorBody(body, fallback: 'error_request_failed'.trParams({'status': '$status'})),
+          messageFromErrorBody(body, fallback: _statusFallback(status)),
           statusCode: status,
           fieldErrors: fieldErrorsFromBody(body),
           code: errorCodeFromBody(body),
@@ -236,7 +236,11 @@ class ApiClient extends GetxService {
       default:
         // مثل أخطاء 5xx — نص Dio التقني (بالإنجليزية) لا يُعرض للمستخدم.
         final status = e.response?.statusCode;
-        return status == null ? 'connection_error'.tr : 'error_request_failed'.trParams({'status': '$status'});
+        return status == null ? 'connection_error'.tr : _statusFallback(status);
     }
   }
+
+  /// نص الخطأ حين لا يرسل الخادم رسالة صالحة للعرض: 5xx = مشكلة مؤقتة في الخادم (لا «فشل الطلب (500)»).
+  static String _statusFallback(int status) =>
+      status >= 500 ? 'error_server_unavailable'.tr : 'error_request_failed'.trParams({'status': '$status'});
 }

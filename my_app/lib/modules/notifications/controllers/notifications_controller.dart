@@ -64,7 +64,8 @@ class NotificationsController extends GetxController with LatestLoadGuard, Initi
         hasMore.value = result.hasMore;
       });
     } catch (_) {
-      if (shouldApply(session)) hasMore.value = false;
+      // «تحميل المزيد» يبقى ظاهراً لإعادة المحاولة (كانت القائمة تنتهي بصمت عند انقطاع الشبكة).
+      if (shouldApply(session)) Get.snackbar('error'.tr, 'error_load_more_failed'.tr);
     } finally {
       isLoadingMore.value = false;
     }

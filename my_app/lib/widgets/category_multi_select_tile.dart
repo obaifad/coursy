@@ -28,10 +28,10 @@ class CategoryMultiSelectTile extends StatelessWidget {
       if (compact) {
         return Material(
           color: AppColors.indicatorFill,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           child: InkWell(
             onTap: () => _showPicker(context, ids.toSet()),
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
@@ -57,7 +57,7 @@ class CategoryMultiSelectTile extends StatelessWidget {
 
       return Material(
         color: AppColors.indicatorFill,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: ListTile(
           leading: const Icon(Icons.interests_rounded, color: AppColors.primary),
           title: Text('interests_optional'.tr, style: const TextStyle(fontWeight: FontWeight.w700)),

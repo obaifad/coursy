@@ -55,7 +55,7 @@ class CourseRepository extends GetxService {
         strict: false,
       );
       if (items.isNotEmpty) {
-        return _ratingService.enrich(items);
+        return await _ratingService.enrich(items);
       }
     } catch (_) {}
 

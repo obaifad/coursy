@@ -21,6 +21,34 @@ class ProfileRepository extends GetxService {
 
   Future<Map<String, dynamic>> fetchMe() => fetchFullStudentUser();
 
+  /// أخطاء حقول تغيير البريد قبل الإرسال، أو null إن كانت سليمة.
+  static Map<String, String>? emailChangeFieldErrors(String email, String currentPassword) {
+    if (!RegExp(r'^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$').hasMatch(email.trim())) {
+      return {'email': 'enter_valid_email'.tr};
+    }
+    if (currentPassword.isEmpty) return {'current_password': 'current_password_required'.tr};
+    return null;
+  }
+
+  /// يغيّر البريد بكلمة المرور الحالية. يُرجع أخطاء الحقول (`email` / `current_password`) أو null عند النجاح.
+  /// الخادم يعيد البريد الجديد غير مؤكد (`email_verified_at` = null)، فتُحفظ الحالة محلياً كذلك.
+  Future<Map<String, String>?> changeEmail(String email, String currentPassword) async {
+    final invalid = emailChangeFieldErrors(email, currentPassword);
+    if (invalid != null) return invalid;
+    try {
+      final result = await updateProfile(StudentProfilePayload(email: email.trim(), currentPassword: currentPassword));
+      // البريد نفسه لا يغيّر شيئاً على الخادم، لذا نحفظ ما أرسله بدل افتراض «غير مؤكد».
+      await _tokenStorage.saveEmailVerified(emailVerificationStatus(extractUserMap(result) ?? result) ?? false);
+      return null;
+    } on ApiException catch (e) {
+      final fields = e.fieldErrors ?? const {};
+      if (fields.containsKey('current_password')) return {'current_password': fields['current_password']!};
+      return {'email': fields['email'] ?? e.message};
+    } catch (_) {
+      return {'email': 'connection_error'.tr};
+    }
+  }
+
   /// `/student/me` (يحمل الملف الأكاديمي `student_profile`) + الكاش المحلي.
   /// (`GET /student/profile` غير موجود على الخادم — المسار للتعديل فقط — فكان كل تحميل يفشل بـ 405.)
   Future<Map<String, dynamic>> fetchFullStudentUser() async {

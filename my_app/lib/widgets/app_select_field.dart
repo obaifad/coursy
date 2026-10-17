@@ -50,7 +50,7 @@ class AppSelectField<T> extends StatelessWidget {
       button: true,
       label: label,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         onTap: !enabled || options.isEmpty
             ? null
             : () => showAppSelectionSheet<T>(

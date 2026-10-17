@@ -32,11 +32,11 @@ class DeleteAccountController extends GetxController {
       return;
     }
     FocusManager.instance.primaryFocus?.unfocus();
-    if (!await _confirm()) return;
-
-    passwordError.value = null;
+    // القفل قبل نافذة التأكيد: ضغطتان سريعتان كانتا تفتحان نافذتين وترسلان طلبَي حذف.
     isDeleting.value = true;
     try {
+      if (!await _confirm()) return;
+      passwordError.value = null;
       await _authRepository.deleteAccount(password);
       // الخادم ألغى كل الجلسات وحذف توكنات الأجهزة؛ هنا ننظّف ما بقي محلياً فقط.
       // الحذف نجح: أي فشل في التنظيف بعده لا يُعرض كخطأ — المستخدم يصل خارج الحساب دائماً.

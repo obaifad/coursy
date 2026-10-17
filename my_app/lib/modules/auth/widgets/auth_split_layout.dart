@@ -102,7 +102,7 @@ class AuthSplitHeroPanel extends StatelessWidget {
                   style: AppFonts.tajawal(
                     fontSize: metrics.welcomeSubtitleSize,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
+                    color: AppColors.primaryInk,
                     height: 1.4,
                   ),
                 ),
@@ -111,7 +111,7 @@ class AuthSplitHeroPanel extends StatelessWidget {
                   isRegister ? 'auth_hero_register_desc'.tr : 'auth_hero_login_desc'.tr,
                   textAlign: TextAlign.center,
                   style: AppFonts.tajawal(
-                    fontSize: metrics.welcomeSubtitleSize - 1,
+                    fontSize: AppTextSize.snap(metrics.welcomeSubtitleSize - 1),
                     fontWeight: FontWeight.w500,
                     color: AppColors.textSecondary,
                     height: 1.55,

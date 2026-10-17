@@ -8,6 +8,8 @@ import '../../../widgets/design_system.dart';
 import '../controllers/phone_verification_controller.dart';
 import '../widgets/register_form_widgets.dart';
 
+import '../../../theme/app_fonts.dart';
+
 class PhoneVerificationView extends GetView<PhoneVerificationController> {
   const PhoneVerificationView({super.key});
 
@@ -52,7 +54,7 @@ class _StepIndicator extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 16,
-              backgroundColor: active ? AppColors.primary : AppColors.indicatorFill,
+              backgroundColor: active ? AppColors.primaryStrong : AppColors.indicatorFill,
               child: Text(
                 n,
                 style: TextStyle(color: active ? Colors.white : AppColors.textSecondary, fontWeight: FontWeight.w800),
@@ -65,9 +67,9 @@ class _StepIndicator extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: AppTextSize.xs,
                 fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                color: active ? AppColors.primary : AppColors.textSecondary,
+                color: active ? AppColors.primaryInk : AppColors.textSecondary,
               ),
             ),
           ],
@@ -96,7 +98,10 @@ class _SendStep extends StatelessWidget {
       children: [
         const Icon(Icons.phone_android_rounded, size: 56, color: AppColors.primary),
         const SizedBox(height: 16),
-        Text('confirm_phone'.tr, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+        Text(
+          'confirm_phone'.tr,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.xl),
+        ),
         const SizedBox(height: 8),
         Text(
           'otp_will_send'.trParams({'phone': controller.phone}),
@@ -125,7 +130,10 @@ class _VerifyStep extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('enter_otp'.tr, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+        Text(
+          'enter_otp'.tr,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.xl),
+        ),
         const SizedBox(height: 8),
         Text(
           'otp_sent_to'.trParams({'phone': controller.phone}),
@@ -138,7 +146,7 @@ class _VerifyStep extends StatelessWidget {
           textAlign: TextAlign.center,
           maxLength: 6,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: 8),
+          style: const TextStyle(fontSize: AppTextSize.display, fontWeight: FontWeight.w800, letterSpacing: 8),
           decoration: const InputDecoration(counterText: '', hintText: '••••••', border: OutlineInputBorder()),
         ),
         Obx(() {

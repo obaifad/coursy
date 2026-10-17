@@ -197,7 +197,7 @@ class _Box extends StatelessWidget {
         color: hasError
             ? AppColors.dangerSoft.withValues(alpha: 0.5)
             : (isActive ? AppColors.card : AppColors.surfaceSoft),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(color: border, width: borderWidth),
         boxShadow: isActive && !hasError
             ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.16), blurRadius: 10, offset: const Offset(0, 4))]
@@ -206,7 +206,7 @@ class _Box extends StatelessWidget {
       child: Text(
         digit,
         style: AppFonts.tajawal(
-          fontSize: 22,
+          fontSize: AppTextSize.xxl,
           fontWeight: FontWeight.w800,
           color: enabled ? AppColors.textPrimary : AppColors.textHint,
         ),

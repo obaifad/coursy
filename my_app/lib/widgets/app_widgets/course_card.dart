@@ -3,11 +3,16 @@ part of '../app_widgets.dart';
 /// بطاقة الدورة بتصميم التذكرة: صورة داخلية بشارة، التصنيف والمستوى، العنوان، المعهد والمدينة،
 /// التقييم، ثم خط متقطع بقصّتين جانبيتين، وتحته السعر والمدة ونوع الحضور.
 /// تُستخدم في كل القوائم (الرئيسية، الشبكات، المفضلة، صفحة المدرّس) والضغط في أي مكان يفتح الدورة.
+/// زر المفضلة على زاوية البداية من الصورة، والشارة على زاوية النهاية — لا يغطي أحدهما الآخر.
 class CourseCard extends StatelessWidget {
-  const CourseCard({super.key, required this.course, this.onTap});
+  const CourseCard({super.key, required this.course, this.onTap, this.showFavorite = true, this.onFavoritePressed});
 
   final CourseModel course;
   final VoidCallback? onTap;
+  final bool showFavorite;
+
+  /// بديل لتبديل المفضلة الافتراضي (شاشة المفضلة: إزالة مع تلاشٍ وتراجع).
+  final Future<void> Function()? onFavoritePressed;
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +45,17 @@ class CourseCard extends StatelessWidget {
                   onTap: onTap,
                   splashColor: AppColors.primary.withValues(alpha: 0.08),
                   highlightColor: AppColors.primary.withValues(alpha: 0.04),
-                  child: _TicketContent(course: course, spec: spec),
+                  child: _TicketContent(
+                    course: course,
+                    spec: spec,
+                    favorite: showFavorite
+                        ? CourseFavoriteButton(
+                            courseId: course.id,
+                            diameter: spec.compact ? 32 : 34,
+                            onPressed: onFavoritePressed,
+                          )
+                        : null,
+                  ),
                 ),
               ),
             ),
@@ -52,10 +67,11 @@ class CourseCard extends StatelessWidget {
 }
 
 class _TicketContent extends StatelessWidget {
-  const _TicketContent({required this.course, required this.spec});
+  const _TicketContent({required this.course, required this.spec, this.favorite});
 
   final CourseModel course;
   final CourseTicketSpec spec;
+  final Widget? favorite;
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +83,7 @@ class _TicketContent extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(CourseTicketSpec.inset, CourseTicketSpec.inset, CourseTicketSpec.inset, 0),
           child: SizedBox(
             height: spec.imageHeight,
-            child: _TicketImage(course: course, compact: spec.compact),
+            child: _TicketImage(course: course, compact: spec.compact, favorite: favorite),
           ),
         ),
         const SizedBox(height: CourseTicketSpec.gapAfterImage),
@@ -212,12 +228,17 @@ class _DashPainter extends CustomPainter {
   bool shouldRepaint(covariant _DashPainter oldDelegate) => oldDelegate.color != color;
 }
 
-/// الصورة داخل البطاقة بزوايا مدوّرة، مع شارة داكنة (الأكثر طلباً / مقاعد محدودة / جديدة…) في الزاوية.
+/// الصورة داخل البطاقة بزوايا مدوّرة، مع شارة داكنة (الأكثر طلباً / مقاعد محدودة / جديدة…) في زاوية
+/// النهاية وزر المفضلة في زاوية البداية.
 class _TicketImage extends StatelessWidget {
-  const _TicketImage({required this.course, required this.compact});
+  const _TicketImage({required this.course, required this.compact, this.favorite});
 
   final CourseModel course;
   final bool compact;
+  final Widget? favorite;
+
+  /// مساحة اللمس (44) تبدأ قبل الدائرة بـ 5؛ فتبعد الدائرة عن حافة الصورة كما تبعد الشارة (8).
+  static const _favoriteInset = 2.0;
 
   @override
   Widget build(BuildContext context) {
@@ -227,20 +248,21 @@ class _TicketImage extends StatelessWidget {
       children: [
         _CourseCardImage(
           course: course,
-          borderRadius: BorderRadius.circular(_kCourseCardRadius - 4),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           fallbackSize: compact ? 26 : 30,
         ),
         if (badge != null)
           PositionedDirectional(
             top: 8,
             end: 8,
-            start: 40,
+            // لا تمتد الشارة الطويلة تحت زر المفضلة.
+            start: favorite != null ? _favoriteInset + CourseFavoriteButton.tapTarget : 40,
             child: Align(
               alignment: AlignmentDirectional.topEnd,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: AppColors.textPrimary.withValues(alpha: 0.88),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppRadius.xs),
                 ),
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: 4),
@@ -250,7 +272,7 @@ class _TicketImage extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: AppFonts.tajawal(
                       color: Colors.white,
-                      fontSize: compact ? 10 : 11,
+                      fontSize: compact ? AppTextSize.xs : AppTextSize.xs,
                       fontWeight: FontWeight.w800,
                       height: 1.2,
                     ),
@@ -259,6 +281,7 @@ class _TicketImage extends StatelessWidget {
               ),
             ),
           ),
+        if (favorite != null) PositionedDirectional(top: _favoriteInset, start: _favoriteInset, child: favorite!),
       ],
     );
   }
@@ -275,7 +298,7 @@ class _CategoryLevelLine extends StatelessWidget {
     final category = course.categoryName?.trim() ?? '';
     final level = (course.levelCode ?? '').trim().isEmpty ? '' : course.level.trim();
     if (category.isEmpty && level.isEmpty) return const SizedBox.shrink();
-    final style = AppFonts.tajawal(fontSize: 11.5, fontWeight: FontWeight.w700, height: 1.3);
+    final style = AppFonts.tajawal(fontSize: AppTextSize.xs, fontWeight: FontWeight.w700, height: 1.3);
     return Align(
       alignment: AlignmentDirectional.centerStart,
       child: Text.rich(
@@ -287,7 +310,7 @@ class _CategoryLevelLine extends StatelessWidget {
             if (category.isNotEmpty)
               TextSpan(
                 text: category,
-                style: const TextStyle(color: AppColors.primary),
+                style: const TextStyle(color: AppColors.primaryInk),
               ),
             if (category.isNotEmpty && level.isNotEmpty)
               const TextSpan(
@@ -326,7 +349,7 @@ class _InstituteLine extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppFonts.tajawal(
-              fontSize: 10.5,
+              fontSize: AppTextSize.xs,
               fontWeight: FontWeight.w500,
               color: AppColors.textSecondary,
               height: 1.3,
@@ -338,7 +361,8 @@ class _InstituteLine extends StatelessWidget {
   }
 }
 
-/// نجوم صفراء + القيمة + عدد التقييمات بين قوسين (إن أرسله الخادم).
+/// نجوم صفراء + القيمة + عدد التقييمات بين قوسين (إن أرسله الخادم). دورة بلا تقييمات فعلية:
+/// «لا تقييمات بعد» بدل خمس نجوم رمادية توحي بتقييم 0.
 class _RatingLine extends StatelessWidget {
   const _RatingLine({required this.course});
 
@@ -346,6 +370,27 @@ class _RatingLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!course.hasRating) {
+      return Row(
+        children: [
+          const Icon(Icons.star_outline_rounded, size: 15, color: AppColors.textHint),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              'no_ratings_yet'.tr,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppFonts.tajawal(
+                fontSize: AppTextSize.xs,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textHint,
+                height: 1.2,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
     final rating = course.rating;
     final filled = rating.round().clamp(0, 5);
     final count = course.reviewsCount;
@@ -358,7 +403,12 @@ class _RatingLine extends StatelessWidget {
           Text(
             rating.toStringAsFixed(1),
             textDirection: TextDirection.ltr,
-            style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textBody, height: 1.2),
+            style: AppFonts.tajawal(
+              fontSize: AppTextSize.xs,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textBody,
+              height: 1.2,
+            ),
           ),
           if (count != null && count > 0) ...[
             const SizedBox(width: 3),
@@ -368,7 +418,7 @@ class _RatingLine extends StatelessWidget {
                 textDirection: TextDirection.ltr,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppFonts.tajawal(fontSize: 11, color: AppColors.textHint, height: 1.2),
+                style: AppFonts.tajawal(fontSize: AppTextSize.xs, color: AppColors.textHint, height: 1.2),
               ),
             ),
           ],
@@ -403,7 +453,7 @@ class _WideFooter extends StatelessWidget {
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: AlignmentDirectional.centerEnd,
-            child: _PriceBlock(course: course, alignEnd: true, amountSize: 18),
+            child: _PriceBlock(course: course, alignEnd: true, amountSize: AppTextSize.xl),
           ),
         ),
       ],
@@ -424,7 +474,9 @@ class _CompactFooter extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _ScaleDownStart(child: _PriceBlock(course: course, alignEnd: false, amountSize: 16)),
+        _ScaleDownStart(
+          child: _PriceBlock(course: course, alignEnd: false, amountSize: AppTextSize.lg),
+        ),
         if (meta.isNotEmpty) ...[
           const SizedBox(height: 6),
           _ScaleDownStart(
@@ -470,7 +522,12 @@ class _MetaItem extends StatelessWidget {
             item.text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textBody, height: 1.2),
+            style: AppFonts.tajawal(
+              fontSize: AppTextSize.xs,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textBody,
+              height: 1.2,
+            ),
           ),
         ),
       ],
@@ -488,7 +545,7 @@ class _PriceBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final price = CoursePriceText(price: course.price, amountSize: amountSize, currencySize: 11);
+    final price = CoursePriceText(price: course.price, amountSize: amountSize, currencySize: AppTextSize.xs);
     final original = course.originalPriceLabel;
     final percent = course.discountPercent;
     if (original == null) return price;
@@ -519,14 +576,19 @@ class _DiscountPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(color: AppColors.accentPink, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: AppColors.accentPink, borderRadius: BorderRadius.circular(AppRadius.xs)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         // «-8%» يبقى بهذا الترتيب في العربية أيضاً.
         child: Text(
           '-$percent%',
           textDirection: TextDirection.ltr,
-          style: AppFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white, height: 1.2),
+          style: AppFonts.tajawal(
+            fontSize: AppTextSize.xs,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            height: 1.2,
+          ),
         ),
       ),
     );
@@ -549,7 +611,12 @@ class _StrikethroughPrice extends StatelessWidget {
         Text(
           amount,
           maxLines: 1,
-          style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textHint, height: 1.3),
+          style: AppFonts.tajawal(
+            fontSize: AppTextSize.xs,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textHint,
+            height: 1.3,
+          ),
         ),
         Positioned.fill(
           child: Align(child: Container(height: 1.3, color: AppColors.textHint)),
@@ -560,11 +627,19 @@ class _StrikethroughPrice extends StatelessWidget {
 }
 
 class _CourseCardImage extends StatelessWidget {
-  const _CourseCardImage({required this.course, required this.borderRadius, required this.fallbackSize});
+  const _CourseCardImage({
+    required this.course,
+    required this.borderRadius,
+    required this.fallbackSize,
+    this.fallbackIconAlignment = const Alignment(0, 0.3),
+  });
 
   final CourseModel course;
   final BorderRadius borderRadius;
   final double fallbackSize;
+
+  /// موضع أيقونة البديل (بلا صورة) — أسفل المركز افتراضياً كي لا تغطيها الشارة.
+  final Alignment fallbackIconAlignment;
 
   @override
   Widget build(BuildContext context) {
@@ -609,15 +684,14 @@ class _CourseCardImage extends StatelessWidget {
             start: -fallbackSize * 0.5,
             child: _SoftCircle(size: fallbackSize * 2, alpha: 0.09),
           ),
-          // أسفل المركز قليلاً كي لا تغطيها الشارة في البطاقات الضيقة.
           Align(
-            alignment: const Alignment(0, 0.3),
+            alignment: fallbackIconAlignment,
             child: Container(
               width: fallbackSize * 1.7,
               height: fallbackSize * 1.7,
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(fallbackSize * 0.45),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
               ),
               child: Icon(

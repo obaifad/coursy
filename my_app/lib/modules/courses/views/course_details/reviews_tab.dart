@@ -23,7 +23,11 @@ class _ReviewsTab extends StatelessWidget {
                     children: [
                       Text(
                         average.toStringAsFixed(1),
-                        style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w800, color: AppColors.primary),
+                        style: const TextStyle(
+                          fontSize: AppTextSize.display,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primaryInk,
+                        ),
                       ),
                       Row(
                         children: List.generate(5, (i) {
@@ -37,7 +41,7 @@ class _ReviewsTab extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         pluralTr('reviews_total', reviews.length),
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.xs),
                       ),
                     ],
                   ),
@@ -48,7 +52,7 @@ class _ReviewsTab extends StatelessWidget {
                       children: [
                         Text(
                           'rating_distribution'.tr,
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm),
                         ),
                         const SizedBox(height: 8),
                         ...List.generate(5, (i) {
@@ -59,11 +63,14 @@ class _ReviewsTab extends StatelessWidget {
                             padding: const EdgeInsets.only(bottom: 6),
                             child: Row(
                               children: [
-                                Text('$star', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                                Text(
+                                  '$star',
+                                  style: const TextStyle(fontSize: AppTextSize.xs, fontWeight: FontWeight.w700),
+                                ),
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
+                                    borderRadius: BorderRadius.circular(AppRadius.full),
                                     child: LinearProgressIndicator(
                                       value: ratio,
                                       minHeight: 6,
@@ -73,7 +80,10 @@ class _ReviewsTab extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                Text('$count', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                Text(
+                                  '$count',
+                                  style: const TextStyle(fontSize: AppTextSize.xs, color: AppColors.textSecondary),
+                                ),
                               ],
                             ),
                           );
@@ -111,13 +121,17 @@ class _ReviewsTab extends StatelessWidget {
   }
 }
 
+/// داخل Obx خاص به: Obx الأب يتتبّع التقييمات فقط، فكان الهيكل (أو «غير مسجّل») يبقى بعد انتهاء
+/// التحقق من التسجيل حتى تبديل التبويب.
 class _ReviewFormSection extends StatelessWidget {
   const _ReviewFormSection({required this.item, required this.controller});
   final CourseModel item;
   final CourseDetailsController controller;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Obx(() => _build(context));
+
+  Widget _build(BuildContext context) {
     if (!controller.isLoggedIn) return const SizedBox.shrink();
 
     if (controller.isCheckingEnrollment.value) {

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 
+import '../theme/app_fonts.dart';
+
 enum AppLoaderSize { small, medium, large }
 
 /// ثلاث نقاط نابضة — لودر خفيف بألوان العلامة (بدون مكتبات خارجية).
@@ -165,7 +167,7 @@ class _AppPageLoaderState extends State<AppPageLoader> with SingleTickerProvider
             textAlign: TextAlign.center,
             style: TextStyle(
               color: widget.light ? Colors.white70 : AppColors.textSecondary,
-              fontSize: 13,
+              fontSize: AppTextSize.sm,
               fontWeight: FontWeight.w700,
               height: 1.4,
             ),

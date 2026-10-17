@@ -15,6 +15,8 @@ import '../../../widgets/review_report.dart';
 import '../controllers/instructor_details_controller.dart';
 import '../../../core/locale/plural.dart';
 
+import '../../../theme/app_fonts.dart';
+
 class InstructorDetailsView extends GetView<InstructorDetailsController> {
   const InstructorDetailsView({super.key, required this.controllerTag});
 
@@ -38,53 +40,61 @@ class InstructorDetailsView extends GetView<InstructorDetailsController> {
       return DefaultTabController(
         length: 4,
         child: Scaffold(
-          body: NestedScrollView(
-            headerSliverBuilder: (context, inner) => [
-              SliverAppBar(
-                expandedHeight: 220,
-                pinned: true,
-                backgroundColor: AppColors.surface,
-                // مفضلة المدرّسين غير مدعومة في الخادم (POST /student/favorites يقبل الدورات فقط) — مخفية حتى تُضاف.
-                title: Text(name),
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      const DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.primary)),
-                      const BrandBannerPattern(),
-                      Center(child: _InstructorHeroAvatar(instructor: item)),
-                    ],
+          // الشريط أبيض فوق التدرّج البنفسجي وداكن بعد طيّه (كان داكناً فوق البنفسجي فلا يُقرأ).
+          body: CollapsingHeroScope(
+            collapseOffset: 220 - kToolbarHeight - 24,
+            builder: (context, collapsed) => NestedScrollView(
+              headerSliverBuilder: (context, inner) => [
+                SliverAppBar(
+                  expandedHeight: 220,
+                  pinned: true,
+                  backgroundColor: AppColors.surface,
+                  iconTheme: HeroAppBarStyle.icons(collapsed),
+                  actionsIconTheme: HeroAppBarStyle.icons(collapsed),
+                  titleTextStyle: HeroAppBarStyle.title(collapsed),
+                  systemOverlayStyle: HeroAppBarStyle.overlay(collapsed),
+                  // مفضلة المدرّسين غير مدعومة في الخادم (POST /student/favorites يقبل الدورات فقط) — مخفية حتى تُضاف.
+                  title: Text(name),
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        const DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.primary)),
+                        const BrandBannerPattern(),
+                        Center(child: _InstructorHeroAvatar(instructor: item)),
+                      ],
+                    ),
                   ),
-                ),
-                bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(60),
-                  child: ColoredBox(
-                    color: AppColors.surface,
-                    child: Builder(
-                      builder: (context) => Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
-                        child: AppSegmentedTabBar(
-                          controller: DefaultTabController.of(context),
-                          tabs: [
-                            Tab(text: 'tab_info'.tr),
-                            Tab(text: 'tab_courses'.tr),
-                            Tab(text: 'tab_institutes'.tr),
-                            Tab(text: 'tab_reviews'.tr),
-                          ],
+                  bottom: PreferredSize(
+                    preferredSize: const Size.fromHeight(60),
+                    child: ColoredBox(
+                      color: AppColors.surface,
+                      child: Builder(
+                        builder: (context) => Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+                          child: AppSegmentedTabBar(
+                            controller: DefaultTabController.of(context),
+                            tabs: [
+                              Tab(text: 'tab_info'.tr),
+                              Tab(text: 'tab_courses'.tr),
+                              Tab(text: 'tab_institutes'.tr),
+                              Tab(text: 'tab_reviews'.tr),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
-            body: TabBarView(
-              children: [
-                _InstructorInfoTab(instructor: item, totalCourses: controller.totalCourses.value),
-                _InstructorCoursesTab(controller: controller),
-                _InstructorInstitutesTab(instructor: item),
-                _InstructorReviewsTab(controller: controller),
               ],
+              body: TabBarView(
+                children: [
+                  _InstructorInfoTab(instructor: item, totalCourses: controller.totalCourses.value),
+                  _InstructorCoursesTab(controller: controller),
+                  _InstructorInstitutesTab(instructor: item),
+                  _InstructorReviewsTab(controller: controller),
+                ],
+              ),
             ),
           ),
         ),
@@ -141,26 +151,33 @@ class _InstructorInfoTab extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(instructor!.name, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
+                    child: Text(
+                      instructor!.name,
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.xxl),
+                    ),
                   ),
                   if (instructor!.isPrivate)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(AppRadius.full),
                       ),
                       child: Text(
                         'private_instructor_badge'.tr,
-                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 12),
+                        style: const TextStyle(
+                          color: AppColors.primaryInk,
+                          fontWeight: FontWeight.w700,
+                          fontSize: AppTextSize.xs,
+                        ),
                       ),
                     ),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
-                instructor!.specialization ?? 'instructor_default'.tr,
-                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
+                instructor!.specializationLabel ?? 'instructor_default'.tr,
+                style: const TextStyle(color: AppColors.primaryInk, fontWeight: FontWeight.w700),
               ),
               if (instructor!.experienceYears > 0) ...[
                 const SizedBox(height: 4),
@@ -288,6 +305,15 @@ class _InstructorCoursesTab extends StatelessWidget {
       if (controller.isLoadingCourses.value && controller.courses.isEmpty) {
         return const AppGridSkeleton();
       }
+      final error = controller.coursesError.value;
+      if (controller.courses.isEmpty && error != null) {
+        return AppEmptyState.scrollable(
+          context: context,
+          message: error,
+          icon: Icons.cloud_off_outlined,
+          action: FilledButton(onPressed: controller.retryCourses, child: Text('retry'.tr)),
+        );
+      }
       if (controller.courses.isEmpty) {
         return AppEmptyState.scrollable(
           context: context,
@@ -368,11 +394,14 @@ class _InstructorReviewsTab extends StatelessWidget {
               children: [
                 const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 22),
                 const SizedBox(width: 6),
-                Text(avg.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+                Text(
+                  avg.toStringAsFixed(1),
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.xl),
+                ),
                 const SizedBox(width: 8),
                 Text(
                   pluralTr('reviews_total', reviews.length),
-                  style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                  style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w500),
                 ),
               ],
             );
@@ -413,7 +442,7 @@ class _InstructorInstitutesTab extends StatelessWidget {
         final linked = institutes[i];
         return SoftCard(
           child: InkWell(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             onTap: () => Get.toNamed(
               AppRoutes.instituteDetails,
               arguments: InstituteModel(
@@ -434,7 +463,10 @@ class _InstructorInstitutesTab extends StatelessWidget {
                   Container(
                     width: 56,
                     height: 56,
-                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), gradient: AppGradients.category),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      gradient: AppGradients.category,
+                    ),
                     child: const Icon(Icons.apartment_rounded, color: Colors.white),
                   ),
                   const SizedBox(width: 12),
@@ -447,7 +479,7 @@ class _InstructorInstitutesTab extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 linked.name,
-                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.lg),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -460,7 +492,7 @@ class _InstructorInstitutesTab extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             linked.address!,
-                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.sm),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -468,15 +500,32 @@ class _InstructorInstitutesTab extends StatelessWidget {
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 16),
-                            const SizedBox(width: 4),
-                            Text('${linked.rating}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                            if (linked.rating > 0) ...[
+                              const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 16),
+                              const SizedBox(width: 4),
+                              Text(
+                                linked.rating.toStringAsFixed(1),
+                                textDirection: TextDirection.ltr,
+                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm),
+                              ),
+                            ] else ...[
+                              const Icon(Icons.star_outline_rounded, color: AppColors.textHint, size: 16),
+                              const SizedBox(width: 4),
+                              Text(
+                                'no_ratings_yet'.tr,
+                                style: const TextStyle(
+                                  color: AppColors.textHint,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: AppTextSize.xs,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_left_rounded, color: AppColors.textSecondary),
+                  const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
                 ],
               ),
             ),
@@ -505,9 +554,15 @@ class _InfoRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              Text(
+                label,
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.xs),
+              ),
               const SizedBox(height: 2),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              Text(
+                value,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.lg),
+              ),
             ],
           ),
         ),
@@ -526,15 +581,18 @@ class _StatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(AppRadius.md)),
       child: Column(
         children: [
           Text(
             value,
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary),
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.xl, color: AppColors.primaryInk),
           ),
           const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+          Text(
+            label,
+            style: const TextStyle(fontSize: AppTextSize.xs, color: AppColors.textSecondary),
+          ),
         ],
       ),
     );

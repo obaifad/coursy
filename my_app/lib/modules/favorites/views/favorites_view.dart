@@ -17,7 +17,7 @@ import '../../../widgets/design_system.dart';
 import '../../../widgets/guest_access.dart';
 import '../controllers/favorites_controller.dart';
 
-/// صفحة المفضلة: هيدر بنفسجي موحّد + شبكة بطاقات الدورات نفسها المستخدمة في التطبيق.
+/// صفحة المفضلة: رأس العلامة ينطوي مع التمرير، والدورات بطاقات صفّية مضغوطة بزر قلب لإزالتها.
 class FavoritesView extends GetView<FavoritesController> {
   const FavoritesView({super.key});
 
@@ -26,32 +26,29 @@ class FavoritesView extends GetView<FavoritesController> {
     return Obx(() {
       final _ = localeRebuildToken;
       final count = controller.courses.length;
-      // الرأس البنفسجي يمتد تحت شريط الحالة.
+      // رأس العلامة يمتد تحت شريط الحالة ويبقى مثبّتاً مطوياً.
       return AppStatusBar(
         lightIcons: true,
         child: Scaffold(
           backgroundColor: AppColors.surface,
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AppHeroHeader(
+          body: NestedScrollView(
+            headerSliverBuilder: (context, _) => [
+              AppBrandSliverAppBar(
                 title: 'favorites_title'.tr,
                 subtitle: 'favorites_subtitle'.tr,
                 badge: count > 0 ? pluralTr('category_courses_count', count) : null,
                 onBack: Navigator.canPop(context) ? Get.back : null,
               ),
-              Expanded(
-                child: GuestGate(
-                  message: 'guest_favorites_hint'.tr,
-                  exploreCta: 'favorites_explore'.tr,
-                  onExplore: () {
-                    AppNavigation.switchToTab(0);
-                    Get.back();
-                  },
-                  child: _FavoritesBody(controller: controller),
-                ),
-              ),
             ],
+            body: GuestGate(
+              message: 'guest_favorites_hint'.tr,
+              exploreCta: 'favorites_explore'.tr,
+              onExplore: () {
+                AppNavigation.switchToTab(0);
+                Get.back();
+              },
+              child: _FavoritesBody(controller: controller),
+            ),
           ),
         ),
       );
@@ -67,12 +64,12 @@ class _FavoritesBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final hPad = AppLayout.horizontalPage(context);
-      // لقطة واحدة لكل بناء: الشبكة تبني عناصرها لاحقاً، وقراءة القائمة الحية بعد تغيّرها ترمي RangeError.
+      final hPad = AppLayout.readableInset(context);
+      // لقطة واحدة لكل بناء: القائمة تبني عناصرها لاحقاً، وقراءة القائمة الحية بعد تغيّرها ترمي RangeError.
       final courses = controller.courses.toList(growable: false);
 
       if (controller.isLoading.value) {
-        return AppGridSkeleton(padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 8));
+        return AppRowListSkeleton(padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 8), itemCount: 5);
       }
 
       if (courses.isEmpty && controller.errorMessage.value != null) {
@@ -132,14 +129,14 @@ class _FavoritesBody extends StatelessWidget {
       return RefreshIndicator(
         color: AppColors.primary,
         onRefresh: controller.loadFavorites,
-        child: GridView.builder(
+        child: ListView.separated(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.fromLTRB(hPad, 16, hPad, AppLayout.scrollBottomInset(context)),
           itemCount: courses.length,
-          gridDelegate: AppGridLayouts.courseGridFor(context),
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (_, i) {
             final course = courses[i];
-            return _FavoriteGridItem(key: ValueKey(course.id), course: course, controller: controller);
+            return _FavoriteRowItem(key: ValueKey(course.id), course: course, controller: controller);
           },
         ),
       );
@@ -147,18 +144,18 @@ class _FavoritesBody extends StatelessWidget {
   }
 }
 
-/// بطاقة الدورة الموحّدة + زر قلب دائري فوق الغلاف لإزالتها (مع تلاشٍ وتراجع).
-class _FavoriteGridItem extends StatefulWidget {
-  const _FavoriteGridItem({super.key, required this.course, required this.controller});
+/// بطاقة الدورة الصفّية + زر قلب في نهاية سطر العنوان لإزالتها (مع تلاشٍ وتراجع).
+class _FavoriteRowItem extends StatefulWidget {
+  const _FavoriteRowItem({super.key, required this.course, required this.controller});
 
   final CourseModel course;
   final FavoritesController controller;
 
   @override
-  State<_FavoriteGridItem> createState() => _FavoriteGridItemState();
+  State<_FavoriteRowItem> createState() => _FavoriteRowItemState();
 }
 
-class _FavoriteGridItemState extends State<_FavoriteGridItem> {
+class _FavoriteRowItemState extends State<_FavoriteRowItem> {
   bool _leaving = false;
 
   Future<void> _remove() async {
@@ -195,34 +192,24 @@ class _FavoriteGridItemState extends State<_FavoriteGridItem> {
         scale: _leaving ? 0.92 : 1,
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeIn,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: CourseCard(
-                course: course,
-                onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
-              ),
-            ),
-            PositionedDirectional(
-              top: 8,
-              end: 8,
-              child: Material(
-                color: Colors.white.withValues(alpha: 0.94),
-                shape: const CircleBorder(),
-                elevation: 2,
-                shadowColor: Colors.black26,
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: _leaving ? null : _remove,
-                  child: const SizedBox(
-                    width: 36,
-                    height: 36,
-                    child: Icon(Icons.favorite_rounded, color: AppColors.danger, size: 20),
-                  ),
+        child: CourseRowCard(
+          course: course,
+          onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
+          trailing: Tooltip(
+            message: 'favorite_remove'.tr,
+            child: Material(
+              color: AppColors.dangerSoft,
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: _leaving ? null : _remove,
+                child: const SizedBox.square(
+                  dimension: 36,
+                  child: Icon(Icons.favorite_rounded, color: AppColors.danger, size: 20),
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

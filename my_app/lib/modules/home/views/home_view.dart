@@ -37,9 +37,6 @@ class HomeView extends GetView<HomeController> {
         final privateInstructors = controller.privateInstructors.toList(growable: false);
         final instructorSubjects = controller.instructorSubjects.toList(growable: false);
         final scrollReset = controller.horizontalScrollReset.value;
-        final bannerCourses = controller.bannerCourses;
-        final upcomingLecture = controller.upcomingLecture.value;
-        final isGuest = !controller.isLoggedIn;
         return RefreshIndicator(
           color: AppColors.primary,
           onRefresh: () => controller.loadHome(forceRefresh: true, refreshStatic: true),
@@ -78,7 +75,7 @@ class HomeView extends GetView<HomeController> {
                     padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 10, 10),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
                       border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
                     ),
                     child: Row(
@@ -89,7 +86,7 @@ class HomeView extends GetView<HomeController> {
                           child: Text(
                             controller.errorMessage.value!,
                             style: const TextStyle(
-                              fontSize: 13,
+                              fontSize: AppTextSize.sm,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textBody,
                             ),
@@ -99,15 +96,15 @@ class HomeView extends GetView<HomeController> {
                         OutlinedButton(
                           onPressed: () => controller.loadHome(forceRefresh: true, refreshStatic: true),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primary,
+                            foregroundColor: AppColors.primaryInk,
                             side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
                             minimumSize: const Size(0, 40),
                             padding: const EdgeInsets.symmetric(horizontal: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
                           ),
                           child: Text(
                             'retry_action'.tr,
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm),
                           ),
                         ),
                       ],
@@ -116,18 +113,7 @@ class HomeView extends GetView<HomeController> {
                 ),
                 const SizedBox(height: 12),
               ],
-              // ضيف → دعوة للتسجيل؛ طالب بمحاضرة قادمة → بطاقتها؛ وإلا → عروض الدورات.
-              if (isGuest)
-                Padding(padding: _sectionPad(context), child: const GuestSignUpBanner())
-              else if (upcomingLecture != null)
-                Padding(
-                  padding: _sectionPad(context),
-                  child: UpcomingLectureCard(lecture: upcomingLecture),
-                )
-              else if (bannerCourses.isEmpty)
-                Padding(padding: _sectionPad(context), child: const _HomeHeroBanner())
-              else
-                FeaturedCourseCarousel(courses: bannerCourses),
+              _HomeBannerSlot(controller: controller),
               const SizedBox(height: 22),
               Padding(
                 padding: _sectionPad(context),
@@ -283,6 +269,50 @@ class HomeView extends GetView<HomeController> {
   }
 }
 
+/// مكان البانر أعلى الرئيسية: زائر → دعوة التسجيل؛ وإلا → الدورات المميزة (أو بطاقة الترحيب إن لم توجد
+/// دورات مفتوحة).
+///
+/// له Obx خاص: تغيّر دورات البانر لا يعيد بناء الرئيسية كلها. حالة الدخول معروفة قبل أول إطار
+/// (TokenStorage يُقرأ قبل runApp)، والدورات من كاش الجهاز — فالنسخة الصحيحة تظهر فوراً. وإن تغيّرت
+/// الحالة لاحقاً تتلاشى وتتغيّر المساحة بنعومة بدل القفز.
+class _HomeBannerSlot extends StatelessWidget {
+  const _HomeBannerSlot({required this.controller});
+
+  final HomeController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final pad = AppLayout.sectionHorizontal(context);
+    return Obx(() {
+      final (variant, child) = _variant(pad);
+      return AnimatedSize(
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+        alignment: Alignment.topCenter,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          layoutBuilder: (current, previous) =>
+              Stack(alignment: Alignment.topCenter, children: [...previous, if (current != null) current]),
+          child: KeyedSubtree(key: ValueKey(variant), child: child),
+        ),
+      );
+    });
+  }
+
+  (String, Widget) _variant(EdgeInsetsDirectional pad) {
+    if (!controller.isLoggedIn) {
+      return ('guest', Padding(padding: pad, child: const GuestSignUpBanner()));
+    }
+    final banner = controller.bannerCourses.toList(growable: false);
+    if (banner.isEmpty) {
+      return ('hero', Padding(padding: pad, child: const _HomeHeroBanner()));
+    }
+    return ('carousel', FeaturedCourseCarousel(courses: banner));
+  }
+}
+
 class _CategoriesSection extends StatelessWidget {
   const _CategoriesSection({required this.categories});
   final List<CategoryModel> categories;
@@ -415,7 +445,7 @@ class _CityCardState extends State<_CityCard> {
           child: Container(
             width: _CityCard.width,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(AppRadius.md),
               gradient: LinearGradient(
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
@@ -444,7 +474,7 @@ class _CityCardState extends State<_CityCard> {
                         style: AppFonts.tajawal(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
-                          fontSize: 16,
+                          fontSize: AppTextSize.lg,
                           height: 1.2,
                         ),
                       ),
@@ -456,8 +486,8 @@ class _CityCardState extends State<_CityCard> {
                           overflow: TextOverflow.ellipsis,
                           style: AppFonts.tajawal(
                             color: Colors.white.withValues(alpha: 0.9),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                            fontSize: AppTextSize.xs,
                           ),
                         ),
                       ],
@@ -489,11 +519,16 @@ class _CategoryCountBadge extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadius.full),
       ),
       child: Text(
         '$count',
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary, height: 1),
+        style: const TextStyle(
+          fontSize: AppTextSize.xs,
+          fontWeight: FontWeight.w700,
+          color: AppColors.primaryInk,
+          height: 1,
+        ),
       ),
     );
   }
@@ -534,13 +569,13 @@ class _InstructorSubjectChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: Container(
         height: _kSubjectChipHeight,
         padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 14, 0),
         decoration: BoxDecoration(
           color: AppColors.surfaceSoft,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           boxShadow: const [BoxShadow(color: AppColors.shadowSoft, blurRadius: 8, offset: Offset(0, 4))],
         ),
         child: Row(
@@ -555,7 +590,7 @@ class _InstructorSubjectChip extends StatelessWidget {
                 subject.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm),
               ),
             ),
             if (subject.instructorsCount > 0) ...[
@@ -609,17 +644,17 @@ class _HomeHeroBanner extends StatelessWidget {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final compact = screenWidth < 380;
     final horizontalPad = compact ? 16.0 : 20.0;
-    final titleSize = compact ? 17.0 : 19.0;
-    final subtitleSize = compact ? 12.5 : 13.5;
+    final titleSize = compact ? AppTextSize.xl : AppTextSize.xxl;
+    final subtitleSize = compact ? AppTextSize.sm : AppTextSize.md;
     final contentMaxWidth = screenWidth - (horizontalPad * 2);
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         boxShadow: const [BoxShadow(color: AppColors.shadowPurple, blurRadius: 20, offset: Offset(0, 12))],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: SizedBox(
           width: double.infinity,
           child: Stack(
@@ -641,7 +676,7 @@ class _HomeHeroBanner extends StatelessWidget {
                         child: DecoratedBox(
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(AppRadius.full),
                             border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
                           ),
                           child: Padding(
@@ -659,7 +694,7 @@ class _HomeHeroBanner extends StatelessWidget {
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w700,
-                                      fontSize: 12,
+                                      fontSize: AppTextSize.xs,
                                       height: 1.25,
                                     ),
                                   ),
@@ -703,9 +738,9 @@ class _HomeHeroBanner extends StatelessWidget {
                           backgroundColor: Colors.white.withValues(alpha: 0.12),
                           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
                           minimumSize: const Size(0, 44),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
                           // textStyle يستبدل نمط الزر بالكامل — لذا الخط صريح وإلا يظهر بخط النظام.
-                          textStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13),
+                          textStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm),
                         ),
                         child: Text('hero_cta'.tr),
                       ),

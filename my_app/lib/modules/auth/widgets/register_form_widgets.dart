@@ -22,8 +22,9 @@ abstract final class RegisterDecor {
     end: Alignment.bottomRight,
   );
 
+  // نص أبيض فوق طرفي التدرّج بتباين ≥ 5.4:1 (كان primaryLight يعطي 3.2:1 فقط).
   static const LinearGradient button = LinearGradient(
-    colors: [AppColors.primary, AppColors.primaryLight],
+    colors: [AppColors.primaryStrong, AppColors.primaryInk],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
@@ -34,15 +35,25 @@ abstract final class RegisterDecor {
   ];
 
   static TextStyle heading(BuildContext context) {
-    return AppFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary);
+    return AppFonts.tajawal(fontSize: AppTextSize.xxl, fontWeight: FontWeight.w800, color: AppColors.textPrimary);
   }
 
   static TextStyle subheading(BuildContext context) {
-    return AppFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textSecondary, height: 1.4);
+    return AppFonts.tajawal(
+      fontSize: AppTextSize.md,
+      fontWeight: FontWeight.w500,
+      color: AppColors.textSecondary,
+      height: 1.4,
+    );
   }
 
   static TextStyle sectionLabel() {
-    return AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primary, letterSpacing: 0.2);
+    return AppFonts.tajawal(
+      fontSize: AppTextSize.sm,
+      fontWeight: FontWeight.w700,
+      color: AppColors.primaryInk,
+      letterSpacing: 0.2,
+    );
   }
 
   static InputDecoration fieldDecoration({
@@ -65,23 +76,23 @@ abstract final class RegisterDecor {
       fillColor: focused ? AppColors.primary.withValues(alpha: 0.04) : Colors.white,
       labelStyle: AppFonts.tajawal(
         fontWeight: FontWeight.w700,
-        color: focused ? AppColors.primary : AppColors.textSecondary,
+        color: focused ? AppColors.primaryInk : AppColors.textSecondary,
       ),
-      floatingLabelStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, color: AppColors.primary),
+      floatingLabelStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, color: AppColors.primaryInk),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         borderSide: BorderSide(color: borderColor),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         borderSide: const BorderSide(color: AppColors.primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         borderSide: BorderSide(color: AppColors.danger),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         borderSide: BorderSide(color: AppColors.danger, width: 2),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
@@ -105,7 +116,7 @@ class AuthUnifiedShell extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             boxShadow: RegisterDecor.cardShadow,
           ),
           child: Padding(
@@ -133,7 +144,7 @@ class RegisterFloatingCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         boxShadow: RegisterDecor.cardShadow,
       ),
       child: child,
@@ -164,7 +175,7 @@ class RegisterSegmentedProgress extends StatelessWidget {
                   curve: Curves.easeOutCubic,
                   height: 6,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(AppRadius.full),
                     gradient: active
                         ? (current
                               ? RegisterDecor.button
@@ -201,8 +212,8 @@ class RegisterSegmentedProgress extends StatelessWidget {
                               '${i + 1}',
                               style: AppFonts.tajawal(
                                 color: active ? Colors.white : AppColors.textSecondary,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                fontSize: AppTextSize.sm,
                               ),
                             ),
                     ),
@@ -214,9 +225,9 @@ class RegisterSegmentedProgress extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppFonts.tajawal(
-                      fontSize: 11,
-                      fontWeight: active ? FontWeight.w800 : FontWeight.w700,
-                      color: active ? AppColors.primary : AppColors.textSecondary,
+                      fontSize: AppTextSize.xs,
+                      fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                      color: active ? AppColors.primaryInk : AppColors.textSecondary,
                       height: 1.2,
                     ),
                   ),
@@ -244,6 +255,7 @@ class RegisterFloatingField extends StatefulWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.onChanged,
+    this.onSubmitted,
     this.readOnly = false,
   });
 
@@ -258,6 +270,9 @@ class RegisterFloatingField extends StatefulWidget {
   final IconData? prefixIcon;
   final Widget? suffixIcon;
   final ValueChanged<String>? onChanged;
+
+  /// زر «تم» في لوحة المفاتيح (مثلاً كلمة مرور الدخول ترسل النموذج).
+  final ValueChanged<String>? onSubmitted;
   final bool readOnly;
 
   @override
@@ -293,8 +308,9 @@ class _RegisterFloatingFieldState extends State<RegisterFloatingField> {
       inputFormatters: widget.inputFormatters,
       textInputAction: widget.textInputAction,
       onChanged: widget.onChanged,
+      onSubmitted: widget.onSubmitted,
       readOnly: widget.readOnly,
-      style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 15),
+      style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: AppTextSize.lg),
       decoration: RegisterDecor.fieldDecoration(
         label: widget.label,
         hint: widget.hint,
@@ -334,7 +350,7 @@ class RegisterGradientButton extends StatelessWidget {
           gradient: (enabled || loading || success)
               ? RegisterDecor.button
               : const LinearGradient(colors: [Color(0xFFB8B5E8), Color(0xFFB8B5E8)]),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           boxShadow: (enabled || loading || success)
               ? const [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 16, offset: Offset(0, 8))]
               : null,
@@ -343,7 +359,7 @@ class RegisterGradientButton extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: enabled ? onPressed : null,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
             child: SizedBox(
               height: 52,
               child: Center(
@@ -358,7 +374,11 @@ class RegisterGradientButton extends StatelessWidget {
                         child: Text(
                           label,
                           maxLines: 1,
-                          style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+                          style: AppFonts.tajawal(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: AppTextSize.lg,
+                          ),
                         ),
                       ),
               ),
@@ -386,12 +406,12 @@ class RegisterGhostButton extends StatelessWidget {
         minimumSize: const Size.fromHeight(52),
         foregroundColor: color,
         side: BorderSide(color: primaryText ? AppColors.primary.withValues(alpha: 0.35) : AppColors.borderNeutral),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
         backgroundColor: Colors.transparent,
       ),
       child: Text(
         label,
-        style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 15, color: color),
+        style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: AppTextSize.lg, color: color),
       ),
     );
   }
@@ -411,11 +431,11 @@ class RegisterChoiceChip extends StatelessWidget {
       duration: AppMotion.fast,
       curve: Curves.easeOut,
       child: Material(
-        color: selected ? AppColors.primary : AppColors.indicatorFill,
-        borderRadius: BorderRadius.circular(12),
+        color: selected ? AppColors.primaryStrong : AppColors.indicatorFill,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Row(
@@ -426,7 +446,7 @@ class RegisterChoiceChip extends StatelessWidget {
                   label,
                   style: AppFonts.tajawal(
                     fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                    fontSize: AppTextSize.sm,
                     color: selected ? Colors.white : AppColors.textBody,
                   ),
                 ),
@@ -521,7 +541,7 @@ class RegisterCityPicker extends StatelessWidget {
           onTap: () {
             showCityPickerSheet(context: context, cities: cities, initialSelected: selectedId, onPick: onChanged);
           },
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           child: InputDecorator(
             decoration: RegisterDecor.fieldDecoration(
               label: label,
@@ -581,6 +601,9 @@ class RegisterInterestPicker extends StatelessWidget {
         }
 
         if (categories.isEmpty) {
+          // لا تصنيفات في الخادم بعد (والحقل اختياري): نخفيه بدل «تعذر الاتصال بالخادم» — الخطأ يظهر
+          // فقط حين فشل التحميل فعلاً.
+          if (errorText == null && selectedIds.isEmpty) return const SizedBox.shrink();
           final summary = selectedIds.isEmpty ? 'pick_interests'.tr : interestSelectionSummary(categories, selectedIds);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -588,7 +611,7 @@ class RegisterInterestPicker extends StatelessWidget {
               InputDecorator(
                 decoration: RegisterDecor.fieldDecoration(
                   label: 'interests_optional'.tr,
-                  errorText: selectedIds.isEmpty ? (errorText ?? 'connection_error'.tr) : errorText,
+                  errorText: errorText,
                   prefixIcon: const Icon(Icons.interests_rounded, color: AppColors.primary),
                 ),
                 child: Text(
@@ -621,7 +644,7 @@ class RegisterInterestPicker extends StatelessWidget {
                   onApply: (ids) => onApply(ids.toList()),
                 );
               },
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
               child: InputDecorator(
                 decoration: RegisterDecor.fieldDecoration(
                   label: 'interests_optional'.tr,
@@ -674,7 +697,10 @@ class RegisterInterestChips extends StatelessWidget {
               (_) => Container(
                 width: 96,
                 height: 38,
-                decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(
+                  color: AppColors.indicatorFill,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
               ),
             ),
           );
@@ -690,7 +716,7 @@ class RegisterInterestChips extends StatelessWidget {
             return RegisterChoiceChip(
               label: category.name,
               selected: selected,
-              leading: CategoryIcon(category: category, size: 22, borderRadius: BorderRadius.circular(6)),
+              leading: CategoryIcon(category: category, size: 22, borderRadius: BorderRadius.circular(AppRadius.xs)),
               onTap: () => onToggle(category.id),
             );
           }).toList(),
@@ -715,7 +741,7 @@ class RegisterDateField extends StatelessWidget {
       children: [
         InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           child: InputDecorator(
             decoration: RegisterDecor.fieldDecoration(
               label: label,

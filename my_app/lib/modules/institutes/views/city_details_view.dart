@@ -10,6 +10,8 @@ import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/design_system.dart';
 import '../controllers/city_details_controller.dart';
 
+import '../../../theme/app_fonts.dart';
+
 class CityDetailsView extends GetView<CityDetailsController> {
   const CityDetailsView({super.key});
 
@@ -117,15 +119,22 @@ class _StatBox extends StatelessWidget {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(14)),
+        decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(AppRadius.sm)),
         child: Column(
           children: [
             Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary),
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: AppTextSize.xl,
+                color: AppColors.primaryInk,
+              ),
             ),
             const SizedBox(height: 4),
-            Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+            Text(
+              label,
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.xs),
+            ),
           ],
         ),
       ),

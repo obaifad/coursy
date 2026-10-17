@@ -119,7 +119,8 @@ class FavoritesController extends GetxController with InitialLoadState {
     if (removingIds.contains(course.id)) return;
     removingIds.add(course.id);
     try {
-      await _favoritesService.toggleCourse(course.id);
+      // الشاشة تعرض «أُزيلت» مع «تراجع» — بلا تنبيه ثانٍ من الخدمة.
+      await _favoritesService.toggleCourse(course.id, showFeedback: false);
     } finally {
       removingIds.remove(course.id);
     }

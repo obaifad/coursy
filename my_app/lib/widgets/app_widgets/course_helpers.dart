@@ -14,6 +14,47 @@ IconData courseCategoryIcon(String? category, {bool rounded = false}) {
   return rounded ? Icons.school_rounded : Icons.school_outlined;
 }
 
+/// ألوان التصنيف للبطاقات: تدرّج الجزء الملوّن ([c1]→[c2])، ولون النص على الأبيض ([ink])، وخلفية فاتحة ([tint]).
+typedef CourseCategoryPalette = ({Color c1, Color c2, Color ink, Color tint});
+
+CourseCategoryPalette courseCategoryPalette(String? category) {
+  final name = (category ?? '').toLowerCase();
+  bool has(List<String> words) => words.any(name.contains);
+  if (has(['تصم', 'design'])) {
+    return (
+      c1: const Color(0xFFEC4899),
+      c2: const Color(0xFF8B5CF6),
+      ink: const Color(0xFF9D174D),
+      tint: const Color(0xFFFCE7F3),
+    );
+  }
+  if (has(['لغ', 'lang'])) {
+    return (
+      c1: const Color(0xFFF59E0B),
+      c2: const Color(0xFFF97316),
+      ink: const Color(0xFF9A3412),
+      tint: const Color(0xFFFFEDD5),
+    );
+  }
+  if (has(['أعمال', 'business', 'تسويق', 'marketing', 'مال', 'financ'])) {
+    return (
+      c1: const Color(0xFF0EA5E9),
+      c2: const Color(0xFF6366F1),
+      ink: const Color(0xFF1E40AF),
+      tint: const Color(0xFFDBEAFE),
+    );
+  }
+  if (has(['عمار', 'هندس', 'architect', 'engineer'])) {
+    return (
+      c1: const Color(0xFF14B8A6),
+      c2: const Color(0xFF0EA5E9),
+      ink: const Color(0xFF115E59),
+      tint: const Color(0xFFCCFBF1),
+    );
+  }
+  return (c1: AppColors.primary, c2: AppColors.primaryStrong, ink: AppColors.primaryInk, tint: const Color(0xFFECEBFF));
+}
+
 IconData courseStudyTypeIcon(String studyType) {
   final probe = studyType.toLowerCase();
   if (probe.contains('أون') || probe.contains('online') || probe.contains('عن')) {

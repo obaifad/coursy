@@ -18,6 +18,7 @@ import '../data/repositories/payment_repository.dart';
 import '../data/repositories/home_repository.dart';
 import '../data/repositories/instructor_repository.dart';
 import '../data/repositories/institute_repository.dart';
+import '../storage/home_cache.dart';
 import '../storage/notification_delivery_store.dart';
 import '../storage/recent_search_storage.dart';
 import '../data/repositories/notification_repository.dart';
@@ -47,6 +48,9 @@ class AppBindings extends Bindings {
     if (!Get.isRegistered<RecentSearchStorage>()) {
       Get.put(RecentSearchStorage(), permanent: true);
     }
+    if (!Get.isRegistered<HomeCache>()) {
+      Get.put(HomeCache(), permanent: true);
+    }
     if (!Get.isRegistered<ApiClient>()) {
       Get.put(ApiClient(Get.find<TokenStorage>()), permanent: true);
     }
@@ -60,7 +64,7 @@ class AppBindings extends Bindings {
     Get.lazyPut(() => InstituteRepository(Get.find()), fenix: true);
     Get.lazyPut(() => CategoryRepository(Get.find()), fenix: true);
     Get.lazyPut(() => InterestRepository(Get.find()), fenix: true);
-    Get.lazyPut(() => HomeRepository(Get.find()), fenix: true);
+    Get.lazyPut(() => HomeRepository(Get.find(), cache: Get.find<HomeCache>()), fenix: true);
     Get.lazyPut(() => NotificationRepository(Get.find()), fenix: true);
     Get.lazyPut(() => ProfileRepository(Get.find(), Get.find()), fenix: true);
     Get.lazyPut(() => ReferenceRepository(Get.find()), fenix: true);

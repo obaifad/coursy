@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:get/get.dart';
 
+import '../config/app_debug_log.dart';
 import '../models/paginated_result.dart';
 import 'api_client.dart';
 import 'api_exception.dart';
@@ -35,9 +37,8 @@ Future<List<T>> fetchAllPages<T>(
 
     if (page >= result.lastPage) {
       if (strict && expectedTotal > 0 && all.length < expectedTotal) {
-        throw ApiException(
-          'Incomplete paginated fetch for $path: got ${all.length} of $expectedTotal (page $page/${result.lastPage})',
-        );
+        AppDebugLog.api('INCOMPLETE PAGES', '$path: ${all.length} of $expectedTotal (page $page/${result.lastPage})');
+        throw ApiException('error_incomplete_list'.tr);
       }
       break;
     }
@@ -46,7 +47,9 @@ Future<List<T>> fetchAllPages<T>(
   }
 
   if (strict && expectedTotal > 0 && all.length < expectedTotal) {
-    throw ApiException('Incomplete paginated fetch for $path: got ${all.length} of $expectedTotal');
+    // التفاصيل التقنية لسجل التطوير فقط؛ المستخدم يرى نصاً مترجماً (كانت تظهر بالإنجليزية في القوائم).
+    AppDebugLog.api('INCOMPLETE PAGES', '$path: ${all.length} of $expectedTotal');
+    throw ApiException('error_incomplete_list'.tr);
   }
 
   return all;

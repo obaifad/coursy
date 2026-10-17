@@ -15,11 +15,21 @@ import '../../../core/models/app_models.dart';
 import '../../../core/models/register_payload.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/session/session_refresh.dart';
+import '../../../core/storage/email_verification_prompt.dart';
+import '../../../core/storage/token_storage.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/utils/education_level_utils.dart';
 import '../../../routes/app_routes.dart';
 
 class AuthController extends GetxController {
+  /// صفحتا الدخول والتسجيل تتشاركان هذا المتحكّم وتستبدل إحداهما الأخرى (offNamed / offAllNamed).
+  /// لو رُبط بالصفحة التي أنشأته (lazyPut) لحذفه GetX مع حقوله عند استبدالها، والصفحة الجديدة ما زالت
+  /// تستخدمه («AuthController not found» عند أول إعادة بناء). لذا يبقى مسجّلاً؛ وتُمسح كلمات المرور بعد
+  /// نجاح الدخول وكل الحقول عند تسجيل الخروج.
+  static void ensureRegistered() {
+    if (!Get.isRegistered<AuthController>()) Get.put(AuthController(), permanent: true);
+  }
+
   final AuthRepository _authRepository = Get.find();
   final CityRepository _cityRepository = Get.find();
   final InterestRepository _interestRepository = Get.find();
@@ -234,6 +244,7 @@ class AuthController extends GetxController {
     try {
       await _authRepository.login(login: loginId, password: pass);
       await _afterAuthSuccess();
+      await _openPendingEmailVerification(loginId);
     } on ApiException catch (e) {
       errorMessage.value = e.message;
       Get.snackbar('login_failed'.tr, e.message);
@@ -253,7 +264,20 @@ class AuthController extends GetxController {
       } catch (_) {}
     }
     await SessionRefresh.onLoginSuccess();
+    // المتحكّم يبقى بعد الدخول — لا نُبقي كلمات المرور في الذاكرة.
+    passwordController.clear();
+    registerPasswordController.clear();
+    confirmPasswordController.clear();
     AppNavigation.goToRoot(tab: 2);
+  }
+
+  /// أول تسجيل دخول بعد إنشاء حساب لم يُسجَّل دخوله تلقائياً: تُعرض شاشة تأكيد البريد مرة واحدة
+  /// (مع «تخطي الآن») إن كان البريد ما زال غير مؤكد.
+  Future<void> _openPendingEmailVerification(String loginId) async {
+    if (!AppFlags.emailVerificationEnabled) return;
+    if (!await EmailVerificationPrompt.takeFor(loginId)) return;
+    if (!Get.isRegistered<TokenStorage>() || Get.find<TokenStorage>().emailVerified.value != false) return;
+    unawaited(Get.toNamed(AppRoutes.emailVerification, arguments: {'email': loginId, 'fromRegister': true}));
   }
 
   void clearRegisterValidation() {
@@ -323,7 +347,7 @@ class AuthController extends GetxController {
         phone: phone,
         password: registerPasswordController.text,
         passwordConfirmation: confirmPasswordController.text,
-        cityId: selectedCityId.value!,
+        cityId: selectedCityId.value,
         gender: selectedGender.value,
         birthDate: birthDate.value != null ? formatBirthDate(birthDate.value!) : null,
         educationLevel: selectedEducationLevel.value,
@@ -347,7 +371,6 @@ class AuthController extends GetxController {
           specializationId: payload.specializationId,
           preferredCategories: payload.preferredCategories,
         );
-        Get.snackbar('welcome'.tr, 'account_created_ok'.tr);
         await _afterAuthSuccess();
         // تأكيد البريد اختياري: يُعرض مرة بعد إنشاء الحساب مع «تخطي الآن».
         final email = payload.email.trim();
@@ -359,7 +382,10 @@ class AuthController extends GetxController {
 
       Get.offAllNamed(AppRoutes.login);
       final registeredEmail = emailController.text.trim();
+      if (AppFlags.emailVerificationEnabled) await EmailVerificationPrompt.remember(registeredEmail);
       loginIdController.text = registeredEmail.isNotEmpty ? registeredEmail : phone;
+      registerPasswordController.clear();
+      confirmPasswordController.clear();
       Get.snackbar('register_done'.tr, 'register_login_hint'.tr);
     } on ApiException catch (e) {
       _applyApiRegisterErrors(e);
@@ -417,10 +443,14 @@ class AuthController extends GetxController {
         }
         break;
       case 2:
-        if (selectedCityId.value == null) errors['city'] = 'pick_city_validation'.tr;
+        // قائمة فارغة (لا بيانات في الخادم بعد) أو فشل تحميلها لا يجوز أن يمنع إنشاء الحساب:
+        // الحقل إجباري فقط حين توجد خيارات يمكن اختيارها. الخادم نفسه لا يشترط المدينة.
+        if (cities.isNotEmpty && selectedCityId.value == null) errors['city'] = 'pick_city_validation'.tr;
         if (requiresUniversityFields) {
-          if (selectedUniversityId.value == null) errors['university'] = 'pick_university'.tr;
-          if (selectedSpecializationId.value == null) {
+          if (universities.isNotEmpty && selectedUniversityId.value == null) {
+            errors['university'] = 'pick_university'.tr;
+          }
+          if (specializations.isNotEmpty && selectedSpecializationId.value == null) {
             errors['specialization'] = 'pick_specialization'.tr;
           }
         }
@@ -582,6 +612,19 @@ class AuthController extends GetxController {
   String educationLevelLabel(String value) => EducationLevelUtils.label(value);
 
   void resetAfterLogout() {
+    // حساب آخر قد يستخدم الجهاز نفسه: لا نُبقي بياناته في نماذج الدخول والتسجيل.
+    for (final field in [
+      loginIdController,
+      passwordController,
+      firstNameController,
+      lastNameController,
+      emailController,
+      phoneController,
+      registerPasswordController,
+      confirmPasswordController,
+    ]) {
+      field.clear();
+    }
     errorMessage.value = null;
     registerStepError.value = null;
     registerFieldErrors.clear();

@@ -163,13 +163,18 @@ void main() {
       await _pumpScene(tester, const RootView(), locale: 'ar');
     }
 
-    testWidgets('profile tab (purple header) gets light icons, the other tabs dark ones', (tester) async {
+    testWidgets('tabs with a purple header get light icons, Home gets dark ones', (tester) async {
       await pumpRoot(tester, tab: 4);
       expect(SystemChrome.latestStyle?.statusBarIconBrightness, Brightness.light);
 
       Get.find<RootController>().changeTab(2);
       await tester.pump(const Duration(milliseconds: 600));
       expect(SystemChrome.latestStyle?.statusBarIconBrightness, Brightness.dark);
+
+      // الدورات: رأس العلامة البنفسجي يمتد تحت شريط الحالة.
+      Get.find<RootController>().changeTab(0);
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(SystemChrome.latestStyle?.statusBarIconBrightness, Brightness.light);
       await _disposeScene(tester);
     });
 

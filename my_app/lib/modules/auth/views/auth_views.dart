@@ -191,6 +191,10 @@ class _LoginFormBody extends GetView<AuthController> {
                   label: 'password_required'.tr,
                   obscureText: controller.hidePassword.value,
                   textInputAction: TextInputAction.done,
+                  // «تم» يسجّل الدخول (كان لا يفعل شيئاً)؛ نفس قفل الزر أثناء الطلب.
+                  onSubmitted: (_) {
+                    if (!controller.isLoading.value) controller.login();
+                  },
                   prefixIcon: Icons.lock_outline_rounded,
                   suffixIcon: IconButton(
                     tooltip: 'toggle_password_visibility'.tr,
@@ -235,7 +239,7 @@ class _CompactHint extends StatelessWidget {
     final theme = Theme.of(context);
     return Theme(
       data: theme.copyWith(
-        inputDecorationTheme: theme.inputDecorationTheme.copyWith(hintStyle: const TextStyle(fontSize: 13)),
+        inputDecorationTheme: theme.inputDecorationTheme.copyWith(hintStyle: const TextStyle(fontSize: AppTextSize.sm)),
       ),
       child: child,
     );
@@ -257,7 +261,7 @@ class _LoginForgotPasswordLink extends StatelessWidget {
         ),
         child: Text(
           'forgot_password'.tr,
-          style: AppFonts.tajawal(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 13),
+          style: AppFonts.tajawal(color: AppColors.primaryInk, fontWeight: FontWeight.w700, fontSize: AppTextSize.sm),
         ),
       ),
     );
@@ -276,11 +280,11 @@ class _CreateAccountLink extends GetView<AuthController> {
       child: Text(
         'register'.tr,
         style: AppFonts.tajawal(
-          color: AppColors.primary,
+          color: AppColors.primaryInk,
           fontWeight: FontWeight.w800,
-          fontSize: 15,
+          fontSize: AppTextSize.lg,
           decoration: TextDecoration.underline,
-          decorationColor: AppColors.primary,
+          decorationColor: AppColors.primaryInk,
         ),
       ),
     );
@@ -295,7 +299,7 @@ class _LoginErrorBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.danger.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.sm),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -323,7 +327,7 @@ class _WebLoginHint extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.ratingStar.withValues(alpha: 0.2),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.sm),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -331,7 +335,9 @@ class _WebLoginHint extends StatelessWidget {
           children: [
             const Icon(Icons.info_outline, color: AppColors.ratingStar, size: 22),
             const SizedBox(width: 10),
-            Expanded(child: Text('web_cors_hint'.tr, style: AppFonts.tajawal(fontSize: 13, height: 1.4))),
+            Expanded(
+              child: Text('web_cors_hint'.tr, style: AppFonts.tajawal(fontSize: AppTextSize.sm, height: 1.4)),
+            ),
           ],
         ),
       ),
@@ -363,7 +369,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                 Text(
                   (codeStep ? 'reset_code_heading' : 'forgot_email_heading').tr,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.xl),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -386,36 +392,40 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
   }
 }
 
+/// كل خطوة داخل Obx خاص بها: قراءات `.value` هنا لا يتتبّعها Obx الأب (يُبنى هذا الويدجت لاحقاً)،
+/// فكان الزر يبقى في حالة التحميل والأخطاء والعدّاد لا تتحدّث.
 class _EmailStep extends StatelessWidget {
   const _EmailStep({required this.controller});
   final ForgotPasswordController controller;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        TextField(
-          controller: controller.emailController,
-          keyboardType: TextInputType.emailAddress,
-          textInputAction: TextInputAction.done,
-          textDirection: TextDirection.ltr,
-          autofillHints: const [AutofillHints.email],
-          onChanged: (_) => controller.clearError('email'),
-          onSubmitted: (_) => controller.sendCode(),
-          decoration: RegisterDecor.fieldDecoration(
-            label: 'email'.tr,
-            errorText: controller.errors['email'],
-            prefixIcon: const Icon(Icons.mail_outline_rounded, color: AppColors.primary),
+    return Obx(
+      () => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: controller.emailController,
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.done,
+            textDirection: TextDirection.ltr,
+            autofillHints: const [AutofillHints.email],
+            onChanged: (_) => controller.clearError('email'),
+            onSubmitted: (_) => controller.sendCode(),
+            decoration: RegisterDecor.fieldDecoration(
+              label: 'email'.tr,
+              errorText: controller.errors['email'],
+              prefixIcon: const Icon(Icons.mail_outline_rounded, color: AppColors.primary),
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        RegisterGradientButton(
-          label: 'send_reset_code'.tr,
-          loading: controller.isSending.value,
-          onPressed: controller.isSending.value ? null : controller.sendCode,
-        ),
-      ],
+          const SizedBox(height: 16),
+          RegisterGradientButton(
+            label: 'send_reset_code'.tr,
+            loading: controller.isSending.value,
+            onPressed: controller.isSending.value ? null : controller.sendCode,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -425,7 +435,9 @@ class _ResetStep extends StatelessWidget {
   final ForgotPasswordController controller;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Obx(() => _build(context));
+
+  Widget _build(BuildContext context) {
     final hidden = controller.hidePassword.value;
     final waiting = controller.resendIn.value;
     return Column(

@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 
 import '../../../core/data/repositories/category_repository.dart';
 import '../../../core/data/repositories/course_repository.dart';
-import '../../../core/data/repositories/enrollment_repository.dart';
 import '../../../core/data/repositories/home_repository.dart';
 import '../../../core/data/repositories/instructor_repository.dart';
 import '../../../core/data/repositories/institute_repository.dart';
@@ -13,7 +12,6 @@ import '../../../core/models/app_models.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/services/course_rating_service.dart';
 import '../../../core/storage/token_storage.dart';
-import '../upcoming_lecture.dart';
 
 class HomeController extends GetxController with LatestLoadGuard {
   HomeController(this._tokenStorage);
@@ -40,8 +38,14 @@ class HomeController extends GetxController with LatestLoadGuard {
   final categories = <CategoryModel>[].obs;
   final cities = <CityModel>[].obs;
 
-  /// أقرب محاضرة للطالب المسجّل (تسجيل مؤكد + جدول معروف)؛ null = ضيف أو لا محاضرات قادمة.
-  final upcomingLecture = Rxn<UpcomingLecture>();
+  /// قوائم تعرض الآن دورات بلا إكمال (تقييم المعهد/اسمه): من الكاش أو قبل انتهاء الإكمال.
+  /// بيانات جديدة غير مكمّلة تحلّ محلها فوراً؛ أما المكمّلة فلا يستبدلها إلا مكمّل (بلا وميض).
+  final _unenriched = Set<RxList<CourseModel>>.identity();
+
+  /// الرئيسية مرسومة من الكاش ولم يصل بعد رد الشبكة: كل القوائم تُجلب حتى لو لم تكن فارغة.
+  bool _showingCache = false;
+
+  Worker? _bannerWorker;
 
   /// يُزاد عند العودة للرئيسية لإعادة ضبط القوائم الأفقية من نقطة الصفر.
   final horizontalScrollReset = 0.obs;
@@ -54,8 +58,11 @@ class HomeController extends GetxController with LatestLoadGuard {
   static const int _bannerLimit = 5;
 
   /// دورات بانر الرئيسية (التسجيل المفتوح فقط): المميزة أولاً ثم ذات الخصم ثم الأعلى تقييماً.
-  /// تُقرأ داخل Obx فتتحدّث مع [courses]. فارغة = تُعرض بطاقة الترحيب الثابتة بدلها.
-  List<CourseModel> get bannerCourses {
+  /// تُحسب مرة عند تغيّر [courses] (لا في كل بناء) ولا تتغيّر إلا إن تغيّر محتواها — فلا يُعاد بناء
+  /// البانر بلا داعٍ. فارغة = تُعرض بطاقة الترحيب الثابتة بدلها.
+  final bannerCourses = <CourseModel>[].obs;
+
+  List<CourseModel> _pickBannerCourses() {
     final open = courses.where((course) => course.isRegistrationOpen).toList();
     final featured = open.where((course) => course.isFeatured);
     final discounted = open.where((course) => !course.isFeatured && course.hasDiscount);
@@ -89,6 +96,7 @@ class HomeController extends GetxController with LatestLoadGuard {
 
   @override
   void onClose() {
+    _bannerWorker?.dispose();
     scrollController.dispose();
     super.onClose();
   }
@@ -96,7 +104,28 @@ class HomeController extends GetxController with LatestLoadGuard {
   @override
   void onInit() {
     super.onInit();
+    _bannerWorker = ever<List<CourseModel>>(courses, (_) => _setIfChanged(bannerCourses, _pickBannerCourses()));
+    _hydrateFromCache();
     loadHome();
+  }
+
+  /// يرسم الرئيسية من آخر رد محفوظ قبل أول إطار: بلا هيكل تحميل، والبانر يظهر فوراً بنسخته الصحيحة
+  /// (زائر/طالب). الشبكة تستبدله بعد لحظات.
+  void _hydrateFromCache() {
+    final cached = _homeRepository.cachedHomepage();
+    if (cached == null) return;
+    _showingCache = true;
+    if (cached.categories.isNotEmpty) categories.assignAll(cached.categories);
+    if (cached.courses.isNotEmpty) {
+      courses.assignAll(cached.courses);
+      _unenriched.add(courses);
+    }
+    if (!isLoggedIn && cached.suggestedCourses.isNotEmpty) {
+      suggestedCourses.assignAll(cached.suggestedCourses);
+      _unenriched.add(suggestedCourses);
+    }
+    if (cached.institutes.isNotEmpty) institutes.assignAll(cached.institutes);
+    if (cached.cities.isNotEmpty) cities.assignAll(cached.cities);
   }
 
   Future<void> reloadLocalizedData() => loadHome(forceRefresh: true, refreshStatic: true);
@@ -127,22 +156,26 @@ class HomeController extends GetxController with LatestLoadGuard {
 
     final errors = <String>[];
 
+    // إكمال دورات /homepage (تقييم المعهد واسمه) يجري بالتوازي مع باقي الطلبات، والدورات تظهر قبله.
+    final enrichment = <Future<void>>[];
+
     try {
       try {
-        final homepage = await _homeRepository.fetchHomepage();
+        final homepage = await (forceRefresh
+            ? _homeRepository.fetchHomepage()
+            : _homeRepository.fetchHomepageOrPrefetched());
         if (!shouldApply(session)) return;
         if (homepage != null) {
           _replaceIfNotEmpty(categories, homepage.categories, session);
           if (!forceRefresh) {
-            _replaceIfNotEmpty(courses, await _ratingService.enrich(homepage.courses), session);
-            if (!shouldApply(session)) return;
+            enrichment.add(_applyCourses(courses, homepage.courses, session));
             if (!isLoggedIn) {
-              _replaceIfNotEmpty(suggestedCourses, await _ratingService.enrich(homepage.suggestedCourses), session);
+              enrichment.add(_applyCourses(suggestedCourses, homepage.suggestedCourses, session));
             }
           }
-          if (!shouldApply(session)) return;
           _replaceIfNotEmpty(institutes, homepage.institutes, session);
           _replaceIfNotEmpty(cities, homepage.cities, session);
+          _showingCache = false;
         }
       } on ApiCancelledException {
         return;
@@ -153,12 +186,12 @@ class HomeController extends GetxController with LatestLoadGuard {
       if (!shouldApply(session)) return;
 
       await Future.wait([
+        ...enrichment,
         _fetchCategories(errors, session, force: refreshStatic),
         _fetchCourses(errors, session, force: forceRefresh),
         _fetchInstitutes(errors, session, force: forceRefresh),
         _fetchPrivateInstructors(errors, session, force: forceRefresh),
         _fetchInstructorSubjects(errors, session, force: refreshStatic),
-        _fetchUpcomingLecture(session),
       ]);
 
       if (!shouldApply(session)) return;
@@ -171,6 +204,8 @@ class HomeController extends GetxController with LatestLoadGuard {
         errorMessage.value = errors.first;
       } else if (errors.isNotEmpty) {
         errorMessage.value = 'home_partial_load_error'.tr;
+      } else {
+        _showingCache = false;
       }
     } on ApiCancelledException {
       return;
@@ -187,10 +222,29 @@ class HomeController extends GetxController with LatestLoadGuard {
     _setIfChanged(target, source);
   }
 
+  /// يعرض [fresh] فوراً إن كانت [target] فارغة أو غير مكمّلة — البانر لا ينتظر كاش المعاهد (عدة صفحات
+  /// متتالية) — ثم يستبدلها بالنسخة المكمّلة حين تجهز.
+  Future<void> _applyCourses(RxList<CourseModel> target, List<CourseModel> fresh, LoadSession session) async {
+    if (fresh.isEmpty || !shouldApply(session)) return;
+    if (target.isEmpty || _unenriched.contains(target)) {
+      _setIfChanged(target, fresh);
+      _unenriched.add(target);
+    }
+    final enriched = await _ratingService.enrich(fresh);
+    applyIfCurrent(session, () {
+      _setIfChanged(target, enriched);
+      _unenriched.remove(target);
+    });
+  }
+
+  /// القائمة جاهزة ولا تحتاج جلباً (بلا force): غير فارغة ومن الشبكة لا من الكاش.
+  bool _isFresh(RxList<Object?> list) => list.isNotEmpty && !_showingCache;
+
   /// بصمة حقول العرض فقط — لمنع إعادة بناء القوائم والصور عندما تأتي نفس البيانات من إعادة التحميل.
   String _sig(Object? o) => switch (o) {
     CourseModel c =>
-      '${c.id}|${c.title}|${c.imageUrl}|${c.price}|${c.rating}|${c.studentsCount}|${c.isRegistrationClosed}',
+      '${c.id}|${c.title}|${c.imageUrl}|${c.price}|${c.rating}|${c.studentsCount}|${c.isRegistrationClosed}'
+          '|${c.institute}|${c.instituteCity}|${c.categoryName}',
     InstituteModel i => '${i.id}|${i.name}|${i.logoUrl}|${i.coursesCount}|${i.rating}|${i.city}',
     CategoryModel c => '${c.id}|${c.name}|${c.icon}|${c.coursesCount}',
     CityModel c => '${c.id}|${c.name}|${c.institutesCount}|${c.coursesCount}',
@@ -214,40 +268,9 @@ class HomeController extends GetxController with LatestLoadGuard {
     target.assignAll(fresh);
   }
 
-  /// غير حرج: فشله لا يُظهر خطأ في الرئيسية — يبقى البانر العادي.
-  Future<void> _fetchUpcomingLecture(LoadSession session) async {
-    if (!isLoggedIn || !Get.isRegistered<EnrollmentRepository>()) {
-      upcomingLecture.value = null;
-      return;
-    }
-    try {
-      final enrollments = await Get.find<EnrollmentRepository>().fetchEnrollments();
-      final confirmed = enrollments
-          .where((e) => UpcomingLecture.isConfirmed(e.status) && e.course != null && e.courseId != null)
-          .take(6)
-          .toList();
-      // جدول الدورة إن جاء مع التسجيل، وإلا من /course-schedules (طلب لكل دورة مؤكدة، 6 كحد أقصى).
-      final schedules = <int, List<ScheduleModel>>{};
-      await Future.wait(
-        confirmed.map((e) async {
-          final own = e.course!.schedules;
-          schedules[e.id] = own.isNotEmpty
-              ? own
-              : await _courseRepository.fetchCourseSchedules(e.courseId!).catchError((Object _) => <ScheduleModel>[]);
-        }),
-      );
-      if (!shouldApply(session)) return;
-      upcomingLecture.value = UpcomingLecture.find(confirmed, (e) => schedules[e.id] ?? const [], DateTime.now());
-    } on ApiCancelledException {
-      return;
-    } catch (_) {
-      // نُبقي آخر قيمة معروفة.
-    }
-  }
-
   Future<void> _fetchCategories(List<String> errors, LoadSession session, {bool force = false}) async {
     // /homepage يُرجع التصنيفات غالباً — لا نعيد جلب كل صفحاتها في كل تحميل.
-    if (!force && categories.isNotEmpty) return;
+    if (!force && _isFresh(categories)) return;
     try {
       final fresh = await _categoryRepository.fetchCategories();
       applyIfCurrent(session, () {
@@ -265,14 +288,11 @@ class HomeController extends GetxController with LatestLoadGuard {
   }
 
   Future<void> _fetchCourses(List<String> errors, LoadSession session, {bool force = false}) async {
-    if (!force && courses.isNotEmpty) return;
+    if (!force && _isFresh(courses)) return;
     try {
       final fresh = await _courseRepository.fetchCourses();
       if (!shouldApply(session)) return;
-      if (fresh.isNotEmpty) {
-        final enriched = await _ratingService.enrich(fresh);
-        applyIfCurrent(session, () => _setIfChanged(courses, enriched));
-      }
+      await _applyCourses(courses, fresh, session);
     } on ApiCancelledException {
       return;
     } on ApiException catch (e) {
@@ -289,7 +309,7 @@ class HomeController extends GetxController with LatestLoadGuard {
         if (!shouldApply(session)) return;
         _setIfChanged(suggestedCourses, personalized);
         if (personalized.isNotEmpty) return;
-      } else if (!force && suggestedCourses.isNotEmpty) {
+      } else if (!force && _isFresh(suggestedCourses)) {
         return;
       }
 
@@ -334,7 +354,7 @@ class HomeController extends GetxController with LatestLoadGuard {
   }
 
   Future<void> _fetchInstitutes(List<String> errors, LoadSession session, {bool force = false}) async {
-    if (!force && institutes.isNotEmpty) return;
+    if (!force && _isFresh(institutes)) return;
     try {
       final fresh = await _instituteRepository.fetchInstitutes();
       _replaceIfNotEmpty(institutes, fresh, session);
@@ -348,7 +368,7 @@ class HomeController extends GetxController with LatestLoadGuard {
   }
 
   Future<void> _fetchPrivateInstructors(List<String> errors, LoadSession session, {bool force = false}) async {
-    if (!force && privateInstructors.isNotEmpty) return;
+    if (!force && _isFresh(privateInstructors)) return;
     try {
       final result = await _instructorRepository.fetchInstructorsPage(page: 1, perPage: 12, isPrivate: true);
       applyIfCurrent(session, () {
@@ -366,7 +386,7 @@ class HomeController extends GetxController with LatestLoadGuard {
   }
 
   Future<void> _fetchInstructorSubjects(List<String> errors, LoadSession session, {bool force = false}) async {
-    if (!force && instructorSubjects.isNotEmpty) return;
+    if (!force && _isFresh(instructorSubjects)) return;
     try {
       final fresh = await _instructorRepository.fetchInstructorSubjectFilters();
       applyIfCurrent(session, () {

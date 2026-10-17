@@ -7,7 +7,6 @@ class _StickyEnrollBar extends StatelessWidget {
     required this.enrollmentResolved,
     required this.onBook,
     required this.onRegistrationClosed,
-    required this.onFavorite,
   });
 
   final CourseModel item;
@@ -15,7 +14,6 @@ class _StickyEnrollBar extends StatelessWidget {
   final bool enrollmentResolved;
   final VoidCallback onBook;
   final VoidCallback onRegistrationClosed;
-  final VoidCallback onFavorite;
 
   @override
   Widget build(BuildContext context) {
@@ -34,33 +32,13 @@ class _StickyEnrollBar extends StatelessWidget {
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          // السعر في جهة البداية والزر في جهة النهاية — يتبع اتجاه اللغة (كان مثبتاً على RTL حتى بالإنجليزية).
+          // المفضلة في شريط الغلاف المثبّت فوق، بنفس زر البطاقات.
           child: Row(
-            textDirection: TextDirection.rtl,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _StickyPriceColumn(item: item),
-              const SizedBox(width: 10),
-              Obx(() {
-                final fav = Get.find<FavoritesService>();
-                final isFav = fav.isCourseFavorite(item.id);
-                return Material(
-                  color: isFav ? AppColors.danger.withValues(alpha: 0.12) : AppColors.indicatorFill,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  child: InkWell(
-                    onTap: onFavorite,
-                    borderRadius: BorderRadius.circular(14),
-                    child: SizedBox(
-                      width: 52,
-                      height: 52,
-                      child: Icon(
-                        isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        color: isFav ? AppColors.danger : AppColors.primary,
-                      ),
-                    ),
-                  ),
-                );
-              }),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: registrationClosed
                     ? OutlinedButton(
@@ -70,11 +48,11 @@ class _StickyEnrollBar extends StatelessWidget {
                           foregroundColor: AppColors.warningText,
                           side: const BorderSide(color: AppColors.warningBorder),
                           backgroundColor: AppColors.warningSoft,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
                         ),
                         child: Text(
                           'registration_closed_action'.tr,
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.md),
                         ),
                       )
                     : RegisterGradientButton(
@@ -103,7 +81,12 @@ class _StickyStrikethroughPrice extends StatelessWidget {
       label,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, height: 1.2),
+      style: const TextStyle(
+        color: AppColors.textSecondary,
+        fontSize: AppTextSize.xs,
+        fontWeight: FontWeight.w500,
+        height: 1.2,
+      ),
     );
 
     return Stack(
@@ -134,7 +117,7 @@ class _StickyPriceColumn extends StatelessWidget {
       children: [
         if (item.hasDiscount && item.originalPriceLabel != null)
           _StickyStrikethroughPrice(label: item.originalPriceLabel!),
-        CoursePriceText(price: item.price, amountSize: 20, currencySize: 12),
+        CoursePriceText(price: item.price, amountSize: AppTextSize.xxl, currencySize: AppTextSize.xs),
       ],
     );
   }

@@ -4,6 +4,7 @@ import '../../../core/data/repositories/instructor_repository.dart';
 import '../../../core/data/repositories/review_repository.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/models/json_helpers.dart';
+import '../../../core/network/api_exception.dart';
 import '../../../core/services/favorites_service.dart';
 
 class InstructorDetailsController extends GetxController {
@@ -21,6 +22,9 @@ class InstructorDetailsController extends GetxController {
   final reviews = <ReviewModel>[].obs;
   final isLoadingReviews = false.obs;
   final totalCourses = 0.obs;
+
+  /// فشل تحميل الدورات: «تعذّر التحميل» مع إعادة المحاولة بدل «لا دورات».
+  final coursesError = RxnString();
 
   late int instructorId;
   int _coursesPage = 1;
@@ -98,14 +102,17 @@ class InstructorDetailsController extends GetxController {
     }
     if (reset) {
       isLoadingCourses.value = true;
-      _coursesPage = 1;
+      coursesError.value = null;
     }
+    // الصفحة تتقدّم بعد النجاح فقط — كانت تتقدّم قبل الطلب فتُتخطّى صفحة كاملة بعد أي فشل.
+    final page = reset ? 1 : _coursesPage + 1;
     try {
       final result = await _instructorRepository.fetchInstructorCoursesPage(
         instructorId: instructorId,
-        page: _coursesPage,
+        page: page,
         perPage: _coursesPerPage,
       );
+      _coursesPage = page;
       if (reset) {
         courses.assignAll(result.items);
       } else {
@@ -113,16 +120,24 @@ class InstructorDetailsController extends GetxController {
       }
       hasMoreCourses.value = result.hasMore;
       totalCourses.value = result.total;
+    } catch (e) {
+      // كان الخطأ يخرج من loadDetails بلا معالجة.
+      if (reset) {
+        coursesError.value = userErrorMessage(e);
+      } else {
+        Get.snackbar('error'.tr, 'error_load_more_failed'.tr);
+      }
     } finally {
       if (reset) isLoadingCourses.value = false;
     }
   }
 
+  Future<void> retryCourses() => _loadCourses(reset: true);
+
   Future<void> loadMoreCourses() async {
     if (!hasMoreCourses.value || isLoadingMoreCourses.value || isLoadingCourses.value) return;
     isLoadingMoreCourses.value = true;
     try {
-      _coursesPage += 1;
       await _loadCourses(reset: false);
     } finally {
       isLoadingMoreCourses.value = false;

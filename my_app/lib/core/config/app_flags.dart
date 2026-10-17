@@ -8,7 +8,7 @@ abstract final class AppFlags {
   static const bool phoneVerificationEnabled = false;
 
   /// تأكيد البريد الإلكتروني (اختياري): بعد إنشاء الحساب، ومن «حسابي» حين يكون البريد غير مؤكد.
-  /// موقوف حتى ينشر الخادم `/student/email-verification/send` و`/verify` ويرسل `email_verified_at`
-  /// في `/student/me` — وإلا ظهر الخيار لكل المستخدمين وفشل الإرسال.
-  static const bool emailVerificationEnabled = false;
+  /// الخادم ينشر `/student/email-verification/send` و`/verify` ويرسل `email_verified_at` دائماً في
+  /// `/student/me`؛ إن غاب الحقل تبقى الحالة «غير معروفة» فلا يظهر خيار التأكيد.
+  static const bool emailVerificationEnabled = true;
 }

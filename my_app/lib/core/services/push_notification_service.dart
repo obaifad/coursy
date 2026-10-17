@@ -31,6 +31,10 @@ class PushNotificationService extends GetxService {
   late final GetStorage _prefs;
 
   StreamSubscription<String>? _tokenRefreshSub;
+
+  /// تُحفظ لتُلغى قبل أي تسجيل ثانٍ (init مرتين كان يكرّر عرض كل إشعار وفتحه).
+  StreamSubscription<RemoteMessage>? _foregroundSub;
+  StreamSubscription<RemoteMessage>? _openedSub;
   String? _lastSyncedToken;
 
   final notificationsEnabled = true.obs;
@@ -51,6 +55,7 @@ class PushNotificationService extends GetxService {
       await _messaging.setForegroundNotificationPresentationOptions(alert: true, badge: true, sound: true);
     }
 
+    _tokenRefreshSub?.cancel();
     _tokenRefreshSub = _messaging.onTokenRefresh.listen(_onTokenRefresh);
     _listenForegroundMessages();
     _listenOpenedFromBackground();
@@ -235,7 +240,8 @@ class PushNotificationService extends GetxService {
   }
 
   void _listenForegroundMessages() {
-    FirebaseMessaging.onMessage.listen((message) async {
+    _foregroundSub?.cancel();
+    _foregroundSub = FirebaseMessaging.onMessage.listen((message) async {
       if (!notificationsEnabled.value) return;
       AppDebugLog.fcm(
         'foreground: id=${message.messageId} '
@@ -266,7 +272,8 @@ class PushNotificationService extends GetxService {
   }
 
   void _listenOpenedFromBackground() {
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageNavigation);
+    _openedSub?.cancel();
+    _openedSub = FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageNavigation);
   }
 
   /// فُتح التطبيق بالضغط على إشعار FCM وهو مغلق. شاشة البداية ما زالت ظاهرة: PushNavigation يؤجّل
@@ -301,6 +308,8 @@ class PushNotificationService extends GetxService {
   @override
   void onClose() {
     _tokenRefreshSub?.cancel();
+    _foregroundSub?.cancel();
+    _openedSub?.cancel();
     super.onClose();
   }
 }

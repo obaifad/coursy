@@ -81,9 +81,11 @@ class FavoritesService extends GetxService {
     }
   }
 
-  Future<bool> toggleCourse(int courseId) async {
+  Future<bool> toggleCourse(int courseId, {bool showFeedback = true}) async {
     if (!await AuthGuard.requireLogin(message: 'favorite_login_required'.tr)) return false;
     return _toggle(
+      key: 'course:$courseId',
+      showFeedback: showFeedback,
       find: () => findCourse(courseId),
       remove: (id) => _repository.removeFavorite(id, courseId: courseId),
       add: () => _repository.addFavorite(courseId: courseId),
@@ -95,6 +97,7 @@ class FavoritesService extends GetxService {
   Future<bool> toggleInstitute(int instituteId) async {
     if (!await AuthGuard.requireLogin(message: 'favorite_login_required'.tr)) return false;
     return _toggle(
+      key: 'institute:$instituteId',
       find: () => findInstitute(instituteId),
       remove: (id) => _repository.removeFavorite(id),
       add: () => _repository.addFavorite(instituteId: instituteId),
@@ -106,6 +109,7 @@ class FavoritesService extends GetxService {
   Future<bool> toggleInstructor(int instructorId) async {
     if (!await AuthGuard.requireLogin(message: 'favorite_login_required'.tr)) return false;
     return _toggle(
+      key: 'instructor:$instructorId',
       find: () => findInstructor(instructorId),
       remove: (id) => _repository.removeFavorite(id),
       add: () => _repository.addFavorite(instructorId: instructorId),
@@ -123,20 +127,26 @@ class FavoritesService extends GetxService {
     return ids.toList();
   }
 
+  /// عناصر يجري تبديلها الآن: ضغطة ثانية (أو بطاقة ثانية للدورة نفسها) لا ترسل طلباً آخر.
+  final _inFlight = <String>{};
+
   Future<bool> _toggle({
+    required String key,
     required FavoriteModel? Function() find,
     required Future<void> Function(int id) remove,
     required Future<Map<String, dynamic>> Function() add,
     required String addedMsg,
     required String removedMsg,
+    bool showFeedback = true,
   }) async {
+    if (!_inFlight.add(key)) return find() != null;
     try {
       final existing = find();
       if (existing != null) {
         await remove(existing.id);
         items.removeWhere((f) => f.id == existing.id);
         _log('Removed favorite id=${existing.id}');
-        Get.snackbar('favorite_removed_title'.tr, removedMsg);
+        if (showFeedback) Get.snackbar('favorite_removed_title'.tr, removedMsg);
         return false;
       }
 
@@ -146,14 +156,22 @@ class FavoritesService extends GetxService {
       if (map.containsKey('id')) {
         items.add(FavoriteModel.fromJson(map));
       } else {
-        await syncFromApi();
+        // بلا معرّف في الرد: نجلب القائمة الآن (force — وإلا تخطّاها كاش الدقيقتين فلا يتغيّر القلب).
+        await syncFromApi(force: true);
       }
-      Get.snackbar('favorite_added_title'.tr, addedMsg);
+      if (showFeedback) Get.snackbar('favorite_added_title'.tr, addedMsg);
       return true;
     } on ApiException catch (e) {
       _log('API failed: ${e.message}');
       Get.snackbar('error'.tr, e.message);
       return find() != null;
+    } catch (e) {
+      // انقطاع أو رد غير متوقع: رسالة مفهومة بدل استثناء غير معالج.
+      _log('Toggle error: $e');
+      Get.snackbar('error'.tr, 'connection_error'.tr);
+      return find() != null;
+    } finally {
+      _inFlight.remove(key);
     }
   }
 

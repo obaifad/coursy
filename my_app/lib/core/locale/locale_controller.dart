@@ -14,6 +14,8 @@ import 'locale_request_guard.dart';
 import '../../widgets/app_selection_sheet.dart';
 import '../../widgets/syrian_flag.dart';
 
+import '../../theme/app_fonts.dart';
+
 /// إدارة لغة التطبيق (عربي / إنجليزي) + RTL/LTR + Accept-Language للـ API.
 class LocaleController extends GetxService {
   static const _storageKey = 'app_locale';
@@ -74,7 +76,11 @@ class LocaleController extends GetxService {
       if (Get.isRegistered<LocaleRequestGuard>()) {
         Get.find<LocaleRequestGuard>().bump();
       }
-      await LocaleRefresh.reloadAll();
+      try {
+        await LocaleRefresh.reloadAll();
+      } catch (_) {
+        // شاشة فشل تحديثها (انقطاع مثلاً) تعرض خطأها بنفسها؛ تغيير اللغة نفسه تمّ — لا نُسقط تأكيده.
+      }
       // الخادم يحفظ لغة كل جهاز ليرسل إشعاراته بها: نعيد تسجيل التوكن باللغة الجديدة.
       if (Get.isRegistered<PushNotificationService>()) {
         unawaited(Get.find<PushNotificationService>().syncDeviceTokenIfLoggedIn(force: true));
@@ -99,7 +105,7 @@ class LocaleController extends GetxService {
             _LanguageTile(
               code: 'en',
               label: 'lang_english'.tr,
-              flag: const Text('🇬🇧', style: TextStyle(fontSize: 26)),
+              flag: const Text('🇬🇧', style: TextStyle(fontSize: AppTextSize.display)),
             ),
           ],
         ),

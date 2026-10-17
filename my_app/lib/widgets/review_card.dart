@@ -6,6 +6,8 @@ import '../theme/app_colors.dart';
 import 'app_widgets.dart';
 import 'design_system.dart';
 
+import '../theme/app_fonts.dart';
+
 /// بطاقة تقييم موحّدة (صفحة الدورة وصفحة المدرّس): صورة صاحب التقييم أو أول حرف من اسمه،
 /// الاسم، النجوم، واسم الدورة إن وُجد (تقييمات المدرّس تشمل كل دوراته)، ثم التعليق.
 class ReviewCard extends StatelessWidget {
@@ -93,7 +95,11 @@ class ReviewCard extends StatelessWidget {
                     course,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+                    style: const TextStyle(
+                      fontSize: AppTextSize.xs,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primaryInk,
+                    ),
                   ),
                 ),
               ],
@@ -114,7 +120,7 @@ class ReviewCard extends StatelessWidget {
       child: Center(
         child: Text(
           name.isNotEmpty ? name.characters.first.toUpperCase() : '?',
-          style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.primary),
+          style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.primaryInk),
         ),
       ),
     );

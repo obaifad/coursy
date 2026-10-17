@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/locale/plural.dart';
-import '../../../core/responsive/responsive.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_system_ui.dart';
@@ -15,6 +14,7 @@ import '../controllers/private_instructors_controller.dart';
 class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
   const PrivateInstructorsView({super.key});
 
+  /// الرأس يختفي عند النزول وتبقى فلاتر التخصص ملتصقة بالأعلى — كتبويب الدورات.
   @override
   Widget build(BuildContext context) {
     // الرأس البنفسجي يمتد تحت شريط الحالة.
@@ -25,83 +25,65 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
         body: Obx(() {
           final _ = localeRebuildToken;
           final count = controller.instructors.length;
-          final header = AppHeroHeader(
-            title: 'private_instructors_title'.tr,
-            subtitle: 'private_instructors_subtitle'.tr,
-            badge: count > 0 ? pluralTr('instructor_subject_count', count) : null,
-            onBack: Get.back,
-          );
-          if (controller.isLoading.value && controller.instructors.isEmpty) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                header,
-                const Expanded(child: AppListSkeleton(padding: EdgeInsets.fromLTRB(16, 12, 16, 24))),
-              ],
-            );
-          }
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              header,
-              const SizedBox(height: 10),
-              InstructorSpecializationFiltersPanel(
-                subjects: controller.subjects.toList(growable: false),
-                selectedKey: controller.selectedSubjectKey.value,
-                onSelected: controller.selectSubject,
-                isLoading: controller.isLoadingFilters.value && controller.subjects.isEmpty,
-              ),
-              Expanded(child: _buildBody(context)),
-            ],
+          final loading = controller.isLoading.value && controller.instructors.isEmpty;
+          return AppScrollAwayHeaderView(
+            onRefresh: controller.loadInstructors,
+            header: AppHeroHeader(
+              title: 'private_instructors_title'.tr,
+              subtitle: 'private_instructors_subtitle'.tr,
+              badge: count > 0 ? pluralTr('instructor_subject_count', count) : null,
+              onBack: Get.back,
+            ),
+            pinned: loading
+                ? null
+                : InstructorSpecializationFiltersPanel(
+                    subjects: controller.subjects.toList(growable: false),
+                    selectedKey: controller.selectedSubjectKey.value,
+                    onSelected: controller.selectSubject,
+                    isLoading: controller.isLoadingFilters.value && controller.subjects.isEmpty,
+                  ),
+            slivers: loading
+                ? const [AppSliverListSkeleton(padding: EdgeInsets.fromLTRB(16, 12, 16, 24))]
+                : _content(context),
           );
         }),
       ),
     );
   }
 
-  Widget _buildBody(BuildContext context) {
-    if (controller.errorMessage.value != null && controller.instructors.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.cloud_off_outlined, size: 48, color: AppColors.textSecondary),
-              const SizedBox(height: 12),
-              Text(controller.errorMessage.value!, textAlign: TextAlign.center, style: AppTypography.pageSubtitle()),
-              const SizedBox(height: 16),
-              FilledButton(onPressed: controller.loadInstructors, child: Text('retry'.tr)),
-            ],
-          ),
+  List<Widget> _content(BuildContext context) {
+    final error = controller.errorMessage.value;
+    if (error != null && controller.instructors.isEmpty) {
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: AppLoadErrorState(message: error, onRetry: controller.loadInstructors),
         ),
-      );
+      ];
     }
 
     if (controller.instructors.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            controller.selectedSubjectKey.value == null ? 'no_private_instructors'.tr : 'no_instructors_in_subject'.tr,
-            textAlign: TextAlign.center,
-            style: AppTypography.pageSubtitle(),
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: AppEmptyState(
+            message: controller.selectedSubjectKey.value == null
+                ? 'no_private_instructors'.tr
+                : 'no_instructors_in_subject'.tr,
+            icon: Icons.person_search_outlined,
           ),
         ),
-      );
+      ];
     }
 
     // لقطة واحدة للعدد والعناصر وحالة «المزيد» (القائمة تُبنى أثناء التمرير).
     final instructors = controller.instructors.toList();
     final hasMore = controller.hasMore.value;
     final isLoadingMore = controller.isLoadingMore.value;
-    return AppMaxWidth(
-      child: RefreshIndicator(
-        onRefresh: controller.loadInstructors,
-        child: ListView.separated(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: AppLayout.scrollPadding(context),
+    return [
+      SliverPadding(
+        padding: AppLayout.scrollPadding(context, top: 4),
+        sliver: SliverList.separated(
           itemCount: instructors.length + 1,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (_, i) {
@@ -122,6 +104,6 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
           },
         ),
       ),
-    );
+    ];
   }
 }
