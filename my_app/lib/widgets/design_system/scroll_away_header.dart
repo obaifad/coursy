@@ -54,7 +54,9 @@ class _AppScrollAwayHeaderViewState extends State<AppScrollAwayHeaderView> {
       controller: _controller,
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
-        SliverToBoxAdapter(child: KeyedSubtree(key: _headerKey, child: widget.header)),
+        SliverToBoxAdapter(
+          child: KeyedSubtree(key: _headerKey, child: widget.header),
+        ),
         if (widget.pinned != null)
           PinnedHeaderSliver(
             child: AppPinnedBar(scrollController: _controller, pinOffset: _pinOffset, child: widget.pinned!),
@@ -173,7 +175,7 @@ abstract final class HeroAppBarStyle {
 
   static TextStyle title(bool collapsed) => AppFonts.tajawal(
     fontWeight: FontWeight.w800,
-    fontSize: 18,
+    fontSize: AppTextSize.xl,
     color: foreground(collapsed),
   ).copyWith(shadows: collapsed ? null : const [Shadow(color: Color(0x66000000), blurRadius: 8)]);
 

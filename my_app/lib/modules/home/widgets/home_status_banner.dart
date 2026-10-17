@@ -20,7 +20,7 @@ class GuestSignUpBanner extends StatelessWidget {
           begin: AlignmentDirectional.centerStart,
           end: AlignmentDirectional.centerEnd,
         ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         boxShadow: const [BoxShadow(color: AppColors.shadowPrimary, blurRadius: 18, offset: Offset(0, 8))],
       ),
       child: Column(
@@ -35,13 +35,17 @@ class GuestSignUpBanner extends StatelessWidget {
                   children: [
                     Text(
                       'guest_banner_title'.tr,
-                      style: AppFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
+                      style: AppFonts.tajawal(
+                        fontSize: AppTextSize.xl,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'guest_banner_subtitle'.tr,
                       style: AppFonts.tajawal(
-                        fontSize: 12.5,
+                        fontSize: AppTextSize.sm,
                         fontWeight: FontWeight.w500,
                         height: 1.45,
                         color: Colors.white.withValues(alpha: 0.92),
@@ -56,7 +60,7 @@ class GuestSignUpBanner extends StatelessWidget {
                 height: 52,
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                   border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
                 ),
                 child: const Icon(Icons.event_seat_rounded, color: Colors.white, size: 26),
@@ -76,8 +80,8 @@ class GuestSignUpBanner extends StatelessWidget {
                       foregroundColor: AppColors.primaryDark,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      textStyle: AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w800),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+                      textStyle: AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700),
                     ),
                     child: FittedBox(fit: BoxFit.scaleDown, child: Text('register'.tr, maxLines: 1)),
                   ),
@@ -93,8 +97,8 @@ class GuestSignUpBanner extends StatelessWidget {
                       foregroundColor: Colors.white,
                       side: BorderSide(color: Colors.white.withValues(alpha: 0.75)),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      textStyle: AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w800),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+                      textStyle: AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700),
                     ),
                     child: FittedBox(fit: BoxFit.scaleDown, child: Text('browse_courses_short'.tr, maxLines: 1)),
                   ),

@@ -63,8 +63,8 @@ class EmailVerificationView extends GetView<EmailVerificationController> {
                               child: Text(
                                 'skip_for_now'.tr,
                                 style: AppFonts.tajawal(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: AppTextSize.md,
+                                  fontWeight: FontWeight.w500,
                                   color: AppColors.textSecondary,
                                 ),
                               ),
@@ -96,7 +96,7 @@ class _CodeForm extends StatelessWidget {
         Text(
           'verify_email_instruction'.tr,
           textAlign: TextAlign.center,
-          style: AppFonts.tajawal(fontSize: 13.5, color: AppColors.textSecondary, height: 1.5),
+          style: AppFonts.tajawal(fontSize: AppTextSize.md, color: AppColors.textSecondary, height: 1.5),
         ),
         const SizedBox(height: 4),
         Obx(
@@ -107,7 +107,11 @@ class _CodeForm extends StatelessWidget {
               Text(
                 controller.email.value.isEmpty ? '—' : controller.email.value,
                 textDirection: TextDirection.ltr,
-                style: AppFonts.tajawal(fontSize: 14.5, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                style: AppFonts.tajawal(
+                  fontSize: AppTextSize.lg,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
               ),
               TextButton.icon(
                 onPressed: () => _showEditEmailSheet(context, controller),
@@ -117,7 +121,10 @@ class _CodeForm extends StatelessWidget {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 icon: const Icon(Icons.edit_rounded, size: 15),
-                label: Text('edit_email'.tr, style: AppFonts.tajawal(fontSize: 12.5, fontWeight: FontWeight.w800)),
+                label: Text(
+                  'edit_email'.tr,
+                  style: AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700),
+                ),
               ),
             ],
           ),
@@ -147,7 +154,7 @@ class _CodeForm extends StatelessWidget {
                       error ?? hint!,
                       textAlign: TextAlign.center,
                       style: AppFonts.tajawal(
-                        fontSize: 12.5,
+                        fontSize: AppTextSize.sm,
                         fontWeight: FontWeight.w700,
                         color: error != null ? AppColors.dangerText : AppColors.successText,
                       ),
@@ -179,7 +186,7 @@ class _ResendRow extends StatelessWidget {
   Widget build(BuildContext context) => Obx(() => _buildRow());
 
   Widget _buildRow() {
-    final muted = AppFonts.tajawal(fontSize: 13, color: AppColors.textSecondary);
+    final muted = AppFonts.tajawal(fontSize: AppTextSize.sm, color: AppColors.textSecondary);
     if (controller.isSending.value) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -209,7 +216,10 @@ class _ResendRow extends StatelessWidget {
             minimumSize: const Size(0, 36),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          child: Text('resend_code'.tr, style: AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w800)),
+          child: Text(
+            'resend_code'.tr,
+            style: AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700),
+          ),
         ),
       ],
     );
@@ -233,7 +243,7 @@ class _MailIllustration extends StatelessWidget {
             height: 88,
             decoration: BoxDecoration(
               gradient: AppGradients.primary,
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               boxShadow: const [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 18, offset: Offset(0, 8))],
             ),
             child: const Icon(Icons.mark_email_unread_rounded, color: Colors.white, size: 42),
@@ -276,13 +286,17 @@ class _VerifiedState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'email_verified_title'.tr,
-            style: AppFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+            style: AppFonts.tajawal(
+              fontSize: AppTextSize.xl,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             'email_verified_msg'.tr,
             textAlign: TextAlign.center,
-            style: AppFonts.tajawal(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
+            style: AppFonts.tajawal(fontSize: AppTextSize.sm, color: AppColors.textSecondary, height: 1.5),
           ),
         ],
       ),

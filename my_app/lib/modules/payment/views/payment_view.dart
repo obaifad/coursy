@@ -108,7 +108,7 @@ class _SummaryCard extends StatelessWidget {
                 height: 36,
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: const Icon(Icons.receipt_long_rounded, size: 20, color: AppColors.primary),
               ),
@@ -116,7 +116,7 @@ class _SummaryCard extends StatelessWidget {
               Expanded(child: Text('payment_summary'.tr, style: AppTypography.sectionTitle())),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppRadius.full)),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -128,7 +128,7 @@ class _SummaryCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       label,
-                      style: AppFonts.tajawal(color: fg, fontWeight: FontWeight.w800, fontSize: 12),
+                      style: AppFonts.tajawal(color: fg, fontWeight: FontWeight.w700, fontSize: AppTextSize.xs),
                     ),
                   ],
                 ),
@@ -151,7 +151,7 @@ class _SummaryCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.07),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
               border: Border.all(color: AppColors.primary.withValues(alpha: 0.14)),
             ),
             child: Row(
@@ -159,12 +159,20 @@ class _SummaryCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     (data.hasPendingAdvance ? 'payment_required_now' : 'payment_remaining').tr,
-                    style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.textBody),
+                    style: AppFonts.tajawal(
+                      fontWeight: FontWeight.w700,
+                      fontSize: AppTextSize.md,
+                      color: AppColors.textBody,
+                    ),
                   ),
                 ),
                 Text(
                   _money(data.amountToSendNow, data.currency),
-                  style: AppFonts.tajawal(fontWeight: FontWeight.w900, fontSize: 20, color: AppColors.primary),
+                  style: AppFonts.tajawal(
+                    fontWeight: FontWeight.w800,
+                    fontSize: AppTextSize.xxl,
+                    color: AppColors.primaryInk,
+                  ),
                 ),
               ],
             ),
@@ -187,7 +195,7 @@ class _PayCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.card,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColors.primary.withValues(alpha: 0.07)),
         boxShadow: const [
           BoxShadow(color: AppColors.shadowPrimary, blurRadius: 20, offset: Offset(0, 8)),
@@ -214,7 +222,7 @@ class _InfoBanner extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: tint.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: tint.withValues(alpha: 0.16)),
       ),
       child: Row(
@@ -223,7 +231,10 @@ class _InfoBanner extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(color: tint.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: tint.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
             child: Icon(icon, size: 22, color: tint),
           ),
           const SizedBox(width: 12),
@@ -231,9 +242,15 @@ class _InfoBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 14.5, height: 1.3)),
+                Text(
+                  title,
+                  style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: AppTextSize.lg, height: 1.3),
+                ),
                 const SizedBox(height: 4),
-                Text(body, style: AppFonts.tajawal(fontSize: 13, color: AppColors.textSecondary, height: 1.5)),
+                Text(
+                  body,
+                  style: AppFonts.tajawal(fontSize: AppTextSize.sm, color: AppColors.textSecondary, height: 1.5),
+                ),
               ],
             ),
           ),
@@ -258,7 +275,11 @@ class _AmountRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: AppFonts.tajawal(color: AppColors.textSecondary, fontWeight: FontWeight.w600, fontSize: 14),
+              style: AppFonts.tajawal(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+                fontSize: AppTextSize.md,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -266,7 +287,11 @@ class _AmountRow extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: AppFonts.tajawal(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 14),
+              style: AppFonts.tajawal(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w700,
+                fontSize: AppTextSize.md,
+              ),
             ),
           ),
         ],
@@ -290,20 +315,31 @@ class _TransferCard extends GetView<PaymentController> {
         children: [
           Text('payment_shamcash_title'.tr, style: AppTypography.sectionTitle()),
           const SizedBox(height: 4),
-          Text('payment_steps'.tr, style: AppTypography.cardSubtitle(size: 13).copyWith(height: 1.5)),
+          Text('payment_steps'.tr, style: AppTypography.cardSubtitle(size: AppTextSize.sm).copyWith(height: 1.5)),
           if (shamcash.accountName != null) ...[
             const SizedBox(height: 14),
             Text(
               'payment_account_name'.tr,
-              style: AppFonts.tajawal(color: AppColors.textSecondary, fontWeight: FontWeight.w700, fontSize: 12),
+              style: AppFonts.tajawal(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+                fontSize: AppTextSize.xs,
+              ),
             ),
             const SizedBox(height: 2),
-            Text(shamcash.accountName!, style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 15)),
+            Text(
+              shamcash.accountName!,
+              style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: AppTextSize.lg),
+            ),
           ],
           const SizedBox(height: 14),
           Text(
             'payment_address'.tr,
-            style: AppFonts.tajawal(color: AppColors.textSecondary, fontWeight: FontWeight.w700, fontSize: 12),
+            style: AppFonts.tajawal(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+              fontSize: AppTextSize.xs,
+            ),
           ),
           const SizedBox(height: 6),
           Row(
@@ -313,7 +349,7 @@ class _TransferCard extends GetView<PaymentController> {
                   textDirection: TextDirection.ltr,
                   child: SelectableText(
                     shamcash.address!,
-                    style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 15, letterSpacing: 0.3),
+                    style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: AppTextSize.lg, letterSpacing: 0.3),
                   ),
                 ),
               ),
@@ -336,7 +372,7 @@ class _TransferCard extends GetView<PaymentController> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                   border: Border.all(color: AppColors.borderNeutral),
                 ),
                 child: QrImageView(data: qr, size: 180, backgroundColor: Colors.white),
@@ -346,7 +382,11 @@ class _TransferCard extends GetView<PaymentController> {
             Text(
               'payment_scan_qr'.tr,
               textAlign: TextAlign.center,
-              style: AppFonts.tajawal(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w700),
+              style: AppFonts.tajawal(
+                color: AppColors.textSecondary,
+                fontSize: AppTextSize.xs,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ],
@@ -368,7 +408,7 @@ class _SubmitCard extends GetView<PaymentController> {
           children: [
             Text('payment_txn_title'.tr, style: AppTypography.sectionTitle()),
             const SizedBox(height: 4),
-            Text('payment_txn_help'.tr, style: AppTypography.cardSubtitle(size: 13).copyWith(height: 1.5)),
+            Text('payment_txn_help'.tr, style: AppTypography.cardSubtitle(size: AppTextSize.sm).copyWith(height: 1.5)),
             const SizedBox(height: 12),
             TextField(
               controller: controller.transactionController,
@@ -454,12 +494,15 @@ class _BottomAction extends GetView<PaymentController> {
         onPressed: () => Get.toNamed(AppRoutes.courseDetails, arguments: courseId),
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(48),
-          foregroundColor: AppColors.primary,
+          foregroundColor: AppColors.primaryInk,
           side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
         ),
         icon: const Icon(Icons.menu_book_outlined, size: 20),
-        label: Text('view_details'.tr, style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 14)),
+        label: Text(
+          'view_details'.tr,
+          style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: AppTextSize.md),
+        ),
       ),
     );
   }
@@ -491,13 +534,13 @@ class _HistoryCard extends StatelessWidget {
                       children: [
                         Text(
                           _money(p.amount, p.currency),
-                          style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 14),
+                          style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: AppTextSize.md),
                         ),
                         Directionality(
                           textDirection: TextDirection.ltr,
                           child: Text(
                             '#${p.transactionId}',
-                            style: AppFonts.tajawal(color: AppColors.textSecondary, fontSize: 12),
+                            style: AppFonts.tajawal(color: AppColors.textSecondary, fontSize: AppTextSize.xs),
                           ),
                         ),
                       ],
@@ -506,7 +549,7 @@ class _HistoryCard extends StatelessWidget {
                   if (p.occurredAt != null)
                     Text(
                       JsonHelpers.formatDisplayDate(p.occurredAt!.toIso8601String()),
-                      style: AppFonts.tajawal(color: AppColors.textSecondary, fontSize: 12),
+                      style: AppFonts.tajawal(color: AppColors.textSecondary, fontSize: AppTextSize.xs),
                     ),
                 ],
               ),

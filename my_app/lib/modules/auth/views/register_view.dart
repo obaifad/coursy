@@ -28,10 +28,10 @@ class _TermsAgreement extends GetView<AuthController> {
   Widget build(BuildContext context) {
     final lang = Get.locale?.languageCode == 'en' ? 'en' : 'ar';
     const linkStyle = TextStyle(
-      color: AppColors.primary,
+      color: AppColors.primaryInk,
       fontWeight: FontWeight.w700,
       decoration: TextDecoration.underline,
-      decorationColor: AppColors.primary,
+      decorationColor: AppColors.primaryInk,
     );
     return Obx(
       () => Row(
@@ -275,7 +275,7 @@ class _SignInLink extends StatelessWidget {
       children: [
         Text(
           'have_account_prefix'.tr,
-          style: AppFonts.tajawal(color: AppColors.textSecondary, fontWeight: FontWeight.w700),
+          style: AppFonts.tajawal(color: AppColors.textSecondary, fontWeight: FontWeight.w500),
         ),
         TextButton(
           onPressed: () => Get.offNamed(AppRoutes.login),
@@ -286,10 +286,10 @@ class _SignInLink extends StatelessWidget {
           child: Text(
             'sign_in'.tr,
             style: AppFonts.tajawal(
-              color: AppColors.primary,
+              color: AppColors.primaryInk,
               fontWeight: FontWeight.w800,
               decoration: TextDecoration.underline,
-              decorationColor: AppColors.primary,
+              decorationColor: AppColors.primaryInk,
             ),
           ),
         ),
@@ -306,7 +306,7 @@ class _ErrorBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.danger.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.sm),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -393,7 +393,7 @@ class _RegisterStepBody extends GetView<AuthController> {
             const SizedBox(height: 6),
             Text(
               'password_hint_min_6'.tr,
-              style: AppFonts.tajawal(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
+              style: AppFonts.tajawal(fontSize: AppTextSize.xs, color: AppColors.textSecondary, height: 1.3),
             ),
             const SizedBox(height: 14),
             Obx(
@@ -415,7 +415,10 @@ class _RegisterStepBody extends GetView<AuthController> {
               ),
             ),
             const SizedBox(height: 16),
-            Text('gender'.tr, style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 14)),
+            Text(
+              'gender'.tr,
+              style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: AppTextSize.md),
+            ),
             const SizedBox(height: 8),
             Obx(
               () => Wrap(
@@ -440,7 +443,10 @@ class _RegisterStepBody extends GetView<AuthController> {
             ),
             if (_fieldError('gender') != null) ...[
               const SizedBox(height: 6),
-              Text(_fieldError('gender')!, style: AppFonts.tajawal(color: AppColors.dangerText, fontSize: 12)),
+              Text(
+                _fieldError('gender')!,
+                style: AppFonts.tajawal(color: AppColors.dangerText, fontSize: AppTextSize.xs),
+              ),
             ],
             const SizedBox(height: 16),
             Obx(
@@ -473,11 +479,11 @@ class _RegisterStepBody extends GetView<AuthController> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: Text(
                 'role_student'.tr,
-                style: AppFonts.tajawal(fontWeight: FontWeight.w800, color: AppColors.primary),
+                style: AppFonts.tajawal(fontWeight: FontWeight.w800, color: AppColors.primaryInk),
               ),
             ),
             const SizedBox(height: 16),
@@ -487,7 +493,10 @@ class _RegisterStepBody extends GetView<AuthController> {
                   enabled: true,
                   child: Container(
                     height: 56,
-                    decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(
+                      color: AppColors.indicatorFill,
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
                   ),
                 );
               }
@@ -552,7 +561,7 @@ class _RegisterStepBody extends GetView<AuthController> {
                         height: 56,
                         decoration: BoxDecoration(
                           color: AppColors.indicatorFill,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
                         ),
                       ),
                     )
@@ -578,7 +587,7 @@ class _RegisterStepBody extends GetView<AuthController> {
                         height: 56,
                         decoration: BoxDecoration(
                           color: AppColors.indicatorFill,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
                         ),
                       ),
                     )
@@ -614,7 +623,7 @@ class _RegisterStepBody extends GetView<AuthController> {
             const SizedBox(height: 14),
             Text(
               'register_after_note'.tr,
-              style: AppFonts.tajawal(color: AppColors.textSecondary, height: 1.45, fontSize: 13),
+              style: AppFonts.tajawal(color: AppColors.textSecondary, height: 1.45, fontSize: AppTextSize.sm),
             ),
           ],
         );

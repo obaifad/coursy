@@ -11,10 +11,7 @@ void main() {
             header: const SizedBox(height: 220, child: Center(child: Text('HEADER'))),
             pinned: pinned,
             slivers: [
-              SliverList.builder(
-                itemCount: 60,
-                itemBuilder: (_, i) => SizedBox(height: 80, child: Text('row $i')),
-              ),
+              SliverList.builder(itemCount: 60, itemBuilder: (_, i) => SizedBox(height: 80, child: Text('row $i'))),
             ],
           ),
         ),

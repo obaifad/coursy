@@ -77,7 +77,7 @@ class HomeView extends GetView<HomeController> {
                     padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 10, 10),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
                       border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
                     ),
                     child: Row(
@@ -88,7 +88,7 @@ class HomeView extends GetView<HomeController> {
                           child: Text(
                             controller.errorMessage.value!,
                             style: const TextStyle(
-                              fontSize: 13,
+                              fontSize: AppTextSize.sm,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textBody,
                             ),
@@ -98,15 +98,15 @@ class HomeView extends GetView<HomeController> {
                         OutlinedButton(
                           onPressed: () => controller.loadHome(forceRefresh: true, refreshStatic: true),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primary,
+                            foregroundColor: AppColors.primaryInk,
                             side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
                             minimumSize: const Size(0, 40),
                             padding: const EdgeInsets.symmetric(horizontal: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
                           ),
                           child: Text(
                             'retry_action'.tr,
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm),
                           ),
                         ),
                       ],
@@ -409,7 +409,7 @@ class _CityCardState extends State<_CityCard> {
           child: Container(
             width: _CityCard.width,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(AppRadius.md),
               gradient: LinearGradient(
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
@@ -438,7 +438,7 @@ class _CityCardState extends State<_CityCard> {
                         style: AppFonts.tajawal(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
-                          fontSize: 16,
+                          fontSize: AppTextSize.lg,
                           height: 1.2,
                         ),
                       ),
@@ -450,8 +450,8 @@ class _CityCardState extends State<_CityCard> {
                           overflow: TextOverflow.ellipsis,
                           style: AppFonts.tajawal(
                             color: Colors.white.withValues(alpha: 0.9),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                            fontSize: AppTextSize.xs,
                           ),
                         ),
                       ],
@@ -483,11 +483,16 @@ class _CategoryCountBadge extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadius.full),
       ),
       child: Text(
         '$count',
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary, height: 1),
+        style: const TextStyle(
+          fontSize: AppTextSize.xs,
+          fontWeight: FontWeight.w700,
+          color: AppColors.primaryInk,
+          height: 1,
+        ),
       ),
     );
   }
@@ -528,13 +533,13 @@ class _InstructorSubjectChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: Container(
         height: _kSubjectChipHeight,
         padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 14, 0),
         decoration: BoxDecoration(
           color: AppColors.surfaceSoft,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           boxShadow: const [BoxShadow(color: AppColors.shadowSoft, blurRadius: 8, offset: Offset(0, 4))],
         ),
         child: Row(
@@ -549,7 +554,7 @@ class _InstructorSubjectChip extends StatelessWidget {
                 subject.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm),
               ),
             ),
             if (subject.instructorsCount > 0) ...[
@@ -603,17 +608,17 @@ class _HomeHeroBanner extends StatelessWidget {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final compact = screenWidth < 380;
     final horizontalPad = compact ? 16.0 : 20.0;
-    final titleSize = compact ? 17.0 : 19.0;
-    final subtitleSize = compact ? 12.5 : 13.5;
+    final titleSize = compact ? AppTextSize.xl : AppTextSize.xxl;
+    final subtitleSize = compact ? AppTextSize.sm : AppTextSize.md;
     final contentMaxWidth = screenWidth - (horizontalPad * 2);
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         boxShadow: const [BoxShadow(color: AppColors.shadowPurple, blurRadius: 20, offset: Offset(0, 12))],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: SizedBox(
           width: double.infinity,
           child: Stack(
@@ -635,7 +640,7 @@ class _HomeHeroBanner extends StatelessWidget {
                         child: DecoratedBox(
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(AppRadius.full),
                             border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
                           ),
                           child: Padding(
@@ -653,7 +658,7 @@ class _HomeHeroBanner extends StatelessWidget {
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w700,
-                                      fontSize: 12,
+                                      fontSize: AppTextSize.xs,
                                       height: 1.25,
                                     ),
                                   ),
@@ -697,9 +702,9 @@ class _HomeHeroBanner extends StatelessWidget {
                           backgroundColor: Colors.white.withValues(alpha: 0.12),
                           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
                           minimumSize: const Size(0, 44),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
                           // textStyle يستبدل نمط الزر بالكامل — لذا الخط صريح وإلا يظهر بخط النظام.
-                          textStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13),
+                          textStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm),
                         ),
                         child: Text('hero_cta'.tr),
                       ),

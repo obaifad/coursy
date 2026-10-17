@@ -88,10 +88,12 @@ void main() {
     final (_, repo) = await _setup(loggedIn: true);
     repo.gate = Completer<void>();
     await tester.pumpWidget(
-      _app(const Row(mainAxisSize: MainAxisSize.min, children: [
-        CourseFavoriteButton(courseId: 7),
-        CourseFavoriteButton(courseId: 7),
-      ])),
+      _app(
+        const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [CourseFavoriteButton(courseId: 7), CourseFavoriteButton(courseId: 7)],
+        ),
+      ),
     );
 
     await tester.tap(_heart.first);
@@ -125,7 +127,14 @@ void main() {
       final course = sampleCourses().first;
       for (final width in [150.0, 170.0, 270.0]) {
         await tester.pumpWidget(
-          _app(SizedBox(width: width, height: 420, child: CourseCard(course: course)), locale: locale),
+          _app(
+            SizedBox(
+              width: width,
+              height: 420,
+              child: CourseCard(course: course),
+            ),
+            locale: locale,
+          ),
         );
         await tester.pump();
 
@@ -175,7 +184,9 @@ class _FailingFavorites extends FavoritesRepository {
   _FailingFavorites(super.client, super.resolver);
 
   @override
-  Future<List<FavoriteModel>> fetchMine() async => [FavoriteModel.fromJson({'id': 1, 'course_id': 1})];
+  Future<List<FavoriteModel>> fetchMine() async => [
+    FavoriteModel.fromJson({'id': 1, 'course_id': 1}),
+  ];
 
   @override
   Future<void> removeFavorite(int favoriteId, {int? courseId}) async => throw Exception('offline');

@@ -73,7 +73,9 @@ void main() {
   testWidgets('a course without ratings says "No ratings yet" instead of empty stars', (tester) async {
     Widget card(CourseModel course) => MaterialApp(
       home: Scaffold(
-        body: Center(child: SizedBox(width: 170, child: CourseCard(course: course))),
+        body: Center(
+          child: SizedBox(width: 170, child: CourseCard(course: course)),
+        ),
       ),
     );
 

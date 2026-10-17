@@ -21,6 +21,7 @@ import '../controllers/course_details_controller.dart';
 import '../../../core/locale/plural.dart';
 import '../../../theme/app_motion.dart';
 
+import '../../../theme/app_fonts.dart';
 part 'course_details/header_widgets.dart';
 part 'course_details/info_tabs.dart';
 part 'course_details/reviews_tab.dart';
@@ -162,11 +163,7 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
             controller: _scrollController,
             physics: const ClampingScrollPhysics(),
             slivers: [
-              _buildCourseHeroSliver(
-                context: context,
-                item: item,
-                showTitleInBar: _showTitleInBar,
-              ),
+              _buildCourseHeroSliver(context: context, item: item, showTitleInBar: _showTitleInBar),
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _CourseTabBarHeaderDelegate(tabController: _tabController),
@@ -285,7 +282,7 @@ SliverAppBar _buildCourseHeroSliver({
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: MediaQuery.sizeOf(context).width < 480 ? 22 : 26,
+                      fontSize: MediaQuery.sizeOf(context).width < 480 ? AppTextSize.xxl : AppTextSize.display,
                       fontWeight: FontWeight.w800,
                       height: 1.2,
                       shadows: const [Shadow(color: Colors.black45, blurRadius: 8)],
@@ -297,7 +294,7 @@ SliverAppBar _buildCourseHeroSliver({
                   item.institute,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  style: const TextStyle(color: Colors.white70, fontSize: AppTextSize.md),
                 ),
                 const SizedBox(height: 14),
                 Row(
@@ -313,7 +310,10 @@ SliverAppBar _buildCourseHeroSliver({
                     ] else ...[
                       const Icon(Icons.star_outline_rounded, color: Colors.white70, size: 18),
                       const SizedBox(width: 4),
-                      Text('no_ratings_yet'.tr, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
+                      Text(
+                        'no_ratings_yet'.tr,
+                        style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
+                      ),
                       const SizedBox(width: 16),
                     ],
                     const Icon(Icons.people_alt_outlined, color: Colors.white70, size: 18),

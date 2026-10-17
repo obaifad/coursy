@@ -36,6 +36,12 @@ class ProfileController extends GetxController with LatestLoadGuard {
   final isSaving = false.obs;
   final listsLoading = false.obs;
   final hasChanges = false.obs;
+
+  /// عدد الحقول التي تغيّرت عن آخر نسخة محفوظة (الصورة حقل واحد) — لشريط الحفظ السفلي.
+  final pendingChangesCount = 0.obs;
+
+  /// البريد كما يرسله الخادم — للعرض فقط في قسم الحساب.
+  final email = RxnString();
   final saveSucceeded = false.obs;
   final pickedAvatarPath = RxnString();
   final avatarUrl = RxnString();
@@ -51,7 +57,7 @@ class ProfileController extends GetxController with LatestLoadGuard {
   final selectedSpecializationId = RxnInt();
   final selectedCategoryIds = <int>[].obs;
 
-  String? _editFormBaselineKey;
+  List<String>? _editFormBaseline;
   final avatarDirty = false.obs;
 
   static const educationLevels = ['High School', 'Diploma', 'Bachelor', 'Master', 'PhD'];
@@ -163,6 +169,8 @@ class ProfileController extends GetxController with LatestLoadGuard {
     firstNameController.text = user['first_name']?.toString() ?? '';
     lastNameController.text = user['last_name']?.toString() ?? '';
     phoneController.text = user['phone']?.toString() ?? '';
+    final mail = user['email']?.toString().trim() ?? '';
+    email.value = mail.isEmpty ? null : mail;
     selectedGender.value = user['gender']?.toString();
     if (user['city_id'] != null) {
       selectedCityId.value = int.tryParse(user['city_id'].toString());
@@ -227,11 +235,12 @@ class ProfileController extends GetxController with LatestLoadGuard {
 
   void captureEditBaseline() {
     saveSucceeded.value = false;
-    _editFormBaselineKey = _formSnapshotKey();
+    _editFormBaseline = _formSnapshot();
     _recomputeHasChanges();
   }
 
-  String _formSnapshotKey() {
+  /// قيمة كل حقل قابل للتعديل بترتيب ثابت — يُقارن عنصراً بعنصر لعدّ التغييرات.
+  List<String> _formSnapshot() {
     final categoryIds = [...selectedCategoryIds]..sort();
     return [
       firstNameController.text.trim(),
@@ -243,15 +252,20 @@ class ProfileController extends GetxController with LatestLoadGuard {
       '${selectedUniversityId.value ?? ''}',
       '${selectedSpecializationId.value ?? ''}',
       categoryIds.join(','),
-    ].join('|');
+    ];
   }
 
   void _recomputeHasChanges() {
-    if (_editFormBaselineKey == null) {
-      hasChanges.value = avatarDirty.value;
-      return;
+    final baseline = _editFormBaseline;
+    var count = avatarDirty.value ? 1 : 0;
+    if (baseline != null) {
+      final current = _formSnapshot();
+      for (var i = 0; i < current.length; i++) {
+        if (current[i] != baseline[i]) count++;
+      }
     }
-    hasChanges.value = _formSnapshotKey() != _editFormBaselineKey || avatarDirty.value;
+    pendingChangesCount.value = count;
+    hasChanges.value = count > 0;
   }
 
   Future<void> pickAvatar() async {
@@ -390,11 +404,11 @@ class ProfileController extends GetxController with LatestLoadGuard {
       'profile_saved'.tr,
       'profile_changes_saved'.tr,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppColors.primary,
+      backgroundColor: AppColors.primaryStrong,
       colorText: Colors.white,
       icon: const Icon(Icons.check_circle_rounded, color: Colors.white),
       margin: const EdgeInsets.all(16),
-      borderRadius: 16,
+      borderRadius: AppRadius.md,
       duration: const Duration(seconds: 3),
     );
   }
@@ -426,7 +440,7 @@ class ProfileController extends GetxController with LatestLoadGuard {
 
   void clearForLogout() {
     _cachedProfileUser = null;
-    _editFormBaselineKey = null;
+    _editFormBaseline = null;
     firstNameController.clear();
     lastNameController.clear();
     phoneController.clear();
@@ -434,6 +448,8 @@ class ProfileController extends GetxController with LatestLoadGuard {
     pickedAvatarPath.value = null;
     avatarDirty.value = false;
     hasChanges.value = false;
+    pendingChangesCount.value = 0;
+    email.value = null;
     saveSucceeded.value = false;
     selectedCityId.value = null;
     selectedGender.value = null;

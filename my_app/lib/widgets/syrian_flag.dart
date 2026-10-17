@@ -2,10 +2,12 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 /// علم الجمهورية العربية السورية الجديد: أخضر / أبيض / أسود وثلاث نجوم حمراء على الشريط الأبيض.
 /// يُرسم برمجياً لأن إيموجي 🇸🇾 يظهر بالعلم القديم على كثير من الأجهزة (يتبع خط النظام).
 class SyrianFlag extends StatelessWidget {
-  const SyrianFlag({super.key, this.width = 36, this.borderRadius = 4});
+  const SyrianFlag({super.key, this.width = 36, this.borderRadius = AppRadius.xs});
 
   final double width;
   final double borderRadius;

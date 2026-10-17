@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_fonts.dart';
 import 'design_system.dart';
 
 class AppHomeSkeleton extends StatelessWidget {
@@ -33,12 +34,12 @@ class AppHomeSkeleton extends StatelessWidget {
           const SizedBox(height: 10),
           Container(
             height: 50,
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.md)),
           ),
           const SizedBox(height: 22),
           Container(
             height: 168,
-            decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(22)),
+            decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(AppRadius.lg)),
           ),
           const SizedBox(height: 22),
           const _SkeletonSectionHeader(),
@@ -52,7 +53,7 @@ class AppHomeSkeleton extends StatelessWidget {
               itemBuilder: (_, __) => Container(
                 width: 116,
                 height: 44,
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.md)),
               ),
             ),
           ),
@@ -86,10 +87,13 @@ class AppHomeSkeleton extends StatelessWidget {
 }
 
 class AppGridSkeleton extends StatelessWidget {
-  const AppGridSkeleton({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16)});
+  const AppGridSkeleton({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16), this.poster = false});
 
   final int itemCount;
   final EdgeInsetsGeometry padding;
+
+  /// هيكل بطاقات «الملصق» ([CoursePosterCard]) بدل بطاقة التذكرة.
+  final bool poster;
 
   @override
   Widget build(BuildContext context) {
@@ -99,8 +103,8 @@ class AppGridSkeleton extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: padding,
         itemCount: itemCount,
-        gridDelegate: AppGridLayouts.courseGridFor(context),
-        itemBuilder: (_, __) => const _SkeletonCourseCard(),
+        gridDelegate: poster ? AppGridLayouts.posterGridFor(context) : AppGridLayouts.courseGridFor(context),
+        itemBuilder: (_, __) => poster ? const _SkeletonPosterCard() : const _SkeletonCourseCard(),
       ),
     );
   }
@@ -108,7 +112,60 @@ class AppGridSkeleton extends StatelessWidget {
 
 /// نفس [AppGridSkeleton] لكن كـ sliver، داخل CustomScrollView لصفحة يتحرك هيدرها مع المحتوى.
 class AppSliverGridSkeleton extends StatelessWidget {
-  const AppSliverGridSkeleton({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16)});
+  const AppSliverGridSkeleton({
+    super.key,
+    this.itemCount = 6,
+    this.padding = const EdgeInsets.all(16),
+    this.poster = false,
+  });
+
+  final int itemCount;
+  final EdgeInsetsGeometry padding;
+
+  /// هيكل بطاقات «الملصق» ([CoursePosterCard]) بدل بطاقة التذكرة.
+  final bool poster;
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer.sliver(
+      enabled: true,
+      child: SliverPadding(
+        padding: padding,
+        sliver: SliverGrid.builder(
+          itemCount: itemCount,
+          gridDelegate: poster ? AppGridLayouts.posterGridFor(context) : AppGridLayouts.courseGridFor(context),
+          itemBuilder: (_, __) => poster ? const _SkeletonPosterCard() : const _SkeletonCourseCard(),
+        ),
+      ),
+    );
+  }
+}
+
+/// هيكل قوائم البطاقات الصفّية ([AppRowCard]) — نفس الارتفاع والصورة في جهة البداية.
+class AppRowListSkeleton extends StatelessWidget {
+  const AppRowListSkeleton({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16)});
+
+  final int itemCount;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer(
+      enabled: true,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: padding,
+        itemCount: itemCount,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (_, __) => const _SkeletonRowCard(),
+      ),
+    );
+  }
+}
+
+/// نفس [AppRowListSkeleton] كـ sliver، داخل CustomScrollView برأس ينطوي.
+class AppSliverRowListSkeleton extends StatelessWidget {
+  const AppSliverRowListSkeleton({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16)});
 
   final int itemCount;
   final EdgeInsetsGeometry padding;
@@ -119,10 +176,10 @@ class AppSliverGridSkeleton extends StatelessWidget {
       enabled: true,
       child: SliverPadding(
         padding: padding,
-        sliver: SliverGrid.builder(
+        sliver: SliverList.separated(
           itemCount: itemCount,
-          gridDelegate: AppGridLayouts.courseGridFor(context),
-          itemBuilder: (_, __) => const _SkeletonCourseCard(),
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (_, __) => const _SkeletonRowCard(),
         ),
       ),
     );
@@ -206,7 +263,10 @@ class CourseDetailsSkeleton extends StatelessWidget {
                         const SizedBox(height: 12),
                         Container(
                           height: 48,
-                          decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(16)),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                          ),
                         ),
                       ],
                     ),
@@ -225,7 +285,7 @@ class CourseDetailsSkeleton extends StatelessWidget {
                         height: 34,
                         decoration: BoxDecoration(
                           color: AppColors.indicatorFill,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
                         ),
                       ),
                     ),
@@ -248,7 +308,7 @@ class CourseDetailsSkeleton extends StatelessWidget {
                         (_) => Container(
                           decoration: BoxDecoration(
                             color: AppColors.indicatorFill,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
                           ),
                         ),
                       ),
@@ -268,7 +328,7 @@ class CourseDetailsSkeleton extends StatelessWidget {
                           height: 10,
                           decoration: BoxDecoration(
                             color: AppColors.indicatorFill,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(AppRadius.xs),
                           ),
                         ),
                       ],
@@ -279,7 +339,10 @@ class CourseDetailsSkeleton extends StatelessWidget {
                 Container(
                   height: 48,
                   margin: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(
+                    color: AppColors.indicatorFill,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
                 ),
               ],
             ),
@@ -323,7 +386,10 @@ class _SkeletonCourseCard extends StatelessWidget {
                 Container(
                   height: layout.imageHeight,
                   width: double.infinity,
-                  decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(16)),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
                 ),
                 SizedBox(height: layout.gapAfterImage),
                 SizedBox(
@@ -338,7 +404,7 @@ class _SkeletonCourseCard extends StatelessWidget {
                   height: layout.subtitleHeight,
                   child: const Align(
                     alignment: AlignmentDirectional.centerStart,
-                    child: Text('Institute name', style: TextStyle(fontSize: 13)),
+                    child: Text('Institute name', style: TextStyle(fontSize: AppTextSize.sm)),
                   ),
                 ),
                 Expanded(
@@ -356,17 +422,17 @@ class _SkeletonCourseCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
                                 color: AppColors.indicatorFill,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(AppRadius.sm),
                               ),
-                              child: const Text('Online', style: TextStyle(fontSize: 11)),
+                              child: const Text('Online', style: TextStyle(fontSize: AppTextSize.xs)),
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
                                 color: AppColors.indicatorFill,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(AppRadius.sm),
                               ),
-                              child: const Text('24h', style: TextStyle(fontSize: 11)),
+                              child: const Text('24h', style: TextStyle(fontSize: AppTextSize.xs)),
                             ),
                           ],
                         ),
@@ -379,14 +445,20 @@ class _SkeletonCourseCard extends StatelessWidget {
                           children: [
                             const Align(
                               alignment: AlignmentDirectional.centerStart,
-                              child: Text('350000', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900)),
+                              child: Text(
+                                '350000',
+                                style: TextStyle(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700),
+                              ),
                             ),
                             Align(
                               alignment: AlignmentDirectional.centerEnd,
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: const [
-                                  Text('4.8', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+                                  Text(
+                                    '4.8',
+                                    style: TextStyle(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700),
+                                  ),
                                   SizedBox(width: 3),
                                   Icon(Icons.star_rounded, size: 16, color: AppColors.ratingStar),
                                 ],
@@ -407,6 +479,92 @@ class _SkeletonCourseCard extends StatelessWidget {
   }
 }
 
+class _SkeletonPosterCard extends StatelessWidget {
+  const _SkeletonPosterCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final spec = CourseCardMetrics.posterSpec(constraints.maxWidth);
+        return DecoratedBox(
+          decoration: const BoxDecoration(color: AppColors.card, borderRadius: AppCorners.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Expanded(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.md)),
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: spec.stripHeight,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: CoursePosterSpec.padding),
+                  child: Row(
+                    children: [
+                      Text(
+                        '350,000',
+                        style: TextStyle(fontSize: AppTextSize.lg, fontWeight: FontWeight.w800),
+                      ),
+                      Spacer(),
+                      Text('4.8', style: TextStyle(fontSize: AppTextSize.sm)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SkeletonRowCard extends StatelessWidget {
+  const _SkeletonRowCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: AppCorners.md,
+        border: Border.all(color: AppColors.borderNeutral),
+      ),
+      child: const Padding(
+        padding: EdgeInsets.all(AppRowCard.padding),
+        child: Row(
+          children: [
+            SizedBox.square(
+              dimension: AppRowCard.thumbSize,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: AppColors.primary, borderRadius: AppCorners.sm),
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Course title placeholder text', style: TextStyle(fontSize: AppTextSize.lg)),
+                  SizedBox(height: 6),
+                  Text('Institute name', style: TextStyle(fontSize: AppTextSize.sm)),
+                  SizedBox(height: 20),
+                  Text('12 weeks · 350,000', style: TextStyle(fontSize: AppTextSize.sm)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SkeletonInstituteMiniCard extends StatelessWidget {
   const _SkeletonInstituteMiniCard();
 
@@ -421,7 +579,7 @@ class _SkeletonInstituteMiniCard extends StatelessWidget {
             height: 88,
             decoration: const BoxDecoration(
               color: AppColors.primary,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.md)),
             ),
           ),
           const Padding(padding: EdgeInsets.all(12), child: _SkeletonTextBlock(width: 150)),
@@ -442,7 +600,7 @@ class _SkeletonListTile extends StatelessWidget {
           Container(
             width: 72,
             height: 72,
-            decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(AppRadius.md)),
           ),
           const SizedBox(width: 14),
           const Expanded(child: _SkeletonTextBlock(width: 180)),

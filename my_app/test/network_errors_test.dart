@@ -19,8 +19,11 @@ import 'package:my_app/modules/search/controllers/search_controller.dart';
 import 'layout/fakes.dart';
 import 'layout/sample_data.dart';
 
-Response<dynamic> _response(int status, dynamic data) =>
-    Response<dynamic>(requestOptions: RequestOptions(path: '/x'), statusCode: status, data: data);
+Response<dynamic> _response(int status, dynamic data) => Response<dynamic>(
+  requestOptions: RequestOptions(path: '/x'),
+  statusCode: status,
+  data: data,
+);
 
 /// عميل يرجع صفحة واحدة بعنصر واحد بينما «total» يقول 5.
 class _ShortPagesClient extends ApiClient {

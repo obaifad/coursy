@@ -57,7 +57,7 @@ class AppFloatingSheetFrame extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: AppColors.card,
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               boxShadow: const [
                 BoxShadow(color: AppColors.shadowPrimary, blurRadius: 32, offset: Offset(0, 10)),
                 BoxShadow(color: AppColors.shadowNeutralSoft, blurRadius: 6, offset: Offset(0, 2)),
@@ -75,7 +75,7 @@ class AppFloatingSheetFrame extends StatelessWidget {
                       height: 4,
                       decoration: BoxDecoration(
                         color: AppColors.primary.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(2),
+                        borderRadius: BorderRadius.circular(AppRadius.full),
                       ),
                     ),
                   ),
@@ -91,7 +91,7 @@ class AppFloatingSheetFrame extends StatelessWidget {
                           child: Text(
                             title!,
                             style: AppFonts.tajawal(
-                              fontSize: 18,
+                              fontSize: AppTextSize.xl,
                               fontWeight: FontWeight.w800,
                               color: AppColors.textPrimary,
                             ),
@@ -274,7 +274,7 @@ class AppSelectableTile extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOut,
@@ -284,7 +284,7 @@ class AppSelectableTile extends StatelessWidget {
                 color: selected
                     ? AppColors.primary.withValues(alpha: 0.09)
                     : AppColors.surfaceSoft.withValues(alpha: 0.55),
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(
                   color: selected ? AppColors.primary.withValues(alpha: 0.4) : Colors.transparent,
                   width: 1.2,
@@ -299,7 +299,7 @@ class AppSelectableTile extends StatelessWidget {
                         height: 38,
                         decoration: BoxDecoration(
                           color: selected ? AppColors.primary : AppColors.primary.withValues(alpha: 0.10),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
                         ),
                         child: Icon(icon, size: 20, color: selected ? Colors.white : AppColors.primary),
                       ),
@@ -312,16 +312,20 @@ class AppSelectableTile extends StatelessWidget {
                         Text(
                           label,
                           style: AppFonts.tajawal(
-                            fontSize: 15,
+                            fontSize: AppTextSize.lg,
                             fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
-                            color: selected ? AppColors.primary : AppColors.textPrimary,
+                            color: selected ? AppColors.primaryInk : AppColors.textPrimary,
                           ),
                         ),
                         if (subtitle != null) ...[
                           const SizedBox(height: 2),
                           Text(
                             subtitle!,
-                            style: AppFonts.tajawal(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
+                            style: AppFonts.tajawal(
+                              fontSize: AppTextSize.xs,
+                              color: AppColors.textSecondary,
+                              height: 1.3,
+                            ),
                           ),
                         ],
                       ],

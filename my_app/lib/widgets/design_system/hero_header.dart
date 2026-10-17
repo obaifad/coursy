@@ -24,7 +24,7 @@ class AppHeroHeader extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppRadius.lg)),
         child: DecoratedBox(
           decoration: const BoxDecoration(gradient: AppGradients.heroBanner),
           child: Stack(
@@ -73,12 +73,16 @@ class AppHeroHeader extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(AppRadius.full),
                             border: Border.all(color: Colors.white24),
                           ),
                           child: Text(
                             badge ?? ' ',
-                            style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
+                            style: AppFonts.tajawal(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: AppTextSize.xs,
+                            ),
                           ),
                         ),
                       ),
@@ -90,7 +94,7 @@ class AppHeroHeader extends StatelessWidget {
                         style: AppFonts.tajawal(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
-                          fontSize: compact ? 22 : 24,
+                          fontSize: compact ? AppTextSize.xxl : AppTextSize.display,
                           height: 1.2,
                         ),
                       ),
@@ -102,7 +106,7 @@ class AppHeroHeader extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: AppFonts.tajawal(
                             color: Colors.white.withValues(alpha: 0.88),
-                            fontSize: 13,
+                            fontSize: AppTextSize.sm,
                             fontWeight: FontWeight.w500,
                           ),
                         ),

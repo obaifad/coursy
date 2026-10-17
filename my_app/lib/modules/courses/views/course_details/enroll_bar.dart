@@ -48,11 +48,11 @@ class _StickyEnrollBar extends StatelessWidget {
                           foregroundColor: AppColors.warningText,
                           side: const BorderSide(color: AppColors.warningBorder),
                           backgroundColor: AppColors.warningSoft,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
                         ),
                         child: Text(
                           'registration_closed_action'.tr,
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.md),
                         ),
                       )
                     : RegisterGradientButton(
@@ -81,7 +81,12 @@ class _StickyStrikethroughPrice extends StatelessWidget {
       label,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700, height: 1.2),
+      style: const TextStyle(
+        color: AppColors.textSecondary,
+        fontSize: AppTextSize.xs,
+        fontWeight: FontWeight.w500,
+        height: 1.2,
+      ),
     );
 
     return Stack(
@@ -112,7 +117,7 @@ class _StickyPriceColumn extends StatelessWidget {
       children: [
         if (item.hasDiscount && item.originalPriceLabel != null)
           _StickyStrikethroughPrice(label: item.originalPriceLabel!),
-        CoursePriceText(price: item.price, amountSize: 20, currencySize: 12),
+        CoursePriceText(price: item.price, amountSize: AppTextSize.xxl, currencySize: AppTextSize.xs),
       ],
     );
   }

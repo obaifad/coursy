@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/assets/app_assets.dart';
 
+import '../../../theme/app_fonts.dart';
+
 /// أنيميشن شعار Coursy: حلقة تُرسم بخط مضيء، أيقونات تعلّم تدور وتنجذب للمركز،
 /// موجة ضوء ثم يظهر الشعار ويمرّ عليه لمعان واحد.
 ///
@@ -42,7 +44,12 @@ class _SplashLogoAnimationState extends State<SplashLogoAnimation> {
         TextPainter(
           text: TextSpan(
             text: String.fromCharCode(icon.codePoint),
-            style: TextStyle(fontSize: 22, fontFamily: icon.fontFamily, package: icon.fontPackage, color: Colors.white),
+            style: TextStyle(
+              fontSize: AppTextSize.xxl,
+              fontFamily: icon.fontFamily,
+              package: icon.fontPackage,
+              color: Colors.white,
+            ),
           ),
           textDirection: TextDirection.ltr,
         )..layout(),

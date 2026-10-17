@@ -5,7 +5,7 @@ abstract final class CourseCardMetrics {
   CourseCardMetrics._();
 
   static const double gridSpacing = 12;
-  static const double cardRadius = 18;
+  static const double cardRadius = AppRadius.md;
 
   /// معامل تكبير الخط الفعلي (إعداد الجهاز محصور بين 1.0 و1.3 في app.dart).
   /// ارتفاعات أسطر النص في البطاقة تُضرب به — وإلا تتداخل النصوص عند تكبير الخط.
@@ -38,11 +38,21 @@ abstract final class CourseCardMetrics {
       imageHeight: ((width - CourseTicketSpec.inset * 2) / 1.7).clamp(80.0, 150.0),
       padding: compact ? 10 : 12,
       categoryHeight: 16 * s,
-      titleSize: compact ? 13 : 14.5,
+      titleSize: compact ? AppTextSize.sm : AppTextSize.lg,
       titleHeight: (compact ? 34 : 38) * s,
       instituteHeight: 16 * s,
       ratingHeight: 16 * s,
       footerHeight: (compact ? 62 : 42) * s,
+    );
+  }
+
+  /// مقاسات بطاقة «الملصق» (شبكة كل الدورات وصفحات التصنيف) لعرض [width]: غلاف كامل يعلوه العنوان،
+  /// وتحته شريط أبيض للسعر والتقييم. الشريط يطول مع تكبير الخط، والغلاف ثابت لعرض البطاقة.
+  static CoursePosterSpec posterSpec(double width, {double textScale = 1}) {
+    return CoursePosterSpec(
+      compact: isCompactTile(width),
+      coverHeight: (width * 1.05).clamp(150.0, 240.0).roundToDouble(),
+      stripHeight: (20 + 22 * textScale).ceilToDouble(),
     );
   }
 
@@ -85,7 +95,7 @@ abstract final class CourseCardMetrics {
       imageHeight: spec.imageHeight,
       compact: spec.compact,
       titleSize: spec.titleSize,
-      subtitleSize: 11.5,
+      subtitleSize: AppTextSize.xs,
       titleHeight: spec.titleHeight,
       subtitleHeight: spec.instituteHeight,
       footerHeight: spec.footerHeight,
@@ -158,6 +168,20 @@ class CourseTicketSpec {
   double get notchFromBottom => bottomPadding + footerHeight + dividerHeight / 2;
 }
 
+/// مقاسات بطاقة «الملصق»: غلاف بارتفاع [coverHeight] ثم شريط السعر والتقييم.
+class CoursePosterSpec {
+  const CoursePosterSpec({required this.compact, required this.coverHeight, required this.stripHeight});
+
+  /// هامش المحتوى فوق الغلاف وداخل الشريط.
+  static const double padding = 10;
+
+  final bool compact;
+  final double coverHeight;
+  final double stripHeight;
+
+  double get totalHeight => coverHeight + stripHeight;
+}
+
 class CourseCardLayout {
   const CourseCardLayout({
     required this.cardHeight,
@@ -206,6 +230,18 @@ abstract final class AppGridLayouts {
       // هامش 2 لكسور البكسل في مقاييس الخط.
       mainAxisExtent:
           CourseCardMetrics.gridCardHeightForWidth(tileWidth, textScale: CourseCardMetrics.textScaleOf(context)) + 2,
+      crossAxisSpacing: CourseCardMetrics.gridSpacing,
+      mainAxisSpacing: CourseCardMetrics.gridSpacing,
+    );
+  }
+
+  /// شبكة بطاقات «الملصق» — نفس عدد الأعمدة والتباعد، بارتفاع الملصق.
+  static SliverGridDelegateWithFixedCrossAxisCount posterGridFor(BuildContext context) {
+    final tileWidth = CourseCardMetrics.courseGridTileWidth(context);
+    return SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: CourseCardMetrics.courseGridCrossAxisCount(context),
+      mainAxisExtent:
+          CourseCardMetrics.posterSpec(tileWidth, textScale: CourseCardMetrics.textScaleOf(context)).totalHeight + 2,
       crossAxisSpacing: CourseCardMetrics.gridSpacing,
       mainAxisSpacing: CourseCardMetrics.gridSpacing,
     );

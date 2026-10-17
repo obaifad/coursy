@@ -10,6 +10,8 @@ import '../../../widgets/design_system.dart';
 import '../../../theme/app_motion.dart';
 import '../../auth/widgets/register_form_widgets.dart';
 
+import '../../../theme/app_fonts.dart';
+
 class OnboardingView extends StatefulWidget {
   const OnboardingView({super.key});
 
@@ -75,7 +77,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                               height: 240,
                               decoration: BoxDecoration(
                                 gradient: AppGradients.primary,
-                                borderRadius: BorderRadius.circular(32),
+                                borderRadius: BorderRadius.circular(AppRadius.lg),
                                 boxShadow: const [
                                   BoxShadow(color: AppColors.shadowPurple, blurRadius: 24, offset: Offset(0, 14)),
                                 ],
@@ -92,7 +94,11 @@ class _OnboardingViewState extends State<OnboardingView> {
                             Text(
                               _pageSubtitleKeys[i].tr,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(color: AppColors.textSecondary, height: 1.45, fontSize: 15),
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                height: 1.45,
+                                fontSize: AppTextSize.lg,
+                              ),
                             ),
                           ],
                         ),
@@ -111,7 +117,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                       height: 8,
                       decoration: BoxDecoration(
                         color: dot == index ? AppColors.primary : Colors.black26,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(AppRadius.xs),
                       ),
                     ),
                   ),

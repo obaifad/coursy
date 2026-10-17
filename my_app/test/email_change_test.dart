@@ -82,7 +82,8 @@ void main() {
           home: Scaffold(
             body: Builder(
               builder: (context) => TextButton(
-                onPressed: () => result = showChangeEmailSheet(context, initialEmail: 'old@example.com', onSubmit: onSubmit),
+                onPressed: () =>
+                    result = showChangeEmailSheet(context, initialEmail: 'old@example.com', onSubmit: onSubmit),
                 child: const Text('open'),
               ),
             ),

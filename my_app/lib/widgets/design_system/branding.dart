@@ -34,7 +34,7 @@ class AppLogo extends StatelessWidget {
         'Coursy',
         style: AppTypography.tabScreenTitle().copyWith(
           color: onDark ? Colors.white : AppColors.primary,
-          fontSize: height * 0.55,
+          fontSize: AppTextSize.snap(height * 0.55),
         ),
       ),
     );
@@ -49,7 +49,7 @@ class AppLogo extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: height * 0.28, vertical: height * 0.18),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           boxShadow: const [BoxShadow(color: Color(0x40000000), blurRadius: 20, offset: Offset(0, 10))],
         ),
         child: logo,
@@ -86,14 +86,14 @@ class AppHomeSearchBar extends StatelessWidget {
       color: AppColors.surfaceSoft,
       elevation: 0,
       shadowColor: Colors.transparent,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Ink(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(color: AppColors.primary.withValues(alpha: 0.14)),
             boxShadow: [
               BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4)),
@@ -108,7 +108,11 @@ class AppHomeSearchBar extends StatelessWidget {
                   hint,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
+                  style: AppFonts.tajawal(
+                    fontSize: AppTextSize.md,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
               Icon(Icons.tune_rounded, size: 18, color: AppColors.textSecondary.withValues(alpha: 0.65)),
@@ -168,7 +172,7 @@ class CategoryHeaderBanner extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
       decoration: const BoxDecoration(
         gradient: AppGradients.primary,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppRadius.lg)),
       ),
       child: Row(
         children: [
@@ -177,11 +181,11 @@ class CategoryHeaderBanner extends StatelessWidget {
             height: 64,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(AppRadius.md),
               boxShadow: const [BoxShadow(color: AppColors.shadowPurple, blurRadius: 12)],
             ),
             clipBehavior: Clip.antiAlias,
-            child: CategoryIcon(category: category, size: 64, borderRadius: BorderRadius.circular(18)),
+            child: CategoryIcon(category: category, size: 64, borderRadius: BorderRadius.circular(AppRadius.md)),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -192,18 +196,18 @@ class CategoryHeaderBanner extends StatelessWidget {
                   category.name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: AppTextSize.xl),
                 ),
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                   child: Text(
                     pluralTr('category_courses_count', count),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: AppTextSize.sm),
                   ),
                 ),
               ],

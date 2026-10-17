@@ -17,14 +17,14 @@ class _OverviewTab extends StatelessWidget {
           const SizedBox(height: 16),
           _SectionCard(
             title: 'about_course'.tr,
-            child: Text(item.description!.trim(), style: const TextStyle(height: 1.55, fontSize: 15)),
+            child: Text(item.description!.trim(), style: const TextStyle(height: 1.55, fontSize: AppTextSize.lg)),
           ),
         ],
         if (_hasText(item.requirements)) ...[
           const SizedBox(height: 16),
           _SectionCard(
             title: 'course_requirements'.tr,
-            child: Text(item.requirements!.trim(), style: const TextStyle(height: 1.55, fontSize: 15)),
+            child: Text(item.requirements!.trim(), style: const TextStyle(height: 1.55, fontSize: AppTextSize.lg)),
           ),
         ],
         if (item.institute.isNotEmpty) ...[const SizedBox(height: 16), _InstituteCard(item: item)],
@@ -72,7 +72,7 @@ class _ScheduleTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(AppRadius.sm)),
       child: Row(
         children: [
           Container(
@@ -80,7 +80,7 @@ class _ScheduleTile extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: const Icon(Icons.calendar_month_rounded, color: AppColors.primary),
           ),
@@ -93,7 +93,7 @@ class _ScheduleTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '${schedule.startTime} - ${schedule.endTime}',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.sm),
                 ),
               ],
             ),
@@ -130,11 +130,14 @@ class _InstructorTab extends StatelessWidget {
             children: [
               _InstructorAvatar(instructor: instructor),
               const SizedBox(height: 16),
-              Text(instructor.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
+              Text(
+                instructor.name,
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.xxl),
+              ),
               const SizedBox(height: 6),
               Text(
                 instructor.specializationLabel ?? 'instructor_default'.tr,
-                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
+                style: const TextStyle(color: AppColors.primaryInk, fontWeight: FontWeight.w700),
               ),
               if (instructor.experienceYears > 0) ...[
                 const SizedBox(height: 4),
@@ -209,7 +212,7 @@ class _InstituteCard extends StatelessWidget {
     return SoftCard(
       padding: const EdgeInsets.all(16),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         onTap: item.instituteId != null
             ? () => Get.toNamed(AppRoutes.instituteDetails, arguments: item.instituteId)
             : null,
@@ -225,7 +228,7 @@ class _InstituteCard extends StatelessWidget {
                   height: 48,
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                   child: const Icon(Icons.school_rounded, color: AppColors.primary),
                 ),

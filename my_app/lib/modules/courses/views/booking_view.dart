@@ -7,6 +7,8 @@ import '../../../widgets/app_widgets.dart';
 import '../controllers/booking_controller.dart';
 import '../../auth/widgets/register_form_widgets.dart';
 
+import '../../../theme/app_fonts.dart';
+
 class CourseBookingView extends GetView<BookingController> {
   const CourseBookingView({super.key});
 
@@ -36,7 +38,7 @@ class CourseBookingView extends GetView<BookingController> {
                   ],
                 ),
                 const SizedBox(height: 14),
-                CoursePriceText(price: c.price, amountSize: 22, currencySize: 13),
+                CoursePriceText(price: c.price, amountSize: AppTextSize.xxl, currencySize: AppTextSize.sm),
               ],
             ),
           ),
@@ -81,13 +83,16 @@ class _InfoChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(AppRadius.sm)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 16, color: AppColors.primary),
           const SizedBox(width: 6),
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+          Text(
+            label,
+            style: const TextStyle(fontSize: AppTextSize.xs, fontWeight: FontWeight.w700),
+          ),
         ],
       ),
     );
