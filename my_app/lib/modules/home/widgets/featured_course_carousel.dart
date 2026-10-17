@@ -8,17 +8,11 @@ import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_fonts.dart';
 import '../../../widgets/app_widgets.dart';
-import '../../../widgets/design_system.dart';
 
-/// تدرّج البانر من ألوان الهوية نفسها ([AppColors]): الأغمق عند النص (لتباين الأبيض) والأفتح عند الصورة.
-const _bannerGradient = LinearGradient(
-  colors: [AppColors.primary, AppColors.primaryLight],
-  begin: AlignmentDirectional.centerStart,
-  end: AlignmentDirectional.centerEnd,
-);
-
-/// بانر الدورات المميزة في الرئيسية: شرائح أفقية بحواف الجيران ظاهرة، تمرير تلقائي كل [interval]،
-/// يتوقف عند لمس البطاقة ويستأنف بعد رفع الإصبع، ومؤشر نقاط في الأسفل (بلا أسهم).
+/// بانر الدورات المميزة في الرئيسية — «البطاقات العائمة» (المقترح A): صورة الدورة تملأ بطاقة مرتفعة،
+/// شارة وخصم فوقها، ولوح أبيض في أسفلها فيه العنوان والمعهد والمدة وزر حجز دائري. البطاقات الجانبية
+/// أصغر (92%) وباهتة، وخلف الحالية توهّج بلون تصنيفها. تمرير تلقائي كل [interval] يتوقف عند اللمس،
+/// ومؤشر كبسولة تنزلق بين النقاط.
 class FeaturedCourseCarousel extends StatefulWidget {
   const FeaturedCourseCarousel({
     super.key,
@@ -34,11 +28,17 @@ class FeaturedCourseCarousel extends StatefulWidget {
   final Duration interval;
 
   static const _transition = Duration(milliseconds: 700);
-  static const _viewportFraction = 0.88;
-  static const _cardHeight = 210.0;
-  static const _pagePadH = 5.0;
-  static const _pagePadTop = 4.0;
-  static const _pagePadBottom = 16.0;
+  static const _viewportFraction = 0.84;
+  static const _cardHeight = 214.0;
+
+  /// فراغ 8px بين البطاقات (4 من كل جهة)، ومساحة فوقها وتحتها لظلّها.
+  static const _pagePadH = 4.0;
+  static const _pagePadTop = 10.0;
+  static const _pagePadBottom = 20.0;
+
+  /// البطاقات الجانبية: حجمها وشفافيتها عند ابتعادها شريحة كاملة عن المنتصف.
+  static const _sideScale = 0.92;
+  static const _sideOpacity = 0.55;
 
   @override
   State<FeaturedCourseCarousel> createState() => _FeaturedCourseCarouselState();
@@ -102,10 +102,28 @@ class _FeaturedCourseCarouselState extends State<FeaturedCourseCarousel> {
     _timer = Timer.periodic(widget.interval, (_) => _advance());
   }
 
+  int get _currentPage => (_controller.page ?? _controller.initialPage.toDouble()).round();
+
   void _advance() {
     if (!mounted || _held || !_controller.hasClients) return;
-    final current = (_controller.page ?? _controller.initialPage.toDouble()).round();
-    _controller.animateToPage(current + 1, duration: FeaturedCourseCarousel._transition, curve: Curves.easeInOutCubic);
+    _controller.animateToPage(
+      _currentPage + 1,
+      duration: FeaturedCourseCarousel._transition,
+      curve: Curves.easeInOutCubic,
+    );
+  }
+
+  /// نقطة المؤشر: أقصر طريق إلى تلك الشريحة من الصفحة الحالية (القائمة لا نهائية).
+  void _goTo(int index) {
+    if (!_controller.hasClients) return;
+    final current = _currentPage;
+    final delta = index - current % _count;
+    _controller.animateToPage(
+      current + delta,
+      duration: FeaturedCourseCarousel._transition,
+      curve: Curves.easeInOutCubic,
+    );
+    _restartTimer();
   }
 
   void _hold() {
@@ -141,74 +159,123 @@ class _FeaturedCourseCarouselState extends State<FeaturedCourseCarousel> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Listener لا يدخل في تنافس الإيماءات: يرى اللمس دون أن يعطّل التمرير أو الضغط.
-        Listener(
-          onPointerDown: (_) => _hold(),
-          onPointerUp: (_) => _release(),
-          onPointerCancel: (_) => _release(),
-          child: SizedBox(
-            height: pageHeight,
-            child: PageView.builder(
-              controller: _controller,
-              itemCount: _count > 1 ? null : 1,
-              clipBehavior: Clip.none,
-              onPageChanged: (page) => _index.value = page % _count,
-              itemBuilder: (context, page) {
-                final course = courses[page % _count];
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    FeaturedCourseCarousel._pagePadH,
-                    FeaturedCourseCarousel._pagePadTop,
-                    FeaturedCourseCarousel._pagePadH,
-                    FeaturedCourseCarousel._pagePadBottom,
-                  ),
-                  child: _CourseBannerCard(key: ValueKey<int>(course.id), course: course, onOpen: () => _open(course)),
-                );
-              },
-            ),
+        SizedBox(
+          height: pageHeight,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // التوهّج خلف البطاقة الحالية بلون تصنيفها — ظل كبير بلا فلتر تمويه (أرخص داخل PageView).
+              Positioned(
+                left: MediaQuery.sizeOf(context).width * 0.14,
+                right: MediaQuery.sizeOf(context).width * 0.14,
+                top: FeaturedCourseCarousel._pagePadTop + cardHeight * 0.25,
+                height: cardHeight * 0.65,
+                child: ValueListenableBuilder<int>(
+                  valueListenable: _index,
+                  builder: (context, i, _) => _Glow(color: _slideColor(courses[i % _count])),
+                ),
+              ),
+              // Listener لا يدخل في تنافس الإيماءات: يرى اللمس دون أن يعطّل التمرير أو الضغط.
+              Listener(
+                onPointerDown: (_) => _hold(),
+                onPointerUp: (_) => _release(),
+                onPointerCancel: (_) => _release(),
+                child: PageView.builder(
+                  controller: _controller,
+                  itemCount: _count > 1 ? null : 1,
+                  clipBehavior: Clip.none,
+                  onPageChanged: (page) => _index.value = page % _count,
+                  itemBuilder: (context, page) {
+                    final course = courses[page % _count];
+                    return _SideSlide(
+                      controller: _controller,
+                      page: page,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          FeaturedCourseCarousel._pagePadH,
+                          FeaturedCourseCarousel._pagePadTop,
+                          FeaturedCourseCarousel._pagePadH,
+                          FeaturedCourseCarousel._pagePadBottom,
+                        ),
+                        child: _FloatingCard(
+                          key: ValueKey<int>(course.id),
+                          course: course,
+                          onOpen: () => _open(course),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
-        if (_count > 1) _DotsIndicator(count: _count, index: _index),
+        if (_count > 1) _PillIndicator(count: _count, index: _index, onSelect: _goTo),
       ],
     );
   }
 }
 
-class _DotsIndicator extends StatelessWidget {
-  const _DotsIndicator({required this.count, required this.index});
+/// لون الشريحة من تصنيف الدورة (خريطة صغيرة في التطبيق — بلا تغيير في الخادم).
+Color _slideColor(CourseModel course) {
+  final name = (course.categoryName ?? '').toLowerCase();
+  bool has(List<String> words) => words.any(name.contains);
+  if (has(['تصم', 'design'])) return const Color(0xFFEC4899);
+  if (has(['أعمال', 'business', 'تسويق', 'marketing'])) return const Color(0xFF0EA5E9);
+  if (has(['لغ', 'language'])) return const Color(0xFF14B8A6);
+  if (has(['مال', 'financ', 'account'])) return const Color(0xFFF59E0B);
+  if (has(['عمار', 'هندس', 'architect', 'engineer'])) return const Color(0xFFF97316);
+  return AppColors.primaryStrong;
+}
 
-  final int count;
-  final ValueNotifier<int> index;
+/// يصغّر البطاقة ويبهتها كلما ابتعدت عن المنتصف (92% و55% عند شريحة كاملة)، من موضع التمرير نفسه.
+class _SideSlide extends StatelessWidget {
+  const _SideSlide({required this.controller, required this.page, required this.child});
+
+  final PageController controller;
+  final int page;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return ExcludeSemantics(
-      child: ValueListenableBuilder<int>(
-        valueListenable: index,
-        builder: (context, current, _) => Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            for (var i = 0; i < count; i++)
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeOutCubic,
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                width: i == current ? 22 : 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  color: i == current ? AppColors.primary : AppColors.indicatorFill,
-                  borderRadius: BorderRadius.circular(AppRadius.full),
-                ),
-              ),
-          ],
+    return AnimatedBuilder(
+      animation: controller,
+      child: child,
+      builder: (context, child) {
+        final position = controller.hasClients && controller.position.haveDimensions
+            ? controller.page ?? page.toDouble()
+            : controller.initialPage.toDouble();
+        final t = (position - page).abs().clamp(0.0, 1.0);
+        return Opacity(
+          opacity: 1 - (1 - FeaturedCourseCarousel._sideOpacity) * t,
+          child: Transform.scale(scale: 1 - (1 - FeaturedCourseCarousel._sideScale) * t, child: child),
+        );
+      },
+    );
+  }
+}
+
+class _Glow extends StatelessWidget {
+  const _Glow({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 600),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.full),
+          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.55), blurRadius: 60)],
         ),
       ),
     );
   }
 }
 
-class _CourseBannerCard extends StatelessWidget {
-  const _CourseBannerCard({super.key, required this.course, required this.onOpen});
+class _FloatingCard extends StatelessWidget {
+  const _FloatingCard({super.key, required this.course, required this.onOpen});
 
   final CourseModel course;
   final VoidCallback onOpen;
@@ -216,196 +283,59 @@ class _CourseBannerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(AppRadius.lg);
+    final percent = course.discountPercent;
+    final badge = course.isFeatured ? 'featured_course'.tr : (course.categoryName?.trim() ?? '');
+
     return Semantics(
       button: true,
       label: course.title,
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: radius,
-          boxShadow: const [BoxShadow(color: AppColors.shadowPrimary, blurRadius: 18, offset: Offset(0, 8))],
+          boxShadow: const [
+            BoxShadow(color: Color(0x73111827), blurRadius: 28, spreadRadius: -14, offset: Offset(0, 18)),
+            BoxShadow(color: Color(0x14111827), blurRadius: 6, offset: Offset(0, 2)),
+          ],
         ),
         child: ClipRRect(
           borderRadius: radius,
           child: Material(
-            color: Colors.transparent,
-            child: Ink(
-              decoration: const BoxDecoration(gradient: _bannerGradient),
-              child: InkWell(
-                onTap: onOpen,
-                child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 16, 16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(
-                        flex: 55,
-                        child: _TextSide(course: course, onOpen: onOpen),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(flex: 45, child: _ImageSide(course: course)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TextSide extends StatelessWidget {
-  const _TextSide({required this.course, required this.onOpen});
-
-  final CourseModel course;
-  final VoidCallback onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final duration = course.duration;
-    final instructor = course.instructor?.name.trim() ?? '';
-    // سطران كحد أقصى: المعهد والمدة، والمدرّس بديل لأيٍّ منهما إن غاب.
-    final meta = <(IconData, String)>[
-      if (course.institute.trim().isNotEmpty) (Icons.apartment_rounded, course.institute.trim()),
-      if (duration != '—') (Icons.schedule_rounded, duration),
-      if (instructor.isNotEmpty) (Icons.person_outline_rounded, instructor),
-    ].take(2);
-    final badge = course.isFeatured ? 'featured_course'.tr : (course.categoryName?.trim() ?? '');
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _GlassBadge(label: badge.isEmpty ? 'featured_course'.tr : badge),
-        const SizedBox(height: 10),
-        Text(
-          course.title,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: AppFonts.tajawal(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-            fontSize: AppTextSize.xl,
-            height: 1.35,
-          ),
-        ),
-        const SizedBox(height: 8),
-        for (final (icon, text) in meta) _MetaRow(icon: icon, text: text),
-        const Spacer(),
-        _PrimaryButton(label: 'book_now'.tr, onTap: onOpen),
-      ],
-    );
-  }
-}
-
-/// كبسولة زجاجية شبه شفافة — بلا BackdropFilter (الخلفية تدرّج ناعم، والضبابية مكلفة داخل PageView).
-class _GlassBadge extends StatelessWidget {
-  const _GlassBadge({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(AppRadius.full),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.bolt_rounded, color: Colors.white, size: 14),
-            const SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: AppTextSize.xs),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MetaRow extends StatelessWidget {
-  const _MetaRow({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.9)),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              text,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppFonts.tajawal(
-                color: Colors.white.withValues(alpha: 0.92),
-                fontWeight: FontWeight.w500,
-                fontSize: AppTextSize.xs,
-                height: 1.3,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PrimaryButton extends StatelessWidget {
-  const _PrimaryButton({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.full),
-        boxShadow: const [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 10, offset: Offset(0, 4))],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.full),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
-            // يصغّر المحتوى بدل أن يفيض على الشاشات الضيقة أو مع خط كبير.
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+            color: AppColors.card,
+            child: InkWell(
+              onTap: onOpen,
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  Text(
-                    label,
-                    maxLines: 1,
-                    style: AppFonts.tajawal(
-                      color: AppColors.primaryDark,
-                      fontWeight: FontWeight.w700,
-                      fontSize: AppTextSize.sm,
+                  _Cover(course: course),
+                  // تعتيم خفيف أعلى الصورة: الشارة البيضاء تُقرأ فوق أي صورة فاتحة.
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment(0, -0.2),
+                        colors: [Color(0x59000000), Color(0x00000000)],
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  // arrow_forward ينعكس تلقائياً في العربية فيشير لليسار.
-                  const Icon(Icons.arrow_forward_rounded, color: AppColors.primaryDark, size: 16),
+                  PositionedDirectional(
+                    top: 12,
+                    start: 12,
+                    end: 12,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Flexible(child: _DarkBadge(label: badge.isEmpty ? 'featured_course'.tr : badge)),
+                        const Spacer(),
+                        if (percent != null) ...[const SizedBox(width: 8), _DiscountPill(percent: percent)],
+                      ],
+                    ),
+                  ),
+                  PositionedDirectional(
+                    start: 10,
+                    end: 10,
+                    bottom: 10,
+                    child: _InfoPanel(course: course, onOpen: onOpen),
+                  ),
                 ],
               ),
             ),
@@ -416,87 +346,78 @@ class _PrimaryButton extends StatelessWidget {
   }
 }
 
-/// صورة الدورة (أو المدرّس) داخل إطار مستدير ناعم، ووسم الخصم على زاويتها العليا.
-class _ImageSide extends StatelessWidget {
-  const _ImageSide({required this.course});
+/// صورة الدورة (أو المدرّس) بعرض البطاقة كله؛ بلا صورة: تدرّج بلون التصنيف وأيقونته.
+class _Cover extends StatelessWidget {
+  const _Cover({required this.course});
 
   final CourseModel course;
 
   @override
   Widget build(BuildContext context) {
     final imageUrl = course.resolvedImageUrl ?? course.instructor?.resolvedImageUrl;
-    final percent = course.discountPercent;
-    final fallback = _ImageFallback(label: course.categoryName);
-
+    final fallback = _CoverFallback(course: course);
     return RepaintBoundary(
-      child: Center(
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned.fill(
-                child: Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(AppRadius.full),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
-                    boxShadow: [BoxShadow(color: Colors.white.withValues(alpha: 0.18), blurRadius: 16)],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    child: imageUrl == null
-                        ? fallback
-                        : AppNetworkImage(url: imageUrl, ignorePointer: true, errorWidget: fallback),
-                  ),
-                ),
-              ),
-              if (percent != null) PositionedDirectional(top: -6, start: -6, child: _DiscountTag(percent: percent)),
-            ],
-          ),
+      child: imageUrl == null
+          ? fallback
+          : AppNetworkImage(url: imageUrl, fit: BoxFit.cover, ignorePointer: true, errorWidget: fallback),
+    );
+  }
+}
+
+class _CoverFallback extends StatelessWidget {
+  const _CoverFallback({required this.course});
+
+  final CourseModel course;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _slideColor(course);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: AlignmentDirectional.topStart,
+          end: AlignmentDirectional.bottomEnd,
+          colors: [color, Color.lerp(color, AppColors.primaryStrong, 0.55)!],
         ),
+      ),
+      // الأيقونة في الجزء العلوي الظاهر فوق اللوح الأبيض.
+      child: Align(
+        alignment: const Alignment(0, -0.35),
+        child: Icon(courseCategoryIcon(course.categoryName, rounded: true), color: Colors.white, size: 52),
       ),
     );
   }
 }
 
-/// بلا صورة: مربع متدرّج من ألوان الهوية مع شارة دورة صغيرة واسم التصنيف.
-class _ImageFallback extends StatelessWidget {
-  const _ImageFallback({this.label});
+class _DarkBadge extends StatelessWidget {
+  const _DarkBadge({required this.label});
 
-  final String? label;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    final text = label?.trim() ?? '';
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: AppGradients.primary),
-      child: Center(
-        child: Column(
+      decoration: BoxDecoration(color: const Color(0x8C111827), borderRadius: BorderRadius.circular(AppRadius.full)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
-              child: const Icon(Icons.auto_stories_rounded, color: Colors.white, size: 24),
-            ),
-            if (text.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
-                  text,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: AppTextSize.xs),
+            const Icon(Icons.bolt_rounded, color: Colors.white, size: 14),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppFonts.tajawal(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: AppTextSize.xs,
+                  height: 1.2,
                 ),
               ),
-            ],
+            ),
           ],
         ),
       ),
@@ -504,69 +425,198 @@ class _ImageFallback extends StatelessWidget {
   }
 }
 
-/// وسم الخصم العائم: كهرماني بنص داكن، بطيّة صغيرة تحت حافته الخارجية كأنه ملتف حول الإطار.
-class _DiscountTag extends StatelessWidget {
-  const _DiscountTag({required this.percent});
+class _DiscountPill extends StatelessWidget {
+  const _DiscountPill({required this.percent});
 
   final int percent;
 
-  static const _fill = [Color(0xFFFFE08A), Color(0xFFFFC14D)];
-  static const _fold = Color(0xFFD99A2B);
-  static const _text = Color(0xFF5A3300);
-
   @override
   Widget build(BuildContext context) {
-    final direction = Directionality.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: _fill),
-            borderRadius: const BorderRadiusDirectional.only(
-              topStart: Radius.circular(AppRadius.xs),
-              topEnd: Radius.circular(AppRadius.xs),
-              bottomEnd: Radius.circular(AppRadius.xs),
-            ).resolve(direction),
-            boxShadow: const [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 8, offset: Offset(0, 3))],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            child: Text(
-              'banner_discount'.trParams({'percent': '$percent'}),
-              maxLines: 1,
-              style: AppFonts.tajawal(color: _text, fontWeight: FontWeight.w700, fontSize: AppTextSize.xs),
-            ),
+    return DecoratedBox(
+      decoration: BoxDecoration(color: const Color(0xFFFFC94D), borderRadius: BorderRadius.circular(AppRadius.full)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        child: Text(
+          'banner_discount'.trParams({'percent': '$percent'}),
+          maxLines: 1,
+          style: AppFonts.tajawal(
+            color: const Color(0xFF4A2A00),
+            fontWeight: FontWeight.w800,
+            fontSize: AppTextSize.xs,
+            height: 1.2,
           ),
         ),
-        CustomPaint(size: const Size(6, 6), painter: _FoldPainter(_fold, direction)),
-      ],
+      ),
     );
   }
 }
 
-/// مثلث الطيّة تحت الطرف الخارجي (start) للوسم.
-class _FoldPainter extends CustomPainter {
-  _FoldPainter(this.color, this.direction);
+/// اللوح السفلي: أبيض شبه معتم (92%) بدل الزجاج المموّه — التمويه مكلف داخل PageView على الهواتف الضعيفة.
+class _InfoPanel extends StatelessWidget {
+  const _InfoPanel({required this.course, required this.onOpen});
 
-  final Color color;
-  final TextDirection direction;
+  final CourseModel course;
+  final VoidCallback onOpen;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final path = Path()
-      ..moveTo(0, 0)
-      ..lineTo(size.width, 0);
-    if (direction == TextDirection.rtl) {
-      path.lineTo(size.width, size.height);
-    } else {
-      path.lineTo(0, size.height);
-    }
-    canvas.drawPath(path..close(), Paint()..color = color);
+  Widget build(BuildContext context) {
+    final duration = course.duration;
+    final sub = [course.institute.trim(), if (duration != '—') duration].where((s) => s.isNotEmpty).join(' · ');
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        boxShadow: const [BoxShadow(color: Color(0x1F111827), blurRadius: 16, offset: Offset(0, 6))],
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 12, 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    course.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.tajawal(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: AppTextSize.lg,
+                      height: 1.3,
+                    ),
+                  ),
+                  if (sub.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      sub,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.tajawal(
+                        color: const Color(0xFF585669),
+                        fontWeight: FontWeight.w500,
+                        fontSize: AppTextSize.xs,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            _GoButton(onTap: onOpen),
+          ],
+        ),
+      ),
+    );
   }
+}
+
+class _GoButton extends StatelessWidget {
+  const _GoButton({required this.onTap});
+
+  final VoidCallback onTap;
 
   @override
-  bool shouldRepaint(covariant _FoldPainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.direction != direction;
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'book_now'.tr,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [BoxShadow(color: Color(0x595B52F0), blurRadius: 12, offset: Offset(0, 6))],
+        ),
+        child: Material(
+          color: AppColors.primaryStrong,
+          shape: const CircleBorder(),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: onTap,
+            // arrow_forward ينعكس تلقائياً في العربية فيشير لليسار.
+            child: const SizedBox.square(
+              dimension: 44,
+              child: Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 22),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// نقاط رمادية وكبسولة بنفسجية تنزلق فوق النقطة الحالية (بارتداد خفيف)، وتنعكس في العربية.
+/// كل نقطة تنقل إلى شريحتها، بمساحة لمس أوسع من النقطة نفسها.
+class _PillIndicator extends StatelessWidget {
+  const _PillIndicator({required this.count, required this.index, required this.onSelect});
+
+  final int count;
+  final ValueNotifier<int> index;
+  final ValueChanged<int> onSelect;
+
+  static const _dot = 8.0;
+  static const _gap = 14.0;
+  static const _pill = 22.0;
+  static const _pitch = _dot + _gap;
+
+  @override
+  Widget build(BuildContext context) {
+    final width = count * _dot + (count - 1) * _gap;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: SizedBox(
+        width: width,
+        height: _dot,
+        child: ValueListenableBuilder<int>(
+          valueListenable: index,
+          builder: (context, current, _) => Stack(
+            clipBehavior: Clip.none,
+            children: [
+              for (var i = 0; i < count; i++)
+                PositionedDirectional(
+                  key: ValueKey('carousel-dot-$i'),
+                  start: i * _pitch - 8,
+                  top: -8,
+                  child: Semantics(
+                    button: true,
+                    selected: i == current,
+                    label: '${i + 1} / $count',
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => onSelect(i),
+                      child: const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(color: Color(0x2E111827), shape: BoxShape.circle),
+                          child: SizedBox.square(dimension: _dot),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              AnimatedPositionedDirectional(
+                key: const ValueKey('carousel-pill'),
+                duration: const Duration(milliseconds: 400),
+                curve: const Cubic(0.34, 1.3, 0.5, 1),
+                start: current * _pitch - (_pill - _dot) / 2,
+                top: 0,
+                width: _pill,
+                height: _dot,
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryStrong,
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

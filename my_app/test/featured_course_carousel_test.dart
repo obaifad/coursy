@@ -79,7 +79,7 @@ void main() {
     await tester.pumpWidget(_host(courses, onOpen: (c) => opened.add(c.id)));
     final shown = _centeredCourseId(tester);
 
-    await tester.tap(find.text('book_now').hitTestable().first);
+    await tester.tap(find.byTooltip('book_now').hitTestable().first);
     await tester.pump();
     await tester.tapAt(tester.getCenter(find.byType(FeaturedCourseCarousel)) + const Offset(0, -40));
     await tester.pump();
@@ -87,20 +87,38 @@ void main() {
     expect(opened, [shown, shown]);
   });
 
-  testWidgets('a single course shows no dots and never auto-scrolls', (tester) async {
+  testWidgets('a single course shows no indicator and never auto-scrolls', (tester) async {
     await tester.pumpWidget(_host([_course(7)]));
 
-    expect(find.byType(AnimatedContainer), findsNothing);
+    expect(find.byKey(const ValueKey('carousel-pill')), findsNothing);
     await tester.pump(const Duration(seconds: 12));
     expect(_centeredCourseId(tester), 7);
   });
 
-  testWidgets('shows one dot per course and nothing for an empty list', (tester) async {
+  testWidgets('shows one dot per course, one sliding pill, and nothing for an empty list', (tester) async {
     await tester.pumpWidget(_host(courses));
-    expect(find.byType(AnimatedContainer), findsNWidgets(3));
+    for (var i = 0; i < 3; i++) {
+      expect(find.byKey(ValueKey('carousel-dot-$i')), findsOneWidget);
+    }
+    expect(find.byKey(const ValueKey('carousel-pill')), findsOneWidget);
 
     await tester.pumpWidget(_host(const []));
     expect(find.byType(PageView), findsNothing);
+  });
+
+  testWidgets('tapping a dot slides to that course and moves the pill over it', (tester) async {
+    await tester.pumpWidget(_host(courses));
+    final pill = find.byKey(const ValueKey('carousel-pill'));
+    final before = tester.getCenter(pill).dx;
+    final first = _centeredCourseId(tester);
+
+    await tester.tap(find.byKey(const ValueKey('carousel-dot-2')));
+    await tester.pumpAndSettle();
+
+    expect(_centeredCourseId(tester), isNot(first));
+    final dot = tester.getCenter(find.byKey(const ValueKey('carousel-dot-2'))).dx;
+    expect(tester.getCenter(pill).dx, closeTo(dot, 1));
+    expect(tester.getCenter(pill).dx, isNot(closeTo(before, 1)));
   });
 
   testWidgets('renders the audit sample courses (long titles, discount) without overflow', (tester) async {
