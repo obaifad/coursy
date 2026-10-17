@@ -5,7 +5,7 @@ abstract final class CourseCardMetrics {
   CourseCardMetrics._();
 
   static const double gridSpacing = 12;
-  static const double cardRadius = 18;
+  static const double cardRadius = AppRadius.md;
 
   /// معامل تكبير الخط الفعلي (إعداد الجهاز محصور بين 1.0 و1.3 في app.dart).
   /// ارتفاعات أسطر النص في البطاقة تُضرب به — وإلا تتداخل النصوص عند تكبير الخط.
@@ -38,7 +38,7 @@ abstract final class CourseCardMetrics {
       imageHeight: ((width - CourseTicketSpec.inset * 2) / 1.7).clamp(80.0, 150.0),
       padding: compact ? 10 : 12,
       categoryHeight: 16 * s,
-      titleSize: compact ? 13 : 14.5,
+      titleSize: compact ? AppTextSize.sm : AppTextSize.lg,
       titleHeight: (compact ? 34 : 38) * s,
       instituteHeight: 16 * s,
       ratingHeight: 16 * s,
@@ -95,7 +95,7 @@ abstract final class CourseCardMetrics {
       imageHeight: spec.imageHeight,
       compact: spec.compact,
       titleSize: spec.titleSize,
-      subtitleSize: 11.5,
+      subtitleSize: AppTextSize.xs,
       titleHeight: spec.titleHeight,
       subtitleHeight: spec.instituteHeight,
       footerHeight: spec.footerHeight,

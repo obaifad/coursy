@@ -8,6 +8,8 @@ import '../core/models/json_helpers.dart';
 import '../core/responsive/responsive.dart';
 import '../theme/app_colors.dart';
 
+import '../theme/app_fonts.dart';
+
 /// نافذة منبثقة عند انتهاء فترة التسجيل في الدورة.
 class RegistrationClosedDialog extends StatelessWidget {
   const RegistrationClosedDialog({super.key, required this.course});
@@ -37,7 +39,7 @@ class RegistrationClosedDialog extends StatelessWidget {
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: ResponsiveModals.dialogMaxWidth(context)),
         child: SingleChildScrollView(
@@ -56,7 +58,7 @@ class RegistrationClosedDialog extends StatelessWidget {
                 Text(
                   'registration_closed_title'.tr,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, height: 1.25),
+                  style: const TextStyle(fontSize: AppTextSize.xxl, fontWeight: FontWeight.w800, height: 1.25),
                 ),
                 const SizedBox(height: 10),
                 Text(
@@ -64,7 +66,7 @@ class RegistrationClosedDialog extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: AppColors.textSecondary,
-                    fontSize: 14,
+                    fontSize: AppTextSize.md,
                     height: 1.55,
                     fontWeight: FontWeight.w500,
                   ),
@@ -75,7 +77,7 @@ class RegistrationClosedDialog extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: AppColors.warningSoft,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
                       border: Border.all(color: AppColors.warningBorder),
                     ),
                     child: Row(
@@ -89,7 +91,7 @@ class RegistrationClosedDialog extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 12,
+                              fontSize: AppTextSize.xs,
                               fontWeight: FontWeight.w700,
                               color: AppColors.warningText,
                             ),
@@ -105,7 +107,7 @@ class RegistrationClosedDialog extends StatelessWidget {
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceSoft,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                     border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
                   ),
                   child: Column(
@@ -114,8 +116,8 @@ class RegistrationClosedDialog extends StatelessWidget {
                       Text(
                         'registration_closed_institute_label'.tr,
                         style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                          fontSize: AppTextSize.xs,
+                          fontWeight: FontWeight.w500,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -124,16 +126,16 @@ class RegistrationClosedDialog extends StatelessWidget {
                         course.institute,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                        style: const TextStyle(fontSize: AppTextSize.lg, fontWeight: FontWeight.w800),
                       ),
                       if (contact != null) ...[
                         const SizedBox(height: 12),
                         Material(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
                           child: InkWell(
                             onTap: () => _callInstitute(contact),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               child: Row(
@@ -143,7 +145,7 @@ class RegistrationClosedDialog extends StatelessWidget {
                                     height: 36,
                                     decoration: BoxDecoration(
                                       color: AppColors.primary.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(AppRadius.xs),
                                     ),
                                     child: const Icon(Icons.phone_in_talk_rounded, color: AppColors.primary, size: 20),
                                   ),
@@ -155,18 +157,18 @@ class RegistrationClosedDialog extends StatelessWidget {
                                         Text(
                                           'registration_closed_phone_label'.tr,
                                           style: const TextStyle(
-                                            fontSize: 11,
+                                            fontSize: AppTextSize.xs,
                                             color: AppColors.textSecondary,
-                                            fontWeight: FontWeight.w700,
+                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
                                           contact,
                                           style: const TextStyle(
-                                            fontSize: 15,
+                                            fontSize: AppTextSize.lg,
                                             fontWeight: FontWeight.w800,
-                                            color: AppColors.primary,
+                                            color: AppColors.primaryInk,
                                           ),
                                         ),
                                       ],
@@ -182,7 +184,7 @@ class RegistrationClosedDialog extends StatelessWidget {
                         const SizedBox(height: 10),
                         Text(
                           'registration_closed_no_phone'.tr,
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4),
+                          style: const TextStyle(fontSize: AppTextSize.xs, color: AppColors.textSecondary, height: 1.4),
                         ),
                       ],
                     ],
@@ -196,7 +198,7 @@ class RegistrationClosedDialog extends StatelessWidget {
                         onPressed: () => Get.back<void>(),
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size.fromHeight(48),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
                         ),
                         child: Text('cancel'.tr),
                       ),
@@ -210,8 +212,8 @@ class RegistrationClosedDialog extends StatelessWidget {
                           label: Text('registration_closed_call'.tr),
                           style: FilledButton.styleFrom(
                             minimumSize: const Size.fromHeight(48),
-                            backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            backgroundColor: AppColors.primaryStrong,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
                           ),
                         ),
                       ),

@@ -104,7 +104,7 @@ class CategoryCoursesView extends GetView<CategoryCoursesController> {
                             return OutlinedButton.icon(
                               onPressed: loadingMore ? null : controller.loadMore,
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.primary,
+                                foregroundColor: AppColors.primaryInk,
                                 side: BorderSide(color: AppColors.primary.withValues(alpha: 0.35)),
                                 shape: const StadiumBorder(),
                                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),

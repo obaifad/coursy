@@ -49,7 +49,7 @@ class ProfileView extends StatelessWidget {
             width: double.infinity,
             decoration: const BoxDecoration(
               gradient: AppGradients.primary,
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppRadius.lg)),
             ),
             child: SafeArea(
               bottom: false,
@@ -83,12 +83,20 @@ class ProfileView extends StatelessWidget {
                           if (!storage.isLoggedIn) {
                             return Text(
                               'guest_user'.tr,
-                              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: AppTextSize.xxl,
+                                fontWeight: FontWeight.w800,
+                              ),
                             );
                           }
                           return Text(
                             storage.userName.value ?? 'student'.tr,
-                            style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: AppTextSize.xxl,
+                              fontWeight: FontWeight.w800,
+                            ),
                           );
                         }),
                         const SizedBox(height: 4),
@@ -116,7 +124,7 @@ class ProfileView extends StatelessWidget {
                     padding: EdgeInsets.symmetric(horizontal: AppLayout.readableInset(context), vertical: 16),
                     decoration: const BoxDecoration(
                       color: AppColors.card,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
                       boxShadow: [BoxShadow(color: AppColors.shadowSoft, blurRadius: 16, offset: Offset(0, -4))],
                     ),
                     child: Obx(() {
@@ -797,7 +805,11 @@ class _EditProfileAvatar extends GetView<ProfileController> {
             const SizedBox(height: 10),
             Text(
               'tap_to_change_photo'.tr,
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: AppTextSize.sm,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -988,7 +1000,10 @@ class _SettingsDocumentView extends StatelessWidget {
           children: [
             SoftCard(
               padding: const EdgeInsets.all(20),
-              child: Text(body, style: AppFonts.tajawal(fontSize: 15, height: 1.65, color: AppColors.textPrimary)),
+              child: Text(
+                body,
+                style: AppFonts.tajawal(fontSize: AppTextSize.lg, height: 1.65, color: AppColors.textPrimary),
+              ),
             ),
           ],
         ),

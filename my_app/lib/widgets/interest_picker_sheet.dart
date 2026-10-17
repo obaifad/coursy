@@ -93,7 +93,10 @@ class _InterestPickerSheetBodyState extends State<_InterestPickerSheetBody> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('pick_interests'.tr, style: AppFonts.tajawal(fontSize: 13, color: AppColors.textSecondary)),
+          Text(
+            'pick_interests'.tr,
+            style: AppFonts.tajawal(fontSize: AppTextSize.sm, color: AppColors.textSecondary),
+          ),
           const SizedBox(height: 12),
           TextField(
             controller: _searchController,
@@ -102,7 +105,10 @@ class _InterestPickerSheetBodyState extends State<_InterestPickerSheetBody> {
               prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary),
               filled: true,
               fillColor: AppColors.indicatorFill,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                borderSide: BorderSide.none,
+              ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
           ),
@@ -112,7 +118,11 @@ class _InterestPickerSheetBodyState extends State<_InterestPickerSheetBody> {
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
                 pluralTr('interests_selected_count', _selected.length),
-                style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.primary),
+                style: AppFonts.tajawal(
+                  fontWeight: FontWeight.w700,
+                  fontSize: AppTextSize.sm,
+                  color: AppColors.primaryInk,
+                ),
               ),
             ),
           ConstrainedBox(
@@ -134,7 +144,11 @@ class _InterestPickerSheetBodyState extends State<_InterestPickerSheetBody> {
                       return AppSelectableTile(
                         label: category.name,
                         selected: selected,
-                        leading: CategoryIcon(category: category, size: 38, borderRadius: BorderRadius.circular(12)),
+                        leading: CategoryIcon(
+                          category: category,
+                          size: 38,
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                        ),
                         onTap: () {
                           HapticFeedback.selectionClick();
                           setState(() {

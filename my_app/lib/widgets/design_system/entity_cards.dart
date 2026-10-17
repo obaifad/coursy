@@ -61,7 +61,10 @@ class InstituteListCard extends StatelessWidget {
           ? null
           : Row(
               children: [
-                if (city.isNotEmpty) Flexible(child: AppRowMeta(icon: Icons.location_on_outlined, text: city)),
+                if (city.isNotEmpty)
+                  Flexible(
+                    child: AppRowMeta(icon: Icons.location_on_outlined, text: city),
+                  ),
                 if (institute.isVerified) ...[
                   const SizedBox(width: 6),
                   Tooltip(
@@ -126,7 +129,7 @@ class _InstituteHeroCard extends StatelessWidget {
   final InstituteModel institute;
   final VoidCallback? onTap;
 
-  static const double _radius = 18;
+  static const double _radius = AppRadius.md;
 
   static double coverHeightFor(double width) => (width * 0.5).clamp(124.0, 156.0);
 
@@ -249,7 +252,7 @@ class _InstituteHeroCover extends StatelessWidget {
                     _InstituteLogoBox(
                       imageUrl: logo,
                       size: 42,
-                      borderRadius: 12,
+                      borderRadius: AppRadius.sm,
                       border: Border.all(color: Colors.white, width: 2),
                     ),
                     const SizedBox(width: 10),
@@ -264,7 +267,7 @@ class _InstituteHeroCover extends StatelessWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: AppFonts.tajawal(
-                            fontSize: 16,
+                            fontSize: AppTextSize.lg,
                             fontWeight: FontWeight.w800,
                             height: 1.25,
                             color: Colors.white,
@@ -282,8 +285,8 @@ class _InstituteHeroCover extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: AppFonts.tajawal(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: AppTextSize.xs,
+                                    fontWeight: FontWeight.w500,
                                     color: Colors.white.withValues(alpha: 0.92),
                                   ),
                                 ),
@@ -317,7 +320,7 @@ class _InstituteHeroFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = institute.reviewsCount;
-    final meta = AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textBody);
+    final meta = AppFonts.tajawal(fontSize: AppTextSize.xs, fontWeight: FontWeight.w700, color: AppColors.textBody);
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(14, 0, 12, 0),
       child: Row(
@@ -357,15 +360,15 @@ class _InstituteHeroFooter extends StatelessWidget {
             child: FilledButton(
               onPressed: onTap,
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: AppColors.primaryStrong,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 // الثيم يعطي الأزرار عرضاً أدنى لا نهائياً — داخل صف يجب تحديده.
                 minimumSize: const Size(0, 0),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                textStyle: AppFonts.tajawal(fontSize: 12.5, fontWeight: FontWeight.w800),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+                textStyle: AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700),
               ),
               child: Text('institute_view_profile'.tr, maxLines: 1),
             ),
@@ -387,7 +390,7 @@ class _CoverChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(AppRadius.full)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
         child: Row(
@@ -398,7 +401,7 @@ class _CoverChip extends StatelessWidget {
             Text(
               label,
               maxLines: 1,
-              style: AppFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w800, color: foreground),
+              style: AppFonts.tajawal(fontSize: AppTextSize.xs, fontWeight: FontWeight.w700, color: foreground),
             ),
           ],
         ),
@@ -468,7 +471,10 @@ class PrivateInstructorListCard extends StatelessWidget {
           if (price != null)
             Flexible(
               flex: 4,
-              child: Align(alignment: AlignmentDirectional.centerEnd, child: _HourlyPrice(price: price)),
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: _HourlyPrice(price: price),
+              ),
             )
           else
             Icon(
@@ -573,7 +579,7 @@ class _TutorCardShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(16);
+    final radius = BorderRadius.circular(AppRadius.md);
     return DecoratedBox(
       decoration: BoxDecoration(color: AppColors.card, borderRadius: radius, boxShadow: AppShadows.card),
       child: Material(
@@ -594,7 +600,7 @@ abstract final class _TutorText {
       AppFonts.tajawal(fontSize: size, fontWeight: FontWeight.w800, height: 1.25, color: AppColors.textPrimary);
 
   static TextStyle specialization(double size) =>
-      AppFonts.tajawal(fontSize: size, fontWeight: FontWeight.w700, height: 1.3, color: AppColors.primary);
+      AppFonts.tajawal(fontSize: size, fontWeight: FontWeight.w700, height: 1.3, color: AppColors.primaryInk);
 }
 
 class _TutorMeta extends StatelessWidget {
@@ -615,7 +621,7 @@ class _TutorMeta extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppFonts.tajawal(
-              fontSize: 11.5,
+              fontSize: AppTextSize.xs,
               fontWeight: FontWeight.w500,
               height: 1.3,
               color: AppColors.textSecondary,
@@ -670,12 +676,12 @@ class _PrivateBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(color: AppColors.surfaceVariant, borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(color: AppColors.surfaceVariant, borderRadius: BorderRadius.circular(AppRadius.xs)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         child: Text(
           'private_instructor_badge'.tr,
-          style: AppFonts.tajawal(fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.primary),
+          style: AppFonts.tajawal(fontSize: AppTextSize.xs, fontWeight: FontWeight.w700, color: AppColors.primaryInk),
         ),
       ),
     );
@@ -686,7 +692,7 @@ class _InstituteLogoBox extends StatelessWidget {
   const _InstituteLogoBox({
     required this.imageUrl,
     required this.size,
-    this.borderRadius = 16,
+    this.borderRadius = AppRadius.md,
     this.fallbackIcon = Icons.apartment_rounded,
     this.fallbackIconSize,
     this.border,
@@ -753,7 +759,7 @@ class InstituteDetailHero extends StatelessWidget {
           child: _InstituteLogoBox(
             imageUrl: logoUrl,
             size: 88,
-            borderRadius: 44,
+            borderRadius: AppRadius.full,
             fallbackIcon: Icons.apartment_rounded,
             fallbackIconSize: 42,
             border: Border.all(color: Colors.white, width: 4),
@@ -775,9 +781,9 @@ class _InstructorAvatarBox extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), gradient: AppGradients.primary),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.md), gradient: AppGradients.primary),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: imageUrl != null
             ? AppNetworkImage(url: imageUrl!, width: size, height: size, fit: BoxFit.cover)
             : const Icon(Icons.person_rounded, color: Colors.white, size: 34),
@@ -817,7 +823,7 @@ class ProfileMenuTile extends StatelessWidget {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: destructive ? AppColors.dangerSoft : AppColors.indicatorFill,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Icon(icon, color: destructive ? AppColors.danger : AppColors.primary, size: 22),
           ),
@@ -857,7 +863,10 @@ class NotificationCard extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(
+              color: AppColors.indicatorFill,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
             child: Icon(icon, color: AppColors.primary),
           ),
           const SizedBox(width: 12),
@@ -867,7 +876,10 @@ class NotificationCard extends StatelessWidget {
               children: [
                 Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.sm),
+                ),
               ],
             ),
           ),

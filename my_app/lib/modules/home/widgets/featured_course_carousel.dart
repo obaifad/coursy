@@ -196,7 +196,7 @@ class _DotsIndicator extends StatelessWidget {
                 height: 7,
                 decoration: BoxDecoration(
                   color: i == current ? AppColors.primary : AppColors.indicatorFill,
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(AppRadius.full),
                 ),
               ),
           ],
@@ -214,7 +214,7 @@ class _CourseBannerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(22);
+    final radius = BorderRadius.circular(AppRadius.lg);
     return Semantics(
       button: true,
       label: course.title,
@@ -281,7 +281,12 @@ class _TextSide extends StatelessWidget {
           course.title,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17, height: 1.35),
+          style: AppFonts.tajawal(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            fontSize: AppTextSize.xl,
+            height: 1.35,
+          ),
         ),
         const SizedBox(height: 8),
         for (final (icon, text) in meta) _MetaRow(icon: icon, text: text),
@@ -303,7 +308,7 @@ class _GlassBadge extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.full),
         border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
       ),
       child: Padding(
@@ -318,7 +323,7 @@ class _GlassBadge extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 11.5),
+                style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: AppTextSize.xs),
               ),
             ),
           ],
@@ -350,7 +355,7 @@ class _MetaRow extends StatelessWidget {
               style: AppFonts.tajawal(
                 color: Colors.white.withValues(alpha: 0.92),
                 fontWeight: FontWeight.w500,
-                fontSize: 12,
+                fontSize: AppTextSize.xs,
                 height: 1.3,
               ),
             ),
@@ -372,14 +377,14 @@ class _PrimaryButton extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.full),
         boxShadow: const [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 10, offset: Offset(0, 4))],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppRadius.full),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
             // يصغّر المحتوى بدل أن يفيض على الشاشات الضيقة أو مع خط كبير.
@@ -391,7 +396,11 @@ class _PrimaryButton extends StatelessWidget {
                   Text(
                     label,
                     maxLines: 1,
-                    style: AppFonts.tajawal(color: AppColors.primaryDark, fontWeight: FontWeight.w800, fontSize: 13),
+                    style: AppFonts.tajawal(
+                      color: AppColors.primaryDark,
+                      fontWeight: FontWeight.w700,
+                      fontSize: AppTextSize.sm,
+                    ),
                   ),
                   const SizedBox(width: 6),
                   // arrow_forward ينعكس تلقائياً في العربية فيشير لليسار.
@@ -430,12 +439,12 @@ class _ImageSide extends StatelessWidget {
                   padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(AppRadius.full),
                     border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
                     boxShadow: [BoxShadow(color: Colors.white.withValues(alpha: 0.18), blurRadius: 16)],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                     child: imageUrl == null
                         ? fallback
                         : AppNetworkImage(url: imageUrl, ignorePointer: true, errorWidget: fallback),
@@ -471,7 +480,7 @@ class _ImageFallback extends StatelessWidget {
               height: 46,
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: const Icon(Icons.auto_stories_rounded, color: Colors.white, size: 24),
             ),
@@ -483,7 +492,7 @@ class _ImageFallback extends StatelessWidget {
                   text,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 11.5),
+                  style: AppFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w700, fontSize: AppTextSize.xs),
                 ),
               ),
             ],
@@ -515,9 +524,9 @@ class _DiscountTag extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: const LinearGradient(colors: _fill),
             borderRadius: const BorderRadiusDirectional.only(
-              topStart: Radius.circular(6),
-              topEnd: Radius.circular(10),
-              bottomEnd: Radius.circular(10),
+              topStart: Radius.circular(AppRadius.xs),
+              topEnd: Radius.circular(AppRadius.xs),
+              bottomEnd: Radius.circular(AppRadius.xs),
             ).resolve(direction),
             boxShadow: const [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 8, offset: Offset(0, 3))],
           ),
@@ -526,7 +535,7 @@ class _DiscountTag extends StatelessWidget {
             child: Text(
               'banner_discount'.trParams({'percent': '$percent'}),
               maxLines: 1,
-              style: AppFonts.tajawal(color: _text, fontWeight: FontWeight.w800, fontSize: 12),
+              style: AppFonts.tajawal(color: _text, fontWeight: FontWeight.w700, fontSize: AppTextSize.xs),
             ),
           ),
         ),

@@ -8,6 +8,8 @@ import 'app_widgets.dart';
 import 'design_system.dart';
 import '../theme/app_motion.dart';
 
+import '../theme/app_fonts.dart';
+
 class HorizontalCategoryFilters extends StatelessWidget {
   const HorizontalCategoryFilters({
     super.key,
@@ -77,7 +79,7 @@ class InstructorSpecializationFiltersPanel extends StatelessWidget {
                   width: 88,
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                 ),
               ),
@@ -144,13 +146,13 @@ class _SubjectFilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(AppRadius.full),
       child: AnimatedContainer(
         duration: AppMotion.fast,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : AppColors.surfaceSoft,
-          borderRadius: BorderRadius.circular(20),
+          color: selected ? AppColors.primaryStrong : AppColors.surfaceSoft,
+          borderRadius: BorderRadius.circular(AppRadius.full),
           boxShadow: selected
               ? const [BoxShadow(color: AppColors.shadowPrimary, blurRadius: 10, offset: Offset(0, 4))]
               : null,
@@ -161,7 +163,7 @@ class _SubjectFilterChip extends StatelessWidget {
             InstructorSubjectIcon(
               subject: subject,
               size: 16,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
               iconColor: selected ? Colors.white : AppColors.primary,
               backgroundColor: selected
                   ? Colors.white.withValues(alpha: 0.22)
@@ -172,7 +174,7 @@ class _SubjectFilterChip extends StatelessWidget {
               subject.name,
               style: TextStyle(
                 fontWeight: FontWeight.w700,
-                fontSize: 13,
+                fontSize: AppTextSize.sm,
                 color: selected ? Colors.white : AppColors.textBody,
               ),
             ),
@@ -202,13 +204,13 @@ class CourseSortDropdown extends StatelessWidget {
         Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppRadius.full),
             onTap: () => showCourseSortSheet(context: context, selected: selected, onSelected: onSelected),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
               decoration: BoxDecoration(
                 color: AppColors.surfaceSoft,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(AppRadius.full),
                 border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
               ),
               child: Row(
@@ -216,7 +218,11 @@ class CourseSortDropdown extends StatelessWidget {
                 children: [
                   Text(
                     selected.labelKey.tr,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textBody),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: AppTextSize.sm,
+                      color: AppColors.textBody,
+                    ),
                   ),
                   const SizedBox(width: 4),
                   Icon(Icons.expand_more_rounded, size: 20, color: AppColors.primary.withValues(alpha: 0.85)),
@@ -290,13 +296,13 @@ class _FilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(AppRadius.full),
       child: AnimatedContainer(
         duration: AppMotion.fast,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : AppColors.surfaceSoft,
-          borderRadius: BorderRadius.circular(20),
+          color: selected ? AppColors.primaryStrong : AppColors.surfaceSoft,
+          borderRadius: BorderRadius.circular(AppRadius.full),
           boxShadow: selected
               ? const [BoxShadow(color: AppColors.shadowPrimary, blurRadius: 10, offset: Offset(0, 4))]
               : null,
@@ -313,7 +319,7 @@ class _FilterChip extends StatelessWidget {
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w700,
-                fontSize: 13,
+                fontSize: AppTextSize.sm,
                 color: selected ? Colors.white : AppColors.textBody,
               ),
             ),
@@ -334,7 +340,7 @@ class _ChipCategoryIcon extends StatelessWidget {
     return CategoryIcon(
       category: category,
       size: 22,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppRadius.xs),
       iconColor: selected ? Colors.white : AppColors.primary,
       backgroundColor: selected ? Colors.white.withValues(alpha: 0.22) : AppColors.primary.withValues(alpha: 0.1),
     );

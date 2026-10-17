@@ -17,7 +17,12 @@ import '../layout/layout_harness.dart';
 
 const _title = 'All courses';
 
-Future<void> _pump(WidgetTester tester, Widget child, {required String locale, Size size = const Size(360, 780)}) async {
+Future<void> _pump(
+  WidgetTester tester,
+  Widget child, {
+  required String locale,
+  Size size = const Size(360, 780),
+}) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -54,7 +59,12 @@ void main() {
         ('tablet', const Size(768, 1024), 24.0),
       ]) {
         testWidgets('the 40px circle rests on the $gutter px gutter with the title ($name, $locale)', (tester) async {
-          await _pump(tester, _scrollScene(onBack: () {}), locale: locale, size: size);
+          await _pump(
+            tester,
+            _scrollScene(onBack: () {}),
+            locale: locale,
+            size: size,
+          );
 
           final circle = tester.getRect(find.byKey(AppBrandBackButton.circleKey));
           final title = tester.getRect(_largeTitle());

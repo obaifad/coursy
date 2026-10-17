@@ -37,7 +37,7 @@ class UpcomingLectureCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.card,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         boxShadow: AppShadows.card,
       ),
       child: Column(
@@ -54,7 +54,7 @@ class UpcomingLectureCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppFonts.tajawal(
-                          fontSize: 17,
+                          fontSize: AppTextSize.xl,
                           fontWeight: FontWeight.w800,
                           color: AppColors.textPrimary,
                         ),
@@ -73,7 +73,11 @@ class UpcomingLectureCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             lecture.isOngoing(current) ? 'lecture_now'.tr : 'next_lecture'.tr,
-            style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+            style: AppFonts.tajawal(
+              fontSize: AppTextSize.xs,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 10),
           Row(
@@ -88,7 +92,7 @@ class UpcomingLectureCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppFonts.tajawal(
-                        fontSize: 16,
+                        fontSize: AppTextSize.lg,
                         fontWeight: FontWeight.w800,
                         height: 1.3,
                         color: AppColors.textPrimary,
@@ -153,7 +157,7 @@ class _ConfirmedBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(color: AppColors.successSoft, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: AppColors.successSoft, borderRadius: BorderRadius.circular(AppRadius.full)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
         child: Row(
@@ -163,7 +167,11 @@ class _ConfirmedBadge extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               'enrollment_confirmed_badge'.tr,
-              style: AppFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.successText),
+              style: AppFonts.tajawal(
+                fontSize: AppTextSize.xs,
+                fontWeight: FontWeight.w700,
+                color: AppColors.successText,
+              ),
             ),
           ],
         ),
@@ -189,7 +197,11 @@ class _InfoLine extends StatelessWidget {
             text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppFonts.tajawal(fontSize: 11.5, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
+            style: AppFonts.tajawal(
+              fontSize: AppTextSize.xs,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
           ),
         ),
       ],
@@ -219,13 +231,16 @@ class _DateTile extends StatelessWidget {
     return Container(
       width: 72,
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-      decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(AppRadius.md)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _fit(dayLabel, AppFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white)),
-          _fit(time, AppFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white, height: 1.2)),
-          _fit(period, AppFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
+          _fit(dayLabel, AppFonts.tajawal(fontSize: AppTextSize.xs, fontWeight: FontWeight.w700, color: Colors.white)),
+          _fit(
+            time,
+            AppFonts.tajawal(fontSize: AppTextSize.xxl, fontWeight: FontWeight.w800, color: Colors.white, height: 1.2),
+          ),
+          _fit(period, AppFonts.tajawal(fontSize: AppTextSize.xs, fontWeight: FontWeight.w500, color: Colors.white)),
         ],
       ),
     );
@@ -250,8 +265,8 @@ class _CardButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = soft
-        ? FilledButton.styleFrom(backgroundColor: AppColors.surfaceVariant, foregroundColor: AppColors.primary)
-        : FilledButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white);
+        ? FilledButton.styleFrom(backgroundColor: AppColors.surfaceVariant, foregroundColor: AppColors.primaryInk)
+        : FilledButton.styleFrom(backgroundColor: AppColors.primaryStrong, foregroundColor: Colors.white);
     return SizedBox(
       height: 44,
       child: FilledButton(
@@ -259,8 +274,8 @@ class _CardButton extends StatelessWidget {
         style: style.copyWith(
           elevation: const WidgetStatePropertyAll(0),
           padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 8)),
-          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-          textStyle: WidgetStatePropertyAll(AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w800)),
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm))),
+          textStyle: WidgetStatePropertyAll(AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700)),
         ),
         child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1)),
       ),
@@ -282,7 +297,7 @@ class GuestSignUpBanner extends StatelessWidget {
           begin: AlignmentDirectional.centerStart,
           end: AlignmentDirectional.centerEnd,
         ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         boxShadow: const [BoxShadow(color: AppColors.shadowPrimary, blurRadius: 18, offset: Offset(0, 8))],
       ),
       child: Column(
@@ -297,13 +312,17 @@ class GuestSignUpBanner extends StatelessWidget {
                   children: [
                     Text(
                       'guest_banner_title'.tr,
-                      style: AppFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
+                      style: AppFonts.tajawal(
+                        fontSize: AppTextSize.xl,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'guest_banner_subtitle'.tr,
                       style: AppFonts.tajawal(
-                        fontSize: 12.5,
+                        fontSize: AppTextSize.sm,
                         fontWeight: FontWeight.w500,
                         height: 1.45,
                         color: Colors.white.withValues(alpha: 0.92),
@@ -318,7 +337,7 @@ class GuestSignUpBanner extends StatelessWidget {
                 height: 52,
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                   border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
                 ),
                 child: const Icon(Icons.event_seat_rounded, color: Colors.white, size: 26),
@@ -338,8 +357,8 @@ class GuestSignUpBanner extends StatelessWidget {
                       foregroundColor: AppColors.primaryDark,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      textStyle: AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w800),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+                      textStyle: AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700),
                     ),
                     child: FittedBox(fit: BoxFit.scaleDown, child: Text('register'.tr, maxLines: 1)),
                   ),
@@ -355,8 +374,8 @@ class GuestSignUpBanner extends StatelessWidget {
                       foregroundColor: Colors.white,
                       side: BorderSide(color: Colors.white.withValues(alpha: 0.75)),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      textStyle: AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w800),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+                      textStyle: AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700),
                     ),
                     child: FittedBox(fit: BoxFit.scaleDown, child: Text('browse_courses_short'.tr, maxLines: 1)),
                   ),

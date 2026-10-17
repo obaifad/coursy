@@ -26,8 +26,16 @@ class AppTheme {
         fontWeight: FontWeight.w800,
         color: AppColors.textPrimary,
       ),
-      titleLarge: AppFonts.tajawal(fontSize: AppTextSize.xxl, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-      titleMedium: AppFonts.tajawal(fontSize: AppTextSize.xl, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+      titleLarge: AppFonts.tajawal(
+        fontSize: AppTextSize.xxl,
+        fontWeight: FontWeight.w800,
+        color: AppColors.textPrimary,
+      ),
+      titleMedium: AppFonts.tajawal(
+        fontSize: AppTextSize.xl,
+        fontWeight: FontWeight.w800,
+        color: AppColors.textPrimary,
+      ),
       titleSmall: sized(ramp.titleSmall, AppTextSize.md),
       bodyLarge: sized(ramp.bodyLarge, AppTextSize.lg),
       bodyMedium: AppFonts.tajawal(

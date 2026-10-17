@@ -89,7 +89,7 @@ _Pastel _pastelFor(CategoryModel category) {
 }
 
 /// مربع الأيقونة وارتفاع النصين أسفله — مشتركان بين التصنيف وبطاقة «كل التصنيفات» لتتساوى المحاذاة.
-const double _boxRadius = 20;
+const double _boxRadius = AppRadius.md;
 
 double _boxSize(double width) => (width * 0.8).clamp(52.0, 72.0);
 
@@ -117,7 +117,7 @@ class _CategoryGridTile extends StatelessWidget {
             child: CategoryIcon(
               category: category,
               size: box * 0.78,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
               iconColor: colors.icon,
               backgroundColor: Colors.transparent,
             ),
@@ -125,12 +125,16 @@ class _CategoryGridTile extends StatelessWidget {
           const SizedBox(height: 8),
           _TileLabel(
             text: category.name,
-            style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.textPrimary),
+            style: AppFonts.tajawal(
+              fontWeight: FontWeight.w700,
+              fontSize: AppTextSize.sm,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 2),
           _TileLabel(
             text: count > 0 ? pluralTr('category_courses_count', count) : '',
-            style: AppFonts.tajawal(fontWeight: FontWeight.w600, fontSize: 11, color: AppColors.textHint),
+            style: AppFonts.tajawal(fontWeight: FontWeight.w500, fontSize: AppTextSize.xs, color: AppColors.textHint),
           ),
         ],
       ),
@@ -163,17 +167,24 @@ class _AllCategoriesTile extends StatelessWidget {
               child: Text(
                 '+$remaining',
                 textDirection: TextDirection.ltr,
-                style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.primary),
+                style: AppFonts.tajawal(
+                  fontWeight: FontWeight.w800,
+                  fontSize: AppTextSize.xxl,
+                  color: AppColors.primaryInk,
+                ),
               ),
             ),
           ),
           const SizedBox(height: 8),
           _TileLabel(
             text: 'all_categories'.tr,
-            style: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.primary),
+            style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm, color: AppColors.primaryInk),
           ),
           const SizedBox(height: 2),
-          _TileLabel(text: '', style: AppFonts.tajawal(fontSize: 11)),
+          _TileLabel(
+            text: '',
+            style: AppFonts.tajawal(fontSize: AppTextSize.xs),
+          ),
         ],
       ),
     );

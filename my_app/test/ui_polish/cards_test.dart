@@ -67,7 +67,12 @@ void main() {
     testWidgets('a course without ratings says so instead of showing grey stars', (tester) async {
       // الخادم أرسل reviews_count = 0: بلا تقييم (ولا يُستعار تقييم المعهد).
       final unrated = CourseModel.fromJson({'id': 9, 'title_ar': 'تصميم', 'price': '0', 'reviews_count': 0});
-      await _pump(tester, Center(child: SizedBox(width: 164, child: CoursePosterCard(course: unrated))));
+      await _pump(
+        tester,
+        Center(
+          child: SizedBox(width: 164, child: CoursePosterCard(course: unrated)),
+        ),
+      );
       expect(find.text('rating_none_short'.tr), findsOneWidget);
       expect(find.byIcon(Icons.star_rounded), findsNothing);
     });
@@ -117,9 +122,7 @@ void main() {
         for (var i = 0; i < 3; i++) {
           final card = tester.getRect(cards.at(i));
           expect(card.height, closeTo(AppRowCard.height, 0.5), reason: 'row $i');
-          final thumb = tester.getRect(
-            find.descendant(of: cards.at(i), matching: find.byType(ClipRRect)).first,
-          );
+          final thumb = tester.getRect(find.descendant(of: cards.at(i), matching: find.byType(ClipRRect)).first);
           expect(thumb.width, AppRowCard.thumbSize);
           if (locale == 'ar') {
             expect(thumb.right, card.right - AppRowCard.padding);
@@ -132,7 +135,13 @@ void main() {
 
     testWidgets('course row: duration and rating on the start side, price on the end side', (tester) async {
       final course = sampleCourses().first;
-      await _pump(tester, ListView(padding: const EdgeInsets.all(16), children: [CourseRowCard(course: course)]));
+      await _pump(
+        tester,
+        ListView(
+          padding: const EdgeInsets.all(16),
+          children: [CourseRowCard(course: course)],
+        ),
+      );
       final duration = tester.getRect(find.text(course.duration));
       final price = tester.getRect(find.byType(CoursePriceText));
       expect((duration.center.dy - price.center.dy).abs(), lessThan(4));

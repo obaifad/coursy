@@ -14,6 +14,8 @@ import '../../../widgets/design_system.dart';
 import '../../../widgets/filter_chips.dart';
 import '../controllers/institutes_controller.dart';
 
+import '../../../theme/app_fonts.dart';
+
 /// رأس العلامة ينطوي مع التمرير وشريط المحافظات يلتصق تحته؛ المعاهد بطاقات صفّية مضغوطة.
 class InstitutesView extends GetView<InstitutesController> {
   const InstitutesView({super.key});
@@ -307,7 +309,7 @@ class _InstituteContactCard extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(0, 44),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
                   ),
                   icon: Icon(a.icon, size: 18),
                   label: Text(a.label),
@@ -350,13 +352,16 @@ class _CoursesTab extends StatelessWidget {
                 leading: Container(
                   width: 56,
                   height: 56,
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), gradient: AppGradients.primary),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    gradient: AppGradients.primary,
+                  ),
                   child: const Icon(Icons.menu_book_rounded, color: Colors.white),
                 ),
                 title: Text(c.title, style: const TextStyle(fontWeight: FontWeight.w700)),
                 subtitle: Text(
                   c.hasRating ? '${c.rating.toStringAsFixed(1)} ★ · ${c.level}' : c.level,
-                  style: const TextStyle(fontSize: 12),
+                  style: const TextStyle(fontSize: AppTextSize.xs),
                 ),
                 trailing: const Icon(Icons.chevron_left_rounded),
                 onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: c),
@@ -413,15 +418,18 @@ class _StatChip extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(AppRadius.md)),
       child: Column(
         children: [
           Text(
             value,
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary),
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.xl, color: AppColors.primaryInk),
           ),
           const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+          Text(
+            label,
+            style: const TextStyle(fontSize: AppTextSize.xs, color: AppColors.textSecondary),
+          ),
         ],
       ),
     );

@@ -112,7 +112,7 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
                             textAlign: TextAlign.center,
                             style: AppFonts.tajawal(
                               color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 15,
+                              fontSize: AppTextSize.lg,
                               fontWeight: FontWeight.w700,
                               height: 1.4,
                             ),

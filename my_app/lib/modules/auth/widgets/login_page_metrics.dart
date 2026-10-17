@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/responsive/responsive.dart';
 
+import '../../../theme/app_fonts.dart';
+
 /// مقاسات متجاوبة لشاشات الدخول والتسجيل.
 class LoginPageMetrics {
   const LoginPageMetrics({
@@ -55,8 +57,8 @@ class LoginPageMetrics {
         pageVerticalPadding: isDesktop ? 32 : 24,
         headerTopPadding: 0,
         headerBottomPadding: 0,
-        welcomeTitleSize: isDesktop ? 34 : 30,
-        welcomeSubtitleSize: isDesktop ? 17 : 15,
+        welcomeTitleSize: AppTextSize.display,
+        welcomeSubtitleSize: isDesktop ? AppTextSize.xl : AppTextSize.lg,
         formVerticalPadding: isDesktop ? 36 : 28,
         sectionGap: isDesktop ? 20 : 16,
         fieldGap: 14,
@@ -78,8 +80,9 @@ class LoginPageMetrics {
       pageVerticalPadding: 0,
       headerTopPadding: (14 * scale).clamp(10.0, 18.0),
       headerBottomPadding: (30 * scale).clamp(24.0, 38.0),
-      welcomeTitleSize: (22 * scale).clamp(19.0, 24.0),
-      welcomeSubtitleSize: (14 * scale).clamp(12.5, 15.0),
+      // متجاوب مع الارتفاع لكن على درجات السلّم فقط.
+      welcomeTitleSize: AppTextSize.snap((22 * scale).clamp(19.0, 24.0)),
+      welcomeSubtitleSize: AppTextSize.snap((14 * scale).clamp(12.5, 15.0)),
       formVerticalPadding: (16 * scale).clamp(12.0, 20.0),
       sectionGap: (20 * scale).clamp(16.0, 24.0),
       fieldGap: 14,

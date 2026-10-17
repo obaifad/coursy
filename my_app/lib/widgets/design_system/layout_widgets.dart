@@ -44,7 +44,7 @@ class AppIconCircleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = size >= 40 ? 14.0 : 12.0;
+    const radius = AppRadius.sm;
     final resolvedIconColor = iconColor ?? (filled ? AppColors.textPrimary : AppColors.primary.withValues(alpha: 0.82));
     return Material(
       color: filled ? AppColors.card : Colors.transparent,
@@ -123,7 +123,7 @@ class AppSegmentedTabBar extends StatelessWidget {
     return Padding(
       padding: margin,
       child: DecoratedBox(
-        decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(AppRadius.md)),
         child: LayoutBuilder(
           builder: (context, constraints) {
             // يتحوّل للتمرير تلقائياً عندما تضيق الخلايا (هواتف صغيرة + 4 تبويبات)
@@ -140,16 +140,16 @@ class AppSegmentedTabBar extends StatelessWidget {
               indicatorPadding: padding,
               labelPadding: scrollable ? const EdgeInsets.symmetric(horizontal: 10) : EdgeInsets.zero,
               overlayColor: WidgetStateProperty.all(Colors.transparent),
-              splashBorderRadius: BorderRadius.circular(12),
+              splashBorderRadius: BorderRadius.circular(AppRadius.sm),
               indicator: BoxDecoration(
                 color: AppColors.card,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
                 boxShadow: const [BoxShadow(color: AppColors.shadowPurple, blurRadius: 10, offset: Offset(0, 3))],
               ),
-              labelColor: AppColors.primary,
+              labelColor: AppColors.primaryInk,
               unselectedLabelColor: AppColors.textSecondary,
-              labelStyle: AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 13),
-              unselectedLabelStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13),
+              labelStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm),
+              unselectedLabelStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm),
               tabs: tabs,
             );
           },
@@ -248,12 +248,12 @@ class _AppStatCell extends StatelessWidget {
       children: [
         Text(
           item.value,
-          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.primary),
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.xl, color: AppColors.primaryInk),
         ),
         const SizedBox(height: 4),
         Text(
           item.label,
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.xs),
           textAlign: TextAlign.center,
         ),
       ],
@@ -560,8 +560,8 @@ class AppEmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: compact
                   ? const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      fontSize: AppTextSize.md,
                       color: AppColors.textSecondary,
                       height: 1.45,
                     )

@@ -34,7 +34,7 @@ class DeleteAccountView extends GetView<DeleteAccountController> {
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             color: AppColors.dangerSoft,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
                           ),
                           child: const Icon(Icons.warning_amber_rounded, color: AppColors.danger),
                         ),
@@ -67,7 +67,11 @@ class DeleteAccountView extends GetView<DeleteAccountController> {
                             Expanded(
                               child: Text(
                                 key.tr,
-                                style: AppFonts.tajawal(color: AppColors.textSecondary, height: 1.5, fontSize: 14),
+                                style: AppFonts.tajawal(
+                                  color: AppColors.textSecondary,
+                                  height: 1.5,
+                                  fontSize: AppTextSize.md,
+                                ),
                               ),
                             ),
                           ],

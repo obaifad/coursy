@@ -115,7 +115,7 @@ class _RootBottomNav extends StatelessWidget {
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: AppColors.card,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
                     border: Border.all(color: AppColors.primary.withValues(alpha: 0.06)),
                     boxShadow: const [
                       BoxShadow(color: AppColors.shadowPrimary, blurRadius: 24, offset: Offset(0, 8)),
@@ -241,7 +241,7 @@ class _SideNavButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
           child: Column(
@@ -256,7 +256,7 @@ class _SideNavButton extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: selected ? AppGradients.primary : null,
                   color: selected ? null : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Icon(icon, color: selected ? Colors.white : AppColors.textSecondary, size: 19),
               ),
@@ -267,9 +267,9 @@ class _SideNavButton extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: AppFonts.tajawal(
-                  fontSize: 12,
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
-                  color: selected ? AppColors.primary : AppColors.textSecondary,
+                  fontSize: AppTextSize.xs,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? AppColors.primaryInk : AppColors.textSecondary,
                 ),
               ),
             ],

@@ -12,7 +12,10 @@ class CoursePosterCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final spec = CourseCardMetrics.posterSpec(constraints.maxWidth, textScale: CourseCardMetrics.textScaleOf(context));
+        final spec = CourseCardMetrics.posterSpec(
+          constraints.maxWidth,
+          textScale: CourseCardMetrics.textScaleOf(context),
+        );
         // ارتفاع مفروض (خلية شبكة) يُحترم والفرق يذهب للغلاف؛ وإلا الارتفاع الطبيعي.
         final height = constraints.hasTightHeight
             ? constraints.maxHeight
@@ -37,7 +40,9 @@ class CoursePosterCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(child: _PosterCover(course: course, spec: spec)),
+                    Expanded(
+                      child: _PosterCover(course: course, spec: spec),
+                    ),
                     SizedBox(
                       height: spec.stripHeight,
                       child: _PosterStrip(course: course, spec: spec),

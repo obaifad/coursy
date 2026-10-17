@@ -225,7 +225,7 @@ class _EnrollmentCard extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
         title: Text('cancel_booking'.tr, style: AppFonts.tajawal(fontWeight: FontWeight.w800)),
         content: Text('cancel_booking_confirm'.tr),
         actions: [
@@ -274,7 +274,7 @@ class _StatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: theme.backgroundColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(color: theme.foregroundColor.withValues(alpha: 0.2)),
       ),
       child: Row(
@@ -284,7 +284,11 @@ class _StatusBadge extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: AppFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w800, color: theme.foregroundColor),
+            style: AppFonts.tajawal(
+              fontSize: AppTextSize.xs,
+              fontWeight: FontWeight.w700,
+              color: theme.foregroundColor,
+            ),
           ),
         ],
       ),
@@ -354,13 +358,13 @@ class _BookingActions extends StatelessWidget {
     side: BorderSide(color: color.withValues(alpha: 0.4)),
     minimumSize: const Size(0, _height),
     padding: const EdgeInsets.symmetric(horizontal: 12),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
   );
 
   @override
   Widget build(BuildContext context) {
     final canCancel = enrollment.canCancel;
-    final label = AppFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 13);
+    final label = AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm);
 
     return Obx(() {
       // «ادفع الآن» فقط إذا كان الدفع الإلكتروني متاحاً فعلاً؛ وإلا «عرض التفاصيل» هو الإجراء الأساسي.
@@ -393,11 +397,11 @@ class _BookingActions extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: () => Get.toNamed(AppRoutes.payment, arguments: enrollment),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppColors.primaryStrong,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
                 ),
                 icon: const Icon(Icons.account_balance_wallet_rounded, size: 18),
                 label: fitted('payment_pay_now'.tr),
@@ -537,7 +541,7 @@ class _MyCoursesLoginPrompt extends StatelessWidget {
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
                   color: AppColors.card,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                   boxShadow: RegisterDecor.cardShadow,
                 ),
                 child: Column(

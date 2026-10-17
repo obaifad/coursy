@@ -20,7 +20,7 @@ class CoursePriceText extends StatelessWidget {
         'price_on_request'.tr,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w700, fontSize: currencySize + 2),
+        style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w500, fontSize: currencySize + 2),
       );
     }
 
@@ -32,7 +32,12 @@ class CoursePriceText extends StatelessWidget {
         children: [
           TextSpan(
             text: amount,
-            style: TextStyle(color: AppColors.primaryInk, fontWeight: FontWeight.w800, fontSize: amountSize, height: 1.1),
+            style: TextStyle(
+              color: AppColors.primaryInk,
+              fontWeight: FontWeight.w800,
+              fontSize: amountSize,
+              height: 1.1,
+            ),
           ),
           if (currency.isNotEmpty)
             TextSpan(
@@ -244,7 +249,7 @@ class CourseMetaChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: compact ? 3 : 4),
-      decoration: BoxDecoration(color: AppColors.neutralFill, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: AppColors.neutralFill, borderRadius: BorderRadius.circular(AppRadius.full)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -257,7 +262,7 @@ class CourseMetaChip extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AppFonts.tajawal(
-                fontSize: compact ? 10 : 11,
+                fontSize: compact ? AppTextSize.xs : AppTextSize.xs,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textMuted,
               ),

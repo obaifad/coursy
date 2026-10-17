@@ -227,7 +227,7 @@ class _TicketImage extends StatelessWidget {
       children: [
         _CourseCardImage(
           course: course,
-          borderRadius: BorderRadius.circular(_kCourseCardRadius - 4),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           fallbackSize: compact ? 26 : 30,
         ),
         if (badge != null)
@@ -240,7 +240,7 @@ class _TicketImage extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: AppColors.textPrimary.withValues(alpha: 0.88),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppRadius.xs),
                 ),
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: 4),
@@ -250,7 +250,7 @@ class _TicketImage extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: AppFonts.tajawal(
                       color: Colors.white,
-                      fontSize: compact ? 10 : 11,
+                      fontSize: compact ? AppTextSize.xs : AppTextSize.xs,
                       fontWeight: FontWeight.w800,
                       height: 1.2,
                     ),
@@ -275,7 +275,7 @@ class _CategoryLevelLine extends StatelessWidget {
     final category = course.categoryName?.trim() ?? '';
     final level = (course.levelCode ?? '').trim().isEmpty ? '' : course.level.trim();
     if (category.isEmpty && level.isEmpty) return const SizedBox.shrink();
-    final style = AppFonts.tajawal(fontSize: 11.5, fontWeight: FontWeight.w700, height: 1.3);
+    final style = AppFonts.tajawal(fontSize: AppTextSize.xs, fontWeight: FontWeight.w700, height: 1.3);
     return Align(
       alignment: AlignmentDirectional.centerStart,
       child: Text.rich(
@@ -287,7 +287,7 @@ class _CategoryLevelLine extends StatelessWidget {
             if (category.isNotEmpty)
               TextSpan(
                 text: category,
-                style: const TextStyle(color: AppColors.primary),
+                style: const TextStyle(color: AppColors.primaryInk),
               ),
             if (category.isNotEmpty && level.isNotEmpty)
               const TextSpan(
@@ -326,7 +326,7 @@ class _InstituteLine extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppFonts.tajawal(
-              fontSize: 10.5,
+              fontSize: AppTextSize.xs,
               fontWeight: FontWeight.w500,
               color: AppColors.textSecondary,
               height: 1.3,
@@ -358,7 +358,12 @@ class _RatingLine extends StatelessWidget {
           Text(
             rating.toStringAsFixed(1),
             textDirection: TextDirection.ltr,
-            style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textBody, height: 1.2),
+            style: AppFonts.tajawal(
+              fontSize: AppTextSize.xs,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textBody,
+              height: 1.2,
+            ),
           ),
           if (count != null && count > 0) ...[
             const SizedBox(width: 3),
@@ -368,7 +373,7 @@ class _RatingLine extends StatelessWidget {
                 textDirection: TextDirection.ltr,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppFonts.tajawal(fontSize: 11, color: AppColors.textHint, height: 1.2),
+                style: AppFonts.tajawal(fontSize: AppTextSize.xs, color: AppColors.textHint, height: 1.2),
               ),
             ),
           ],
@@ -403,7 +408,7 @@ class _WideFooter extends StatelessWidget {
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: AlignmentDirectional.centerEnd,
-            child: _PriceBlock(course: course, alignEnd: true, amountSize: 18),
+            child: _PriceBlock(course: course, alignEnd: true, amountSize: AppTextSize.xl),
           ),
         ),
       ],
@@ -424,7 +429,9 @@ class _CompactFooter extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _ScaleDownStart(child: _PriceBlock(course: course, alignEnd: false, amountSize: 16)),
+        _ScaleDownStart(
+          child: _PriceBlock(course: course, alignEnd: false, amountSize: AppTextSize.lg),
+        ),
         if (meta.isNotEmpty) ...[
           const SizedBox(height: 6),
           _ScaleDownStart(
@@ -470,7 +477,12 @@ class _MetaItem extends StatelessWidget {
             item.text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textBody, height: 1.2),
+            style: AppFonts.tajawal(
+              fontSize: AppTextSize.xs,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textBody,
+              height: 1.2,
+            ),
           ),
         ),
       ],
@@ -488,7 +500,7 @@ class _PriceBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final price = CoursePriceText(price: course.price, amountSize: amountSize, currencySize: 11);
+    final price = CoursePriceText(price: course.price, amountSize: amountSize, currencySize: AppTextSize.xs);
     final original = course.originalPriceLabel;
     final percent = course.discountPercent;
     if (original == null) return price;
@@ -519,14 +531,19 @@ class _DiscountPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(color: AppColors.accentPink, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: AppColors.accentPink, borderRadius: BorderRadius.circular(AppRadius.xs)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         // «-8%» يبقى بهذا الترتيب في العربية أيضاً.
         child: Text(
           '-$percent%',
           textDirection: TextDirection.ltr,
-          style: AppFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white, height: 1.2),
+          style: AppFonts.tajawal(
+            fontSize: AppTextSize.xs,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            height: 1.2,
+          ),
         ),
       ),
     );
@@ -549,7 +566,12 @@ class _StrikethroughPrice extends StatelessWidget {
         Text(
           amount,
           maxLines: 1,
-          style: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textHint, height: 1.3),
+          style: AppFonts.tajawal(
+            fontSize: AppTextSize.xs,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textHint,
+            height: 1.3,
+          ),
         ),
         Positioned.fill(
           child: Align(child: Container(height: 1.3, color: AppColors.textHint)),
@@ -624,7 +646,7 @@ class _CourseCardImage extends StatelessWidget {
               height: fallbackSize * 1.7,
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(fallbackSize * 0.45),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
               ),
               child: Icon(

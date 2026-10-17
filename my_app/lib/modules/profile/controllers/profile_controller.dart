@@ -396,11 +396,11 @@ class ProfileController extends GetxController with LatestLoadGuard {
       'profile_saved'.tr,
       'profile_changes_saved'.tr,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppColors.primary,
+      backgroundColor: AppColors.primaryStrong,
       colorText: Colors.white,
       icon: const Icon(Icons.check_circle_rounded, color: Colors.white),
       margin: const EdgeInsets.all(16),
-      borderRadius: 16,
+      borderRadius: AppRadius.md,
       duration: const Duration(seconds: 3),
     );
   }

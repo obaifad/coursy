@@ -57,4 +57,7 @@ abstract final class AppTextSize {
   static const double display = 28;
 
   static const List<double> ramp = [xs, sm, md, lg, xl, xxl, display];
+
+  /// أقرب درجة في السلّم لحجم محسوب (رؤوس متجاوبة) — التعادل للأصغر.
+  static double snap(double size) => ramp.reduce((a, b) => (size - b).abs() < (size - a).abs() ? b : a);
 }

@@ -116,12 +116,12 @@ class NotificationsView extends GetView<NotificationsController> {
                       padding: const EdgeInsetsDirectional.only(end: 20),
                       decoration: BoxDecoration(
                         color: Colors.redAccent.shade100,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
                       child: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
                     ),
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                       onTap: () => controller.openNotification(n),
                       child: NotificationCard(
                         title: n.title.trim().isEmpty ? 'notification_default_title'.tr : n.title,

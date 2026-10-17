@@ -111,8 +111,12 @@ abstract final class AppTypography {
       AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700, color: AppColors.primaryInk);
 
   /// تسمية صغيرة (شارة، وسم، عدّاد).
-  static TextStyle caption({Color? color, FontWeight weight = FontWeight.w700}) =>
-      AppFonts.tajawal(fontSize: AppTextSize.xs, fontWeight: weight, height: 1.25, color: color ?? AppColors.textSecondary);
+  static TextStyle caption({Color? color, FontWeight weight = FontWeight.w700}) => AppFonts.tajawal(
+    fontSize: AppTextSize.xs,
+    fontWeight: weight,
+    height: 1.25,
+    color: color ?? AppColors.textSecondary,
+  );
 
   /// السعر البارز في البطاقات.
   static TextStyle price({double size = AppTextSize.lg, Color color = AppColors.primaryInk}) =>

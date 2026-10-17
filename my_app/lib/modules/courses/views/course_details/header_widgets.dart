@@ -12,7 +12,7 @@ class _HeroBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.full),
         border: Border.all(color: Colors.white24),
       ),
       child: Row(
@@ -22,7 +22,7 @@ class _HeroBadge extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: AppTextSize.xs),
           ),
         ],
       ),
@@ -82,7 +82,7 @@ class _DetailBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: highlighted ? AppColors.primary.withValues(alpha: 0.1) : AppColors.indicatorFill,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(color: highlighted ? AppColors.primary.withValues(alpha: 0.25) : Colors.transparent),
       ),
       child: Row(
@@ -93,9 +93,9 @@ class _DetailBadge extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: AppTextSize.xs,
               fontWeight: FontWeight.w700,
-              color: highlighted ? AppColors.primary : AppColors.textPrimary,
+              color: highlighted ? AppColors.primaryInk : AppColors.textPrimary,
             ),
           ),
         ],
@@ -103,7 +103,7 @@ class _DetailBadge extends StatelessWidget {
     );
 
     if (onTap == null) return child;
-    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(12), child: child);
+    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(AppRadius.sm), child: child);
   }
 }
 
@@ -169,7 +169,7 @@ class _StatTile extends StatelessWidget {
     return Container(
       alignment: AlignmentDirectional.centerStart,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(AppRadius.xs)),
       child: Row(
         children: [
           Icon(stat.icon, size: 15, color: AppColors.primary),
@@ -179,7 +179,7 @@ class _StatTile extends StatelessWidget {
               stat.label,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11, height: 1.15),
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.xs, height: 1.15),
             ),
           ),
         ],
@@ -211,14 +211,18 @@ class _SeatsProgressCard extends StatelessWidget {
               const Spacer(),
               Text(
                 pluralTr('seats_available', remaining),
-                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 12),
+                style: const TextStyle(
+                  color: AppColors.primaryInk,
+                  fontWeight: FontWeight.w700,
+                  fontSize: AppTextSize.xs,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             'seats_filled'.trParams({'current': '$current', 'max': '$max'}),
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.sm),
           ),
           const SizedBox(height: 12),
           TweenAnimationBuilder<double>(
@@ -226,7 +230,7 @@ class _SeatsProgressCard extends StatelessWidget {
             duration: const Duration(milliseconds: 700),
             curve: Curves.easeOutCubic,
             builder: (_, value, __) => ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
               child: LinearProgressIndicator(
                 value: value,
                 minHeight: 10,
@@ -328,9 +332,15 @@ class _TimelineRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(step.title, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  Text(
+                    step.title,
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.xs),
+                  ),
                   const SizedBox(height: 4),
-                  Text(step.date, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+                  Text(
+                    step.date,
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.lg),
+                  ),
                 ],
               ),
             ),

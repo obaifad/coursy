@@ -9,6 +9,8 @@ import '../../../widgets/design_system.dart';
 import '../controllers/instructor_courses_controller.dart';
 import '../../../core/locale/plural.dart';
 
+import '../../../theme/app_fonts.dart';
+
 class InstructorCoursesView extends GetView<InstructorCoursesController> {
   const InstructorCoursesView({super.key});
 
@@ -104,7 +106,7 @@ class _InstructorHeader extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: AppGradients.primary,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         boxShadow: const [BoxShadow(color: AppColors.shadowPurple, blurRadius: 16, offset: Offset(0, 8))],
       ),
       child: Row(
@@ -113,7 +115,7 @@ class _InstructorHeader extends StatelessWidget {
           Container(
             width: 64,
             height: 64,
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.md)),
             child: const Icon(Icons.person_rounded, color: AppColors.primary, size: 34),
           ),
           const SizedBox(width: 14),
@@ -123,7 +125,7 @@ class _InstructorHeader extends StatelessWidget {
               children: [
                 Text(
                   controller.instructorName.value,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: AppTextSize.xl),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -140,7 +142,11 @@ class _InstructorHeader extends StatelessWidget {
                     controller.bio.value!,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.85), height: 1.4, fontSize: 13),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      height: 1.4,
+                      fontSize: AppTextSize.sm,
+                    ),
                   ),
                 ],
                 if (controller.totalCourses.value > 0) ...[
@@ -149,11 +155,15 @@ class _InstructorHeader extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
                     ),
                     child: Text(
                       pluralTr('instructor_courses_count', controller.totalCourses.value),
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: AppTextSize.sm,
+                      ),
                     ),
                   ),
                 ],

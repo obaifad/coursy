@@ -174,10 +174,7 @@ class AppRowMetaLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        for (var i = 0; i < items.length; i++) ...[
-          if (i > 0) SizedBox(width: spacing),
-          Flexible(child: items[i]),
-        ],
+        for (var i = 0; i < items.length; i++) ...[if (i > 0) SizedBox(width: spacing), Flexible(child: items[i])],
       ],
     );
   }
