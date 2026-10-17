@@ -9,14 +9,16 @@ class SoftCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: padding ?? const EdgeInsets.all(14),
-      decoration: const BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.all(Radius.circular(20)),
-        boxShadow: AppShadows.card,
+    // Material شفاف داخل الخلفية: ListTile/InkWell يرسمان التموّج عليه بدل أن تخفيه الخلفية الملوّنة
+    // (Flutter يرفض ListTile تحت DecoratedBox ملوّن مباشرة).
+    return DecoratedBox(
+      decoration: const BoxDecoration(color: AppColors.card, borderRadius: AppCorners.md, boxShadow: AppShadows.card),
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: AppCorners.md,
+        clipBehavior: Clip.antiAlias,
+        child: Padding(padding: padding ?? const EdgeInsets.all(14), child: child),
       ),
-      child: child,
     );
   }
 }

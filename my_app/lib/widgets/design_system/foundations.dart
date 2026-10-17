@@ -49,39 +49,74 @@ abstract final class AppShadows {
   static const List<BoxShadow> card = [BoxShadow(color: AppColors.shadowSoft, blurRadius: 16, offset: Offset(0, 8))];
 }
 
-/// خطوط وعناوين موحّدة عبر التطبيق (Tajawal).
+/// زوايا جاهزة من مقياس [AppRadius] — لا أنصاف أقطار خارج الدرجات الخمس.
+abstract final class AppCorners {
+  AppCorners._();
+
+  static const BorderRadius xs = BorderRadius.all(Radius.circular(AppRadius.xs));
+  static const BorderRadius sm = BorderRadius.all(Radius.circular(AppRadius.sm));
+  static const BorderRadius md = BorderRadius.all(Radius.circular(AppRadius.md));
+  static const BorderRadius lg = BorderRadius.all(Radius.circular(AppRadius.lg));
+  static const BorderRadius full = BorderRadius.all(Radius.circular(AppRadius.full));
+
+  /// الأوراق السفلية: الحافة العلوية فقط.
+  static const BorderRadius sheetTop = BorderRadius.vertical(top: Radius.circular(AppRadius.lg));
+}
+
+/// خطوط وعناوين موحّدة عبر التطبيق (Tajawal) — أحجام [AppTextSize] فقط.
+/// 800 للعناوين والأسعار، 700 للتسميات والأزرار، 500 للنص الوصفي.
 abstract final class AppTypography {
   AppTypography._();
 
-  static TextStyle pageTitle() =>
-      AppFonts.tajawal(fontSize: 26, fontWeight: FontWeight.w800, color: AppColors.textPrimary, height: 1.15);
+  static TextStyle pageTitle() => AppFonts.tajawal(
+    fontSize: AppTextSize.display,
+    fontWeight: FontWeight.w800,
+    color: AppColors.textPrimary,
+    height: 1.15,
+  );
 
-  static TextStyle pageSubtitle() =>
-      AppFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textSecondary, height: 1.4);
+  static TextStyle pageSubtitle() => AppFonts.tajawal(
+    fontSize: AppTextSize.md,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textSecondary,
+    height: 1.4,
+  );
 
   static TextStyle tabScreenTitle() =>
-      AppFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary);
+      AppFonts.tajawal(fontSize: AppTextSize.xxl, fontWeight: FontWeight.w800, color: AppColors.textPrimary);
 
-  static TextStyle homeWelcome() =>
-      AppFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w500, color: AppColors.textPrimary, height: 1.25);
+  static TextStyle homeWelcome() => AppFonts.tajawal(
+    fontSize: AppTextSize.xxl,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textPrimary,
+    height: 1.25,
+  );
 
   static TextStyle filterSectionLabel() =>
-      AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textBody);
+      AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700, color: AppColors.textBody);
 
   static TextStyle sectionTitle() =>
-      AppFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary);
+      AppFonts.tajawal(fontSize: AppTextSize.xl, fontWeight: FontWeight.w800, color: AppColors.textPrimary);
 
-  static TextStyle cardTitle({double size = 15}) =>
-      AppFonts.tajawal(fontSize: size, fontWeight: FontWeight.w700, height: 1.25, color: AppColors.textPrimary);
+  static TextStyle cardTitle({double size = AppTextSize.lg}) =>
+      AppFonts.tajawal(fontSize: size, fontWeight: FontWeight.w800, height: 1.25, color: AppColors.textPrimary);
 
-  static TextStyle cardSubtitle({double size = 13}) =>
+  static TextStyle cardSubtitle({double size = AppTextSize.sm}) =>
       AppFonts.tajawal(fontSize: size, fontWeight: FontWeight.w500, height: 1.35, color: AppColors.textSecondary);
 
   static TextStyle meta({Color? color}) =>
-      AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: color ?? AppColors.textSecondary);
+      AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w500, color: color ?? AppColors.textSecondary);
 
   static TextStyle actionLabel() =>
-      AppFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary);
+      AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700, color: AppColors.primaryInk);
+
+  /// تسمية صغيرة (شارة، وسم، عدّاد).
+  static TextStyle caption({Color? color, FontWeight weight = FontWeight.w700}) =>
+      AppFonts.tajawal(fontSize: AppTextSize.xs, fontWeight: weight, height: 1.25, color: color ?? AppColors.textSecondary);
+
+  /// السعر البارز في البطاقات.
+  static TextStyle price({double size = AppTextSize.lg, Color color = AppColors.primaryInk}) =>
+      AppFonts.tajawal(fontSize: size, fontWeight: FontWeight.w800, height: 1.1, color: color);
 }
 
 /// مقاسات وتباعدات مشتركة — شريط التنقل العائم، هوامش الصفحة، ومساحة التمرير.

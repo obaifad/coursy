@@ -22,8 +22,9 @@ abstract final class RegisterDecor {
     end: Alignment.bottomRight,
   );
 
+  // نص أبيض فوق طرفي التدرّج بتباين ≥ 5.4:1 (كان primaryLight يعطي 3.2:1 فقط).
   static const LinearGradient button = LinearGradient(
-    colors: [AppColors.primary, AppColors.primaryLight],
+    colors: [AppColors.primaryStrong, AppColors.primaryInk],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );

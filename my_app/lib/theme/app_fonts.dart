@@ -31,3 +31,30 @@ abstract final class AppFonts {
 
   static TextTheme tajawalTextTheme(TextTheme base) => base.apply(fontFamily: familyName);
 }
+
+/// سلّم أحجام الخط الموحّد — سبعة أحجام صحيحة فقط (بلا كسور بكسل).
+/// الوزن 800 للعناوين والأسعار فقط، 700 للتسميات والأزرار، 500 للنص الوصفي.
+abstract final class AppTextSize {
+  /// الشارات والتسميات الصغيرة.
+  static const double xs = 12;
+
+  /// النص الوصفي (المعهد، المدة، التاريخ).
+  static const double sm = 13;
+
+  /// نص المحتوى والأزرار الثانوية.
+  static const double md = 14;
+
+  /// عناوين البطاقات والأزرار الأساسية.
+  static const double lg = 15;
+
+  /// عناوين الأقسام والأشرطة العلوية.
+  static const double xl = 17;
+
+  /// عناوين الشاشات.
+  static const double xxl = 20;
+
+  /// العنوان الكبير في رأس الشاشة الممتد.
+  static const double display = 28;
+
+  static const List<double> ramp = [xs, sm, md, lg, xl, xxl, display];
+}

@@ -21,6 +21,13 @@ abstract final class AppColors {
   /// بنفسجي أغمق — نهاية تدرّجات الهوية.
   static const Color primaryDark = Color(0xFF5548CC);
 
+  /// «حبر» بنفسجي للنصوص الصغيرة (تسميات، روابط، أسعار): تباين 6.6:1 على الأبيض.
+  /// [primary] يعطي 4.3:1 فقط — دون حدّ WCAG AA للنص العادي (4.5:1).
+  static const Color primaryInk = Color(0xFF5548CC);
+
+  /// بنفسجي الأزرار الممتلئة والرؤوس الصلبة: النص الأبيض فوقه بتباين 5.4:1.
+  static const Color primaryStrong = Color(0xFF5B52F0);
+
   /// خلفية فاتحة للحقول والشرائح غير المحددة.
   static const Color surfaceSoft = Color(0xFFF7F6FF);
 
@@ -61,4 +68,17 @@ abstract final class AppColors {
   static const Color shadowPrimaryStrong = Color(0x446C63FF);
   static const Color shadowNeutral = Color(0x14000000);
   static const Color shadowNeutralSoft = Color(0x0F000000);
+}
+
+/// مقياس الزوايا الموحّد — خمس درجات فقط، لا أرقام أخرى في الواجهة.
+/// xs: الشارات والوسوم الصغيرة · sm: الأزرار والحقول والشرائح · md: البطاقات
+/// lg: الأوراق السفلية والحوارات والأشرطة العائمة · full: الكبسولات والدوائر.
+abstract final class AppRadius {
+  static const double xs = 8;
+  static const double sm = 12;
+  static const double md = 16;
+  static const double lg = 24;
+  static const double full = 999;
+
+  static const List<double> scale = [xs, sm, md, lg, full];
 }
