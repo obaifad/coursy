@@ -115,11 +115,31 @@ void main() {
       expect(tester.getRect(find.byKey(AppBrandBackButton.circleKey)).right, 360 - 16);
     });
 
-    testWidgets('the solid bar uses primary-strong', (tester) async {
+    testWidgets('the bar has the original hero look: brand gradient, rounded bottom corners', (tester) async {
       await _pump(tester, _scrollScene(), locale: 'en');
       final bar = tester.widget<SliverAppBar>(find.byType(SliverAppBar));
-      expect(bar.backgroundColor, AppBrandSliverAppBar.background);
       expect(bar.systemOverlayStyle?.statusBarIconBrightness, Brightness.light);
+
+      final appBar = find.byType(SliverAppBar);
+      final gradient = find.descendant(
+        of: appBar,
+        matching: find.byWidgetPredicate(
+          (w) =>
+              w is DecoratedBox &&
+              w.decoration is BoxDecoration &&
+              (w.decoration as BoxDecoration).gradient == AppGradients.heroBanner,
+        ),
+      );
+      expect(gradient, findsOneWidget);
+      final clip = find.descendant(
+        of: appBar,
+        matching: find.byWidgetPredicate(
+          (w) =>
+              w is ClipRRect &&
+              w.borderRadius == const BorderRadius.vertical(bottom: Radius.circular(AppBrandSliverAppBar.bottomRadius)),
+        ),
+      );
+      expect(clip, findsOneWidget);
     });
 
     Future<void> pumpRoot(WidgetTester tester, {required int tab}) async {

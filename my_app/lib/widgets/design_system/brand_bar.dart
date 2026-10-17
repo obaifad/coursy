@@ -1,8 +1,9 @@
 part of '../design_system.dart';
 
-/// «Brand Bar»: رأس بنفسجي صلب ينطوي مع التمرير — لشاشات القوائم الرئيسية (الدورات، التصنيف، المعاهد،
-/// المفضلة، دوراتي). ممتداً: كبسولة العدّاد ثم العنوان الكبير والسطر الفرعي؛ مطوياً: شريط أدوات بعنوان صغير
-/// يبقى مثبّتاً. أيقونات شريط الحالة بيضاء في كل حالات التمرير لأن الشريط المثبّت يبقى تحتها دائماً.
+/// «Brand Bar»: الرأس البنفسجي لشاشات القوائم الرئيسية (الدورات، التصنيف، المعاهد، المفضلة، دوراتي) — بشكل
+/// الرأس الأصلي: تدرّج الهوية بنقش نقاط خفيف وتعتيم سفلي، وزوايا سفلية مدوّرة 28. ممتداً: كبسولة العدّاد
+/// في جهة النهاية، ثم العنوان الكبير والسطر الفرعي؛ ينطوي مع التمرير إلى شريط أدوات بعنوان صغير يبقى مثبّتاً.
+/// أيقونات شريط الحالة بيضاء في كل حالات التمرير لأن الشريط المثبّت يبقى تحتها دائماً.
 ///
 /// زر الرجوع دائرة 40px تبدأ حافتها عند هامش المحتوى ([AppLayout.horizontalPage]) — نفس بداية العنوان —
 /// في العربية والإنجليزية؛ منطقة اللمس 48px تمتد 4px حولها.
@@ -35,6 +36,9 @@ class AppBrandSliverAppBar extends StatelessWidget {
   static const double _backTapTarget = 48;
   static const Color background = AppColors.primaryStrong;
 
+  /// زوايا الرأس السفلية (كالرأس الأصلي).
+  static const double bottomRadius = 28;
+
   /// الشاشات القصيرة (هاتف أفقي، 320×640): بلا السطر الفرعي كي لا يأكل الرأس نصف الشاشة.
   static bool isCompact(BuildContext context) => MediaQuery.sizeOf(context).height < 700;
 
@@ -46,8 +50,8 @@ class AppBrandSliverAppBar extends StatelessWidget {
     final s = CourseCardMetrics.textScaleOf(context);
     final pill = AppTextSize.xs * 1.25 * s + 10;
     final titleLine = AppTextSize.display * 1.2 * s;
-    final subtitleLine = hasSubtitle && !isCompact(context) ? 4 + AppTextSize.md * 1.4 * s : 0.0;
-    return (pill + 8 + titleLine + subtitleLine + 16).ceilToDouble();
+    final subtitleLine = hasSubtitle && !isCompact(context) ? 4 + AppTextSize.sm * 1.4 * s : 0.0;
+    return (pill + 8 + titleLine + subtitleLine + 20).ceilToDouble();
   }
 
   @override
@@ -61,7 +65,8 @@ class AppBrandSliverAppBar extends StatelessWidget {
       automaticallyImplyLeading: false,
       toolbarHeight: toolbarHeight,
       expandedHeight: toolbarHeight + collapseDistance(context, hasSubtitle: hasSubtitle) + bottomHeight,
-      backgroundColor: background,
+      // الخلفية يرسمها flexibleSpace (تدرّج بزوايا مدوّرة)؛ الشفافية تُظهر الصفحة عند الزوايا.
+      backgroundColor: Colors.transparent,
       foregroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
@@ -190,7 +195,16 @@ class _BrandBarExpandedArea extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        const ColoredBox(color: AppBrandSliverAppBar.background),
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: bottomHeight,
+          child: const ClipRRect(
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppBrandSliverAppBar.bottomRadius)),
+            child: _BrandBarBackground(),
+          ),
+        ),
         if (bottomHeight > 0)
           Positioned(
             left: 0,
@@ -212,7 +226,7 @@ class _BrandBarExpandedArea extends StatelessWidget {
                 PositionedDirectional(
                   start: gutter,
                   end: gutter,
-                  bottom: 16,
+                  bottom: 20,
                   child: Opacity(
                     opacity: opacity,
                     child: ExcludeSemantics(
@@ -221,25 +235,28 @@ class _BrandBarExpandedArea extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // بلا عدد بعد: كبسولة شفافة بنفس الحجم.
-                          Opacity(
-                            opacity: badge == null ? 0 : 1,
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.16),
-                                borderRadius: AppCorners.full,
-                                border: Border.all(color: Colors.white24),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                child: Text(
-                                  badge ?? ' ',
-                                  maxLines: 1,
-                                  style: AppFonts.tajawal(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: AppTextSize.xs,
-                                    height: 1.25,
+                          // بلا عدد بعد: كبسولة شفافة بنفس الحجم. في جهة النهاية، مقابل بداية العنوان.
+                          Align(
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: Opacity(
+                              opacity: badge == null ? 0 : 1,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.16),
+                                  borderRadius: AppCorners.full,
+                                  border: Border.all(color: Colors.white24),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  child: Text(
+                                    badge ?? ' ',
+                                    maxLines: 1,
+                                    style: AppFonts.tajawal(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: AppTextSize.xs,
+                                      height: 1.25,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -265,7 +282,7 @@ class _BrandBarExpandedArea extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: AppFonts.tajawal(
                                 color: Colors.white.withValues(alpha: 0.88),
-                                fontSize: AppTextSize.md,
+                                fontSize: AppTextSize.sm,
                                 fontWeight: FontWeight.w500,
                                 height: 1.4,
                               ),
@@ -281,6 +298,33 @@ class _BrandBarExpandedArea extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// خلفية الرأس الأصلي: تدرّج الهوية، نقش نقاط خفيف، وتعتيم يزداد نحو الأسفل.
+class _BrandBarBackground extends StatelessWidget {
+  const _BrandBarBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(gradient: AppGradients.heroBanner),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const BrandBannerPattern(),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.black.withValues(alpha: 0.05), Colors.black.withValues(alpha: 0.38)],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

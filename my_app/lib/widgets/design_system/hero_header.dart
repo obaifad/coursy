@@ -66,22 +66,25 @@ class AppHeroHeader extends StatelessWidget {
                         ),
                         SizedBox(height: compact ? 4 : 8),
                       ],
-                      // بلا عدد بعد: كبسولة شفافة بنفس الحجم.
-                      Opacity(
-                        opacity: badge == null ? 0 : 1,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(AppRadius.full),
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          child: Text(
-                            badge ?? ' ',
-                            style: AppFonts.tajawal(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: AppTextSize.xs,
+                      // بلا عدد بعد: كبسولة شفافة بنفس الحجم. في جهة النهاية، مقابل بداية العنوان.
+                      Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: Opacity(
+                          opacity: badge == null ? 0 : 1,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(AppRadius.full),
+                              border: Border.all(color: Colors.white24),
+                            ),
+                            child: Text(
+                              badge ?? ' ',
+                              style: AppFonts.tajawal(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: AppTextSize.xs,
+                              ),
                             ),
                           ),
                         ),
