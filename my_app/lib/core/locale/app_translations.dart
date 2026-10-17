@@ -775,6 +775,22 @@ class AppTranslations extends Translations {
     'search_show_results_few': 'عرض @n نتائج',
     'search_show_results_many': 'عرض @n نتيجة',
     'search_show_results_other': 'عرض @n نتيجة',
+    // تعديل الملف الشخصي: قسم الحساب والاهتمامات وشريط الحفظ.
+    'account_settings': 'إعدادات الحساب',
+    'verified_badge': 'موثّق',
+    'not_verified_badge': 'غير موثّق',
+    'verify_now': 'تحقّق الآن',
+    'email_not_set': 'لا يوجد بريد مرتبط',
+    'interests_add': 'إضافة',
+    'interests_edit': 'تعديل',
+    'interests_remove': 'إزالة الاهتمام',
+    'no_unsaved_changes': 'لا توجد تغييرات',
+    'unsaved_changes': '@n تغيير غير محفوظ',
+    'unsaved_changes_one': 'تغيير واحد غير محفوظ',
+    'unsaved_changes_two': 'تغييران غير محفوظين',
+    'unsaved_changes_few': '@n تغييرات غير محفوظة',
+    'unsaved_changes_many': '@n تغييراً غير محفوظ',
+    'unsaved_changes_other': '@n تغيير غير محفوظ',
   };
 
   static final Map<String, String> _en = {
@@ -1520,5 +1536,18 @@ class AppTranslations extends Translations {
     'search_show_results': 'Show @n results',
     'search_show_results_one': 'Show 1 result',
     'search_show_results_other': 'Show @n results',
+    // Edit profile: account section, interests and the save bar.
+    'account_settings': 'Account settings',
+    'verified_badge': 'Verified',
+    'not_verified_badge': 'Not verified',
+    'verify_now': 'Verify',
+    'email_not_set': 'No email linked',
+    'interests_add': 'Add',
+    'interests_edit': 'Edit',
+    'interests_remove': 'Remove interest',
+    'no_unsaved_changes': 'No changes yet',
+    'unsaved_changes': '@n unsaved changes',
+    'unsaved_changes_one': '1 unsaved change',
+    'unsaved_changes_other': '@n unsaved changes',
   };
 }
