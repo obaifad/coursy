@@ -47,7 +47,7 @@ class CategoryCoursesView extends GetView<CategoryCoursesController> {
                   onBack: Get.back,
                 ),
                 if (isLoading)
-                  AppSliverGridSkeleton(padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0), itemCount: 4, poster: true)
+                  AppSliverGridSkeleton(padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0), itemCount: 4, aurora: true)
                 else ...[
                   if (controller.courses.isNotEmpty)
                     SliverToBoxAdapter(
@@ -84,9 +84,9 @@ class CategoryCoursesView extends GetView<CategoryCoursesController> {
                     SliverPadding(
                       padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
                       sliver: SliverGrid(
-                        gridDelegate: AppGridLayouts.posterGridFor(context),
+                        gridDelegate: AppGridLayouts.auroraGridFor(context),
                         delegate: SliverChildBuilderDelegate(
-                          (_, i) => CoursePosterCard(
+                          (_, i) => CourseAuroraCard(
                             course: courses[i],
                             onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: courses[i]),
                           ),
