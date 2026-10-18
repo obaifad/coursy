@@ -42,8 +42,8 @@ class SyrianEducationApp extends StatelessWidget {
           }
         },
         defaultTransition: Transition.fadeIn,
-        customTransition: AppFadeTransition(),
-        transitionDuration: AppMotion.normal,
+        customTransition: AppPageTransition(),
+        transitionDuration: AppMotion.fast,
         builder: (context, child) {
           return Directionality(
             textDirection: locale.isRtl ? TextDirection.rtl : TextDirection.ltr,

@@ -5,7 +5,6 @@ import 'package:my_app/core/models/app_models.dart';
 import 'package:my_app/core/navigation/route_motion_builder.dart';
 import 'package:my_app/core/navigation/route_settle.dart';
 import 'package:my_app/widgets/app_widgets.dart';
-import 'package:my_app/widgets/course_image_hero.dart';
 
 import 'layout/fakes.dart';
 import 'layout/layout_harness.dart';
@@ -101,68 +100,5 @@ void main() {
     await pumpHome(tester, const SizedBox());
     RouteSettle.run(() => runs++);
     expect(runs, 1);
-  });
-
-  testWidgets('Hero flight in both directions (rounded shuttle) throws nothing', (tester) async {
-    tester.view.physicalSize = const Size(360 * 3, 780 * 3);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(
-      GetMaterialApp(
-        home: Scaffold(
-          body: Align(
-            alignment: Alignment.topLeft,
-            child: GestureDetector(
-              onTap: () => Get.to<void>(
-                () => const Scaffold(
-                  body: Align(
-                    alignment: Alignment.topCenter,
-                    child: SizedBox(
-                      width: 360,
-                      height: 320,
-                      child: CourseImageHero(courseId: 5, child: ColoredBox(color: Colors.teal)),
-                    ),
-                  ),
-                ),
-              ),
-              child: const SizedBox(
-                width: 150,
-                height: 220,
-                child: CourseImageHero(courseId: 5, child: ColoredBox(color: Colors.teal)),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.tap(find.byType(GestureDetector));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 150));
-    expect(tester.takeException(), isNull);
-    await settle(tester);
-
-    Get.back<void>();
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 150));
-    expect(tester.takeException(), isNull);
-    await settle(tester);
-  });
-
-  testWidgets('card and cover decode at the same width (one image-cache entry)', (tester) async {
-    late int a, b;
-    await tester.pumpWidget(
-      MediaQuery(
-        data: const MediaQueryData(size: Size(360, 780), devicePixelRatio: 3),
-        child: Builder(
-          builder: (context) {
-            a = courseImageCacheWidth(context);
-            b = courseImageCacheWidth(context);
-            return const SizedBox();
-          },
-        ),
-      ),
-    );
-    expect(a, b);
-    expect(a, 720, reason: '360dp x 3 = 1080px, capped at 720');
   });
 }

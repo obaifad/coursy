@@ -12,7 +12,6 @@ import '../../../theme/app_colors.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/course_favorite_button.dart';
-import '../../../widgets/course_image_hero.dart';
 import '../../../modules/auth/widgets/register_form_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/registration_closed_dialog.dart';
@@ -265,10 +264,7 @@ SliverAppBar _buildCourseHeroSliver({
       background: Stack(
         fit: StackFit.expand,
         children: [
-          CourseImageHero(
-            courseId: item.id,
-            child: _CourseHeroImage(imagePath: item.imageUrl),
-          ),
+          _CourseHeroImage(imagePath: item.imageUrl),
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(

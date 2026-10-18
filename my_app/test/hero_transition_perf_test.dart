@@ -10,6 +10,8 @@ import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/core/services/course_rating_service.dart';
 import 'package:my_app/modules/courses/controllers/category_courses_controller.dart';
 import 'package:my_app/modules/courses/controllers/course_details_controller.dart';
+import 'package:my_app/modules/courses/views/category_courses_view.dart';
+import 'package:my_app/modules/courses/views/course_details_view.dart';
 import 'package:my_app/widgets/course_favorite_button.dart';
 
 import 'layout/fakes.dart';
@@ -55,14 +57,14 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   }
 
-  testWidgets('the page transition only fades (no scale, so the Hero lands where it aimed)', (tester) async {
+  testWidgets('the page transition is a fade with a short rise (no scale, no Hero)', (tester) async {
     final animation = AnimationController(vsync: const TestVSync(), value: 0.5);
     addTearDown(animation.dispose);
     late Widget built;
     await tester.pumpWidget(
       Builder(
         builder: (context) {
-          built = AppFadeTransition().buildTransition(
+          built = AppPageTransition().buildTransition(
             context,
             null,
             null,
@@ -75,6 +77,7 @@ void main() {
       ),
     );
     expect(built, isA<FadeTransition>());
+    expect(find.byType(SlideTransition), findsOneWidget);
     expect(find.byType(ScaleTransition), findsNothing);
   });
 
@@ -188,5 +191,33 @@ void main() {
     expect(repo.pages, 0, reason: 'skeleton while moving, no request yet');
     await settle(tester);
     expect(repo.pages, 1);
+  });
+
+  // Hero أُزيل من التطبيق كله: لا صورة طائرة بين البطاقة والتفاصيل.
+  testWidgets('no Hero in a course grid nor on the course page', (tester) async {
+    tester.view.physicalSize = const Size(360, 780);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await registerFakes(loggedIn: true, locale: 'ar');
+    Get.routing.args = <String, dynamic>{'id': 3, 'name': 'البرمجة'};
+    Get.put(CategoryCoursesController());
+    await tester.pumpWidget(
+      auditApp(child: const CategoryCoursesView(), locale: 'ar', scale: 1, boundaryKey: GlobalKey()),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(Hero), findsNothing);
+
+    final c = Get.put(CourseDetailsController(), tag: 'no-hero');
+    c.course.value = sampleCourses().first;
+    await tester.pumpWidget(
+      auditApp(
+        child: const CourseDetailsView(controllerTag: 'no-hero'),
+        locale: 'ar',
+        scale: 1,
+        boundaryKey: GlobalKey(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(Hero), findsNothing);
   });
 }

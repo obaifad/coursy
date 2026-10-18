@@ -26,7 +26,6 @@ import 'design_system.dart'
         CourseTicketSpec;
 import '../theme/app_motion.dart';
 import 'course_favorite_button.dart';
-import 'course_image_hero.dart';
 
 part 'app_widgets/course_helpers.dart';
 part 'app_widgets/common_widgets.dart';

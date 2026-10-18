@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:my_app/core/locale/app_translations.dart';
 import 'package:my_app/core/locale/plural.dart';
-import 'package:my_app/widgets/course_image_hero.dart';
 import 'package:my_app/widgets/design_system.dart';
 
 import 'layout/layout_harness.dart';
@@ -18,28 +17,6 @@ void main() {
     locale: const Locale('ar'),
     home: Scaffold(body: Center(child: child)),
   );
-
-  group('course image hero', () {
-    testWidgets('a real course id gets a Hero with the shared tag', (tester) async {
-      await tester.pumpWidget(host(const CourseImageHero(courseId: 7, child: SizedBox(width: 10, height: 10))));
-      expect(tester.widget<Hero>(find.byType(Hero)).tag, courseImageHeroTag(7));
-    });
-
-    testWidgets('skeleton cards (id 0) get no Hero, so identical tags never collide', (tester) async {
-      await tester.pumpWidget(
-        host(
-          const Column(
-            children: [
-              CourseImageHero(courseId: 0, child: SizedBox(width: 10, height: 10)),
-              CourseImageHero(courseId: 0, child: SizedBox(width: 10, height: 10)),
-            ],
-          ),
-        ),
-      );
-      expect(find.byType(Hero), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
-  });
 
   testWidgets('an icon-only circle button exposes its name as tooltip and semantics', (tester) async {
     final handle = tester.ensureSemantics();

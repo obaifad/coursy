@@ -61,8 +61,6 @@ class AppNetworkImage extends StatelessWidget {
     this.borderRadius,
     this.errorWidget,
     this.ignorePointer = false,
-    this.cacheWidth,
-    this.fadeIn = true,
   });
 
   final String url;
@@ -74,13 +72,6 @@ class AppNetworkImage extends StatelessWidget {
 
   /// true داخل كروت قابلة للنقر حتى لا تحجب الصورة ضغطة الـ InkWell.
   final bool ignorePointer;
-
-  /// عرض فك الصورة بالبكسل بدل عرض الرسم × كثافة الشاشة. يوحّد مفتاح الكاش بين بطاقة وغلاف يعرضان نفس
-  /// الصورة بحجمين، فلا يُعاد فكّها ولا تومض أثناء Hero.
-  final int? cacheWidth;
-
-  /// false: تظهر الصورة فوراً بلا تلاشٍ (الغلاف الهابط من Hero).
-  final bool fadeIn;
 
   @override
   Widget build(BuildContext context) {
@@ -105,8 +96,8 @@ class AppNetworkImage extends StatelessWidget {
         width: hasExplicitSize ? w : null,
         height: hasExplicitSize ? h : null,
         fit: fit,
-        memCacheWidth: cacheWidth ?? (hasExplicitSize ? (w * pixelRatio).round() : null),
-        fadeInDuration: fadeIn ? AppMotion.fast : Duration.zero,
+        memCacheWidth: hasExplicitSize ? (w * pixelRatio).round() : null,
+        fadeInDuration: AppMotion.fast,
         errorWidget: (_, __, ___) => fallback,
       );
     }

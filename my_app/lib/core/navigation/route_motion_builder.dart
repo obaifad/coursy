@@ -8,7 +8,7 @@ abstract final class RouteMotion {
   static final ValueNotifier<bool> inMotion = ValueNotifier<bool>(false);
   static final Set<Timer> _timers = {};
 
-  /// هامش بعد انتهاء المدة المعلنة للانتقال (آخر إطار + هبوط Hero).
+  /// هامش بعد انتهاء المدة المعلنة للانتقال (آخر إطار).
   static const Duration _tail = Duration(milliseconds: 60);
 
   /// الانتقال يُعدّ جارياً طوال مدة المسار المعلنة. المدة لا حالة الأنيميشن: حالة أنيميشن مسارات GetX
