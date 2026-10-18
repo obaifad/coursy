@@ -1,3 +1,4 @@
+import '../../../core/navigation/route_settle.dart';
 import '../../../core/cache/memory_cache.dart';
 import 'package:get/get.dart';
 
@@ -45,7 +46,11 @@ class InstructorDetailsController extends GetxController {
     _syncFavorite();
     final cached = _restoreFromCache();
     if (cached != null && cached.isFresh()) return;
-    loadDetails();
+    // ما لدينا يُعرض فوراً (كما كان أول loadDetails يفعل)، والطلبات بعد حركة الفتح.
+    if (instructorId > 0 && instructor.value != null) isLoading.value = false;
+    RouteSettle.run(() {
+      if (!isClosed) loadDetails();
+    });
   }
 
   String get _cacheKey => MemoryCache.key('instructor-details', [instructorId]);

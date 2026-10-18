@@ -1,3 +1,4 @@
+import '../core/navigation/route_motion_builder.dart';
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
@@ -198,9 +199,14 @@ class _GlassCircle extends StatelessWidget {
       ),
       child: SizedBox.square(
         dimension: diameter,
+        // التمويه الحقيقي يُوقَف أثناء حركة الانتقال (فوق غلاف يتلاشى مع الصفحة كان يُرسم في كل إطار).
         child: blur
-            ? ClipOval(
-                child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), child: fill),
+            ? RouteMotionBuilder(
+                builder: (context, inMotion) => inMotion
+                    ? fill
+                    : ClipOval(
+                        child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), child: fill),
+                      ),
               )
             : fill,
       ),

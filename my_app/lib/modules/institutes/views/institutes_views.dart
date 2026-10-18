@@ -363,6 +363,12 @@ class _CoursesTab extends StatelessWidget {
           action: FilledButton(onPressed: controller.loadDetails, child: Text('retry'.tr)),
         );
       }
+      if (courses.isEmpty && controller.isLoading.value) {
+        return AppRowListSkeleton(
+          padding: EdgeInsets.fromLTRB(AppLayout.readableInset(context), 16, AppLayout.readableInset(context), 8),
+          itemCount: 3,
+        );
+      }
       if (courses.isEmpty) {
         return AppEmptyState.scrollable(
           context: context,
@@ -422,6 +428,12 @@ class _InstructorsTab extends StatelessWidget {
           message: error,
           icon: Icons.cloud_off_outlined,
           action: FilledButton(onPressed: controller.loadDetails, child: Text('retry'.tr)),
+        );
+      }
+      if (instructors.isEmpty && controller.isLoading.value) {
+        return AppRowListSkeleton(
+          padding: EdgeInsets.fromLTRB(AppLayout.readableInset(context), 16, AppLayout.readableInset(context), 8),
+          itemCount: 3,
         );
       }
       if (instructors.isEmpty) {

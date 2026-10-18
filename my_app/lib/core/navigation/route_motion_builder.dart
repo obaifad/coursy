@@ -27,6 +27,9 @@ abstract final class RouteMotion {
     scheduleMicrotask(() => inMotion.value = _timers.isNotEmpty);
   }
 
+  /// انتقال جارٍ الآن (متزامن؛ [inMotion] يُحدَّث بعد الحدث الحالي).
+  static bool get isMoving => _timers.isNotEmpty;
+
   static void resetForTest() {
     for (final t in _timers) {
       t.cancel();
