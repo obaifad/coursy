@@ -69,7 +69,10 @@ class _FavoritesBody extends StatelessWidget {
       final courses = controller.courses.toList(growable: false);
 
       if (controller.isLoading.value) {
-        return AppRowListSkeleton(padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 8), itemCount: 5);
+        return CustomScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          slivers: [AppSliverGridSkeleton(padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 8), aurora: true)],
+        );
       }
 
       if (courses.isEmpty && controller.errorMessage.value != null) {
@@ -129,14 +132,14 @@ class _FavoritesBody extends StatelessWidget {
       return RefreshIndicator(
         color: AppColors.primary,
         onRefresh: controller.loadFavorites,
-        child: ListView.separated(
+        child: GridView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.fromLTRB(hPad, 16, hPad, AppLayout.scrollBottomInset(context)),
+          gridDelegate: AppGridLayouts.auroraGridFor(context),
           itemCount: courses.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (_, i) {
             final course = courses[i];
-            return _FavoriteRowItem(key: ValueKey(course.id), course: course, controller: controller);
+            return _FavoriteItem(key: ValueKey(course.id), course: course, controller: controller);
           },
         ),
       );
@@ -144,18 +147,18 @@ class _FavoritesBody extends StatelessWidget {
   }
 }
 
-/// بطاقة الدورة الصفّية + زر قلب في نهاية سطر العنوان لإزالتها (مع تلاشٍ وتراجع).
-class _FavoriteRowItem extends StatefulWidget {
-  const _FavoriteRowItem({super.key, required this.course, required this.controller});
+/// بطاقة الدورة الموحّدة (Aurora)؛ قلبها هنا يزيل الدورة (مع تلاشٍ وتراجع).
+class _FavoriteItem extends StatefulWidget {
+  const _FavoriteItem({super.key, required this.course, required this.controller});
 
   final CourseModel course;
   final FavoritesController controller;
 
   @override
-  State<_FavoriteRowItem> createState() => _FavoriteRowItemState();
+  State<_FavoriteItem> createState() => _FavoriteItemState();
 }
 
-class _FavoriteRowItemState extends State<_FavoriteRowItem> {
+class _FavoriteItemState extends State<_FavoriteItem> {
   bool _leaving = false;
 
   Future<void> _remove() async {
@@ -192,24 +195,10 @@ class _FavoriteRowItemState extends State<_FavoriteRowItem> {
         scale: _leaving ? 0.92 : 1,
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeIn,
-        child: CourseRowCard(
+        child: CourseAuroraCard(
           course: course,
           onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
-          trailing: Tooltip(
-            message: 'favorite_remove'.tr,
-            child: Material(
-              color: AppColors.dangerSoft,
-              shape: const CircleBorder(),
-              child: InkWell(
-                customBorder: const CircleBorder(),
-                onTap: _leaving ? null : _remove,
-                child: const SizedBox.square(
-                  dimension: 36,
-                  child: Icon(Icons.favorite_rounded, color: AppColors.danger, size: 20),
-                ),
-              ),
-            ),
-          ),
+          onFavoritePressed: _leaving ? null : _remove,
         ),
       ),
     );

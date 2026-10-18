@@ -453,7 +453,7 @@ class PrivateInstructorListCard extends StatelessWidget {
     final price = instructor.hourlyPrice;
     return AppRowCard(
       onTap: onTap,
-      leading: _InstructorRowThumb(imageUrl: instructor.resolvedImageUrl),
+      leading: _InstructorRowThumb(imageUrl: instructor.resolvedImageUrl, gender: instructor.gender),
       title: AppRowTitle(instructor.name),
       trailing: instructor.isPrivate ? const _PrivateBadge() : null,
       subtitle: BidiText(
@@ -496,16 +496,17 @@ class PrivateInstructorListCard extends StatelessWidget {
 }
 
 class _InstructorRowThumb extends StatelessWidget {
-  const _InstructorRowThumb({required this.imageUrl});
+  const _InstructorRowThumb({required this.imageUrl, this.gender});
 
   final String? imageUrl;
+  final String? gender;
 
   @override
   Widget build(BuildContext context) {
     if (imageUrl != null) return AppNetworkImage(url: imageUrl!, fit: BoxFit.cover, ignorePointer: true);
-    return const DecoratedBox(
-      decoration: BoxDecoration(gradient: AppGradients.primary),
-      child: Center(child: Icon(Icons.person_rounded, color: Colors.white, size: 40)),
+    return DecoratedBox(
+      decoration: const BoxDecoration(gradient: AppGradients.primary),
+      child: Center(child: Icon(instructorHeadIcon(gender), color: Colors.white, size: 40)),
     );
   }
 }
@@ -606,8 +607,16 @@ class PrivateInstructorMiniCard extends StatelessWidget {
   }
 }
 
-/// صورة دائرية للمدرّس بإطار بلون الهوية (بنفسجي ناعم) وظل خفيف. بلا صورة (أو فشل تحميلها): أيقونة رجل أو
-/// امرأة بحسب [gender] بلون الهوية على خلفية بنفسجية فاتحة، وأيقونة شخص محايدة إن لم يُعرف الجنس.
+/// أيقونة رأس للمدرّس حين لا توجد صورة: رجل بشعر قصير أو امرأة بشعر طويل بحسب [gender]، ووجه محايد
+/// إن لم يُعرف الجنس. مصدر واحد لكل الشاشات (البطاقات، تفاصيل المدرّس، مدرّس الدورة).
+IconData instructorHeadIcon(String? gender) => switch (gender) {
+  'male' => Icons.face_6_rounded,
+  'female' => Icons.face_3_rounded,
+  _ => Icons.face_rounded,
+};
+
+/// صورة دائرية للمدرّس بإطار بلون الهوية (بنفسجي ناعم) وظل خفيف. بلا صورة (أو فشل تحميلها): رأس رجل أو
+/// امرأة بحسب [gender] ([instructorHeadIcon]) بلون الهوية على خلفية بنفسجية فاتحة.
 class _DoctorStyleAvatar extends StatelessWidget {
   const _DoctorStyleAvatar({required this.imageUrl, required this.size, this.gender});
 
@@ -617,18 +626,12 @@ class _DoctorStyleAvatar extends StatelessWidget {
 
   static const double _border = 2.5;
 
-  IconData get _fallbackIcon => switch (gender) {
-    'male' => Icons.man_rounded,
-    'female' => Icons.woman_rounded,
-    _ => Icons.person_rounded,
-  };
-
   @override
   Widget build(BuildContext context) {
     final fallback = ColoredBox(
       color: AppColors.primary.withValues(alpha: 0.1),
       child: Center(
-        child: Icon(_fallbackIcon, color: AppColors.primary, size: size * 0.62),
+        child: Icon(instructorHeadIcon(gender), color: AppColors.primary, size: size * 0.62),
       ),
     );
     return Container(

@@ -7,10 +7,13 @@ part of '../app_widgets.dart';
 /// التوهّج ثابت (بلا حركة دائمة تكلّف إطارات أثناء التمرير)، والضبابية حقيقية لكنها محصورة في اللوح.
 /// عند الضغط تميل البطاقة قليلاً نحو الإصبع ويلمع سطحها؛ تقليل الحركة في النظام يلغي الميل.
 class CourseAuroraCard extends StatefulWidget {
-  const CourseAuroraCard({super.key, required this.course, this.onTap});
+  const CourseAuroraCard({super.key, required this.course, this.onTap, this.onFavoritePressed});
 
   final CourseModel course;
   final VoidCallback? onTap;
+
+  /// بديل لتبديل المفضلة الافتراضي (صفحة المفضلة: إزالة مع تلاشٍ وتراجع).
+  final Future<void> Function()? onFavoritePressed;
 
   @override
   State<CourseAuroraCard> createState() => _CourseAuroraCardState();
@@ -145,7 +148,7 @@ class _CourseAuroraCardState extends State<CourseAuroraCard> {
                       top: CourseAuroraSpec.topInset - 6,
                       start: CourseAuroraSpec.topInset,
                       end: CourseAuroraSpec.topInset - 6,
-                      child: _AuroraTopRow(course: course),
+                      child: _AuroraTopRow(course: course, onFavoritePressed: widget.onFavoritePressed),
                     ),
                   ],
                 ),
@@ -243,9 +246,10 @@ class _AuroraGlowPainter extends CustomPainter {
 
 /// كبسولة السعر الداكنة وزر المفضلة الداكن، متجاوران في زاوية النهاية (يسار بالعربية).
 class _AuroraTopRow extends StatelessWidget {
-  const _AuroraTopRow({required this.course});
+  const _AuroraTopRow({required this.course, this.onFavoritePressed});
 
   final CourseModel course;
+  final Future<void> Function()? onFavoritePressed;
 
   @override
   Widget build(BuildContext context) {
@@ -257,7 +261,7 @@ class _AuroraTopRow extends StatelessWidget {
           child: IgnorePointer(child: _AuroraPricePill(course: course)),
         ),
         const SizedBox(width: 4),
-        CourseFavoriteButton(courseId: course.id, diameter: 32, dark: true),
+        CourseFavoriteButton(courseId: course.id, diameter: 32, dark: true, onPressed: onFavoritePressed),
       ],
     );
   }

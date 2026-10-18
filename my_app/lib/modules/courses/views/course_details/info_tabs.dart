@@ -193,11 +193,13 @@ class _InstructorAvatar extends StatelessWidget {
       ),
       child: ClipOval(
         child: url != null
-            ? AppNetworkImage(url: url, fit: BoxFit.cover, ignorePointer: true)
-            : Container(
-                color: AppColors.indicatorFill,
-                child: const Icon(Icons.person_rounded, color: AppColors.primary, size: 42),
-              ),
+            ? AppNetworkImage(
+                url: url,
+                fit: BoxFit.cover,
+                ignorePointer: true,
+                errorWidget: _InstructorHeadFallback(gender: instructor.gender),
+              )
+            : _InstructorHeadFallback(gender: instructor.gender),
       ),
     );
   }
@@ -298,6 +300,20 @@ class _SectionCard extends StatelessWidget {
           child,
         ],
       ),
+    );
+  }
+}
+
+class _InstructorHeadFallback extends StatelessWidget {
+  const _InstructorHeadFallback({required this.gender});
+
+  final String? gender;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: AppColors.indicatorFill,
+      child: Center(child: Icon(instructorHeadIcon(gender), color: AppColors.primary, size: 50)),
     );
   }
 }
