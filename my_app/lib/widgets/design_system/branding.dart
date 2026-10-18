@@ -130,7 +130,8 @@ class BrandBannerPattern extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(painter: _BrandBannerPatternPainter());
+    // نحو 100 دائرة و6 خطوط: تُرسم مرة وتُخزَّن، لا مع كل إطار طي/تمرير للرأس.
+    return RepaintBoundary(child: CustomPaint(painter: _BrandBannerPatternPainter()));
   }
 }
 

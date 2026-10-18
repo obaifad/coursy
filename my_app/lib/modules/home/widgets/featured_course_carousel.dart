@@ -239,9 +239,10 @@ class _SideSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // البطاقة نفسها طبقة مخزّنة: التمرير يغيّر الشفافية والمقياس فقط فوقها بلا إعادة رسمها (صورة وظلال).
     return AnimatedBuilder(
       animation: controller,
-      child: child,
+      child: RepaintBoundary(child: child),
       builder: (context, child) {
         final position = controller.hasClients && controller.position.haveDimensions
             ? controller.page ?? page.toDouble()
@@ -263,12 +264,15 @@ class _Glow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 600),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.full),
-          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.55), blurRadius: 60)],
+    // طبقة مستقلة: لونه وحده يتحرك (600ms)، فلا يُعاد رسم ما حوله معه، ولا يُعاد رسمه مع التمرير.
+    return RepaintBoundary(
+      child: IgnorePointer(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 600),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.full),
+            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.55), blurRadius: 40)],
+          ),
         ),
       ),
     );
@@ -294,7 +298,7 @@ class _FloatingCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: radius,
           boxShadow: const [
-            BoxShadow(color: Color(0x73111827), blurRadius: 28, spreadRadius: -14, offset: Offset(0, 18)),
+            BoxShadow(color: Color(0x73111827), blurRadius: 20, spreadRadius: -10, offset: Offset(0, 14)),
             BoxShadow(color: Color(0x14111827), blurRadius: 6, offset: Offset(0, 2)),
           ],
         ),
