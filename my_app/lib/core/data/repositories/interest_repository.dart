@@ -13,6 +13,14 @@ class InterestRepository extends GetxService {
   final ApiClient _client;
 
   Future<List<CategoryModel>> fetchInterests({int perPage = 50}) async {
-    return fetchAllPages(_client, ApiEndpoints.categories, CategoryModel.fromJson, perPage: perPage);
+    // all=1: كل التصنيفات حتى التي بلا دورات (courses_count: 0). اهتمامات الطالب يجب أن تشمل كل التصنيفات
+    // لأن إشعارات الدورات الجديدة تُرسل حسبها؛ بدونه يعرض الخادم التصنيفات التي فيها دورات فقط.
+    return fetchAllPages(
+      _client,
+      ApiEndpoints.categories,
+      CategoryModel.fromJson,
+      perPage: perPage,
+      query: const {'all': 1},
+    );
   }
 }
