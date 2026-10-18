@@ -102,8 +102,8 @@ void main() {
           builder: (context) => ListView(
             children: [
               AppHorizontalListView(
-                // نفس ارتفاع الرئيسية (home_view): 120 × تكبير الخط.
-                height: 120 * CourseCardMetrics.textScaleOf(context),
+                // نفس ارتفاع الرئيسية (home_view).
+                height: PrivateInstructorMiniCard.railHeight(context),
                 bottomInset: AppHorizontalListView.cardShadowBottomInset,
                 itemCount: instructors.length,
                 itemBuilder: (_, i) => PrivateInstructorMiniCard(instructor: instructors[i], onTap: () {}),

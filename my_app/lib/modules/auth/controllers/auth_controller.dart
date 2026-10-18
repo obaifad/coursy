@@ -20,6 +20,7 @@ import '../../../core/storage/token_storage.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/utils/education_level_utils.dart';
 import '../../../routes/app_routes.dart';
+import '../../../core/utils/app_toast.dart';
 
 class AuthController extends GetxController {
   /// صفحتا الدخول والتسجيل تتشاركان هذا المتحكّم وتستبدل إحداهما الأخرى (offNamed / offAllNamed).
@@ -231,11 +232,11 @@ class AuthController extends GetxController {
     final pass = passwordController.text;
 
     if (loginId.isEmpty || pass.isEmpty) {
-      Get.snackbar('alert'.tr, 'enter_login_password'.tr);
+      AppToast.show('alert'.tr, 'enter_login_password'.tr);
       return;
     }
     if (loginId.contains('@') ? !_isValidEmail(loginId) : !_looksLikePhone(loginId)) {
-      Get.snackbar('alert'.tr, 'enter_valid_login'.tr);
+      AppToast.show('alert'.tr, 'enter_valid_login'.tr);
       return;
     }
 
@@ -247,11 +248,11 @@ class AuthController extends GetxController {
       await _openPendingEmailVerification(loginId);
     } on ApiException catch (e) {
       errorMessage.value = e.message;
-      Get.snackbar('login_failed'.tr, e.message);
+      AppToast.show('login_failed'.tr, e.message, kind: ToastKind.error);
     } catch (_) {
       final msg = kIsWeb ? 'web_cors_hint'.tr : 'connection_error'.tr;
       errorMessage.value = msg;
-      Get.snackbar('error'.tr, msg);
+      AppToast.show('error'.tr, msg);
     } finally {
       isLoading.value = false;
     }
@@ -386,15 +387,15 @@ class AuthController extends GetxController {
       loginIdController.text = registeredEmail.isNotEmpty ? registeredEmail : phone;
       registerPasswordController.clear();
       confirmPasswordController.clear();
-      Get.snackbar('register_done'.tr, 'register_login_hint'.tr);
+      AppToast.show('register_done'.tr, 'register_login_hint'.tr, kind: ToastKind.success);
     } on ApiException catch (e) {
       _applyApiRegisterErrors(e);
       if (registerFieldErrors.isEmpty) {
-        Get.snackbar('register_failed'.tr, e.message);
+        AppToast.show('register_failed'.tr, e.message, kind: ToastKind.error);
       }
     } catch (_) {
       _showRegisterStepError('connection_error'.tr);
-      Get.snackbar('error'.tr, 'connection_error'.tr);
+      AppToast.show('error'.tr, 'connection_error'.tr);
     } finally {
       isSubmittingRegister.value = false;
     }
@@ -497,7 +498,7 @@ class AuthController extends GetxController {
 
   void _showRegisterStepError(String message) {
     registerStepError.value = message;
-    Get.snackbar('alert'.tr, message);
+    AppToast.show('alert'.tr, message);
   }
 
   void _applyApiRegisterErrors(ApiException e) {

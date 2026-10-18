@@ -88,14 +88,12 @@ class CityDetailsView extends GetView<CityDetailsController> {
                                     ),
                                   ),
                                 ),
-                              if (controller.hasMore.value)
-                                OutlinedButton.icon(
-                                  onPressed: controller.isLoadingMore.value ? null : controller.loadMore,
-                                  icon: controller.isLoadingMore.value
-                                      ? const AppInlineLoader()
-                                      : const Icon(Icons.expand_more_rounded),
-                                  label: Text('load_more'.tr),
-                                ),
+                              AppLoadMoreFooter(
+                                hasMore: controller.hasMore.value,
+                                isLoading: controller.isLoadingMore.value,
+                                failed: controller.loadMoreFailed.value,
+                                onLoadMore: controller.loadMore,
+                              ),
                             ],
                           ),
                         ),

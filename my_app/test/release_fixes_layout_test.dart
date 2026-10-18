@@ -121,25 +121,29 @@ void main() {
       });
     }
 
-    testWidgets('booking card shows full "view details" next to "pay now" ($locale)', (tester) async {
+    testWidgets('booking card: "pay now" in full with a compact cancel next to it, no "view details" ($locale)', (
+      tester,
+    ) async {
       Get.locale = Locale(locale);
       await registerFakes(loggedIn: true, locale: locale);
       await _useEnrollments([_pendingWithAdvance(studyType: 'offline')]);
       Get.put(MyCoursesController());
       await _pumpScene(tester, const MyCoursesTabView(), locale: locale);
 
-      final details = find.text('view_details'.tr);
-      expect(find.text('payment_pay_now'.tr), findsOneWidget);
-      expect(details, findsOneWidget);
+      final pay = find.text('payment_pay_now'.tr);
+      expect(pay, findsOneWidget);
+      // الضغط على البطاقة يفتح التفاصيل: لا زر منفصل لها.
+      expect(find.text('view_details'.tr), findsNothing);
+      expect(find.byTooltip('cancel_booking'.tr), findsOneWidget, reason: 'compact cancel icon beside pay');
       // يُرسم بحجمه الطبيعي: لا قصّ ولا تصغير.
-      final fitted = find.ancestor(of: details, matching: find.byType(FittedBox));
-      expect(tester.getSize(fitted).width, greaterThanOrEqualTo(tester.getSize(details).width - 0.5));
-      expect(_truncatedTexts(tester), isNot(contains(contains('view_details'.tr))));
+      final fitted = find.ancestor(of: pay, matching: find.byType(FittedBox));
+      expect(tester.getSize(fitted).width, greaterThanOrEqualTo(tester.getSize(pay).width - 0.5));
+      expect(_truncatedTexts(tester), isNot(contains(contains('payment_pay_now'.tr))));
       await _disposeScene(tester);
     });
   }
 
-  testWidgets('online courses show only "view details"', (tester) async {
+  testWidgets('online courses: no pay button; a pending booking offers only a full-width cancel', (tester) async {
     Get.locale = const Locale('ar');
     await registerFakes(loggedIn: true, locale: 'ar');
     await _useEnrollments([_pendingWithAdvance(studyType: 'online')]);
@@ -147,7 +151,8 @@ void main() {
     await _pumpScene(tester, const MyCoursesTabView(), locale: 'ar');
 
     expect(find.text('payment_pay_now'.tr), findsNothing);
-    expect(find.text('view_details'.tr), findsOneWidget);
+    expect(find.text('view_details'.tr), findsNothing);
+    expect(find.text('cancel_booking'.tr), findsOneWidget);
     await _disposeScene(tester);
   });
 

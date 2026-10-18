@@ -171,6 +171,7 @@ class _RootBottomNav extends StatelessWidget {
                         _CenterNavButton(
                           selected: currentIndex == items[2].index,
                           icon: items[2].activeIcon,
+                          label: 'nav_home'.tr,
                           onTap: () => onChanged(items[2].index),
                         ),
                       ],
@@ -187,7 +188,7 @@ class _RootBottomNav extends StatelessWidget {
 }
 
 class _CenterNavButton extends StatelessWidget {
-  const _CenterNavButton({required this.selected, required this.icon, required this.onTap});
+  const _CenterNavButton({required this.selected, required this.icon, required this.onTap, required this.label});
 
   static const double _size = 46;
 
@@ -195,32 +196,41 @@ class _CenterNavButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
+  /// أيقونة بلا نص: قارئ الشاشة يحتاج اسمها وحالة تحديدها.
+  final String label;
+
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: AnimatedContainer(
-          duration: AppMotion.fast,
-          curve: Curves.easeOutCubic,
-          width: _size,
-          height: _size,
-          decoration: BoxDecoration(
-            gradient: selected ? AppGradients.primary : null,
-            color: selected ? null : Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(color: selected ? Colors.transparent : AppColors.primary.withValues(alpha: 0.14)),
-            boxShadow: [
-              BoxShadow(
-                color: selected ? AppColors.shadowPrimaryStrong : AppColors.shadowNeutral,
-                blurRadius: selected ? 16 : 10,
-                offset: Offset(0, selected ? 8 : 4),
-              ),
-            ],
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: AnimatedContainer(
+            duration: AppMotion.fast,
+            curve: Curves.easeOutCubic,
+            width: _size,
+            height: _size,
+            decoration: BoxDecoration(
+              gradient: selected ? AppGradients.primary : null,
+              color: selected ? null : Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: selected ? Colors.transparent : AppColors.primary.withValues(alpha: 0.14)),
+              boxShadow: [
+                BoxShadow(
+                  color: selected ? AppColors.shadowPrimaryStrong : AppColors.shadowNeutral,
+                  blurRadius: selected ? 16 : 10,
+                  offset: Offset(0, selected ? 8 : 4),
+                ),
+              ],
+            ),
+            child: Icon(icon, color: selected ? Colors.white : AppColors.primary, size: 22),
           ),
-          child: Icon(icon, color: selected ? Colors.white : AppColors.primary, size: 22),
         ),
       ),
     );

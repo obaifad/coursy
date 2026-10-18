@@ -16,6 +16,7 @@ class InstructorDetailsController extends GetxController {
   final isLoadingCourses = true.obs;
   final isLoadingMoreCourses = false.obs;
   final hasMoreCourses = true.obs;
+  final loadMoreCoursesFailed = false.obs;
   final isFavorite = false.obs;
   final instructor = Rxn<InstructorModel>();
   final courses = <CourseModel>[].obs;
@@ -125,7 +126,7 @@ class InstructorDetailsController extends GetxController {
       if (reset) {
         coursesError.value = userErrorMessage(e);
       } else {
-        Get.snackbar('error'.tr, 'error_load_more_failed'.tr);
+        loadMoreCoursesFailed.value = true;
       }
     } finally {
       if (reset) isLoadingCourses.value = false;
@@ -137,6 +138,7 @@ class InstructorDetailsController extends GetxController {
   Future<void> loadMoreCourses() async {
     if (!hasMoreCourses.value || isLoadingMoreCourses.value || isLoadingCourses.value) return;
     isLoadingMoreCourses.value = true;
+    loadMoreCoursesFailed.value = false;
     try {
       await _loadCourses(reset: false);
     } finally {

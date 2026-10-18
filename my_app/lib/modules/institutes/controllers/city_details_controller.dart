@@ -11,6 +11,7 @@ class CityDetailsController extends GetxController {
   final isLoading = true.obs;
   final isLoadingMore = false.obs;
   final hasMore = true.obs;
+  final loadMoreFailed = false.obs;
   final city = Rxn<CityModel>();
   final institutes = <InstituteModel>[].obs;
   final title = ''.obs;
@@ -74,14 +75,15 @@ class CityDetailsController extends GetxController {
   Future<void> loadMore() async {
     if (!hasMore.value || isLoadingMore.value) return;
     isLoadingMore.value = true;
+    loadMoreFailed.value = false;
     try {
       final next = _page + 1;
       final result = await _cityRepository.fetchInstitutesByCity(cityId, page: next, perPage: _perPage);
       institutes.addAll(result.items);
       _page = next;
       hasMore.value = result.hasMore;
-    } catch (e) {
-      Get.snackbar('error'.tr, userErrorMessage(e));
+    } catch (_) {
+      loadMoreFailed.value = true;
     } finally {
       isLoadingMore.value = false;
     }

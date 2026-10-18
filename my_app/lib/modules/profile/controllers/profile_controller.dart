@@ -18,7 +18,7 @@ import '../../../core/network/json_parser.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/utils/education_level_utils.dart';
 import '../../../core/session/session_refresh.dart';
-import '../../../theme/app_colors.dart';
+import '../../../core/utils/app_toast.dart';
 
 class ProfileController extends GetxController with LatestLoadGuard {
   ProfileController();
@@ -35,6 +35,9 @@ class ProfileController extends GetxController with LatestLoadGuard {
   final phoneController = TextEditingController();
   final isSaving = false.obs;
   final listsLoading = false.obs;
+
+  /// تعذّر جلب بيانات الملف من الخادم (والنموذج معبأ مما في الجهاز فقط): يظهر شريط تنبيه مع إعادة المحاولة.
+  final profileLoadFailed = false.obs;
   final hasChanges = false.obs;
 
   /// عدد الحقول التي تغيّرت عن آخر نسخة محفوظة (الصورة حقل واحد) — لشريط الحفظ السفلي.
@@ -199,12 +202,14 @@ class ProfileController extends GetxController with LatestLoadGuard {
   Future<void> loadProfile() async {
     try {
       final user = await _repository.fetchFullStudentUser();
+      profileLoadFailed.value = false;
       if (user.isNotEmpty) {
         _cachedProfileUser = user;
         _applyUserToForm(user);
       }
     } catch (_) {
-      // نكمل من الكاش المحلي أدناه.
+      // نكمل من الكاش المحلي أدناه، ونُظهر للمستخدم أن البيانات قد لا تكون الأحدث.
+      profileLoadFailed.value = true;
     } finally {
       await _fillAcademicGapsFromCache();
       captureEditBaseline();
@@ -281,7 +286,7 @@ class ProfileController extends GetxController with LatestLoadGuard {
       avatarDirty.value = true;
       _recomputeHasChanges();
     } catch (_) {
-      Get.snackbar('error'.tr, 'pick_image_failed'.tr);
+      AppToast.show('error'.tr, 'pick_image_failed'.tr);
     }
   }
 
@@ -312,7 +317,7 @@ class ProfileController extends GetxController with LatestLoadGuard {
     if (!hasChanges.value) return;
     final validationError = validateProfile();
     if (validationError != null) {
-      Get.snackbar('alert'.tr, validationError);
+      AppToast.show('alert'.tr, validationError);
       return;
     }
 
@@ -391,26 +396,16 @@ class ProfileController extends GetxController with LatestLoadGuard {
       // المستخدم ربما رجع بنفسه خلال المهلة — لا نُغلق صفحة أخرى بدلها.
       if (Get.currentRoute == AppRoutes.editProfile) Get.back(result: true);
     } on ApiException catch (e) {
-      Get.snackbar('error'.tr, e.message);
+      AppToast.show('error'.tr, e.message);
     } catch (_) {
-      Get.snackbar('error'.tr, 'save_profile_failed'.tr);
+      AppToast.show('error'.tr, 'save_profile_failed'.tr);
     } finally {
       isSaving.value = false;
     }
   }
 
   void _showSavedSnack() {
-    Get.snackbar(
-      'profile_saved'.tr,
-      'profile_changes_saved'.tr,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppColors.primaryStrong,
-      colorText: Colors.white,
-      icon: const Icon(Icons.check_circle_rounded, color: Colors.white),
-      margin: const EdgeInsets.all(16),
-      borderRadius: AppRadius.md,
-      duration: const Duration(seconds: 3),
-    );
+    AppToast.show('profile_saved'.tr, 'profile_changes_saved'.tr, kind: ToastKind.success);
   }
 
   void toggleCategoryId(int id) {

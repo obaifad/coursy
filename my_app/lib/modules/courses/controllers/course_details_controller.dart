@@ -15,6 +15,7 @@ import '../../../core/session/course_catalog_sync.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/utils/auth_guard.dart';
 import '../../profile/controllers/my_courses_controller.dart';
+import '../../../core/utils/app_toast.dart';
 
 class CourseDetailsController extends GetxController {
   /// صفحات تفاصيل الدورات المفتوحة الآن — لكلٍّ متحكّمها بوسمٍ خاص، فلا يصلح Get.find بدون وسم.
@@ -69,6 +70,14 @@ class CourseDetailsController extends GetxController {
       // مع مدة الصلاحية (دقيقتان) بدل فرض المزامنة عند كل فتح لصفحة دورة.
       unawaited(_favoritesService.syncFromApi());
     }
+  }
+
+  /// سحب للتحديث: يعيد جلب الدورة والجداول والتقييمات (مقاعد وأسعار تتغيّر) دون هيكل تحميل كامل.
+  Future<void> refreshDetails() async {
+    final id = _requestedId;
+    if (id == null) return;
+    await _loadDetails(id, hadSeed: true);
+    if (_tokenStorage.isLoggedIn) await refreshEnrollment();
   }
 
   /// إعادة محاولة جلب الدورة بعد فشل التحميل.
@@ -245,7 +254,7 @@ class CourseDetailsController extends GetxController {
       if (!await AuthGuard.requireLogin(message: 'review_login_required'.tr)) return;
 
       if (!isEnrolled.value) {
-        Get.snackbar(
+        AppToast.show(
           'alert'.tr,
           hasCourseEnrollment.value ? 'review_completed_required'.tr : 'review_enrollment_required'.tr,
         );
@@ -253,7 +262,7 @@ class CourseDetailsController extends GetxController {
       }
       await _updateReviewPermission();
       if (hasSubmittedReview.value) {
-        Get.snackbar('alert'.tr, 'review_once_only'.tr);
+        AppToast.show('alert'.tr, 'review_once_only'.tr);
         return;
       }
 
@@ -273,11 +282,11 @@ class CourseDetailsController extends GetxController {
       }
       await _updateReviewPermission();
       reviewCommentController.clear();
-      Get.snackbar('review_submitted_title'.tr, 'review_submitted_msg'.tr);
+      AppToast.show('review_submitted_title'.tr, 'review_submitted_msg'.tr, kind: ToastKind.success);
     } on ApiException catch (e) {
-      Get.snackbar('error'.tr, e.message);
+      AppToast.show('error'.tr, e.message);
     } catch (_) {
-      Get.snackbar('error'.tr, 'review_submit_failed'.tr);
+      AppToast.show('error'.tr, 'review_submit_failed'.tr);
     } finally {
       isSubmittingReview.value = false;
     }

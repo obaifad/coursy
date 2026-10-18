@@ -117,30 +117,14 @@ class _CoursesScrollViewState extends State<_CoursesScrollView> {
             Obx(() => _content(context, hPad)),
             Obx(
               () => SliverToBoxAdapter(
-                child: c.isLoadingMore.value
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Center(child: AppInlineLoader()),
-                      )
-                    : c.loadMoreFailed.value
-                    ? Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                        child: Column(
-                          children: [
-                            Text(
-                              'error_load_more_failed'.tr,
-                              textAlign: TextAlign.center,
-                              style: AppTypography.cardSubtitle(),
-                            ),
-                            TextButton.icon(
-                              onPressed: c.loadMoreCourses,
-                              icon: const Icon(Icons.refresh_rounded),
-                              label: Text('retry'.tr),
-                            ),
-                          ],
-                        ),
-                      )
-                    : const SizedBox.shrink(),
+                // المشغّل هنا مستمع التمرير في المتحكم (ويحمّل كل الصفحات عند الترتيب)؛ الذيل يعرض الحالة فقط.
+                child: AppLoadMoreFooter(
+                  hasMore: false,
+                  isLoading: c.isLoadingMore.value,
+                  failed: c.loadMoreFailed.value,
+                  onLoadMore: c.loadMoreCourses,
+                  autoLoad: false,
+                ),
               ),
             ),
             SliverToBoxAdapter(child: SizedBox(height: AppLayout.scrollBottomInset(context, rootTab: true))),

@@ -13,6 +13,7 @@ class AppRowCard extends StatelessWidget {
     this.trailing,
     this.below,
     this.onTap,
+    this.accentColor,
   });
 
   static const double height = 118;
@@ -35,6 +36,9 @@ class AppRowCard extends StatelessWidget {
   /// محتوى إضافي تحت الصف بفاصل (أزرار الحجز في دوراتي).
   final Widget? below;
   final VoidCallback? onTap;
+
+  /// شريط ملوّن رفيع على حافة البداية (لون الحالة في «دوراتي»)؛ null = بلا شريط.
+  final Color? accentColor;
 
   @override
   Widget build(BuildContext context) {
@@ -93,21 +97,38 @@ class AppRowCard extends StatelessWidget {
           onTap: onTap,
           splashColor: AppColors.primary.withValues(alpha: 0.08),
           highlightColor: AppColors.primary.withValues(alpha: 0.04),
-          child: Padding(
-            padding: const EdgeInsets.all(padding),
-            child: below == null
-                ? row
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      row,
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Divider(height: 1, thickness: 1, color: AppColors.borderNeutral),
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(padding),
+                child: below == null
+                    ? row
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          row,
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            child: Divider(height: 1, thickness: 1, color: AppColors.borderNeutral),
+                          ),
+                          below!,
+                        ],
                       ),
-                      below!,
-                    ],
+              ),
+              if (accentColor != null)
+                PositionedDirectional(
+                  start: 0,
+                  top: 14,
+                  bottom: 14,
+                  width: 4,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      borderRadius: const BorderRadiusDirectional.horizontal(end: Radius.circular(AppRadius.xs)),
+                    ),
                   ),
+                ),
+            ],
           ),
         ),
       ),

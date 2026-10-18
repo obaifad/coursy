@@ -60,7 +60,7 @@ IconData courseStudyTypeIcon(String studyType) {
   if (probe.contains('أون') || probe.contains('online') || probe.contains('عن')) {
     return Icons.computer_rounded;
   }
-  if (probe.contains('مختلط') || probe.contains('hybrid') || probe.contains('mixed')) {
+  if (probe.contains('هجين') || probe.contains('مختلط') || probe.contains('hybrid') || probe.contains('mixed')) {
     return Icons.devices_rounded;
   }
   if (probe.contains('حضور') || probe.contains('offline')) {

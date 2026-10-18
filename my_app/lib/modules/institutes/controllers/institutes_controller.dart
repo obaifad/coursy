@@ -15,6 +15,9 @@ class InstitutesController extends GetxController with LatestLoadGuard, InitialL
   final isLoading = true.obs;
   final isLoadingMore = false.obs;
   final hasMore = true.obs;
+
+  /// فشل آخر «تحميل المزيد»: الذيل يعرض رسالة وزر إعادة محاولة بدل إعادة المحاولة التلقائية.
+  final loadMoreFailed = false.obs;
   final errorMessage = RxnString();
   final institutes = <InstituteModel>[].obs;
   final cities = <CityModel>[].obs;
@@ -56,6 +59,7 @@ class InstitutesController extends GetxController with LatestLoadGuard, InitialL
     final session = beginLoad();
     isLoading.value = isInitialLoad;
     errorMessage.value = null;
+    loadMoreFailed.value = false;
     _page = 1;
     try {
       final result = await _repository.fetchInstitutesPage(
@@ -80,6 +84,7 @@ class InstitutesController extends GetxController with LatestLoadGuard, InitialL
   Future<void> loadMoreInstitutes() async {
     if (!hasMore.value || isLoadingMore.value || isLoading.value) return;
     isLoadingMore.value = true;
+    loadMoreFailed.value = false;
     // إن تغيّرت المدينة أثناء التحميل تُهمل الصفحة القديمة بدل خلطها بالقائمة الجديدة.
     final session = currentLoad();
     try {
@@ -95,8 +100,8 @@ class InstitutesController extends GetxController with LatestLoadGuard, InitialL
         hasMore.value = result.hasMore;
       });
     } catch (_) {
-      // «تحميل المزيد» يبقى ظاهراً لإعادة المحاولة (كانت القائمة تنتهي بصمت عند انقطاع الشبكة).
-      if (shouldApply(session)) Get.snackbar('error'.tr, 'error_load_more_failed'.tr);
+      // الذيل يعرض الفشل مع «إعادة المحاولة» (كانت القائمة تنتهي بصمت عند انقطاع الشبكة).
+      if (shouldApply(session)) loadMoreFailed.value = true;
     } finally {
       isLoadingMore.value = false;
     }

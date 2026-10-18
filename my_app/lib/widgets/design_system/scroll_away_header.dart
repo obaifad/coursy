@@ -181,3 +181,83 @@ abstract final class HeroAppBarStyle {
 
   static SystemUiOverlayStyle overlay(bool collapsed) => collapsed ? AppSystemUi.darkIcons : AppSystemUi.lightIcons;
 }
+
+/// مقاسات رأس صفحات التفاصيل (المعهد، المدرّس) وتوزيع محتواه.
+///
+/// الارتفاع يُحسب من محتوى الرأس نفسه: شريط الأدوات + الصورة الدائرية + اسم من سطرين + شريط التبويبات في
+/// الأسفل. كان ارتفاعاً ثابتاً (200/220) يتوسّط فيه الشعار مساحةً يغطي آخرها شريط التبويبات، وتتغيّر
+/// أطراف الرأس مع ارتفاع شريط الحالة، فيلامس الشعار عنوان الشريط على الهواتف ذات الشق.
+abstract final class AppDetailHero {
+  static const double tabBarHeight = 60;
+  static const double gapTop = 12;
+  static const double gapMid = 10;
+  static const double gapBottom = 14;
+
+  /// اسم الكيان تحت الصورة: سطران كحد أقصى.
+  static double nameHeight(BuildContext context) => AppTextSize.xxl * 1.25 * 2 * CourseCardMetrics.textScaleOf(context);
+
+  /// ارتفاع SliverAppBar الممتد (دون شريط الحالة، وشريط التبويبات فيه).
+  static double expandedHeight(BuildContext context, {required double avatarSize}) =>
+      kToolbarHeight + gapTop + avatarSize + gapMid + nameHeight(context) + gapBottom + tabBarHeight;
+
+  /// موضع التمرير الذي يُعدّ الرأس عنده مطوياً (يتحوّل لون الشريط ويظهر عنوانه).
+  static double collapseOffset(BuildContext context, {required double avatarSize}) =>
+      expandedHeight(context, avatarSize: avatarSize) - kToolbarHeight - tabBarHeight - 24;
+}
+
+/// محتوى رأس التفاصيل: الخلفية، وفوقها الصورة الدائرية والاسم متوسّطان في المساحة الظاهرة فعلاً
+/// (بين شريط الأدوات وشريط التبويبات). يتلاشى المحتوى عند الطيّ قبل أن يظهر عنوان الشريط الصغير.
+class AppDetailHeroContent extends StatelessWidget {
+  const AppDetailHeroContent({super.key, required this.background, required this.avatar, required this.name});
+
+  final Widget background;
+  final Widget avatar;
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = _brandBarCollapse(context);
+    final opacity = (1 - t / 0.6).clamp(0.0, 1.0);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        background,
+        Positioned(
+          top: MediaQuery.paddingOf(context).top + kToolbarHeight + AppDetailHero.gapTop,
+          bottom: AppDetailHero.tabBarHeight + AppDetailHero.gapBottom,
+          left: 20,
+          right: 20,
+          child: Opacity(
+            opacity: opacity,
+            child: ExcludeSemantics(
+              excluding: opacity == 0,
+              child: Column(
+                children: [
+                  avatar,
+                  const SizedBox(height: AppDetailHero.gapMid),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: Text(
+                        name,
+                        maxLines: 2,
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppFonts.tajawal(
+                          color: Colors.white,
+                          fontSize: AppTextSize.xxl,
+                          fontWeight: FontWeight.w800,
+                          height: 1.25,
+                        ).copyWith(shadows: const [Shadow(color: Color(0x66000000), blurRadius: 8)]),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

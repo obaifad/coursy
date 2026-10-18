@@ -8,6 +8,7 @@ import '../../../core/models/app_models.dart';
 import '../../../core/navigation/push_navigation.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/session/remote_notification_sync.dart';
+import '../../../core/utils/app_toast.dart';
 
 class NotificationsController extends GetxController with LatestLoadGuard, InitialLoadState {
   final NotificationRepository _repository = Get.find();
@@ -16,6 +17,7 @@ class NotificationsController extends GetxController with LatestLoadGuard, Initi
   final isLoadingMore = false.obs;
   final isMarkingAllRead = false.obs;
   final hasMore = true.obs;
+  final loadMoreFailed = false.obs;
   final errorMessage = RxnString();
   final items = <NotificationModel>[].obs;
   int _page = 1;
@@ -53,6 +55,7 @@ class NotificationsController extends GetxController with LatestLoadGuard, Initi
   Future<void> loadMoreNotifications() async {
     if (!hasMore.value || isLoadingMore.value || isLoading.value) return;
     isLoadingMore.value = true;
+    loadMoreFailed.value = false;
     // إن أُعيد تحميل القائمة أثناء جلب الصفحة التالية تُهمل الصفحة القديمة بدل خلطها بالجديدة.
     final session = currentLoad();
     try {
@@ -64,8 +67,8 @@ class NotificationsController extends GetxController with LatestLoadGuard, Initi
         hasMore.value = result.hasMore;
       });
     } catch (_) {
-      // «تحميل المزيد» يبقى ظاهراً لإعادة المحاولة (كانت القائمة تنتهي بصمت عند انقطاع الشبكة).
-      if (shouldApply(session)) Get.snackbar('error'.tr, 'error_load_more_failed'.tr);
+      // الذيل يعرض الفشل مع «إعادة المحاولة» (كانت القائمة تنتهي بصمت عند انقطاع الشبكة).
+      if (shouldApply(session)) loadMoreFailed.value = true;
     } finally {
       isLoadingMore.value = false;
     }
@@ -101,7 +104,7 @@ class NotificationsController extends GetxController with LatestLoadGuard, Initi
       await _repository.markAllRead();
     } catch (e) {
       items.assignAll(before);
-      Get.snackbar('error'.tr, userErrorMessage(e));
+      AppToast.show('error'.tr, userErrorMessage(e));
     } finally {
       isMarkingAllRead.value = false;
     }

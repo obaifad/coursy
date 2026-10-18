@@ -11,6 +11,7 @@ class InstructorCoursesController extends GetxController with InitialLoadState {
   final isLoading = true.obs;
   final isLoadingMore = false.obs;
   final hasMore = true.obs;
+  final loadMoreFailed = false.obs;
   final courses = <CourseModel>[].obs;
   final instructorName = ''.obs;
   final specialization = RxnString();
@@ -81,6 +82,7 @@ class InstructorCoursesController extends GetxController with InitialLoadState {
   Future<void> loadMore() async {
     if (!hasMore.value || isLoading.value || isLoadingMore.value || instructorId <= 0) return;
     isLoadingMore.value = true;
+    loadMoreFailed.value = false;
     try {
       final nextPage = _page + 1;
       final result = await _repository.fetchInstructorCoursesPage(
@@ -92,8 +94,8 @@ class InstructorCoursesController extends GetxController with InitialLoadState {
       _page = nextPage;
       hasMore.value = result.hasMore;
       totalCourses.value = result.total;
-    } catch (e) {
-      Get.snackbar('error'.tr, userErrorMessage(e));
+    } catch (_) {
+      loadMoreFailed.value = true;
     } finally {
       isLoadingMore.value = false;
     }

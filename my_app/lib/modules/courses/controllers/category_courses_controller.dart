@@ -12,6 +12,7 @@ class CategoryCoursesController extends GetxController with InitialLoadState {
   final isLoading = true.obs;
   final isLoadingMore = false.obs;
   final hasMore = true.obs;
+  final loadMoreFailed = false.obs;
   final courses = <CourseModel>[].obs;
   final selectedSort = CourseSortOption.newest.obs;
   final title = ''.obs;
@@ -65,6 +66,7 @@ class CategoryCoursesController extends GetxController with InitialLoadState {
   Future<void> loadMore() async {
     if (!hasMore.value || isLoading.value || isLoadingMore.value) return;
     isLoadingMore.value = true;
+    loadMoreFailed.value = false;
     try {
       final nextPage = _page + 1;
       final result = await _repository.fetchCoursesPage(
@@ -75,8 +77,8 @@ class CategoryCoursesController extends GetxController with InitialLoadState {
       courses.addAll(result.items);
       _page = nextPage;
       hasMore.value = result.hasMore;
-    } catch (e) {
-      Get.snackbar('error'.tr, userErrorMessage(e));
+    } catch (_) {
+      loadMoreFailed.value = true;
     } finally {
       isLoadingMore.value = false;
     }

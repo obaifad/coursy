@@ -68,23 +68,18 @@ class InstructorSubjectInstructorsView extends GetView<InstructorSubjectInstruct
             ),
             slivers: [
               content,
-              if (!isLoading && instructors.isNotEmpty && controller.hasMore.value)
+              if (!isLoading && instructors.isNotEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      AppLayout.horizontalPage(context),
-                      12,
-                      AppLayout.horizontalPage(context),
-                      AppLayout.scrollBottomInset(context),
+                    padding: EdgeInsets.only(bottom: AppLayout.scrollBottomInset(context)),
+                    child: Obx(
+                      () => AppLoadMoreFooter(
+                        hasMore: controller.hasMore.value,
+                        isLoading: controller.isLoadingMore.value,
+                        failed: false,
+                        onLoadMore: controller.loadMore,
+                      ),
                     ),
-                    child: Obx(() {
-                      final loadingMore = controller.isLoadingMore.value;
-                      return OutlinedButton.icon(
-                        onPressed: loadingMore ? null : controller.loadMore,
-                        icon: loadingMore ? const AppInlineLoader() : const Icon(Icons.expand_more_rounded),
-                        label: Text('load_more'.tr),
-                      );
-                    }),
                   ),
                 ),
             ],

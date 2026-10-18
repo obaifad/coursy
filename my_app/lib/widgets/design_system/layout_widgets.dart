@@ -38,8 +38,11 @@ class AppIconCircleButton extends StatelessWidget {
     this.size = 44,
     this.iconColor,
     this.iconSize,
+    this.semanticLabel,
   });
 
+  /// اسم الزر لقارئ الشاشة وللتلميح عند الضغط المطوّل.
+  final String? semanticLabel;
   final VoidCallback onTap;
   final IconData icon;
   final bool filled;
@@ -51,7 +54,8 @@ class AppIconCircleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     const radius = AppRadius.sm;
     final resolvedIconColor = iconColor ?? (filled ? AppColors.textPrimary : AppColors.primary.withValues(alpha: 0.82));
-    return Material(
+    final label = semanticLabel;
+    final button = Material(
       color: filled ? AppColors.card : Colors.transparent,
       borderRadius: BorderRadius.circular(radius),
       elevation: 0,
@@ -73,6 +77,11 @@ class AppIconCircleButton extends StatelessWidget {
           child: Icon(icon, color: resolvedIconColor, size: iconSize ?? size * 0.48),
         ),
       ),
+    );
+    if (label == null) return button;
+    return Tooltip(
+      message: label,
+      child: Semantics(button: true, label: label, excludeSemantics: true, child: button),
     );
   }
 }
@@ -305,8 +314,11 @@ class AppSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // العنوان و«عرض الكل» على خط أساس واحد: الزر داخل مساحة لمس 44 ونصّه في وسطها، فمحاذاة الأعلى كانت
+    // تُنزله عن العنوان. خط الأساس يبقيهما على سطر واحد مهما اختلف حجماهما، ومع سطر فرعي أيضاً.
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
       children: [
         Expanded(
           child: Column(
@@ -498,6 +510,79 @@ class AppLoadErrorState extends StatelessWidget {
       compact: compact,
       action: FilledButton(onPressed: onRetry, child: Text('retry'.tr)),
     );
+  }
+}
+
+/// ذيل «تحميل المزيد» الموحّد لكل القوائم: تحميل تلقائي عند الاقتراب من النهاية.
+///
+/// القوائم الكسولة لا تبني هذا العنصر إلا حين يقترب من الشاشة، فبناؤه هو إشارة الوصول للنهاية: يطلب
+/// الصفحة التالية من تلقاء نفسه. الحالات:
+/// - جاري التحميل: مؤشر دائري صغير في الوسط.
+/// - فشل: «تعذّر تحميل المزيد» وزر «إعادة المحاولة» (لا إعادة تلقائية، كي لا تتكرر الطلبات بلا نهاية).
+/// - يوجد المزيد: يُحجز مكان المؤشر ويبدأ الطلب (فلا يقفز المحتوى عند ظهوره).
+/// - لا مزيد: لا شيء.
+/// [autoLoad] = false حين يتولى الصفحة نفسها المشغّل (مستمع تمرير) فيعرض الذيل الحالة فقط.
+class AppLoadMoreFooter extends StatefulWidget {
+  const AppLoadMoreFooter({
+    super.key,
+    required this.hasMore,
+    required this.isLoading,
+    required this.failed,
+    required this.onLoadMore,
+    this.autoLoad = true,
+  });
+
+  final bool hasMore;
+  final bool isLoading;
+  final bool failed;
+  final VoidCallback onLoadMore;
+  final bool autoLoad;
+
+  @override
+  State<AppLoadMoreFooter> createState() => _AppLoadMoreFooterState();
+}
+
+class _AppLoadMoreFooterState extends State<AppLoadMoreFooter> {
+  bool _scheduled = false;
+
+  bool get _shouldTrigger => widget.autoLoad && widget.hasMore && !widget.isLoading && !widget.failed;
+
+  /// بعد الإطار الحالي (لا أثناء البناء)، ومرة واحدة لكل بناء؛ المتحكم نفسه يتجاهل الطلب المكرر.
+  void _maybeTrigger() {
+    if (!_shouldTrigger || _scheduled) return;
+    _scheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scheduled = false;
+      if (mounted && _shouldTrigger) widget.onLoadMore();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _maybeTrigger();
+    if (widget.failed && !widget.isLoading) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('error_load_more_failed'.tr, textAlign: TextAlign.center, style: AppTypography.cardSubtitle()),
+            TextButton.icon(
+              onPressed: widget.onLoadMore,
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text('retry'.tr),
+            ),
+          ],
+        ),
+      );
+    }
+    if (widget.isLoading || widget.hasMore) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(child: AppInlineLoader()),
+      );
+    }
+    return const SizedBox.shrink();
   }
 }
 

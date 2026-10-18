@@ -8,7 +8,10 @@ import 'app_widgets.dart';
 import 'design_system.dart';
 
 class AppHomeSkeleton extends StatelessWidget {
-  const AppHomeSkeleton({super.key});
+  const AppHomeSkeleton({super.key, this.banner});
+
+  /// مكان البانر بمقاسه الحقيقي (بانر الطالب أطول من بطاقة الزائر) — كي لا تقفز الصفحة عند وصول البيانات.
+  final Widget? banner;
 
   @override
   Widget build(BuildContext context) {
@@ -39,10 +42,11 @@ class AppHomeSkeleton extends StatelessWidget {
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.md)),
           ),
           const SizedBox(height: 22),
-          Container(
-            height: 168,
-            decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(AppRadius.lg)),
-          ),
+          banner ??
+              Container(
+                height: 168,
+                decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(AppRadius.lg)),
+              ),
           const SizedBox(height: 22),
           const _SkeletonSectionHeader(),
           const SizedBox(height: 10),

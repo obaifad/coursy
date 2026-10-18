@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'app_toast.dart';
 
 /// فتح روابط خارجية (خرائط، هاتف…) بشكل موثوق على Android/iOS/Web.
 abstract final class ExternalLauncher {
@@ -21,7 +22,7 @@ abstract final class ExternalLauncher {
       if (await _tryLaunch(uri)) return true;
     }
 
-    Get.snackbar('error'.tr, 'open_maps_failed'.tr);
+    AppToast.show('error'.tr, 'open_maps_failed'.tr);
     return false;
   }
 
@@ -47,7 +48,7 @@ abstract final class ExternalLauncher {
     final trimmed = url.trim();
     final full = trimmed.startsWith('http://') || trimmed.startsWith('https://') ? trimmed : 'https://$trimmed';
     if (await _tryLaunch(Uri.parse(full))) return true;
-    Get.snackbar('error'.tr, 'open_link_failed'.tr);
+    AppToast.show('error'.tr, 'open_link_failed'.tr);
     return false;
   }
 

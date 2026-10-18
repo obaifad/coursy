@@ -1,8 +1,8 @@
 part of '../app_widgets.dart';
 
 /// بطاقة الدورة «Aurora Glass» (التصميم E في مراجعة التصميم): الغلاف يملأ البطاقة، فوقه توهّج «شفق»
-/// بألوان التصنيف، وفي الأسفل لوح زجاجي مضبّب يحمل التصنيف والمستوى، العنوان، المعهد، ثم السعر والتقييم.
-/// وسم الخصم وشارة الدورة كبسولتان أعلى الغلاف (نفس موضعهما في بطاقة الملصق).
+/// ساطع بألوان التصنيف، وفي الأسفل لوح زجاجي مضبّب يحمل التصنيف والمستوى، العنوان، ثم التقييم والمدة.
+/// في الأعلى: كبسولة السعر الداكنة وزر المفضلة الداكن متجاوران في زاوية النهاية.
 ///
 /// التوهّج ثابت (بلا حركة دائمة تكلّف إطارات أثناء التمرير)، والضبابية حقيقية لكنها محصورة في اللوح.
 /// عند الضغط تميل البطاقة قليلاً نحو الإصبع ويلمع سطحها؛ تقليل الحركة في النظام يلغي الميل.
@@ -82,12 +82,15 @@ class _CourseAuroraCardState extends State<CourseAuroraCard> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    _CourseCardImage(
-                      course: course,
-                      borderRadius: BorderRadius.zero,
-                      fallbackSize: spec.compact ? 26 : 30,
-                      // اللوح يغطي النصف السفلي — أيقونة البديل في الأعلى.
-                      fallbackIconAlignment: const Alignment(0, -0.5),
+                    CourseImageHero(
+                      courseId: course.id,
+                      child: _CourseCardImage(
+                        course: course,
+                        borderRadius: BorderRadius.zero,
+                        fallbackSize: spec.compact ? 26 : 30,
+                        // اللوح يغطي النصف السفلي — أيقونة البديل في الأعلى.
+                        fallbackIconAlignment: const Alignment(0, -0.5),
+                      ),
                     ),
                     const _AuroraScrim(),
                     // في نفس طبقة الصورة (بلا RepaintBoundary) كي يُضاف الضوء إلى بكسلاتها فعلاً.
@@ -98,12 +101,6 @@ class _CourseAuroraCardState extends State<CourseAuroraCard> {
                         borderRadius: AppCorners.lg,
                         border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
                       ),
-                    ),
-                    PositionedDirectional(
-                      top: CourseAuroraSpec.inset + 2,
-                      start: CourseAuroraSpec.inset + 2,
-                      end: CourseAuroraSpec.inset + 2,
-                      child: _AuroraTopRow(course: course),
                     ),
                     Positioned(
                       left: CourseAuroraSpec.inset,
@@ -142,6 +139,13 @@ class _CourseAuroraCardState extends State<CourseAuroraCard> {
                           highlightColor: Colors.white.withValues(alpha: 0.04),
                         ),
                       ),
+                    ),
+                    // مساحة لمس المفضلة 44 حول دائرة 32: الصف يبدأ قبل الحافة بـ 6 كي تبعد الدائرة 10.
+                    PositionedDirectional(
+                      top: CourseAuroraSpec.topInset - 6,
+                      start: CourseAuroraSpec.topInset,
+                      end: CourseAuroraSpec.topInset - 6,
+                      child: _AuroraTopRow(course: course),
                     ),
                   ],
                 ),
@@ -202,28 +206,30 @@ class _AuroraScrim extends StatelessWidget {
   }
 }
 
-/// ثلاث بقع ضوء متدرّجة تُضاف إلى الصورة (BlendMode.plus): ضوء ملوّن لا طبقة طلاء، وبلا ImageFilter
-/// ولا مزج متقدّم — رسم رخيص يصلح لشبكة تُمرَّر.
+/// ثلاث بقع «شفق» ساطعة تُمزج مع الصورة بـ BlendMode.screen: تفتّحها وتلوّنها بألوان التصنيف (كالتصميم)
+/// بدل طبقة داكنة. بلا ImageFilter ولا حركة — رسم رخيص يصلح لشبكة تُمرَّر.
 class _AuroraGlowPainter extends CustomPainter {
   const _AuroraGlowPainter({required this.colors});
 
   final List<Color> colors;
 
   /// (مركز x، مركز y، شدة) نسبةً للبطاقة — أعلى البداية، منتصف النهاية، وأسفل الوسط.
-  static const _spots = [(0.28, 0.26, 0.42), (0.74, 0.58, 0.36), (0.52, 0.76, 0.32)];
+  static const _spots = [(0.22, 0.2, 0.62), (0.82, 0.5, 0.55), (0.42, 0.82, 0.5)];
 
   @override
   void paint(Canvas canvas, Size size) {
-    final radius = size.longestSide * 0.52;
+    final radius = size.longestSide * 0.5;
     for (var i = 0; i < _spots.length; i++) {
       final (x, y, strength) = _spots[i];
       final center = Offset(size.width * x, size.height * y);
       final color = colors[i % colors.length];
       final paint = Paint()
-        ..blendMode = BlendMode.plus
+        ..blendMode = BlendMode.screen
         ..shader = RadialGradient(
+          stops: const [0, 0.55, 1],
           colors: [
             color.withValues(alpha: strength),
+            color.withValues(alpha: strength * 0.45),
             color.withValues(alpha: 0),
           ],
         ).createShader(Rect.fromCircle(center: center, radius: radius));
@@ -235,7 +241,7 @@ class _AuroraGlowPainter extends CustomPainter {
   bool shouldRepaint(covariant _AuroraGlowPainter oldDelegate) => !listEquals(oldDelegate.colors, colors);
 }
 
-/// وسم الخصم في جهة البداية وشارة الدورة الزجاجية في جهة النهاية.
+/// كبسولة السعر الداكنة وزر المفضلة الداكن، متجاوران في زاوية النهاية (يسار بالعربية).
 class _AuroraTopRow extends StatelessWidget {
   const _AuroraTopRow({required this.course});
 
@@ -243,40 +249,69 @@ class _AuroraTopRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final badge = _coursePromoBadge(course);
-    final percent = course.originalPriceLabel == null ? null : course.discountPercent;
-    if (badge == null && percent == null) return const SizedBox.shrink();
     return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        if (percent != null) ...[_DiscountPill(percent: percent), const SizedBox(width: 6)],
-        if (badge != null)
-          Expanded(
-            child: Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: _auroraInk.withValues(alpha: 0.42),
-                  borderRadius: AppCorners.full,
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Text(
-                    badge,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppFonts.tajawal(
-                      color: Colors.white,
-                      fontSize: AppTextSize.xs,
-                      fontWeight: FontWeight.w700,
-                      height: 1.2,
-                    ),
+        // الضغط على السعر يفتح الدورة كباقي البطاقة.
+        Flexible(
+          child: IgnorePointer(child: _AuroraPricePill(course: course)),
+        ),
+        const SizedBox(width: 4),
+        CourseFavoriteButton(courseId: course.id, diameter: 32, dark: true),
+      ],
+    );
+  }
+}
+
+class _AuroraPricePill extends StatelessWidget {
+  const _AuroraPricePill({required this.course});
+
+  final CourseModel course;
+
+  @override
+  Widget build(BuildContext context) {
+    final parts = course.price.trim().split(RegExp(r'\s+'));
+    final amount = parts.first;
+    final currency = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+    final onRequest = amount == '—';
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: _auroraInk.withValues(alpha: 0.45),
+        borderRadius: AppCorners.full,
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text.rich(
+            maxLines: 1,
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: onRequest ? 'price_on_request'.tr : amount,
+                  style: AppFonts.tajawal(
+                    fontSize: AppTextSize.sm,
+                    fontWeight: onRequest ? FontWeight.w600 : FontWeight.w800,
+                    color: Colors.white,
+                    height: 1,
                   ),
                 ),
-              ),
+                if (!onRequest && currency.isNotEmpty)
+                  TextSpan(
+                    text: ' $currency',
+                    style: AppFonts.tajawal(
+                      fontSize: AppTextSize.xs,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      height: 1,
+                    ),
+                  ),
+              ],
             ),
           ),
-      ],
+        ),
+      ),
     );
   }
 }
@@ -311,7 +346,7 @@ class _AuroraGlassPanel extends StatelessWidget {
         filter: _frost,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: _auroraInk.withValues(alpha: 0.4),
+            color: _auroraInk.withValues(alpha: 0.34),
             borderRadius: AppCorners.md,
             border: Border.all(color: white.withValues(alpha: 0.22)),
           ),
@@ -344,16 +379,8 @@ class _AuroraGlassPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: CourseAuroraSpec.gapAfterTitle),
                 SizedBox(
-                  height: spec.instituteHeight,
-                  child: _AuroraInstituteLine(course: course, showIcon: !spec.compact),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: (CourseAuroraSpec.dividerGap - 1) / 2),
-                  child: ColoredBox(color: white.withValues(alpha: 0.14), child: const SizedBox(height: 1)),
-                ),
-                SizedBox(
-                  height: spec.footerHeight,
-                  child: _AuroraFooter(course: course),
+                  height: spec.metaHeight,
+                  child: _AuroraMetaLine(course: course),
                 ),
               ],
             ),
@@ -364,7 +391,7 @@ class _AuroraGlassPanel extends StatelessWidget {
   }
 }
 
-/// «البرمجة • مبتدئ»: التصنيف أبيض والمستوى بأخضر فاتح يُقرأ على الزجاج الداكن. لا مستوى غير معروف.
+/// «البرمجة · مبتدئ» بأبيض خافت. لا مستوى غير معروف.
 class _AuroraCategoryLine extends StatelessWidget {
   const _AuroraCategoryLine({required this.course});
 
@@ -374,159 +401,57 @@ class _AuroraCategoryLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final category = course.categoryName?.trim() ?? '';
     final level = (course.levelCode ?? '').trim().isEmpty ? '' : course.level.trim();
-    if (category.isEmpty && level.isEmpty) return const SizedBox.shrink();
+    final text = [category, level].where((p) => p.isNotEmpty).join(' · ');
+    if (text.isEmpty) return const SizedBox.shrink();
     return Align(
       alignment: AlignmentDirectional.centerStart,
-      child: Text.rich(
+      child: Text(
+        text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        TextSpan(
-          style: AppFonts.tajawal(fontSize: AppTextSize.xs, fontWeight: FontWeight.w700, height: 1.3),
-          children: [
-            if (category.isNotEmpty)
-              TextSpan(
-                text: category,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
-              ),
-            if (category.isNotEmpty && level.isNotEmpty)
-              TextSpan(
-                text: ' • ',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-              ),
-            if (level.isNotEmpty)
-              TextSpan(
-                text: level,
-                style: const TextStyle(color: Color(0xFFA7F3D0)),
-              ),
-          ],
+        style: AppFonts.tajawal(
+          fontSize: AppTextSize.xs,
+          fontWeight: FontWeight.w700,
+          height: 1.3,
+          color: Colors.white.withValues(alpha: 0.86),
         ),
       ),
     );
   }
 }
 
-/// المعهد والمدينة؛ على البطاقة الضيقة بلا أيقونة كي يتسع الاسم.
-class _AuroraInstituteLine extends StatelessWidget {
-  const _AuroraInstituteLine({required this.course, required this.showIcon});
+/// «★ 4.8 · 8 أسابيع»: التقييم (أو «بلا تقييم») ثم المدة بالأسابيع، أو بالساعات/الجلسات إن غاب التاريخان.
+class _AuroraMetaLine extends StatelessWidget {
+  const _AuroraMetaLine({required this.course});
 
   final CourseModel course;
-  final bool showIcon;
 
   @override
   Widget build(BuildContext context) {
-    final city = course.instituteCity?.trim() ?? '';
-    final parts = [course.institute.trim(), city].where((p) => p.isNotEmpty).toList();
-    if (parts.isEmpty) return const SizedBox.shrink();
+    final weeks = course.durationWeeks;
+    final duration = weeks != null ? pluralTr('card_weeks', weeks) : (course.duration == '—' ? '' : course.duration);
+    final style = AppFonts.tajawal(
+      fontSize: AppTextSize.xs,
+      fontWeight: FontWeight.w600,
+      height: 1.2,
+      color: Colors.white.withValues(alpha: 0.92),
+    );
     return Row(
       children: [
-        if (showIcon) ...[
-          Icon(Icons.apartment_rounded, size: 13, color: Colors.white.withValues(alpha: 0.72)),
-          const SizedBox(width: 5),
+        if (course.hasRating) ...[
+          const Icon(Icons.star_rounded, size: 13, color: AppColors.ratingStar),
+          const SizedBox(width: 3),
+          Text(course.rating.toStringAsFixed(1), textDirection: TextDirection.ltr, style: style),
+        ] else
+          Flexible(
+            child: Text('rating_none_short'.tr, maxLines: 1, overflow: TextOverflow.ellipsis, style: style),
+          ),
+        if (duration.isNotEmpty) ...[
+          Text('  ·  ', style: style),
+          Flexible(
+            child: Text(duration, maxLines: 1, overflow: TextOverflow.ellipsis, style: style),
+          ),
         ],
-        Expanded(
-          child: BidiText(
-            parts.join(' • '),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppFonts.tajawal(
-              fontSize: AppTextSize.xs,
-              fontWeight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.82),
-              height: 1.3,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// السعر في جهة البداية (يصغر بدل أن يُقص) والتقييم في جهة النهاية.
-class _AuroraFooter extends StatelessWidget {
-  const _AuroraFooter({required this.course});
-
-  final CourseModel course;
-
-  @override
-  Widget build(BuildContext context) {
-    final parts = course.price.trim().split(RegExp(r'\s+'));
-    final amount = parts.first;
-    final currency = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-    final onRequest = amount == '—';
-    return Row(
-      children: [
-        Expanded(
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: AlignmentDirectional.centerStart,
-            child: Text.rich(
-              maxLines: 1,
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: onRequest ? 'price_on_request'.tr : amount,
-                    style: AppFonts.tajawal(
-                      fontSize: onRequest ? AppTextSize.sm : AppTextSize.lg,
-                      fontWeight: onRequest ? FontWeight.w500 : FontWeight.w800,
-                      color: Colors.white,
-                      height: 1.1,
-                    ),
-                  ),
-                  if (!onRequest && currency.isNotEmpty)
-                    TextSpan(
-                      text: ' $currency',
-                      style: AppFonts.tajawal(
-                        fontSize: AppTextSize.xs,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white.withValues(alpha: 0.85),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        _AuroraRating(course: course),
-      ],
-    );
-  }
-}
-
-/// نجمة + القيمة، أو «بلا تقييم» خافتاً بدل نجوم رمادية.
-class _AuroraRating extends StatelessWidget {
-  const _AuroraRating({required this.course});
-
-  final CourseModel course;
-
-  @override
-  Widget build(BuildContext context) {
-    if (!course.hasRating) {
-      return Text(
-        'rating_none_short'.tr,
-        maxLines: 1,
-        style: AppFonts.tajawal(
-          fontSize: AppTextSize.xs,
-          fontWeight: FontWeight.w500,
-          color: Colors.white.withValues(alpha: 0.7),
-        ),
-      );
-    }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.star_rounded, size: 15, color: AppColors.ratingStar),
-        const SizedBox(width: 2),
-        Text(
-          course.rating.toStringAsFixed(1),
-          textDirection: TextDirection.ltr,
-          style: AppFonts.tajawal(
-            fontSize: AppTextSize.sm,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-            height: 1.2,
-          ),
-        ),
       ],
     );
   }

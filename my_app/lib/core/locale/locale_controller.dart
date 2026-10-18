@@ -58,7 +58,7 @@ class LocaleController extends GetxService {
     await _box.write(_storageKey, newCode);
     unawaited(_mirrorForBackground(newCode));
     await _apply(newCode, refreshData: true);
-    Get.snackbar('language_changed'.tr, 'language_changed_desc'.tr);
+    // لا إشعار: الواجهة كلها تتبدّل أمام المستخدم — هذا أوضح دليل.
   }
 
   Future<void> _apply(String newCode, {required bool refreshData}) async {

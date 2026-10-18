@@ -94,28 +94,13 @@ class CategoryCoursesView extends GetView<CategoryCoursesController> {
                         ),
                       ),
                     ),
-                  if (courses.isNotEmpty && controller.hasMore.value)
+                  if (courses.isNotEmpty)
                     SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 0),
-                        child: Center(
-                          child: Obx(() {
-                            final loadingMore = controller.isLoadingMore.value;
-                            return OutlinedButton.icon(
-                              onPressed: loadingMore ? null : controller.loadMore,
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.primaryInk,
-                                side: BorderSide(color: AppColors.primary.withValues(alpha: 0.35)),
-                                shape: const StadiumBorder(),
-                                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                              ),
-                              icon: loadingMore
-                                  ? const SizedBox(width: 18, height: 18, child: AppInlineLoader())
-                                  : const Icon(Icons.expand_more_rounded, size: 20),
-                              label: Text('load_more'.tr, style: AppTypography.actionLabel()),
-                            );
-                          }),
-                        ),
+                      child: AppLoadMoreFooter(
+                        hasMore: controller.hasMore.value,
+                        isLoading: controller.isLoadingMore.value,
+                        failed: controller.loadMoreFailed.value,
+                        onLoadMore: controller.loadMore,
                       ),
                     ),
                 ],

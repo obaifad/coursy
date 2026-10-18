@@ -10,6 +10,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/session/enrollment_status_coordinator.dart';
 import '../../../core/session/session_refresh.dart';
 import '../../../core/storage/token_storage.dart';
+import '../../../core/utils/app_toast.dart';
 
 class MyCoursesController extends GetxController with LatestLoadGuard, InitialLoadState {
   final EnrollmentRepository _repository = Get.find();
@@ -139,10 +140,10 @@ class MyCoursesController extends GetxController with LatestLoadGuard, InitialLo
       } else {
         await load();
       }
-      Get.snackbar('booking_cancelled_title'.tr, 'booking_cancelled_msg'.tr);
+      AppToast.show('booking_cancelled_title'.tr, 'booking_cancelled_msg'.tr, kind: ToastKind.success);
       await SessionRefresh.afterEnrollment(courseId: enrollment.courseId, enrollmentId: enrollment.id);
     } catch (e) {
-      Get.snackbar('error'.tr, userErrorMessage(e));
+      AppToast.show('error'.tr, userErrorMessage(e));
     } finally {
       cancellingIds.remove(enrollment.id);
     }

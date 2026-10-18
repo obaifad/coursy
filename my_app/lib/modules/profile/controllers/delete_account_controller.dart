@@ -9,6 +9,7 @@ import '../../../core/navigation/app_navigation.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/session/session_refresh.dart';
 import '../../../theme/app_colors.dart';
+import '../../../core/utils/app_toast.dart';
 
 class DeleteAccountController extends GetxController {
   final AuthRepository _authRepository = Get.find();
@@ -41,18 +42,18 @@ class DeleteAccountController extends GetxController {
       // الخادم ألغى كل الجلسات وحذف توكنات الأجهزة؛ هنا ننظّف ما بقي محلياً فقط.
       // الحذف نجح: أي فشل في التنظيف بعده لا يُعرض كخطأ — المستخدم يصل خارج الحساب دائماً.
       await _cleanUpAfterDeletion();
-      Get.snackbar('account_deleted_title'.tr, 'account_deleted_msg'.tr);
+      AppToast.show('account_deleted_title'.tr, 'account_deleted_msg'.tr, kind: ToastKind.success);
     } on ApiException catch (e) {
       switch (e.statusCode) {
         case 422:
           passwordError.value = e.fieldErrors?['password'] ?? e.message;
         case 429:
-          Get.snackbar('error'.tr, 'payment_error_rate_limit'.tr);
+          AppToast.show('error'.tr, 'payment_error_rate_limit'.tr);
         default:
-          Get.snackbar('error'.tr, e.message);
+          AppToast.show('error'.tr, e.message);
       }
     } catch (_) {
-      Get.snackbar('error'.tr, 'error_unexpected'.tr);
+      AppToast.show('error'.tr, 'error_unexpected'.tr);
     } finally {
       isDeleting.value = false;
     }

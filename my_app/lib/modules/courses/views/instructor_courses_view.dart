@@ -68,22 +68,14 @@ class InstructorCoursesView extends GetView<InstructorCoursesController> {
                           },
                         ),
                       ),
-                      if (controller.hasMore.value)
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton.icon(
-                                onPressed: controller.isLoadingMore.value ? null : controller.loadMore,
-                                icon: controller.isLoadingMore.value
-                                    ? const AppInlineLoader()
-                                    : const Icon(Icons.expand_more_rounded),
-                                label: Text('load_more'.tr),
-                              ),
-                            ),
-                          ),
+                      SliverToBoxAdapter(
+                        child: AppLoadMoreFooter(
+                          hasMore: controller.hasMore.value,
+                          isLoading: controller.isLoadingMore.value,
+                          failed: controller.loadMoreFailed.value,
+                          onLoadMore: controller.loadMore,
                         ),
+                      ),
                     ],
                   ],
                 ),

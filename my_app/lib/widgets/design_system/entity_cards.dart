@@ -517,60 +517,163 @@ class PrivateInstructorMiniCard extends StatelessWidget {
   final InstructorModel instructor;
   final VoidCallback? onTap;
 
-  static const double _cardWidth = 288;
-  static const double _avatarSize = 58;
+  static const double _cardWidth = 200;
+  static const double _avatarSize = 84;
+
+  /// ارتفاع شريط الرئيسية: الأجزاء الثابتة (الحشوة، الصورة، الزر، المسافات) + أسطر النص الثلاثة مع تكبير الخط.
+  static double railHeight(BuildContext context) {
+    final s = CourseCardMetrics.textScaleOf(context);
+    const fixed = 16 + 14 + _avatarSize + 12 + 2 + 6 + 12 + 42.0;
+    // 1.45 لا 1.3: الأسطر تُقرَّب لأعلى بكسل، والفرق يكبر مع تكبير الخط (قيس: 247 مقابل 244 بلا هامش).
+    final text = (AppTextSize.lg + AppTextSize.sm + AppTextSize.sm) * 1.45 * s;
+    return (fixed + text + 2).ceilToDouble();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final experience = instructor.experienceYears > 0
+        ? pluralTr('instructor_experience', instructor.experienceYears)
+        : null;
+    final price = instructor.hourlyPrice;
     return SizedBox(
       width: _cardWidth,
       child: _TutorCardShell(
         onTap: onTap,
-        padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 12, 10),
-        child: Row(
+        padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _InstructorAvatarBox(imageUrl: instructor.resolvedImageUrl, size: _avatarSize),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: BidiText(
-                          instructor.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: _TutorText.name(13.5),
-                        ),
-                      ),
-                      if (instructor.isPrivate) ...[const SizedBox(width: 6), const _PrivateBadge()],
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  BidiText(
-                    instructor.specializationLabel ?? 'instructor_default'.tr,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: _TutorText.specialization(11.5),
-                  ),
-                  if (instructor.experienceYears > 0) ...[
-                    const SizedBox(height: 4),
-                    _TutorMeta(
-                      icon: Icons.workspace_premium_rounded,
-                      text: pluralTr('instructor_experience', instructor.experienceYears),
-                    ),
-                  ],
-                  if (instructor.hourlyPrice != null) ...[
-                    const SizedBox(height: 5),
-                    _HourlyPrice(price: instructor.hourlyPrice!, compact: true),
-                  ],
-                ],
+            Center(
+              child: _DoctorStyleAvatar(
+                imageUrl: instructor.resolvedImageUrl,
+                size: _avatarSize,
+                gender: instructor.gender,
               ),
             ),
+            const SizedBox(height: 12),
+            BidiText(
+              instructor.name,
+              maxLines: 1,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              style: AppFonts.tajawal(
+                fontSize: AppTextSize.lg,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 2),
+            BidiText(
+              instructor.specializationLabel ?? 'instructor_default'.tr,
+              maxLines: 1,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              style: AppFonts.tajawal(
+                fontSize: AppTextSize.sm,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            if (experience != null) ...[
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.workspace_premium_rounded, size: 15, color: AppColors.ratingStar),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      experience,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.tajawal(
+                        fontSize: AppTextSize.sm,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textBody,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 12),
+            _BookInstructorButton(label: price == null ? 'book_now'.tr : '${'hourly_rate_label'.tr} $price'),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// صورة دائرية للمدرّس بإطار بلون الهوية (بنفسجي ناعم) وظل خفيف. بلا صورة (أو فشل تحميلها): أيقونة رجل أو
+/// امرأة بحسب [gender] بلون الهوية على خلفية بنفسجية فاتحة، وأيقونة شخص محايدة إن لم يُعرف الجنس.
+class _DoctorStyleAvatar extends StatelessWidget {
+  const _DoctorStyleAvatar({required this.imageUrl, required this.size, this.gender});
+
+  final String? imageUrl;
+  final double size;
+  final String? gender;
+
+  static const double _border = 2.5;
+
+  IconData get _fallbackIcon => switch (gender) {
+    'male' => Icons.man_rounded,
+    'female' => Icons.woman_rounded,
+    _ => Icons.person_rounded,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = ColoredBox(
+      color: AppColors.primary.withValues(alpha: 0.1),
+      child: Center(
+        child: Icon(_fallbackIcon, color: AppColors.primary, size: size * 0.62),
+      ),
+    );
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.55), width: _border),
+        boxShadow: AppShadows.card,
+      ),
+      child: ClipOval(
+        child: imageUrl != null
+            ? AppNetworkImage(
+                url: imageUrl!,
+                width: size - _border * 2,
+                height: size - _border * 2,
+                fit: BoxFit.cover,
+                errorWidget: fallback,
+              )
+            : fallback,
+      ),
+    );
+  }
+}
+
+/// زر عريض بلون التطبيق الأساسي (AppColors.primary) وزوايا كاملة.
+class _BookInstructorButton extends StatelessWidget {
+  const _BookInstructorButton({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 42,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(color: AppColors.primary, borderRadius: AppCorners.full),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          label,
+          maxLines: 1,
+          style: AppFonts.tajawal(fontSize: AppTextSize.md, fontWeight: FontWeight.w700, color: Colors.white),
         ),
       ),
     );
@@ -604,51 +707,15 @@ class _TutorCardShell extends StatelessWidget {
 }
 
 abstract final class _TutorText {
-  static TextStyle name(double size) =>
-      AppFonts.tajawal(fontSize: size, fontWeight: FontWeight.w800, height: 1.25, color: AppColors.textPrimary);
-
   static TextStyle specialization(double size) =>
       AppFonts.tajawal(fontSize: size, fontWeight: FontWeight.w700, height: 1.3, color: AppColors.primaryInk);
 }
 
-class _TutorMeta extends StatelessWidget {
-  const _TutorMeta({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 13, color: AppColors.textHint),
-        const SizedBox(width: 4),
-        Flexible(
-          child: BidiText(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppFonts.tajawal(
-              fontSize: AppTextSize.xs,
-              fontWeight: FontWeight.w500,
-              height: 1.3,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 /// «سعر الساعة» صغير رمادي ثم المبلغ بالبنفسجي العريض.
 class _HourlyPrice extends StatelessWidget {
-  const _HourlyPrice({required this.price, this.compact = false});
+  const _HourlyPrice({required this.price});
 
   final String price;
-
-  /// بطاقة الرئيسية الأفقية: مبلغ أصغر درجة.
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -667,11 +734,7 @@ class _HourlyPrice extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          CoursePriceText(
-            price: price,
-            amountSize: compact ? AppTextSize.md : AppTextSize.lg,
-            currencySize: AppTextSize.xs,
-          ),
+          CoursePriceText(price: price, amountSize: AppTextSize.lg, currencySize: AppTextSize.xs),
         ],
       ),
     );
@@ -741,60 +804,44 @@ class InstituteDetailHero extends StatelessWidget {
 
   final InstituteModel institute;
 
+  static const double logoSize = 88;
+
   @override
   Widget build(BuildContext context) {
     final coverUrl = institute.resolvedCoverImageUrl;
     final logoUrl = institute.resolvedLogoUrl;
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        if (coverUrl != null)
-          AppNetworkImage(url: coverUrl, fit: BoxFit.cover)
-        else
-          const DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.category)),
-        if (coverUrl != null)
+    return AppDetailHeroContent(
+      name: institute.name,
+      background: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (coverUrl != null)
+            AppNetworkImage(url: coverUrl, fit: BoxFit.cover)
+          else
+            const DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.category)),
+          // اسم أبيض فوق الغلاف: تعتيم أقوى نحو الأسفل ليُقرأ فوق أي صورة.
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Colors.black.withValues(alpha: 0.08), Colors.black.withValues(alpha: 0.35)],
+                colors: [
+                  Colors.black.withValues(alpha: 0.1),
+                  Colors.black.withValues(alpha: coverUrl != null ? 0.55 : 0.2),
+                ],
               ),
             ),
           ),
-        Center(
-          child: _InstituteLogoBox(
-            imageUrl: logoUrl,
-            size: 88,
-            borderRadius: AppRadius.full,
-            fallbackIcon: Icons.apartment_rounded,
-            fallbackIconSize: 42,
-            border: Border.all(color: Colors.white, width: 4),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _InstructorAvatarBox extends StatelessWidget {
-  const _InstructorAvatarBox({required this.imageUrl, required this.size});
-
-  final String? imageUrl;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.md), gradient: AppGradients.primary),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: imageUrl != null
-            ? AppNetworkImage(url: imageUrl!, width: size, height: size, fit: BoxFit.cover)
-            : const Icon(Icons.person_rounded, color: Colors.white, size: 34),
+        ],
+      ),
+      avatar: _InstituteLogoBox(
+        imageUrl: logoUrl,
+        size: logoSize,
+        borderRadius: AppRadius.full,
+        fallbackIcon: Icons.apartment_rounded,
+        fallbackIconSize: 42,
+        border: Border.all(color: Colors.white, width: 4),
       ),
     );
   }
