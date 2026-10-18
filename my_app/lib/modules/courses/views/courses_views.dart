@@ -74,6 +74,12 @@ class _CoursesScrollViewState extends State<_CoursesScrollView> {
                   () => Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      // الترتيب أول عنصر في الصف: عند حافة البداية (يمين بالعربية، يسار بالإنجليزية) قبل
+                      // التصنيفات، بلا عنوان «التصنيف» ولا صف مستقل. الصف يتبع Directionality فلا يُعكس يدوياً.
+                      Padding(
+                        padding: EdgeInsetsDirectional.only(start: hPad, end: 8),
+                        child: CourseSortButton(selected: c.selectedSort.value, onSelected: c.selectSort),
+                      ),
                       Expanded(
                         child: c.categories.isEmpty
                             ? const SizedBox(height: CourseSortButton.size)
@@ -81,12 +87,9 @@ class _CoursesScrollViewState extends State<_CoursesScrollView> {
                                 categories: c.categories.toList(growable: false),
                                 selectedId: c.selectedCategoryId.value,
                                 onSelected: c.selectCategory,
+                                // الزر وحشوته يسبقانه: لا حشوة بداية مزدوجة (حشوة النهاية تبقى هامش الصفحة).
+                                startInset: 0,
                               ),
-                      ),
-                      // الترتيب أيقونة في نهاية الصف نفسه، بلا عنوان «التصنيف» ولا صف مستقل.
-                      Padding(
-                        padding: EdgeInsetsDirectional.only(start: 4, end: hPad),
-                        child: CourseSortButton(selected: c.selectedSort.value, onSelected: c.selectSort),
                       ),
                     ],
                   ),
