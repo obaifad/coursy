@@ -1,26 +1,38 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
-import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 
-/// يؤجّل عملاً (عادةً جلب بيانات يبدّل الواجهة) إلى ما بعد انتهاء حركة فتح الصفحة الحالية، كي لا يتغيّر
-/// المحتوى (هيكل ← بيانات) وهي تتحرك. بلا مسار انتقالي (اختبارات، صفحة أولى) أو بعد اكتمال الحركة: فوراً.
+import 'route_motion_builder.dart';
+
+/// يؤجّل عملاً (عادةً جلب بيانات يبدّل الواجهة) إلى ما بعد انتهاء حركة الانتقال الجارية، كي لا يتغيّر
+/// المحتوى والصفحة تتحرك (ولا تُعاد بناء الصفحة أثناء طيران صورة Hero). بلا انتقال جارٍ: فوراً.
+///
+/// يعتمد على [RouteMotion] (مراقب المسارات) لا على حالة أنيميشن المسار: مسارات GetX تُبنى أول مرة وحالتها
+/// «مكتملة» قبل أن تبدأ حركتها، فكان العمل يجري فوراً.
 abstract final class RouteSettle {
-  /// هامش بعد آخر إطار من الحركة.
-  static const Duration _tail = Duration(milliseconds: 60);
+  /// حدّ أقصى للانتظار كي لا يتعطّل العمل أبداً.
+  static const Duration maxWait = Duration(milliseconds: 900);
 
   static void run(VoidCallback action) {
-    final route = Get.routing.route;
-    final animation = route is TransitionRoute ? route.animation : null;
-    final waiting =
-        animation != null &&
-        (animation.status == AnimationStatus.forward || animation.status == AnimationStatus.dismissed);
-    if (route is! TransitionRoute || !waiting) {
+    if (!RouteMotion.isMoving) {
       action();
       return;
     }
-    // المتبقي من الحركة بالزمن (لا بأحداث حالة الأنيميشن: حالة مسارات GetX تتبدّل فور الدفع).
-    final remaining = route.transitionDuration * (1 - animation.value);
-    Timer(remaining + _tail, action);
+    var done = false;
+    Timer? timer;
+    late VoidCallback listener;
+    void finish() {
+      if (done) return;
+      done = true;
+      timer?.cancel();
+      RouteMotion.inMotion.removeListener(listener);
+      action();
+    }
+
+    listener = () {
+      if (!RouteMotion.isMoving) finish();
+    };
+    RouteMotion.inMotion.addListener(listener);
+    timer = Timer(maxWait, finish);
   }
 }

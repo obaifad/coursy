@@ -1,3 +1,4 @@
+import '../../../core/navigation/route_settle.dart';
 import '../../../core/cache/memory_cache.dart';
 import 'package:get/get.dart';
 
@@ -145,7 +146,10 @@ class InstituteDetailsController extends GetxController {
     }
     final cached = _restoreFromCache();
     if (cached != null && cached.isFresh()) return;
-    loadDetails();
+    // الطلبات بعد حركة الفتح: ردّ أثناء الحركة كان يعيد بناء الصفحة وهي تتحرك.
+    RouteSettle.run(() {
+      if (!isClosed) loadDetails();
+    });
   }
 
   String get _cacheKey => MemoryCache.key('institute-details', [instituteId]);

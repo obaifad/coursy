@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-/// انتقال ناعم بين الصفحات: fade + scale خفيف.
-class AppFadeScaleTransition extends CustomTransition {
+/// انتقال ناعم بين الصفحات: تلاشٍ فقط. بلا تكبير: صورة Hero تحسب مكان هبوطها من الصفحة الجديدة عند بدء
+/// الطيران، فكانت تهبط على الصفحة وهي مصغّرة (0.97) ثم تقفز إلى حجمها في آخر إطار.
+class AppFadeTransition extends CustomTransition {
   @override
   Widget buildTransition(
     BuildContext context,
@@ -12,10 +13,9 @@ class AppFadeScaleTransition extends CustomTransition {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
     return FadeTransition(
-      opacity: curved,
-      child: ScaleTransition(scale: Tween<double>(begin: 0.97, end: 1).animate(curved), child: child),
+      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+      child: child,
     );
   }
 }

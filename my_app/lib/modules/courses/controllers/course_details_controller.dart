@@ -1,3 +1,4 @@
+import '../../../core/navigation/route_settle.dart';
 import '../../../core/cache/memory_cache.dart';
 import 'dart:async';
 
@@ -68,17 +69,22 @@ class CourseDetailsController extends GetxController {
       loadFailed.value = true;
     }
     if (_tokenStorage.isLoggedIn) {
-      // مع مدة الصلاحية (دقيقتان) بدل فرض المزامنة عند كل فتح لصفحة دورة.
-      unawaited(_favoritesService.syncFromApi());
+      // مع مدة الصلاحية (دقيقتان) بدل فرض المزامنة عند كل فتح لصفحة دورة — وبعد حركة الفتح.
+      _afterOpening(() => unawaited(_favoritesService.syncFromApi()));
     }
   }
 
   /// الدورة التي زرناها قبل قليل (تفاصيلها وجداولها وتقييماتها) تظهر كاملة فوراً؛ الطازجة بلا طلب،
   /// والقديمة تُحدَّث بصمت. المقاعد والأسعار تتغيّر، لذلك مدة الصلاحية قصيرة ([_detailsTtl]).
+  ///
+  /// الطلبات تبدأ بعد انتهاء حركة الفتح ([RouteSettle]): ردّ يصل أثناء طيران صورة Hero كان يعيد بناء الصفحة
+  /// كلها وهي تتحرك. ما لدينا (بيانات البطاقة أو الذاكرة) يُعرض فوراً، وبلا بيانات يظهر الهيكل فوراً.
   void _openWithCache(int id, {required bool hadSeed}) {
+    if (id > 0) _requestedId = id;
     final cached = id > 0 ? MemoryCache.get<_CourseSnapshot>(MemoryCache.key('course-details', [id])) : null;
     if (cached == null) {
-      _loadDetails(id, hadSeed: hadSeed);
+      if (!hadSeed && id > 0) isLoading.value = true;
+      _afterOpening(() => _loadDetails(id, hadSeed: hadSeed));
       return;
     }
     final s = cached.value;
@@ -89,11 +95,16 @@ class CourseDetailsController extends GetxController {
     reviews.assignAll(s.reviews);
     if (cached.isFresh(_detailsTtl)) {
       // حالة التسجيل والتقييم الخاصان بالمستخدم يُجلبان دائماً.
-      unawaited(_loadSecondaryData(id));
+      _afterOpening(() => unawaited(_loadSecondaryData(id)));
     } else {
-      _loadDetails(id, hadSeed: true);
+      _afterOpening(() => _loadDetails(id, hadSeed: true));
     }
   }
+
+  /// بعد حركة فتح الصفحة، وليس إن أُغلقت قبلها.
+  void _afterOpening(void Function() work) => RouteSettle.run(() {
+    if (!isClosed) work();
+  });
 
   static const Duration _detailsTtl = Duration(minutes: 2);
 

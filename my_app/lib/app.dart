@@ -42,7 +42,7 @@ class SyrianEducationApp extends StatelessWidget {
           }
         },
         defaultTransition: Transition.fadeIn,
-        customTransition: AppFadeScaleTransition(),
+        customTransition: AppFadeTransition(),
         transitionDuration: AppMotion.normal,
         builder: (context, child) {
           return Directionality(
