@@ -22,11 +22,11 @@ void main() {
   setUpAll(loadAuditFonts);
   tearDown(Get.reset);
 
-  Future<void> pump(WidgetTester tester, Widget screen, {double scale = 1}) async {
+  Future<void> pump(WidgetTester tester, Widget screen, {double scale = 1, String locale = 'ar'}) async {
     tester.view.physicalSize = const Size(360, 780);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(auditApp(child: screen, locale: 'ar', scale: scale, boundaryKey: GlobalKey()));
+    await tester.pumpWidget(auditApp(child: screen, locale: locale, scale: scale, boundaryKey: GlobalKey()));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
   }
@@ -123,8 +123,20 @@ void main() {
       final sort = tester.getRect(find.byType(CourseSortButton));
       expect((chips.center.dy - sort.center.dy).abs(), lessThan(2), reason: 'same row');
       expect(sort.width, 44);
-      // الزر في نهاية الصف (يسار بالعربية).
-      expect(sort.left, lessThan(chips.left + 60));
+      // الزر أول الصف عند حافة البداية (يمين بالعربية) وقبل التصنيفات، بهامش الصفحة، بلا تداخل معها.
+      expect(sort.right, 360 - 16, reason: 'rests on the right gutter in Arabic');
+      expect(chips.right, lessThanOrEqualTo(sort.left), reason: 'the chips start after the button');
+      expect(sort.left - chips.right, lessThanOrEqualTo(8 + 0.5));
+    });
+
+    testWidgets('English (LTR): the button rests on the left gutter, before the chips', (tester) async {
+      await registerFakes(loggedIn: true, locale: 'en');
+      Get.put(CoursesController());
+      await pump(tester, const CoursesView(), locale: 'en');
+      final chips = tester.getRect(find.byType(HorizontalCategoryFilters));
+      final sort = tester.getRect(find.byType(CourseSortButton));
+      expect(sort.left, 16);
+      expect(chips.left, greaterThanOrEqualTo(sort.right));
     });
 
     testWidgets('the first card starts right under the filters row', (tester) async {

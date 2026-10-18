@@ -16,11 +16,15 @@ class HorizontalCategoryFilters extends StatelessWidget {
     required this.categories,
     required this.selectedId,
     required this.onSelected,
+    this.startInset,
   });
 
   final List<CategoryModel> categories;
   final int? selectedId;
   final ValueChanged<int?> onSelected;
+
+  /// حشوة بداية الصف (افتراضياً هامش الصفحة) — 0 حين يسبقه زر في الصف نفسه.
+  final double? startInset;
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +32,7 @@ class HorizontalCategoryFilters extends StatelessWidget {
     return AppHorizontalScrollRow(
       height: 44,
       separatorWidth: 8,
+      startInset: startInset,
       children: [
         _FilterChip(label: 'filter_all'.tr, selected: selectedId == null, onTap: () => onSelected(null)),
         for (final cat in categories)

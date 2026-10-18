@@ -356,6 +356,7 @@ class AppHorizontalListView extends StatefulWidget {
     required this.itemBuilder,
     this.separatorWidth = 12,
     this.edgeInset,
+    this.startInset,
     this.bottomInset = 0,
     this.rememberScroll = false,
     this.resetToken = 0,
@@ -366,6 +367,9 @@ class AppHorizontalListView extends StatefulWidget {
   final IndexedWidgetBuilder itemBuilder;
   final double separatorWidth;
   final double? edgeInset;
+
+  /// حشوة بداية أول عنصر فقط (افتراضياً = [edgeInset]) — حين يسبق القائمة عنصر آخر في الصف.
+  final double? startInset;
 
   /// حشو سفلي للحاوية — يمنع قص ظل البطاقات (Box Shadow) عند حافة القائمة.
   final double bottomInset;
@@ -432,7 +436,7 @@ class _AppHorizontalListViewState extends State<AppHorizontalListView> {
     if (!isFirst && !isLast) return child;
 
     return Padding(
-      padding: EdgeInsetsDirectional.only(start: isFirst ? inset : 0, end: isLast ? inset : 0),
+      padding: EdgeInsetsDirectional.only(start: isFirst ? (widget.startInset ?? inset) : 0, end: isLast ? inset : 0),
       child: child,
     );
   }
@@ -466,6 +470,7 @@ class AppHorizontalScrollRow extends StatelessWidget {
     required this.children,
     this.separatorWidth = 8,
     this.edgeInset,
+    this.startInset,
     this.bottomInset = 0,
     this.rememberScroll = false,
     this.resetToken = 0,
@@ -475,6 +480,9 @@ class AppHorizontalScrollRow extends StatelessWidget {
   final List<Widget> children;
   final double separatorWidth;
   final double? edgeInset;
+
+  /// حشوة بداية أول عنصر فقط (افتراضياً = [edgeInset]) — حين يسبق القائمة عنصر آخر في الصف.
+  final double? startInset;
   final double bottomInset;
   final bool rememberScroll;
   final int resetToken;
@@ -485,6 +493,7 @@ class AppHorizontalScrollRow extends StatelessWidget {
       height: height,
       separatorWidth: separatorWidth,
       edgeInset: edgeInset,
+      startInset: startInset,
       bottomInset: bottomInset,
       rememberScroll: rememberScroll,
       resetToken: resetToken,
