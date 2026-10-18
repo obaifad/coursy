@@ -37,16 +37,12 @@ class _CoursesScrollView extends StatefulWidget {
 }
 
 class _CoursesScrollViewState extends State<_CoursesScrollView> {
-  /// عنوان «التصنيفات» الذي يختفي عند النزول — مع مسافة انطواء الرأس يحدد متى يلتصق شريط الفلاتر (فيظهر ظله).
-  final _scrollAwayKey = GlobalKey();
+  /// الفراغ الذي يختفي عند النزول — مع مسافة انطواء الرأس يحدد متى يلتصق شريط الفلاتر (فيظهر ظله).
+  static const double _filtersGap = 12;
 
   CoursesController get c => widget.controller;
 
-  double _pinOffset() {
-    final box = _scrollAwayKey.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return double.infinity;
-    return AppBrandSliverAppBar.collapseDistance(context) + box.size.height;
-  }
+  double _pinOffset() => AppBrandSliverAppBar.collapseDistance(context) + _filtersGap;
 
   @override
   Widget build(BuildContext context) {
@@ -65,49 +61,32 @@ class _CoursesScrollViewState extends State<_CoursesScrollView> {
             Obx(
               () => AppBrandSliverAppBar(
                 title: 'all_courses'.tr,
-                subtitle: 'browse_courses'.tr,
                 badge: _countBadge(c.totalCount.value > c.courses.length ? c.totalCount.value : c.courses.length),
               ),
             ),
-            SliverToBoxAdapter(
-              child: Column(
-                key: _scrollAwayKey,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 14),
-                  Obx(
-                    () => c.categories.isEmpty
-                        ? const SizedBox.shrink()
-                        : Padding(
-                            padding: EdgeInsetsDirectional.fromSTEB(hPad, 0, hPad, 0),
-                            child: Text('filter_categories'.tr, style: AppTypography.filterSectionLabel()),
-                          ),
-                  ),
-                ],
-              ),
-            ),
+            // فراغ بين الرأس وشريط الفلاتر؛ يختفي بالنزول قبل أن يلتصق الشريط.
+            const SliverToBoxAdapter(child: SizedBox(height: _filtersGap)),
             PinnedHeaderSliver(
               child: AppPinnedBar(
                 scrollController: c.scrollController,
                 pinOffset: _pinOffset,
                 child: Obx(
-                  () => Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                  () => Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      if (c.categories.isNotEmpty) ...[
-                        HorizontalCategoryFilters(
-                          categories: c.categories.toList(growable: false),
-                          selectedId: c.selectedCategoryId.value,
-                          onSelected: c.selectCategory,
-                        ),
-                        const SizedBox(height: 10),
-                      ],
+                      Expanded(
+                        child: c.categories.isEmpty
+                            ? const SizedBox(height: CourseSortButton.size)
+                            : HorizontalCategoryFilters(
+                                categories: c.categories.toList(growable: false),
+                                selectedId: c.selectedCategoryId.value,
+                                onSelected: c.selectCategory,
+                              ),
+                      ),
+                      // الترتيب أيقونة في نهاية الصف نفسه، بلا عنوان «التصنيف» ولا صف مستقل.
                       Padding(
-                        padding: EdgeInsetsDirectional.fromSTEB(hPad, 0, hPad, 0),
-                        child: Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: CourseSortDropdown(selected: c.selectedSort.value, onSelected: c.selectSort),
-                        ),
+                        padding: EdgeInsetsDirectional.only(start: 4, end: hPad),
+                        child: CourseSortButton(selected: c.selectedSort.value, onSelected: c.selectSort),
                       ),
                     ],
                   ),

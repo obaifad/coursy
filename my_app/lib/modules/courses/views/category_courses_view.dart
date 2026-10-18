@@ -40,7 +40,6 @@ class CategoryCoursesView extends GetView<CategoryCoursesController> {
               slivers: [
                 AppBrandSliverAppBar(
                   title: title,
-                  subtitle: 'category_page_subtitle'.tr,
                   badge: controller.courses.isEmpty
                       ? null
                       : pluralTr('category_courses_count', controller.courses.length),

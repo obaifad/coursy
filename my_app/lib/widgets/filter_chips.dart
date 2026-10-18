@@ -236,6 +236,59 @@ class CourseSortDropdown extends StatelessWidget {
   }
 }
 
+/// زر الترتيب المدمج: أيقونة 44px في نهاية صف التصنيفات (بدل صف «الترتيب» مستقل). نقطة صغيرة تدلّ على أن
+/// الترتيب ليس الافتراضي (الأحدث). يفتح ورقة الاختيار نفسها.
+class CourseSortButton extends StatelessWidget {
+  const CourseSortButton({super.key, required this.selected, required this.onSelected});
+
+  final CourseSortOption selected;
+  final ValueChanged<CourseSortOption> onSelected;
+
+  static const double size = 44;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = 'sort_by'.tr;
+    final custom = selected != CourseSortOption.newest;
+    return Semantics(
+      button: true,
+      label: '$label: ${selected.labelKey.tr}',
+      child: Tooltip(
+        message: label,
+        child: Material(
+          color: custom ? AppColors.primary.withValues(alpha: 0.12) : AppColors.surfaceSoft,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            side: BorderSide(color: AppColors.primary.withValues(alpha: custom ? 0.5 : 0.22)),
+          ),
+          child: InkWell(
+            customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+            onTap: () => showCourseSortSheet(context: context, selected: selected, onSelected: onSelected),
+            child: SizedBox.square(
+              dimension: size,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(Icons.swap_vert_rounded, size: 22, color: AppColors.primary.withValues(alpha: 0.9)),
+                  if (custom)
+                    PositionedDirectional(
+                      top: 8,
+                      end: 8,
+                      child: DecoratedBox(
+                        decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                        child: const SizedBox.square(dimension: 8),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// ورقة اختيار ترتيب الدورات (عائمة، بأيقونات، بأنيميشن متتابع).
 Future<void> showCourseSortSheet({
   required BuildContext context,

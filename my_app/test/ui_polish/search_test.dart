@@ -227,7 +227,7 @@ void main() {
       final (c, _) = await _setUp();
       await _pumpView(tester);
       expect(find.byType(AppBrandSliverAppBar), findsOneWidget);
-      expect(find.text('search_subtitle'.tr), findsOneWidget);
+      expect(find.text('search_subtitle'.tr), findsNothing, reason: 'compact header: no sub-title');
 
       await tester.enterText(find.byType(TextField), 'فلاتر');
       await tester.pump(const Duration(milliseconds: 400));

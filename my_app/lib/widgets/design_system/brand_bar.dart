@@ -1,27 +1,19 @@
 part of '../design_system.dart';
 
-/// «Brand Bar»: الرأس البنفسجي لشاشات القوائم الرئيسية (الدورات، التصنيف، المعاهد، المفضلة، دوراتي) — بشكل
-/// الرأس الأصلي: تدرّج الهوية بنقش نقاط خفيف وتعتيم سفلي، وزوايا سفلية مدوّرة 28. ممتداً: كبسولة العدّاد
-/// في جهة النهاية، ثم العنوان الكبير والسطر الفرعي؛ ينطوي مع التمرير إلى شريط أدوات بعنوان صغير يبقى مثبّتاً.
+/// «Brand Bar»: الرأس البنفسجي لشاشات القوائم الرئيسية (الدورات، التصنيف، المعاهد، المفضلة، دوراتي، البحث) —
+/// بشكل الرأس الأصلي: تدرّج الهوية بنقش نقاط خفيف وتعتيم سفلي، وزوايا سفلية مدوّرة 28. مضغوط: سطر واحد
+/// فيه العنوان الكبير في البداية وكبسولة العدّاد في النهاية، فيكون الرأس نحو 104px (كان نحو 165)؛ ينطوي مع
+/// التمرير إلى شريط أدوات بعنوان صغير يبقى مثبّتاً.
 /// أيقونات شريط الحالة بيضاء في كل حالات التمرير لأن الشريط المثبّت يبقى تحتها دائماً.
 ///
 /// زر الرجوع دائرة 40px تبدأ حافتها عند هامش المحتوى ([AppLayout.horizontalPage]) — نفس بداية العنوان —
 /// في العربية والإنجليزية؛ منطقة اللمس 48px تمتد 4px حولها.
 class AppBrandSliverAppBar extends StatelessWidget {
-  const AppBrandSliverAppBar({
-    super.key,
-    required this.title,
-    this.subtitle,
-    this.badge,
-    this.onBack,
-    this.actions,
-    this.bottom,
-  });
+  const AppBrandSliverAppBar({super.key, required this.title, this.badge, this.onBack, this.actions, this.bottom});
 
   final String title;
-  final String? subtitle;
 
-  /// نص الكبسولة فوق العنوان (مثل «3 دورات»). صفّها محجوز حتى قبل وصول العدد فلا يقفز الرأس.
+  /// نص الكبسولة في نهاية سطر العنوان (مثل «3 دورات»). تظهر حين يصل العدد؛ ارتفاع السطر ثابت فلا يقفز الرأس.
   final String? badge;
 
   /// إن وُجد يظهر زر الرجوع في بداية شريط الأدوات.
@@ -39,32 +31,25 @@ class AppBrandSliverAppBar extends StatelessWidget {
   /// زوايا الرأس السفلية (كالرأس الأصلي).
   static const double bottomRadius = 28;
 
-  /// الشاشات القصيرة (هاتف أفقي، 320×640): بلا السطر الفرعي كي لا يأكل الرأس نصف الشاشة.
-  static bool isCompact(BuildContext context) => MediaQuery.sizeOf(context).height < 700;
+  /// الحشوة السفلية تحت سطر العنوان.
+  static const double _bottomPad = 14;
 
-  static bool _showsSubtitle(BuildContext context, String? subtitle) =>
-      subtitle != null && subtitle.isNotEmpty && !isCompact(context);
-
-  /// ارتفاع الجزء الممتد تحت شريط الأدوات: الكبسولة + العنوان الكبير + السطر الفرعي + الحشوة السفلية.
-  static double collapseDistance(BuildContext context, {bool hasSubtitle = true}) {
+  /// ارتفاع الجزء الممتد تحت شريط الأدوات: سطر العنوان + الحشوة السفلية (56 + 48 = 104 بحجم الخط العادي).
+  static double collapseDistance(BuildContext context) {
     final s = CourseCardMetrics.textScaleOf(context);
-    final pill = AppTextSize.xs * 1.25 * s + 10;
-    final titleLine = AppTextSize.display * 1.2 * s;
-    final subtitleLine = hasSubtitle && !isCompact(context) ? 4 + AppTextSize.sm * 1.4 * s : 0.0;
-    return (pill + 8 + titleLine + subtitleLine + 20).ceilToDouble();
+    return (AppTextSize.display * 1.2 * s + _bottomPad).ceilToDouble();
   }
 
   @override
   Widget build(BuildContext context) {
     final gutter = AppLayout.horizontalPage(context);
-    final hasSubtitle = _showsSubtitle(context, subtitle);
     final bottomHeight = bottom?.preferredSize.height ?? 0;
     return SliverAppBar(
       pinned: true,
       primary: true,
       automaticallyImplyLeading: false,
       toolbarHeight: toolbarHeight,
-      expandedHeight: toolbarHeight + collapseDistance(context, hasSubtitle: hasSubtitle) + bottomHeight,
+      expandedHeight: toolbarHeight + collapseDistance(context) + bottomHeight,
       // الخلفية يرسمها flexibleSpace (تدرّج بزوايا مدوّرة)؛ الشفافية تُظهر الصفحة عند الزوايا.
       backgroundColor: Colors.transparent,
       foregroundColor: Colors.white,
@@ -81,13 +66,7 @@ class AppBrandSliverAppBar extends StatelessWidget {
       centerTitle: false,
       title: _BrandBarCollapsedTitle(title: title),
       actions: actions,
-      flexibleSpace: _BrandBarExpandedArea(
-        title: title,
-        subtitle: hasSubtitle ? subtitle : null,
-        badge: badge,
-        gutter: gutter,
-        bottomHeight: bottomHeight,
-      ),
+      flexibleSpace: _BrandBarExpandedArea(title: title, badge: badge, gutter: gutter, bottomHeight: bottomHeight),
       bottom: bottom,
     );
   }
@@ -175,14 +154,12 @@ class _BrandBarCollapsedTitle extends StatelessWidget {
 class _BrandBarExpandedArea extends StatelessWidget {
   const _BrandBarExpandedArea({
     required this.title,
-    required this.subtitle,
     required this.badge,
     required this.gutter,
     required this.bottomHeight,
   });
 
   final String title;
-  final String? subtitle;
   final String? badge;
   final double gutter;
   final double bottomHeight;
@@ -226,65 +203,48 @@ class _BrandBarExpandedArea extends StatelessWidget {
                 PositionedDirectional(
                   start: gutter,
                   end: gutter,
-                  bottom: 20,
+                  bottom: AppBrandSliverAppBar._bottomPad,
                   child: Opacity(
                     opacity: opacity,
                     child: ExcludeSemantics(
                       excluding: opacity == 0,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      // سطر واحد: العنوان في البداية، والعدّاد في النهاية (يظهر حين يصل العدد).
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // بلا عدد بعد: كبسولة شفافة بنفس الحجم. في جهة النهاية، مقابل بداية العنوان.
-                          Align(
-                            alignment: AlignmentDirectional.centerEnd,
-                            child: Opacity(
-                              opacity: badge == null ? 0 : 1,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.16),
-                                  borderRadius: AppCorners.full,
-                                  border: Border.all(color: Colors.white24),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                  child: Text(
-                                    badge ?? ' ',
-                                    maxLines: 1,
-                                    style: AppFonts.tajawal(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: AppTextSize.xs,
-                                      height: 1.25,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppFonts.tajawal(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: AppTextSize.display,
-                              height: 1.2,
-                            ),
-                          ),
-                          if (subtitle != null) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              subtitle!,
+                          Expanded(
+                            child: Text(
+                              title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: AppFonts.tajawal(
-                                color: Colors.white.withValues(alpha: 0.88),
-                                fontSize: AppTextSize.sm,
-                                fontWeight: FontWeight.w500,
-                                height: 1.4,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: AppTextSize.display,
+                                height: 1.2,
+                              ),
+                            ),
+                          ),
+                          if (badge != null) ...[
+                            const SizedBox(width: 10),
+                            DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.16),
+                                borderRadius: AppCorners.full,
+                                border: Border.all(color: Colors.white24),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                child: Text(
+                                  badge!,
+                                  maxLines: 1,
+                                  style: AppFonts.tajawal(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: AppTextSize.xs,
+                                    height: 1.25,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
