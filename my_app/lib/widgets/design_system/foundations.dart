@@ -45,8 +45,9 @@ class AppGradients {
 abstract final class AppShadows {
   AppShadows._();
 
-  /// ظل ناعم قياسي (يُستخدم داخل [SoftCard] وأي كارد عام آخر).
-  static const List<BoxShadow> card = [BoxShadow(color: AppColors.shadowSoft, blurRadius: 16, offset: Offset(0, 8))];
+  /// ظل ناعم قياسي (يُستخدم داخل [SoftCard] وأي كارد عام آخر). نصف قطر التمويه 12 لا 16: كلفة الرسم على
+  /// خيط الـ Raster تتناسب معه، والفرق بصرياً شبه معدوم على بطاقة بيضاء.
+  static const List<BoxShadow> card = [BoxShadow(color: AppColors.shadowSoft, blurRadius: 12, offset: Offset(0, 6))];
 }
 
 /// زوايا جاهزة من مقياس [AppRadius] — لا أنصاف أقطار خارج الدرجات الخمس.

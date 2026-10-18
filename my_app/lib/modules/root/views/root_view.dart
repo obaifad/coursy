@@ -46,9 +46,9 @@ class RootView extends GetView<RootController> {
                 child: IndexedStack(index: controller.currentIndex.value, children: screens),
               ),
             ),
-            bottomNavigationBar: _RootBottomNav(
-              currentIndex: controller.currentIndex.value,
-              onChanged: controller.changeTab,
+            // طبقة مستقلة: الشريط ثابت تحت كل التبويبات ولا يُعاد رسمه مع تمرير الصفحة ولا مع الانتقالات.
+            bottomNavigationBar: RepaintBoundary(
+              child: _RootBottomNav(currentIndex: controller.currentIndex.value, onChanged: controller.changeTab),
             ),
           ),
         ),
@@ -156,7 +156,7 @@ class _RootBottomNav extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadius.lg),
                     border: Border.all(color: AppColors.primary.withValues(alpha: 0.06)),
                     boxShadow: const [
-                      BoxShadow(color: AppColors.shadowPrimary, blurRadius: 24, offset: Offset(0, 8)),
+                      BoxShadow(color: AppColors.shadowPrimary, blurRadius: 16, offset: Offset(0, 6)),
                       BoxShadow(color: AppColors.shadowNeutralSoft, blurRadius: 4, offset: Offset(0, 1)),
                     ],
                   ),

@@ -674,7 +674,7 @@ class _HomeHeroBanner extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: const [BoxShadow(color: AppColors.shadowPurple, blurRadius: 20, offset: Offset(0, 12))],
+        boxShadow: const [BoxShadow(color: AppColors.shadowPurple, blurRadius: 14, offset: Offset(0, 8))],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.lg),

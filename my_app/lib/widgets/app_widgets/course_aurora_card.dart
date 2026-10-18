@@ -162,7 +162,7 @@ class _CourseAuroraCardState extends State<CourseAuroraCard> {
 }
 
 const List<BoxShadow> _auroraShadow = [
-  BoxShadow(color: Color(0x59312E81), blurRadius: 24, offset: Offset(0, 12), spreadRadius: -8),
+  BoxShadow(color: Color(0x59312E81), blurRadius: 16, offset: Offset(0, 8), spreadRadius: -6),
   BoxShadow(color: AppColors.shadowNeutralSoft, blurRadius: 4, offset: Offset(0, 2)),
 ];
 
