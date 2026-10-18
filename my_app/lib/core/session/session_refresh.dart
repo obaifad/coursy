@@ -10,6 +10,7 @@ import '../../modules/institutes/controllers/institutes_controller.dart';
 import '../../modules/notifications/controllers/notifications_controller.dart';
 import '../../modules/profile/controllers/my_courses_controller.dart';
 import '../../modules/profile/controllers/profile_controller.dart';
+import '../cache/memory_cache.dart';
 import '../services/course_rating_service.dart';
 import '../services/favorites_service.dart';
 import '../services/app_lifecycle_sync.dart';
@@ -30,6 +31,7 @@ import '../utils/app_toast.dart';
 abstract final class SessionRefresh {
   /// بعد نجاح تسجيل الدخول أو التسجيل.
   static Future<void> onLoginSuccess() async {
+    MemoryCache.clear();
     if (Get.isRegistered<CourseRatingService>()) {
       Get.find<CourseRatingService>().invalidateCache();
     }
@@ -72,6 +74,7 @@ abstract final class SessionRefresh {
   /// عند تسجيل الخروج — مسح الذاكرة المؤقتة في كل المتحكمات النشطة وإلغاء تسجيل الجهاز (يحتاج التوكن).
   /// لا يعيد تحميل البيانات العامة: ذلك في [reloadAsGuest] بعد مسح التوكن، حتى لا ينتظره الانتقال.
   static Future<void> onLogout() async {
+    MemoryCache.clear();
     if (Get.isRegistered<RecentSearchStorage>()) {
       await Get.find<RecentSearchStorage>().clear();
     }

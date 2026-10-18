@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 
+import '../../../core/cache/memory_cache.dart';
 import '../../../core/models/json_helpers.dart';
 import '../../../core/data/repositories/city_repository.dart';
 import '../../../core/models/app_models.dart';
@@ -41,15 +42,41 @@ class CityDetailsController extends GetxController {
     }
     _hasCityName = name != null && name.isNotEmpty;
     title.value = _hasCityName ? name! : 'city'.tr;
+    final cachedCity = cityId > 0 ? MemoryCache.get<CityModel>(_cityKey) : null;
+    if (cachedCity != null && city.value == null) {
+      city.value = cachedCity.value;
+      title.value = cachedCity.value.name;
+      _hasCityName = true;
+    }
+    final cached = cityId > 0 ? MemoryCache.get<PagedSnapshot<InstituteModel>>(_listKey) : null;
+    if (cached != null) {
+      institutes.assignAll(cached.value.items);
+      hasMore.value = cached.value.hasMore;
+      _page = cached.value.page;
+      isLoading.value = false;
+      if (cached.isFresh()) return;
+    }
     load();
   }
 
+  String get _cityKey => MemoryCache.key('city', [cityId]);
+  String get _listKey => MemoryCache.key('city-institutes', [cityId]);
+
+  void _remember() {
+    if (city.value != null) MemoryCache.put<CityModel>(_cityKey, city.value!);
+    MemoryCache.put<PagedSnapshot<InstituteModel>>(
+      _listKey,
+      PagedSnapshot<InstituteModel>(items: institutes, hasMore: hasMore.value, page: _page),
+    );
+  }
+
   Future<void> load() async {
-    if (!_hasCityName) isLoading.value = true;
+    if (!_hasCityName && institutes.isEmpty) isLoading.value = true;
     errorMessage.value = null;
     _page = 1;
     try {
       await Future.wait<void>([_fetchCityIfNeeded(), _fetchInstitutesPage()]);
+      _remember();
     } catch (e) {
       if (institutes.isEmpty) errorMessage.value = userErrorMessage(e);
     } finally {
@@ -82,6 +109,7 @@ class CityDetailsController extends GetxController {
       institutes.addAll(result.items);
       _page = next;
       hasMore.value = result.hasMore;
+      _remember();
     } catch (_) {
       loadMoreFailed.value = true;
     } finally {

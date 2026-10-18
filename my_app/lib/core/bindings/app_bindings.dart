@@ -1,3 +1,4 @@
+import '../cache/memory_cache.dart';
 import 'package:get/get.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/repositories/favorites_repository.dart';
@@ -44,6 +45,9 @@ class AppBindings extends Bindings {
     }
     if (!Get.isRegistered<LocaleRequestGuard>()) {
       Get.put(LocaleRequestGuard(), permanent: true);
+    }
+    if (!Get.isRegistered<MemoryCache>()) {
+      Get.put(MemoryCache(), permanent: true);
     }
     if (!Get.isRegistered<RecentSearchStorage>()) {
       Get.put(RecentSearchStorage(), permanent: true);

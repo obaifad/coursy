@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 
+import '../../../core/cache/memory_cache.dart';
 import '../../../core/models/json_helpers.dart';
 import '../../../core/data/repositories/instructor_repository.dart';
 import '../../../core/models/app_models.dart';
@@ -38,7 +39,26 @@ class InstructorSubjectInstructorsController extends GetxController with Initial
       subjectKey = '';
       title.value = 'instructor_subject_default'.tr;
     }
+    final cached = MemoryCache.get<List<InstructorModel>>(_cacheKey);
+    if (cached != null) {
+      _apply(cached.value);
+      isLoading.value = false;
+      markLoaded();
+      if (cached.isFresh()) return;
+    }
     loadInstructors();
+  }
+
+  String get _cacheKey => MemoryCache.key('subject-instructors', [subjectKey]);
+
+  void _apply(List<InstructorModel> all) {
+    _allInstructors
+      ..clear()
+      ..addAll(all);
+    instructors.assignAll(_allInstructors.take(_pageSize));
+    _visibleCount = instructors.length;
+    instructorsCount.value = _allInstructors.length;
+    hasMore.value = _visibleCount < _allInstructors.length;
   }
 
   Future<void> loadInstructors() async {
@@ -46,14 +66,9 @@ class InstructorSubjectInstructorsController extends GetxController with Initial
     errorMessage.value = null;
     _visibleCount = 0;
     try {
-      _allInstructors
-        ..clear()
-        ..addAll(await _repository.fetchInstructorsBySubject(subjectKey: subjectKey));
-      instructors.assignAll(_allInstructors.take(_pageSize));
-      _visibleCount = instructors.length;
-      instructorsCount.value = _allInstructors.length;
-      hasMore.value = _visibleCount < _allInstructors.length;
+      _apply(await _repository.fetchInstructorsBySubject(subjectKey: subjectKey));
       markLoaded();
+      MemoryCache.put<List<InstructorModel>>(_cacheKey, List.of(_allInstructors));
     } on ApiException catch (e) {
       errorMessage.value = e.message;
       instructors.clear();
