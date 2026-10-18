@@ -341,55 +341,66 @@ class _AuroraGlassPanel extends StatelessWidget {
     0, 0, 0, 1, 0,
   ];
 
+  static const double _frostedInkAlpha = 0.34;
+  static const double _flatInkAlpha = 0.52;
+
+  /// التمويه الحقيقي (BackdropFilter) أغلى ما في البطاقة: يُوقَف أثناء حركة الانتقال (فتح صفحة أو إغلاقها)
+  /// بلوح معتّم أخفّ يحاكيه، ويعود حين تستقر الصفحة.
   @override
   Widget build(BuildContext context) {
-    final white = Colors.white;
-    return ClipRRect(
-      borderRadius: AppCorners.md,
-      child: BackdropFilter(
-        filter: _frost,
-        child: DecoratedBox(
+    return RouteMotionBuilder(
+      builder: (context, inMotion) {
+        final decorated = DecoratedBox(
           decoration: BoxDecoration(
-            color: _auroraInk.withValues(alpha: 0.34),
+            color: _auroraInk.withValues(alpha: inMotion ? _flatInkAlpha : _frostedInkAlpha),
             borderRadius: AppCorners.md,
-            border: Border.all(color: white.withValues(alpha: 0.22)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
           ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: spec.panelPadding, vertical: CourseAuroraSpec.panelPaddingV),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(
-                  height: spec.categoryHeight,
-                  child: _AuroraCategoryLine(course: course),
+          child: _content(),
+        );
+        return ClipRRect(
+          borderRadius: AppCorners.md,
+          child: inMotion ? decorated : BackdropFilter(filter: _frost, child: decorated),
+        );
+      },
+    );
+  }
+
+  Widget _content() {
+    const white = Colors.white;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: spec.panelPadding, vertical: CourseAuroraSpec.panelPaddingV),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            height: spec.categoryHeight,
+            child: _AuroraCategoryLine(course: course),
+          ),
+          const SizedBox(height: CourseAuroraSpec.gapAfterCategory),
+          SizedBox(
+            height: spec.titleHeight,
+            child: Align(
+              alignment: AlignmentDirectional.topStart,
+              child: BidiText(
+                course.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppFonts.tajawal(
+                  fontSize: spec.titleSize,
+                  fontWeight: FontWeight.w800,
+                  height: CourseAuroraSpec.titleLineHeight,
+                  color: white,
                 ),
-                const SizedBox(height: CourseAuroraSpec.gapAfterCategory),
-                SizedBox(
-                  height: spec.titleHeight,
-                  child: Align(
-                    alignment: AlignmentDirectional.topStart,
-                    child: BidiText(
-                      course.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppFonts.tajawal(
-                        fontSize: spec.titleSize,
-                        fontWeight: FontWeight.w800,
-                        height: CourseAuroraSpec.titleLineHeight,
-                        color: white,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: CourseAuroraSpec.gapAfterTitle),
-                SizedBox(
-                  height: spec.metaHeight,
-                  child: _AuroraMetaLine(course: course),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+          const SizedBox(height: CourseAuroraSpec.gapAfterTitle),
+          SizedBox(
+            height: spec.metaHeight,
+            child: _AuroraMetaLine(course: course),
+          ),
+        ],
       ),
     );
   }

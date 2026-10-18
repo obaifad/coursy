@@ -657,6 +657,7 @@ class _CourseCardImage extends StatelessWidget {
               height: h,
               fit: BoxFit.cover,
               ignorePointer: true,
+              cacheWidth: courseImageCacheWidth(context),
               errorWidget: _fallback(),
             );
           },

@@ -41,7 +41,10 @@ class RootView extends GetView<RootController> {
             backgroundColor: AppColors.surface,
             body: PageStorage(
               bucket: controller.pageStorageBucket,
-              child: IndexedStack(index: controller.currentIndex.value, children: screens),
+              child: _TabFade(
+                index: controller.currentIndex.value,
+                child: IndexedStack(index: controller.currentIndex.value, children: screens),
+              ),
             ),
             bottomNavigationBar: _RootBottomNav(
               currentIndex: controller.currentIndex.value,
@@ -52,6 +55,41 @@ class RootView extends GetView<RootController> {
       ),
     );
   }
+}
+
+/// تلاشٍ قصير عند تبديل التبويب (بدل القطع المفاجئ). الحالة محفوظة: التبويبات تبقى في IndexedStack.
+class _TabFade extends StatefulWidget {
+  const _TabFade({required this.index, required this.child});
+
+  final int index;
+  final Widget child;
+
+  @override
+  State<_TabFade> createState() => _TabFadeState();
+}
+
+class _TabFadeState extends State<_TabFade> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 160),
+    value: 1,
+  );
+  late final Animation<double> _opacity = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+
+  @override
+  void didUpdateWidget(covariant _TabFade old) {
+    super.didUpdateWidget(old);
+    if (old.index != widget.index && !MediaQuery.disableAnimationsOf(context)) _controller.forward(from: 0.35);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FadeTransition(opacity: _opacity, child: widget.child);
 }
 
 bool _hasPurpleHeader(int tab) {
