@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import '../../modules/home/controllers/home_controller.dart';
 import '../../modules/root/controllers/root_controller.dart';
+import '../../theme/app_motion.dart';
 
 /// يعيد ضبط موضع تمرير الصفحة الرئيسية (عمودي + أفقي) عند العودة إليها.
 abstract final class HomeScrollReset {
@@ -12,6 +13,11 @@ abstract final class HomeScrollReset {
     if (Get.find<RootController>().currentIndex.value != 2) return;
     if (scrollToTop) Get.find<HomeController>().resetScrollPosition();
     // يُستدعى عند كل عودة للرئيسية (تبديل تبويب / زر رجوع) — نعيد التحميل فقط إن كانت البيانات قديمة.
-    Get.find<HomeController>().refreshIfStale();
+    // بعد انتهاء حركة الرجوع/تبديل التبويب: التحديث يغيّر الواجهة، وهي تتحرك.
+    Future<void>.delayed(AppMotion.normal, () {
+      if (Get.isRegistered<HomeController>() && Get.find<RootController>().currentIndex.value == 2) {
+        Get.find<HomeController>().refreshIfStale();
+      }
+    });
   }
 }

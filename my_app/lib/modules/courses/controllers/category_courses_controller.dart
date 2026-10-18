@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../core/models/json_helpers.dart';
+import '../../../core/navigation/route_settle.dart';
 import '../../../core/data/repositories/course_repository.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/locale/locale_request_guard.dart';
@@ -35,7 +36,8 @@ class CategoryCoursesController extends GetxController with InitialLoadState {
       categoryId = 0;
       title.value = 'category_default_title'.tr;
     }
-    loadCourses();
+    // الهيكل يظهر أثناء حركة الفتح، والبيانات تُجلب بعدها: لا يتبدّل المحتوى والصفحة تتحرك.
+    RouteSettle.run(loadCourses);
   }
 
   void selectSort(CourseSortOption sort) {

@@ -369,6 +369,8 @@ class _CourseHeroImage extends StatelessWidget {
           height: h,
           fit: BoxFit.cover,
           ignorePointer: true,
+          cacheWidth: courseImageCacheWidth(context),
+          fadeIn: false,
           errorWidget: _fallback(),
         );
       },
