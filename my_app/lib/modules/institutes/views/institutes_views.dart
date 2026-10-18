@@ -42,7 +42,6 @@ class InstitutesView extends GetView<InstitutesController> {
           slivers: [
             AppBrandSliverAppBar(
               title: 'institutes_title'.tr,
-              subtitle: 'institutes_subtitle'.tr,
               badge: institutes.isEmpty ? null : pluralTr('city_institutes_count', institutes.length),
             ),
             // أقل من مدينتين: لا فلاتر (HorizontalCityFilters يخفي نفسه) — ولا شريط فارغ ملتصق بحشوته.

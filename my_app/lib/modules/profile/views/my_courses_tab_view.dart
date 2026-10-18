@@ -73,7 +73,6 @@ class _MyCoursesShellState extends State<_MyCoursesShell> with SingleTickerProvi
           Obx(
             () => AppBrandSliverAppBar(
               title: 'my_courses'.tr,
-              subtitle: 'my_courses_subtitle'.tr,
               badge: controller.enrollments.isEmpty ? null : pluralTr('bookings_count', controller.enrollments.length),
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(AppTabBarSection.sectionHeight + 6),

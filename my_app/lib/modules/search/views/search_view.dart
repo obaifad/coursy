@@ -83,7 +83,6 @@ class _SearchScrollViewState extends State<_SearchScrollView> {
                 final total = controller.countFor(SearchScope.all);
                 return AppBrandSliverAppBar(
                   title: 'search_title'.tr,
-                  subtitle: 'search_subtitle'.tr,
                   badge: controller.hasQuery && total != null ? pluralTr('search_results_count', total) : null,
                   onBack: Navigator.canPop(context) ? Get.back : null,
                 );

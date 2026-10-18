@@ -35,7 +35,6 @@ class FavoritesView extends GetView<FavoritesController> {
             headerSliverBuilder: (context, _) => [
               AppBrandSliverAppBar(
                 title: 'favorites_title'.tr,
-                subtitle: 'favorites_subtitle'.tr,
                 badge: count > 0 ? pluralTr('category_courses_count', count) : null,
                 onBack: Navigator.canPop(context) ? Get.back : null,
               ),

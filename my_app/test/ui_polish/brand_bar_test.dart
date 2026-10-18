@@ -33,7 +33,7 @@ Future<void> _pump(
 
 Widget _scrollScene({VoidCallback? onBack}) => CustomScrollView(
   slivers: [
-    AppBrandSliverAppBar(title: _title, subtitle: 'Browse every course', badge: '12 courses', onBack: onBack),
+    AppBrandSliverAppBar(title: _title, badge: '12 courses', onBack: onBack),
     SliverList.builder(itemCount: 60, itemBuilder: (_, i) => SizedBox(height: 64, child: Text('row $i'))),
   ],
 );
