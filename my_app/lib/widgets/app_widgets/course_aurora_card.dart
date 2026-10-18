@@ -85,15 +85,12 @@ class _CourseAuroraCardState extends State<CourseAuroraCard> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    CourseImageHero(
-                      courseId: course.id,
-                      child: _CourseCardImage(
-                        course: course,
-                        borderRadius: BorderRadius.zero,
-                        fallbackSize: spec.compact ? 26 : 30,
-                        // اللوح يغطي النصف السفلي — أيقونة البديل في الأعلى.
-                        fallbackIconAlignment: const Alignment(0, -0.5),
-                      ),
+                    _CourseCardImage(
+                      course: course,
+                      borderRadius: BorderRadius.zero,
+                      fallbackSize: spec.compact ? 26 : 30,
+                      // اللوح يغطي النصف السفلي — أيقونة البديل في الأعلى.
+                      fallbackIconAlignment: const Alignment(0, -0.5),
                     ),
                     const _AuroraScrim(),
                     // في نفس طبقة الصورة (بلا RepaintBoundary) كي يُضاف الضوء إلى بكسلاتها فعلاً.
