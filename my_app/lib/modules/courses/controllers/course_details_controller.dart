@@ -1,3 +1,4 @@
+import '../../../core/cache/memory_cache.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -59,10 +60,10 @@ class CourseDetailsController extends GetxController {
       _seedEnrollmentFromCache(arg.id);
       course.value = arg;
       schedules.assignAll(arg.schedules);
-      _loadDetails(arg.id, hadSeed: true);
+      _openWithCache(arg.id, hadSeed: true);
     } else if (arg is int) {
       _seedEnrollmentFromCache(arg);
-      _loadDetails(arg);
+      _openWithCache(arg, hadSeed: false);
     } else {
       loadFailed.value = true;
     }
@@ -70,6 +71,39 @@ class CourseDetailsController extends GetxController {
       // مع مدة الصلاحية (دقيقتان) بدل فرض المزامنة عند كل فتح لصفحة دورة.
       unawaited(_favoritesService.syncFromApi());
     }
+  }
+
+  /// الدورة التي زرناها قبل قليل (تفاصيلها وجداولها وتقييماتها) تظهر كاملة فوراً؛ الطازجة بلا طلب،
+  /// والقديمة تُحدَّث بصمت. المقاعد والأسعار تتغيّر، لذلك مدة الصلاحية قصيرة ([_detailsTtl]).
+  void _openWithCache(int id, {required bool hadSeed}) {
+    final cached = id > 0 ? MemoryCache.get<_CourseSnapshot>(MemoryCache.key('course-details', [id])) : null;
+    if (cached == null) {
+      _loadDetails(id, hadSeed: hadSeed);
+      return;
+    }
+    final s = cached.value;
+    _requestedId = id;
+    loadFailed.value = false;
+    course.value = hadSeed ? _mergeCourseDetails(course.value, s.course, hadSeed: true) : s.course;
+    schedules.assignAll(s.schedules);
+    reviews.assignAll(s.reviews);
+    if (cached.isFresh(_detailsTtl)) {
+      // حالة التسجيل والتقييم الخاصان بالمستخدم يُجلبان دائماً.
+      unawaited(_loadSecondaryData(id));
+    } else {
+      _loadDetails(id, hadSeed: true);
+    }
+  }
+
+  static const Duration _detailsTtl = Duration(minutes: 2);
+
+  void _rememberDetails() {
+    final current = course.value;
+    if (current == null) return;
+    MemoryCache.put<_CourseSnapshot>(
+      MemoryCache.key('course-details', [current.id]),
+      _CourseSnapshot(course: current, schedules: List.of(schedules), reviews: List.of(reviews)),
+    );
   }
 
   /// سحب للتحديث: يعيد جلب الدورة والجداول والتقييمات (مقاعد وأسعار تتغيّر) دون هيكل تحميل كامل.
@@ -155,6 +189,7 @@ class CourseDetailsController extends GetxController {
           course.value = course.value!.copyWith(rating: avg);
         }
       }
+      _rememberDetails();
     } catch (_) {
       // الإبقاء على بيانات القائمة؛ بدونها نعرض حالة فشل مع إعادة محاولة.
       if (course.value == null) loadFailed.value = true;
@@ -316,4 +351,13 @@ class CourseDetailsController extends GetxController {
       hasSubmittedReview.value = false;
     }
   }
+}
+
+/// ما يُحفظ لصفحة دورة: الدورة بعد دمج التفاصيل + جداولها + تقييماتها.
+class _CourseSnapshot {
+  _CourseSnapshot({required this.course, required this.schedules, required this.reviews});
+
+  final CourseModel course;
+  final List<ScheduleModel> schedules;
+  final List<ReviewModel> reviews;
 }

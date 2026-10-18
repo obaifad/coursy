@@ -1,3 +1,4 @@
+import '../../../core/cache/memory_cache.dart';
 import 'package:get/get.dart';
 
 import '../../../core/data/repositories/city_repository.dart';
@@ -142,7 +143,35 @@ class InstituteDetailsController extends GetxController {
     } else {
       instituteId = 0;
     }
+    final cached = _restoreFromCache();
+    if (cached != null && cached.isFresh()) return;
     loadDetails();
+  }
+
+  String get _cacheKey => MemoryCache.key('institute-details', [instituteId]);
+
+  /// آخر ما عُرض للمعهد (بياناته ودوراته ومدرّسوه): فوراً عند العودة، وتحديث صامت إن كان قديماً.
+  CacheEntry<_InstituteSnapshot>? _restoreFromCache() {
+    if (instituteId <= 0) return null;
+    final cached = MemoryCache.get<_InstituteSnapshot>(_cacheKey);
+    if (cached == null) return null;
+    final s = cached.value;
+    institute.value = s.institute;
+    courses.assignAll(s.courses);
+    instructors.assignAll(s.instructors);
+    isLoading.value = false;
+    return cached;
+  }
+
+  void _remember() {
+    final current = institute.value;
+    if (current == null || instituteId <= 0) return;
+    // لا نحفظ حالة ناقصة بسبب خطأ: كانت ستعرض «لا دورات» بدل إعادة المحاولة.
+    if (coursesError.value != null || instructorsError.value != null) return;
+    MemoryCache.put<_InstituteSnapshot>(
+      _cacheKey,
+      _InstituteSnapshot(institute: current, courses: List.of(courses), instructors: List.of(instructors)),
+    );
   }
 
   @override
@@ -163,6 +192,7 @@ class InstituteDetailsController extends GetxController {
     if (!hasSeed) isLoading.value = true;
     try {
       await Future.wait<void>([_fetchInstituteDetails(), _fetchCourses(), _fetchInstructors()]);
+      _remember();
     } finally {
       isLoading.value = false;
     }
@@ -231,4 +261,13 @@ class InstituteDetailsController extends GetxController {
       institute.value = current.copyWith(coursesCount: loaded);
     }
   }
+}
+
+/// ما يُحفظ لصفحة معهد: بياناته + دوراته + مدرّسوه.
+class _InstituteSnapshot {
+  _InstituteSnapshot({required this.institute, required this.courses, required this.instructors});
+
+  final InstituteModel institute;
+  final List<CourseModel> courses;
+  final List<InstructorModel> instructors;
 }

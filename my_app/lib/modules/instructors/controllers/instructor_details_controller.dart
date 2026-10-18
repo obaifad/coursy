@@ -1,3 +1,4 @@
+import '../../../core/cache/memory_cache.dart';
 import 'package:get/get.dart';
 
 import '../../../core/data/repositories/instructor_repository.dart';
@@ -29,6 +30,9 @@ class InstructorDetailsController extends GetxController {
 
   late int instructorId;
   int _coursesPage = 1;
+
+  /// نجح تحميل الدورات مرة (أو استُعيدت من الذاكرة): التحديثات التالية صامتة بلا هيكل.
+  bool _coursesLoaded = false;
   static const _coursesPerPage = 12;
 
   Worker? _favoritesWorker;
@@ -39,7 +43,47 @@ class InstructorDetailsController extends GetxController {
     _readArguments(Get.arguments);
     _favoritesWorker = ever(_favoritesService.items, (_) => _syncFavorite());
     _syncFavorite();
+    final cached = _restoreFromCache();
+    if (cached != null && cached.isFresh()) return;
     loadDetails();
+  }
+
+  String get _cacheKey => MemoryCache.key('instructor-details', [instructorId]);
+
+  /// آخر ما عُرض للمدرّس (بياناته ودوراته وتقييماته): يُعرض فوراً بلا هياكل عند العودة إليه.
+  CacheEntry<_InstructorSnapshot>? _restoreFromCache() {
+    if (instructorId <= 0) return null;
+    final cached = MemoryCache.get<_InstructorSnapshot>(_cacheKey);
+    if (cached == null) return null;
+    final s = cached.value;
+    instructor.value = s.instructor;
+    courses.assignAll(s.courses.items);
+    hasMoreCourses.value = s.courses.hasMore;
+    totalCourses.value = s.courses.total;
+    _coursesPage = s.courses.page;
+    reviews.assignAll(s.reviews);
+    isLoading.value = false;
+    isLoadingCourses.value = false;
+    _coursesLoaded = true;
+    return cached;
+  }
+
+  void _remember() {
+    final current = instructor.value;
+    if (current == null || instructorId <= 0 || coursesError.value != null) return;
+    MemoryCache.put<_InstructorSnapshot>(
+      _cacheKey,
+      _InstructorSnapshot(
+        instructor: current,
+        courses: PagedSnapshot<CourseModel>(
+          items: courses,
+          hasMore: hasMoreCourses.value,
+          page: _coursesPage,
+          total: totalCourses.value,
+        ),
+        reviews: List.of(reviews),
+      ),
+    );
   }
 
   @override
@@ -82,6 +126,7 @@ class InstructorDetailsController extends GetxController {
 
     try {
       await Future.wait<void>([_refreshInstructor(), _loadCourses(reset: true), _loadReviews()]);
+      _remember();
     } finally {
       isLoading.value = false;
     }
@@ -102,7 +147,8 @@ class InstructorDetailsController extends GetxController {
       return;
     }
     if (reset) {
-      isLoadingCourses.value = true;
+      // تحديث بصمت (من الذاكرة أو بالسحب): تبقى القائمة الحالية ظاهرة بدل الهيكل.
+      if (!_coursesLoaded) isLoadingCourses.value = true;
       coursesError.value = null;
     }
     // الصفحة تتقدّم بعد النجاح فقط — كانت تتقدّم قبل الطلب فتُتخطّى صفحة كاملة بعد أي فشل.
@@ -114,6 +160,7 @@ class InstructorDetailsController extends GetxController {
         perPage: _coursesPerPage,
       );
       _coursesPage = page;
+      _coursesLoaded = true;
       if (reset) {
         courses.assignAll(result.items);
       } else {
@@ -124,7 +171,7 @@ class InstructorDetailsController extends GetxController {
     } catch (e) {
       // كان الخطأ يخرج من loadDetails بلا معالجة.
       if (reset) {
-        coursesError.value = userErrorMessage(e);
+        if (courses.isEmpty) coursesError.value = userErrorMessage(e);
       } else {
         loadMoreCoursesFailed.value = true;
       }
@@ -141,6 +188,7 @@ class InstructorDetailsController extends GetxController {
     loadMoreCoursesFailed.value = false;
     try {
       await _loadCourses(reset: false);
+      _remember();
     } finally {
       isLoadingMoreCourses.value = false;
     }
@@ -163,4 +211,13 @@ class InstructorDetailsController extends GetxController {
     await _favoritesService.toggleInstructor(instructorId);
     _syncFavorite();
   }
+}
+
+/// ما يُحفظ لصفحة مدرّس: بياناته + صفحات دوراته المحمّلة + تقييماته.
+class _InstructorSnapshot {
+  _InstructorSnapshot({required this.instructor, required this.courses, required this.reviews});
+
+  final InstructorModel instructor;
+  final PagedSnapshot<CourseModel> courses;
+  final List<ReviewModel> reviews;
 }

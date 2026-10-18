@@ -1,3 +1,4 @@
+import '../../../core/cache/memory_cache.dart';
 import 'package:get/get.dart';
 
 import '../../../core/data/repositories/instructor_repository.dart';
@@ -29,8 +30,29 @@ class InstructorCoursesController extends GetxController with InitialLoadState {
   void onInit() {
     super.onInit();
     _readArguments(Get.arguments);
+    final cached = instructorId > 0 ? MemoryCache.get<PagedSnapshot<CourseModel>>(_cacheKey) : null;
+    if (cached != null) {
+      _restore(cached.value);
+      if (cached.isFresh()) return;
+    }
     loadCourses();
   }
+
+  String get _cacheKey => MemoryCache.key('instructor-courses', [instructorId]);
+
+  void _restore(PagedSnapshot<CourseModel> snapshot) {
+    courses.assignAll(snapshot.items);
+    hasMore.value = snapshot.hasMore;
+    totalCourses.value = snapshot.total;
+    _page = snapshot.page;
+    isLoading.value = false;
+    markLoaded();
+  }
+
+  void _remember() => MemoryCache.put<PagedSnapshot<CourseModel>>(
+    _cacheKey,
+    PagedSnapshot<CourseModel>(items: courses, hasMore: hasMore.value, page: _page, total: totalCourses.value),
+  );
 
   void _readArguments(dynamic arg) {
     if (arg is InstructorModel) {
@@ -74,6 +96,7 @@ class InstructorCoursesController extends GetxController with InitialLoadState {
       hasMore.value = result.hasMore;
       totalCourses.value = result.total;
       markLoaded();
+      _remember();
     } catch (e) {
       if (courses.isEmpty) errorMessage.value = userErrorMessage(e);
     } finally {
@@ -96,6 +119,7 @@ class InstructorCoursesController extends GetxController with InitialLoadState {
       _page = nextPage;
       hasMore.value = result.hasMore;
       totalCourses.value = result.total;
+      _remember();
     } catch (_) {
       loadMoreFailed.value = true;
     } finally {

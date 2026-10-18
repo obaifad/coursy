@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 
+import '../../../core/cache/memory_cache.dart';
 import '../../../core/models/json_helpers.dart';
 import '../../../core/navigation/route_settle.dart';
 import '../../../core/data/repositories/course_repository.dart';
@@ -36,9 +37,30 @@ class CategoryCoursesController extends GetxController with InitialLoadState {
       categoryId = 0;
       title.value = 'category_default_title'.tr;
     }
+    final cached = MemoryCache.get<PagedSnapshot<CourseModel>>(_cacheKey);
+    if (cached != null) {
+      // زيارة سابقة: القائمة فوراً بلا هيكل؛ القديمة فقط تُحدَّث بصمت بعد الحركة.
+      _restore(cached.value);
+      if (cached.isFresh()) return;
+    }
     // الهيكل يظهر أثناء حركة الفتح، والبيانات تُجلب بعدها: لا يتبدّل المحتوى والصفحة تتحرك.
     RouteSettle.run(loadCourses);
   }
+
+  String get _cacheKey => MemoryCache.key('category-courses', [categoryId]);
+
+  void _restore(PagedSnapshot<CourseModel> snapshot) {
+    courses.assignAll(snapshot.items);
+    hasMore.value = snapshot.hasMore;
+    _page = snapshot.page;
+    isLoading.value = false;
+    markLoaded();
+  }
+
+  void _remember() => MemoryCache.put<PagedSnapshot<CourseModel>>(
+    _cacheKey,
+    PagedSnapshot<CourseModel>(items: courses, hasMore: hasMore.value, page: _page),
+  );
 
   void selectSort(CourseSortOption sort) {
     if (selectedSort.value == sort) return;
@@ -58,6 +80,7 @@ class CategoryCoursesController extends GetxController with InitialLoadState {
       courses.assignAll(result.items);
       hasMore.value = result.hasMore;
       markLoaded();
+      _remember();
     } catch (e) {
       if (courses.isEmpty) errorMessage.value = userErrorMessage(e);
     } finally {
@@ -79,6 +102,7 @@ class CategoryCoursesController extends GetxController with InitialLoadState {
       courses.addAll(result.items);
       _page = nextPage;
       hasMore.value = result.hasMore;
+      _remember();
     } catch (_) {
       loadMoreFailed.value = true;
     } finally {

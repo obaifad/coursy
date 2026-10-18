@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 
+import '../../../core/cache/memory_cache.dart';
 import '../../../core/data/repositories/instructor_repository.dart';
 import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
@@ -39,9 +40,34 @@ class PrivateInstructorsController extends GetxController with LatestLoadGuard, 
     } else if (arg is InstructorSubjectModel) {
       selectedSubjectKey.value = arg.key;
     }
-    _loadSubjectFilters();
+    final cachedSubjects = MemoryCache.get<List<InstructorSubjectModel>>(_subjectsKey);
+    if (cachedSubjects != null) subjects.assignAll(cachedSubjects.value);
+    if (cachedSubjects == null || !cachedSubjects.isFresh()) _loadSubjectFilters();
+    final cached = MemoryCache.get<PagedSnapshot<InstructorModel>>(_listKey);
+    if (cached != null) {
+      _restore(cached.value);
+      if (cached.isFresh()) return;
+    }
     loadInstructors();
   }
+
+  static const _subjectsKeyScope = 'private-instructor-subjects';
+  String get _subjectsKey => MemoryCache.key(_subjectsKeyScope);
+  String get _listKey => MemoryCache.key('private-instructors', [selectedSubjectKey.value]);
+
+  void _restore(PagedSnapshot<InstructorModel> snapshot) {
+    instructors.assignAll(snapshot.items);
+    hasMore.value = snapshot.hasMore;
+    _page = snapshot.page;
+    errorMessage.value = null;
+    isLoading.value = false;
+    markLoaded();
+  }
+
+  void _remember() => MemoryCache.put<PagedSnapshot<InstructorModel>>(
+    _listKey,
+    PagedSnapshot<InstructorModel>(items: instructors, hasMore: hasMore.value, page: _page),
+  );
 
   Future<void> _loadSubjectFilters() async {
     // مفتاح مستقل: تحميل قائمة المدرّسين لا يُلغي تحميل المرشّحات.
@@ -49,7 +75,10 @@ class PrivateInstructorsController extends GetxController with LatestLoadGuard, 
     isLoadingFilters.value = true;
     try {
       final fresh = await _repository.fetchInstructorSubjectFilters();
-      applyIfCurrent(session, () => subjects.assignAll(fresh));
+      applyIfCurrent(session, () {
+        subjects.assignAll(fresh);
+        MemoryCache.put<List<InstructorSubjectModel>>(_subjectsKey, List.of(fresh));
+      });
     } on ApiCancelledException {
       return;
     } catch (_) {
@@ -62,6 +91,13 @@ class PrivateInstructorsController extends GetxController with LatestLoadGuard, 
   void selectSubject(String? key) {
     if (selectedSubjectKey.value == key) return;
     selectedSubjectKey.value = key;
+    final cached = MemoryCache.get<PagedSnapshot<InstructorModel>>(_listKey);
+    if (cached != null) {
+      // فلتر زرناه قبل قليل: قائمته فوراً، وتُحدَّث بصمت إن كانت قديمة.
+      _restore(cached.value);
+      if (!cached.isFresh()) loadInstructors();
+      return;
+    }
     resetInitialLoad();
     loadInstructors();
   }
@@ -83,6 +119,7 @@ class PrivateInstructorsController extends GetxController with LatestLoadGuard, 
         instructors.assignAll(result.items);
         hasMore.value = result.hasMore;
         markLoaded();
+        _remember();
       });
     } on ApiCancelledException {
       return;
@@ -119,6 +156,7 @@ class PrivateInstructorsController extends GetxController with LatestLoadGuard, 
       instructors.addAll(result.items);
       _page = nextPage;
       hasMore.value = result.hasMore;
+      _remember();
     } catch (_) {
       loadMoreFailed.value = true;
     } finally {
