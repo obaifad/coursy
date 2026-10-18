@@ -48,14 +48,8 @@ class _AttributeBadges extends StatelessWidget {
                 )
               : null,
         ),
-      if (item.studyType != null) _DetailBadge(icon: Icons.cast_for_education_rounded, label: item.studyType!),
       if (item.language != null && item.language!.isNotEmpty)
         _DetailBadge(icon: Icons.language_rounded, label: item.language!),
-      _DetailBadge(
-        icon: item.certificateAvailable ? Icons.verified_rounded : Icons.cancel_outlined,
-        label: item.certificateAvailable ? 'course_certificate_yes'.tr : 'course_certificate_no'.tr,
-        highlighted: item.certificateAvailable,
-      ),
       if (item.requiresAdvancePayment) _DetailBadge(icon: Icons.payments_outlined, label: 'course_advance_payment'.tr),
     ];
 
@@ -69,34 +63,25 @@ class _AttributeBadges extends StatelessWidget {
 }
 
 class _DetailBadge extends StatelessWidget {
-  const _DetailBadge({required this.icon, required this.label, this.onTap, this.highlighted = false});
+  const _DetailBadge({required this.icon, required this.label, this.onTap});
 
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
-  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
     final child = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: highlighted ? AppColors.primary.withValues(alpha: 0.1) : AppColors.indicatorFill,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: highlighted ? AppColors.primary.withValues(alpha: 0.25) : Colors.transparent),
-      ),
+      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(AppRadius.sm)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: highlighted ? AppColors.primary : AppColors.textSecondary),
+          Icon(icon, size: 16, color: AppColors.textSecondary),
           const SizedBox(width: 6),
           Text(
             label,
-            style: TextStyle(
-              fontSize: AppTextSize.xs,
-              fontWeight: FontWeight.w700,
-              color: highlighted ? AppColors.primaryInk : AppColors.textPrimary,
-            ),
+            style: TextStyle(fontSize: AppTextSize.xs, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
           ),
         ],
       ),
@@ -107,6 +92,8 @@ class _DetailBadge extends StatelessWidget {
   }
 }
 
+/// بطاقة «معلومات سريعة»: ثلاثة عناصر فقط — المستوى، النمط (حضوري/عن بُعد/هجين)، الشهادة. عدد الطلاب
+/// والمقاعد في بطاقة السعة وحدها، فلا يتكرر في الغلاف ولا هنا.
 class _QuickStatsGrid extends StatelessWidget {
   const _QuickStatsGrid({required this.item});
   final CourseModel item;
@@ -114,17 +101,14 @@ class _QuickStatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stats = <_StatItem>[
-      if (item.durationHours != null && item.durationHours! > 0)
-        _StatItem(Icons.schedule_rounded, pluralTr('hours_unit', item.durationHours!)),
-      if (item.sessionsCount != null && item.sessionsCount! > 0)
-        _StatItem(Icons.event_note_rounded, pluralTr('sessions_unit', item.sessionsCount!)),
       _StatItem(Icons.bar_chart_rounded, item.level),
-      if (item.language != null && item.language!.isNotEmpty) _StatItem(Icons.translate_rounded, item.language!),
-      if (item.studyType != null) _StatItem(Icons.laptop_mac_rounded, item.studyType!),
-      _StatItem(Icons.groups_rounded, item.seatsLabel),
+      if (item.studyType != null && item.studyType!.isNotEmpty) _StatItem(Icons.laptop_mac_rounded, item.studyType!),
+      _StatItem(
+        item.certificateAvailable ? Icons.verified_rounded : Icons.cancel_outlined,
+        item.certificateAvailable ? 'course_certificate_yes'.tr : 'course_certificate_no'.tr,
+        highlighted: item.certificateAvailable,
+      ),
     ];
-
-    if (stats.isEmpty) return const SizedBox.shrink();
 
     return SoftCard(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -139,11 +123,10 @@ class _QuickStatsGrid extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             itemCount: stats.length,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 6,
+              // كل العناصر في صف واحد (٢ أو ٣).
+              crossAxisCount: stats.length,
               crossAxisSpacing: 6,
-              // خانات أطول عند تكبير الخط — نص إنجليزي طويل ("28 / 30 students") يحتاج
-              // سطرين ولا يتسع بالنسبة الثابتة على الأعمدة الضيقة.
+              // أطول عند تكبير الخط: نص طويل يحتاج سطرين.
               mainAxisExtent: 48 * CourseCardMetrics.textScaleOf(context),
             ),
             itemBuilder: (_, i) => _StatTile(stat: stats[i]),
@@ -155,9 +138,10 @@ class _QuickStatsGrid extends StatelessWidget {
 }
 
 class _StatItem {
-  const _StatItem(this.icon, this.label);
+  const _StatItem(this.icon, this.label, {this.highlighted = false});
   final IconData icon;
   final String label;
+  final bool highlighted;
 }
 
 class _StatTile extends StatelessWidget {
@@ -169,10 +153,13 @@ class _StatTile extends StatelessWidget {
     return Container(
       alignment: AlignmentDirectional.centerStart,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(AppRadius.xs)),
+      decoration: BoxDecoration(
+        color: stat.highlighted ? AppColors.primary.withValues(alpha: 0.1) : AppColors.indicatorFill,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
+      ),
       child: Row(
         children: [
-          Icon(stat.icon, size: 15, color: AppColors.primary),
+          Icon(stat.icon, size: 15, color: stat.highlighted ? AppColors.primary : AppColors.textSecondary),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
