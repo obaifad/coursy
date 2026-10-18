@@ -259,6 +259,14 @@ class _CourseDateTimeline extends StatelessWidget {
         ),
     ];
 
+    // المدة وعدد الجلسات بجانب التواريخ (كانا في بطاقة المعلومات السريعة).
+    final totals = <_StatItem>[
+      if (item.durationHours != null && item.durationHours! > 0)
+        _StatItem(Icons.schedule_rounded, pluralTr('hours_unit', item.durationHours!)),
+      if (item.sessionsCount != null && item.sessionsCount! > 0)
+        _StatItem(Icons.event_note_rounded, pluralTr('sessions_unit', item.sessionsCount!)),
+    ];
+
     return SoftCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,7 +278,41 @@ class _CourseDateTimeline extends StatelessWidget {
             final isLast = i == steps.length - 1;
             return _TimelineRow(step: step, showLine: !isLast);
           }),
+          if (totals.isNotEmpty) ...[
+            if (steps.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              Divider(height: 1, color: AppColors.primary.withValues(alpha: 0.12)),
+              const SizedBox(height: 14),
+            ],
+            Wrap(spacing: 8, runSpacing: 8, children: [for (final t in totals) _DurationChip(stat: t)]),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+class _DurationChip extends StatelessWidget {
+  const _DurationChip({required this.stat});
+  final _StatItem stat;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(color: AppColors.indicatorFill, borderRadius: BorderRadius.circular(AppRadius.sm)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(stat.icon, size: 16, color: AppColors.primary),
+            const SizedBox(width: 6),
+            Text(
+              stat.label,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -383,5 +425,9 @@ class _CourseHeroImage extends StatelessWidget {
 }
 
 bool _hasTimelineDates(CourseModel item) {
-  return item.registrationDeadline != null || item.startDate != null || item.endDate != null;
+  return item.registrationDeadline != null ||
+      item.startDate != null ||
+      item.endDate != null ||
+      (item.durationHours ?? 0) > 0 ||
+      (item.sessionsCount ?? 0) > 0;
 }
