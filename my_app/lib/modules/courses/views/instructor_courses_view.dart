@@ -108,7 +108,7 @@ class _InstructorHeader extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.md)),
-            child: const Icon(Icons.person_rounded, color: AppColors.primary, size: 34),
+            child: Obx(() => Icon(instructorHeadIcon(controller.gender.value), color: AppColors.primary, size: 38)),
           ),
           const SizedBox(width: 14),
           Expanded(

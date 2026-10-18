@@ -184,6 +184,8 @@ class _Favorites extends FavoritesRepository {
     FavoriteModel.fromJson({'id': 1, 'course_id': 1}),
     FavoriteModel.fromJson({'id': 2, 'course_id': 4}),
   ];
+  @override
+  Future<void> removeFavorite(int favoriteId, {int? courseId}) async {}
 }
 
 class _Reviews extends ReviewRepository {

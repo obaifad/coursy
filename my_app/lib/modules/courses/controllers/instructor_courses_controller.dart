@@ -17,6 +17,7 @@ class InstructorCoursesController extends GetxController with InitialLoadState {
   final specialization = RxnString();
   final experienceYears = 0.obs;
   final bio = RxnString();
+  final gender = RxnString();
   final totalCourses = 0.obs;
   final errorMessage = RxnString();
 
@@ -38,6 +39,7 @@ class InstructorCoursesController extends GetxController with InitialLoadState {
       specialization.value = arg.specializationLabel;
       experienceYears.value = arg.experienceYears;
       bio.value = arg.bio;
+      gender.value = arg.gender;
       return;
     }
     if (arg is Map<String, dynamic>) {

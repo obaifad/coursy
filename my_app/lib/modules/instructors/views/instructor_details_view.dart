@@ -130,6 +130,12 @@ class _InstructorHeroAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = instructor?.resolvedImageUrl;
+    final fallback = ColoredBox(
+      color: AppColors.primary.withValues(alpha: 0.1),
+      child: Center(
+        child: Icon(instructorHeadIcon(instructor?.gender), color: AppColors.primary, size: size * 0.6),
+      ),
+    );
     return Container(
       width: size,
       height: size,
@@ -140,9 +146,7 @@ class _InstructorHeroAvatar extends StatelessWidget {
         boxShadow: const [BoxShadow(color: AppColors.shadowPurple, blurRadius: 20, offset: Offset(0, 8))],
       ),
       child: ClipOval(
-        child: url != null
-            ? AppNetworkImage(url: url, fit: BoxFit.cover)
-            : const Icon(Icons.person_rounded, color: AppColors.primary, size: 52),
+        child: url != null ? AppNetworkImage(url: url, fit: BoxFit.cover, errorWidget: fallback) : fallback,
       ),
     );
   }

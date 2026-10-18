@@ -96,19 +96,19 @@ void main() {
       final border = decoration.border! as Border;
       expect(border.top.color.toARGB32() & 0x00FFFFFF, AppColors.primary.toARGB32() & 0x00FFFFFF);
       expect(border.top.width, inInclusiveRange(2, 3));
-      expect(find.byIcon(Icons.person_rounded), findsNothing, reason: 'a real photo is shown as is');
+      expect(find.byIcon(Icons.face_rounded), findsNothing, reason: 'a real photo is shown as is');
     });
 
     for (final (gender, icon) in [
-      ('male', Icons.man_rounded),
-      ('female', Icons.woman_rounded),
-      (null, Icons.person_rounded),
+      ('male', Icons.face_6_rounded),
+      ('female', Icons.face_3_rounded),
+      (null, Icons.face_rounded),
     ]) {
       testWidgets('no photo + gender $gender -> $icon in the theme colour', (tester) async {
         await pump(tester, person({'gender': ?gender}), 1);
         final shown = tester.widget<Icon>(find.byIcon(icon));
         expect(shown.color, AppColors.primary);
-        for (final other in [Icons.man_rounded, Icons.woman_rounded, Icons.person_rounded].where((i) => i != icon)) {
+        for (final other in [Icons.face_6_rounded, Icons.face_3_rounded, Icons.face_rounded].where((i) => i != icon)) {
           expect(find.byIcon(other), findsNothing);
         }
       });
