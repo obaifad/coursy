@@ -26,39 +26,63 @@ class CourseCard extends StatelessWidget {
         final height = constraints.hasTightHeight
             ? constraints.maxHeight
             : spec.totalHeight.clamp(0.0, constraints.maxHeight).toDouble();
-        final shape = _TicketShape(
-          radius: _kCourseCardRadius,
-          notchFromBottom: spec.notchFromBottom,
-          notchRadius: CourseTicketSpec.notchRadius,
-        );
+        final radius = BorderRadius.circular(_kCourseCardRadius);
+        const notch = CourseTicketSpec.notchRadius;
+        // القصّتان: دائرتان بلون خلفية الصفحة فوق حافتي البطاقة، لا مسار مقصوص (Path.combine + ClipPath).
+        // القصّ بمسار معقّد وظلّه كانا يُرسمان خطأً بمحرّك Impeller على بعض معالجات الرسوميات (Adreno 618:
+        // كبسولة الحسم فارغة والبطاقة رمادية)، والمستطيل المدوّر أرخص رسماً على كل الأجهزة.
+        final notchColor = Theme.of(context).scaffoldBackgroundColor;
+        final notchTop = height - spec.notchFromBottom - notch;
 
         return SizedBox(
           width: constraints.maxWidth,
           height: height,
-          child: DecoratedBox(
-            decoration: ShapeDecoration(color: AppColors.card, shape: shape, shadows: _courseCardShadow),
-            child: ClipPath(
-              clipper: ShapeBorderClipper(shape: shape, textDirection: Directionality.of(context)),
-              child: Material(
-                type: MaterialType.transparency,
-                child: InkWell(
-                  onTap: onTap,
-                  splashColor: AppColors.primary.withValues(alpha: 0.08),
-                  highlightColor: AppColors.primary.withValues(alpha: 0.04),
-                  child: _TicketContent(
-                    course: course,
-                    spec: spec,
-                    favorite: showFavorite
-                        ? CourseFavoriteButton(
-                            courseId: course.id,
-                            diameter: spec.compact ? 32 : 34,
-                            onPressed: onFavoritePressed,
-                          )
-                        : null,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: AppColors.card, borderRadius: radius, boxShadow: _courseCardShadow),
+                ),
+              ),
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: radius,
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: InkWell(
+                      onTap: onTap,
+                      splashColor: AppColors.primary.withValues(alpha: 0.08),
+                      highlightColor: AppColors.primary.withValues(alpha: 0.04),
+                      child: _TicketContent(
+                        course: course,
+                        spec: spec,
+                        favorite: showFavorite
+                            ? CourseFavoriteButton(
+                                courseId: course.id,
+                                diameter: spec.compact ? 32 : 34,
+                                onPressed: onFavoritePressed,
+                              )
+                            : null,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+              for (final left in [-notch, constraints.maxWidth - notch])
+                Positioned(
+                  left: left,
+                  top: notchTop,
+                  width: notch * 2,
+                  height: notch * 2,
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      key: const ValueKey('ticket-notch'),
+                      decoration: BoxDecoration(color: notchColor, shape: BoxShape.circle),
+                    ),
+                  ),
+                ),
+            ],
           ),
         );
       },
@@ -147,47 +171,6 @@ class _TicketContent extends StatelessWidget {
 
 /// مستطيل بزوايا مدوّرة تُقصّ منه دائرتان على الحافتين عند الخط المتقطع (شكل التذكرة).
 /// الظل في [ShapeDecoration] يتبع هذا المسار فتظهر القصّتان فعلاً لا كدوائر ملوّنة فوق البطاقة.
-class _TicketShape extends ShapeBorder {
-  const _TicketShape({required this.radius, required this.notchFromBottom, required this.notchRadius});
-
-  final double radius;
-  final double notchFromBottom;
-  final double notchRadius;
-
-  @override
-  EdgeInsetsGeometry get dimensions => EdgeInsets.zero;
-
-  @override
-  Path getInnerPath(Rect rect, {TextDirection? textDirection}) => getOuterPath(rect, textDirection: textDirection);
-
-  @override
-  Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
-    final card = Path()..addRRect(RRect.fromRectAndRadius(rect, Radius.circular(radius)));
-    final y = rect.bottom - notchFromBottom;
-    final notches = Path()
-      ..addOval(Rect.fromCircle(center: Offset(rect.left, y), radius: notchRadius))
-      ..addOval(Rect.fromCircle(center: Offset(rect.right, y), radius: notchRadius));
-    return Path.combine(PathOperation.difference, card, notches);
-  }
-
-  @override
-  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {}
-
-  @override
-  ShapeBorder scale(double t) =>
-      _TicketShape(radius: radius * t, notchFromBottom: notchFromBottom * t, notchRadius: notchRadius * t);
-
-  @override
-  bool operator ==(Object other) =>
-      other is _TicketShape &&
-      other.radius == radius &&
-      other.notchFromBottom == notchFromBottom &&
-      other.notchRadius == notchRadius;
-
-  @override
-  int get hashCode => Object.hash(radius, notchFromBottom, notchRadius);
-}
-
 class _DashedDivider extends StatelessWidget {
   const _DashedDivider({required this.inset});
 
