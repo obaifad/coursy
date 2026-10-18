@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:my_app/core/locale/plural.dart';
 import 'package:my_app/core/models/app_models.dart';
 import 'package:my_app/modules/courses/controllers/course_details_controller.dart';
 import 'package:my_app/modules/courses/views/course_details_view.dart';
 
 import 'layout/fakes.dart';
 import 'layout/layout_harness.dart';
-import 'layout/sample_data.dart';
 
 /// تفاصيل الدورة: عدد الطلاب في بطاقة السعة وحدها، «هجين» مرة واحدة، وبطاقة المعلومات ثلاثة عناصر
 /// (المستوى، النمط، الشهادة).
@@ -95,4 +95,46 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  group('duration and sessions sit with the timeline', () {
+    Future<void> openSchedule(WidgetTester tester, CourseModel c) async {
+      await open(tester, c);
+      await tester.tap(find.text('tab_schedule'.tr));
+      await tester.pump(const Duration(milliseconds: 500));
+    }
+
+    CourseModel withHours({int? hours = 8, int? sessions = 12}) => CourseModel.fromJson({
+      'id': 1,
+      'title_ar': 'أساسيات البرمجة',
+      'title_en': 'Python basics',
+      'price': '350000',
+      'level': 'beginner',
+      'institute_name': 'معهد الرواد',
+      'start_date': '2026-10-22',
+      'end_date': '2026-12-17',
+      'duration_hours': ?hours,
+      'sessions_count': ?sessions,
+      'max_students': 30,
+      'current_students': 28,
+    });
+
+    testWidgets('the timeline card shows the hours and sessions; the info card does not', (tester) async {
+      await openSchedule(tester, withHours());
+      expect(find.text(pluralTr('hours_unit', 8)), findsOneWidget);
+      expect(find.text(pluralTr('sessions_unit', 12)), findsOneWidget);
+      expect(find.byIcon(Icons.schedule_rounded), findsOneWidget);
+    });
+
+    testWidgets('no hours or sessions: no chips and no divider', (tester) async {
+      await openSchedule(tester, withHours(hours: null, sessions: null));
+      expect(find.byIcon(Icons.schedule_rounded), findsNothing);
+      expect(find.byIcon(Icons.event_note_rounded), findsNothing);
+    });
+
+    testWidgets('hours only', (tester) async {
+      await openSchedule(tester, withHours(sessions: null));
+      expect(find.text(pluralTr('hours_unit', 8)), findsOneWidget);
+      expect(find.byIcon(Icons.event_note_rounded), findsNothing);
+    });
+  });
 }
