@@ -43,3 +43,11 @@ server/**/bootstrap/cache/
 *.p12
 *.keystore
 !**/debug.keystore
+
+# Release builds and signing material: never commit (APK/AAB are signed with the upload key)
+release/
+*.jks
+*.keystore
+key.properties
+*.apk
+*.aab
