@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import '../../../theme/app_motion.dart';
 
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
@@ -16,6 +17,7 @@ import '../controllers/instructor_details_controller.dart';
 import '../../../core/locale/plural.dart';
 
 import '../../../theme/app_fonts.dart';
+import '../../../core/utils/app_toast.dart';
 
 class InstructorDetailsView extends GetView<InstructorDetailsController> {
   const InstructorDetailsView({super.key, required this.controllerTag});
@@ -42,58 +44,73 @@ class InstructorDetailsView extends GetView<InstructorDetailsController> {
         child: Scaffold(
           // الشريط أبيض فوق التدرّج البنفسجي وداكن بعد طيّه (كان داكناً فوق البنفسجي فلا يُقرأ).
           body: CollapsingHeroScope(
-            collapseOffset: 220 - kToolbarHeight - 24,
-            builder: (context, collapsed) => NestedScrollView(
-              headerSliverBuilder: (context, inner) => [
-                SliverAppBar(
-                  expandedHeight: 220,
-                  pinned: true,
-                  backgroundColor: AppColors.surface,
-                  iconTheme: HeroAppBarStyle.icons(collapsed),
-                  actionsIconTheme: HeroAppBarStyle.icons(collapsed),
-                  titleTextStyle: HeroAppBarStyle.title(collapsed),
-                  systemOverlayStyle: HeroAppBarStyle.overlay(collapsed),
-                  // مفضلة المدرّسين غير مدعومة في الخادم (POST /student/favorites يقبل الدورات فقط) — مخفية حتى تُضاف.
-                  title: Text(name),
-                  flexibleSpace: FlexibleSpaceBar(
-                    background: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        const DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.primary)),
-                        const BrandBannerPattern(),
-                        Center(child: _InstructorHeroAvatar(instructor: item)),
-                      ],
+            collapseOffset: AppDetailHero.collapseOffset(context, avatarSize: _InstructorHeroAvatar.size),
+            builder: (context, collapsed) => RefreshIndicator(
+              color: AppColors.primary,
+              edgeOffset: MediaQuery.paddingOf(context).top + kToolbarHeight,
+              // قوائم التبويبات رأسية داخل PageView أفقي: نقبل كل إشعار رأسي (الأفقي للتبديل بين التبويبات لا يحدّث).
+              notificationPredicate: (n) => n.metrics.axis == Axis.vertical,
+              onRefresh: controller.loadDetails,
+              child: NestedScrollView(
+                headerSliverBuilder: (context, inner) => [
+                  SliverAppBar(
+                    expandedHeight: AppDetailHero.expandedHeight(context, avatarSize: _InstructorHeroAvatar.size),
+                    pinned: true,
+                    backgroundColor: AppColors.surface,
+                    iconTheme: HeroAppBarStyle.icons(collapsed),
+                    actionsIconTheme: HeroAppBarStyle.icons(collapsed),
+                    titleTextStyle: HeroAppBarStyle.title(collapsed),
+                    systemOverlayStyle: HeroAppBarStyle.overlay(collapsed),
+                    // مفضلة المدرّسين غير مدعومة في الخادم (POST /student/favorites يقبل الدورات فقط) — مخفية حتى تُضاف.
+                    // العنوان في الشريط بعد الانطواء فقط؛ وهو مفتوح يعرض الرأس الاسم تحت الصورة.
+                    title: AnimatedOpacity(
+                      opacity: collapsed ? 1 : 0,
+                      duration: AppMotion.fast,
+                      child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
-                  ),
-                  bottom: PreferredSize(
-                    preferredSize: const Size.fromHeight(60),
-                    child: ColoredBox(
-                      color: AppColors.surface,
-                      child: Builder(
-                        builder: (context) => Padding(
-                          padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
-                          child: AppSegmentedTabBar(
-                            controller: DefaultTabController.of(context),
-                            tabs: [
-                              Tab(text: 'tab_info'.tr),
-                              Tab(text: 'tab_courses'.tr),
-                              Tab(text: 'tab_institutes'.tr),
-                              Tab(text: 'tab_reviews'.tr),
-                            ],
+                    flexibleSpace: FlexibleSpaceBar(
+                      background: AppDetailHeroContent(
+                        name: name,
+                        background: const Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.primary)),
+                            BrandBannerPattern(),
+                          ],
+                        ),
+                        avatar: _InstructorHeroAvatar(instructor: item),
+                      ),
+                    ),
+                    bottom: PreferredSize(
+                      preferredSize: const Size.fromHeight(60),
+                      child: ColoredBox(
+                        color: AppColors.surface,
+                        child: Builder(
+                          builder: (context) => Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+                            child: AppSegmentedTabBar(
+                              controller: DefaultTabController.of(context),
+                              tabs: [
+                                Tab(text: 'tab_info'.tr),
+                                Tab(text: 'tab_courses'.tr),
+                                Tab(text: 'tab_institutes'.tr),
+                                Tab(text: 'tab_reviews'.tr),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
-              body: TabBarView(
-                children: [
-                  _InstructorInfoTab(instructor: item, totalCourses: controller.totalCourses.value),
-                  _InstructorCoursesTab(controller: controller),
-                  _InstructorInstitutesTab(instructor: item),
-                  _InstructorReviewsTab(controller: controller),
                 ],
+                body: TabBarView(
+                  children: [
+                    _InstructorInfoTab(instructor: item, totalCourses: controller.totalCourses.value),
+                    _InstructorCoursesTab(controller: controller),
+                    _InstructorInstitutesTab(instructor: item),
+                    _InstructorReviewsTab(controller: controller),
+                  ],
+                ),
               ),
             ),
           ),
@@ -108,12 +125,14 @@ class _InstructorHeroAvatar extends StatelessWidget {
 
   final InstructorModel? instructor;
 
+  static const double size = 104;
+
   @override
   Widget build(BuildContext context) {
     final url = instructor?.resolvedImageUrl;
     return Container(
-      width: 104,
-      height: 104,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: Colors.white,
@@ -290,7 +309,7 @@ class _InstructorInfoTab extends StatelessWidget {
 
   void _copyPhone(String phone) {
     Clipboard.setData(ClipboardData(text: phone));
-    Get.snackbar('copied'.tr, 'phone_copied'.tr);
+    AppToast.show('copied'.tr, 'phone_copied'.tr, kind: ToastKind.success);
   }
 }
 
@@ -344,19 +363,14 @@ class _InstructorCoursesTab extends StatelessWidget {
               },
             ),
           ),
-          if (controller.hasMoreCourses.value)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: OutlinedButton.icon(
-                  onPressed: controller.isLoadingMoreCourses.value ? null : controller.loadMoreCourses,
-                  icon: controller.isLoadingMoreCourses.value
-                      ? const AppInlineLoader()
-                      : const Icon(Icons.expand_more_rounded),
-                  label: Text('load_more'.tr),
-                ),
-              ),
+          SliverToBoxAdapter(
+            child: AppLoadMoreFooter(
+              hasMore: controller.hasMoreCourses.value,
+              isLoading: controller.isLoadingMoreCourses.value,
+              failed: controller.loadMoreCoursesFailed.value,
+              onLoadMore: controller.loadMoreCourses,
             ),
+          ),
         ],
       );
     });

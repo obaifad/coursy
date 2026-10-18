@@ -7,6 +7,7 @@ import '../../../core/data/repositories/auth_repository.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../routes/app_routes.dart';
 import 'auth_controller.dart';
+import '../../../core/utils/app_toast.dart';
 
 /// استعادة كلمة المرور: رمز من 6 أرقام يصل بالبريد، ثم كلمة مرور جديدة.
 class ForgotPasswordController extends GetxController {
@@ -57,11 +58,11 @@ class ForgotPasswordController extends GetxController {
       final message = await _authRepository.requestPasswordReset(email);
       step.value = 1;
       _startCountdown();
-      Get.snackbar('reset_code_sent_title'.tr, message ?? 'reset_code_sent_msg'.tr);
+      AppToast.show('reset_code_sent_title'.tr, message ?? 'reset_code_sent_msg'.tr, kind: ToastKind.success);
     } on ApiException catch (e) {
       _showError(e);
     } catch (_) {
-      Get.snackbar('error'.tr, 'error_unexpected'.tr);
+      AppToast.show('error'.tr, 'error_unexpected'.tr);
     } finally {
       isSending.value = false;
     }
@@ -90,11 +91,11 @@ class ForgotPasswordController extends GetxController {
         passwordConfirmation: confirmController.text,
       );
       Get.offNamed(AppRoutes.login);
-      Get.snackbar('password_reset_done_title'.tr, 'password_reset_done_msg'.tr);
+      AppToast.show('password_reset_done_title'.tr, 'password_reset_done_msg'.tr, kind: ToastKind.success);
     } on ApiException catch (e) {
       _showError(e);
     } catch (_) {
-      Get.snackbar('error'.tr, 'error_unexpected'.tr);
+      AppToast.show('error'.tr, 'error_unexpected'.tr);
     } finally {
       isResetting.value = false;
     }
@@ -115,7 +116,7 @@ class ForgotPasswordController extends GetxController {
 
   void _showError(ApiException e) {
     if (e.statusCode == 429) {
-      Get.snackbar('error'.tr, 'payment_error_rate_limit'.tr);
+      AppToast.show('error'.tr, 'payment_error_rate_limit'.tr);
       return;
     }
     final fields = e.fieldErrors;
@@ -123,7 +124,7 @@ class ForgotPasswordController extends GetxController {
       errors.addAll(fields);
       return;
     }
-    Get.snackbar('error'.tr, e.message);
+    AppToast.show('error'.tr, e.message);
   }
 
   void _startCountdown() {

@@ -26,8 +26,21 @@ class HomeView extends GetView<HomeController> {
     return AppTabSafeArea(
       child: Obx(() {
         final _ = localeRebuildToken;
-        if (controller.isLoading.value && controller.categories.isEmpty && controller.courses.isEmpty) {
-          return const AppHomeSkeleton();
+        // الهيكل يبقى حتى تصل الدورات (من الكاش أو الشبكة) — لا يكفي وصول التصنيفات وحدها، وإلا ظهر
+        // البانر الافتراضي لحظة ثم استُبدل بالشرائح.
+        if (controller.isLoading.value && controller.courses.isEmpty) {
+          return AppHomeSkeleton(
+            banner: controller.isLoggedIn
+                // بعرض الشاشة كاملاً كالشرائح (الهيكل له حشوة جانبية)، وبارتفاعها الثابت.
+                ? SizedBox(
+                    height: FeaturedCourseCarouselPlaceholder.heightOf(context),
+                    child: OverflowBox(
+                      maxWidth: MediaQuery.sizeOf(context).width,
+                      child: const FeaturedCourseCarouselPlaceholder(shimmer: false),
+                    ),
+                  )
+                : null,
+          );
         }
         final categories = controller.categories.toList(growable: false);
         final courses = controller.courses.toList(growable: false);
@@ -207,8 +220,8 @@ class HomeView extends GetView<HomeController> {
                 const SizedBox(height: 10),
                 AppHorizontalListView(
                   resetToken: scrollReset,
-                  // ارتفاع ثابت للبطاقة × تكبير الخط — وإلا يفيض اسم المدرّب عند تكبير الخط.
-                  height: 120 * CourseCardMetrics.textScaleOf(context),
+                  // ارتفاع البطاقة العمودية (صورة دائرية، الاسم، التخصص، الخبرة، الزر) مع تكبير الخط.
+                  height: PrivateInstructorMiniCard.railHeight(context),
                   bottomInset: AppHorizontalListView.cardShadowBottomInset,
                   itemCount: privateInstructors.length,
                   itemBuilder: (_, i) {
@@ -307,6 +320,8 @@ class _HomeBannerSlot extends StatelessWidget {
     }
     final banner = controller.bannerCourses.toList(growable: false);
     if (banner.isEmpty) {
+      // ما زال التحميل الأول جارياً: مكان الشرائح بمقاسها، لا البطاقة الافتراضية (تظهر فقط إن لم تصل دورات).
+      if (controller.isLoading.value) return ('loading', const FeaturedCourseCarouselPlaceholder());
       return ('hero', Padding(padding: pad, child: const _HomeHeroBanner()));
     }
     return ('carousel', FeaturedCourseCarousel(courses: banner));
@@ -614,22 +629,30 @@ class _HomeSettingsButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // الظل على Container خارجي (دائري) والتأثير على Material مقصوص بدائرة — بلا خلفية مربعة حول الزر.
-    return Container(
-      width: _size,
-      height: _size,
-      decoration: const BoxDecoration(
-        gradient: AppGradients.primary,
-        shape: BoxShape.circle,
-        boxShadow: [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 16, offset: Offset(0, 8))],
-      ),
-      child: Material(
-        type: MaterialType.transparency,
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: const Center(child: Icon(Icons.settings_rounded, color: Colors.white, size: 22)),
+    return Tooltip(
+      message: 'settings'.tr,
+      child: Semantics(
+        button: true,
+        label: 'settings'.tr,
+        excludeSemantics: true,
+        child: Container(
+          width: _size,
+          height: _size,
+          decoration: const BoxDecoration(
+            gradient: AppGradients.primary,
+            shape: BoxShape.circle,
+            boxShadow: [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 16, offset: Offset(0, 8))],
+          ),
+          child: Material(
+            type: MaterialType.transparency,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onTap,
+              customBorder: const CircleBorder(),
+              child: const Center(child: Icon(Icons.settings_rounded, color: Colors.white, size: 22)),
+            ),
+          ),
         ),
       ),
     );

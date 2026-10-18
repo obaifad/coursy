@@ -191,25 +191,35 @@ class _EnrollmentCard extends StatelessWidget {
 
     final institute = course?.institute.trim() ?? '';
 
-    // بطاقة صفّية: الصورة، العنوان وشارة الحالة، المعهد، سطر البيانات؛ وتحتها أزرار الحجز.
-    return AppRowCard(
-      onTap: () => _openCourseDetails(enrollment),
-      leading: _CourseThumb(imagePath: course?.imageUrl),
-      title: AppRowTitle(enrollment.courseTitle ?? course?.title ?? 'course_details'.tr),
-      trailing: _StatusBadge(theme: theme, label: enrollment.statusLabel),
-      subtitle: institute.isEmpty ? null : AppRowMeta(icon: Icons.apartment_rounded, text: institute),
-      footer: meta.isNotEmpty
-          ? AppRowMetaLine(
-              items: [for (final m in meta.rows.take(2)) AppRowMeta(icon: m.icon, text: m.label)],
-            )
-          : null,
-      below: _BookingActions(
-        enrollment: enrollment,
-        controller: controller,
-        onDetails: () => _openCourseDetails(enrollment),
-        onCancel: () => _confirmCancel(context, enrollment),
-      ),
-    );
+    // بطاقة صفّية: الصورة، العنوان وشارة الحالة، المعهد، سطر البيانات؛ وتحتها أزرار الحجز إن وُجد إجراء.
+    // الضغط على البطاقة يفتح التفاصيل، فلا زر «عرض التفاصيل» منفصل. Obx: توفّر الدفع يتغيّر بعد الجلب.
+    return Obx(() {
+      controller.paymentAvailable.length;
+      final canPay = controller.showPayButton(enrollment);
+      final canCancel = enrollment.canCancel;
+      return AppRowCard(
+        accentColor: theme.foregroundColor,
+        onTap: () => _openCourseDetails(enrollment),
+        leading: _CourseThumb(imagePath: course?.imageUrl),
+        title: AppRowTitle(enrollment.courseTitle ?? course?.title ?? 'course_details'.tr),
+        trailing: _StatusBadge(theme: theme, label: enrollment.statusLabel),
+        subtitle: institute.isEmpty ? null : AppRowMeta(icon: Icons.apartment_rounded, text: institute),
+        footer: meta.isNotEmpty
+            ? AppRowMetaLine(
+                items: [for (final m in meta.rows.take(2)) AppRowMeta(icon: m.icon, text: m.label)],
+              )
+            : null,
+        below: (canPay || canCancel)
+            ? _BookingActions(
+                enrollment: enrollment,
+                controller: controller,
+                canPay: canPay,
+                canCancel: canCancel,
+                onCancel: () => _confirmCancel(context, enrollment),
+              )
+            : null,
+      );
+    });
   }
 
   void _openCourseDetails(EnrollmentModel enrollment) {
@@ -317,13 +327,29 @@ class _EnrollmentMeta {
 
   bool get isNotEmpty => rows.isNotEmpty;
 
+  /// «يبدأ اليوم / غداً / بعد 5 أيام» للحجوزات الفاعلة التي يقترب موعدها (حتى 30 يوماً)، وإلا التاريخ.
+  /// المنتهية والملغاة تعرض التاريخ دائماً.
+  static String _startLabel(EnrollmentModel enrollment, String startDate) {
+    final fallback = JsonHelpers.formatDisplayDate(startDate);
+    final status = enrollment.status.toLowerCase();
+    if (status == 'completed' || status == 'cancelled' || status == 'rejected') return fallback;
+    final start = JsonHelpers.tryParseDateOnly(startDate);
+    if (start == null) return fallback;
+    final now = DateTime.now();
+    final days = DateTime(start.year, start.month, start.day).difference(DateTime(now.year, now.month, now.day)).inDays;
+    if (days < 0 || days > 30) return fallback;
+    if (days == 0) return 'card_starts_today'.tr;
+    if (days == 1) return 'card_starts_tomorrow'.tr;
+    return pluralTr('card_starts_in', days);
+  }
+
   factory _EnrollmentMeta.from(EnrollmentModel enrollment) {
     final course = enrollment.course;
     final rows = <_MetaRow>[
       if (_showsPaymentStatus(enrollment))
         _MetaRow(icon: Icons.payments_outlined, label: JsonHelpers.paymentStatusLabel(enrollment.paymentStatus))
       else if (course?.startDate != null)
-        _MetaRow(icon: Icons.event_rounded, label: JsonHelpers.formatDisplayDate(course!.startDate))
+        _MetaRow(icon: Icons.event_rounded, label: _startLabel(enrollment, course!.startDate!))
       else if (course != null && course.schedules.isNotEmpty)
         _MetaRow(
           icon: Icons.schedule_rounded,
@@ -335,20 +361,21 @@ class _EnrollmentMeta {
   }
 }
 
-/// أزرار بطاقة الحجز في صف واحد مضغوط:
-/// الإجراء الأساسي (ادفع الآن إن أمكن، وإلا عرض التفاصيل) ممتلئ بالبنفسجي،
-/// والثانوي (عرض التفاصيل) بحد خفيف، وإلغاء الحجز زر صغير بحد أحمر خفيف.
+/// أزرار بطاقة الحجز: فقط ما يمكن فعله فعلاً. «ادفع الآن» (إن توفّر الدفع) ممتلئ بالبنفسجي، و«إلغاء الحجز»
+/// (للمعلّق فقط) بحد أحمر خفيف: مع الدفع يصغر إلى أيقونة بجانبه، وبمفرده يأخذ العرض بنصّه.
 class _BookingActions extends StatelessWidget {
   const _BookingActions({
     required this.enrollment,
     required this.controller,
-    required this.onDetails,
+    required this.canPay,
+    required this.canCancel,
     required this.onCancel,
   });
 
   final EnrollmentModel enrollment;
   final MyCoursesController controller;
-  final VoidCallback onDetails;
+  final bool canPay;
+  final bool canCancel;
   final VoidCallback onCancel;
 
   static const double _height = 44;
@@ -363,33 +390,16 @@ class _BookingActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canCancel = enrollment.canCancel;
     final label = AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm);
-
-    return Obx(() {
-      // «ادفع الآن» فقط إذا كان الدفع الإلكتروني متاحاً فعلاً؛ وإلا «عرض التفاصيل» هو الإجراء الأساسي.
-      controller.paymentAvailable.length;
-      final canPay = controller.showPayButton(enrollment);
-      return _buildRow(canPay, canCancel, label);
-    });
-  }
-
-  Widget _buildRow(bool canPay, bool canCancel, TextStyle label) {
-    // يصغر النص بدل قصّه: «عرض التفاصيل» كان يظهر «عرض التفاصـ…» بجانب «ادفع الآن» على هاتف 1080px.
+    // يصغر النص بدل قصّه على الهواتف الضيقة.
     Widget fitted(String text) => FittedBox(
       fit: BoxFit.scaleDown,
       child: Text(text, style: label, maxLines: 1),
     );
-    final details = canPay
-        ? OutlinedButton(onPressed: onDetails, style: _outlined(AppColors.primary), child: fitted('view_details'.tr))
-        : SizedBox(
-            height: _height,
-            child: RegisterGradientButton(label: 'view_details'.tr, onPressed: onDetails),
-          );
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // عرضان متساويان: «عرض التفاصيل» أطول من «ادفع الآن»، وكانت حصته 2 من 5 فقط.
         if (canPay)
           Expanded(
             child: SizedBox(
@@ -408,26 +418,37 @@ class _BookingActions extends StatelessWidget {
               ),
             ),
           ),
-        if (canPay) const SizedBox(width: 8),
-        Expanded(child: details),
-        if (canCancel) ...[
-          const SizedBox(width: 8),
+        if (canPay && canCancel) const SizedBox(width: 8),
+        if (canCancel)
           Obx(() {
             controller.cancellingIds.length;
             final cancelling = controller.cancellingIds.contains(enrollment.id);
-            return Tooltip(
-              message: 'cancel_booking'.tr,
-              child: OutlinedButton(
-                onPressed: cancelling ? null : onCancel,
-                style: _outlined(AppColors.danger).copyWith(
-                  minimumSize: const WidgetStatePropertyAll(Size(_height, _height)),
-                  padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+            final loader = cancelling ? const AppInlineLoader() : null;
+            if (canPay) {
+              return Tooltip(
+                message: 'cancel_booking'.tr,
+                child: OutlinedButton(
+                  onPressed: cancelling ? null : onCancel,
+                  style: _outlined(AppColors.danger).copyWith(
+                    minimumSize: const WidgetStatePropertyAll(Size(_height, _height)),
+                    padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+                  ),
+                  child: loader ?? const Icon(Icons.close_rounded, size: 20),
                 ),
-                child: cancelling ? const AppInlineLoader() : const Icon(Icons.close_rounded, size: 20),
+              );
+            }
+            return Expanded(
+              child: SizedBox(
+                height: _height,
+                child: OutlinedButton.icon(
+                  onPressed: cancelling ? null : onCancel,
+                  style: _outlined(AppColors.danger),
+                  icon: loader ?? const Icon(Icons.close_rounded, size: 18),
+                  label: fitted('cancel_booking'.tr),
+                ),
               ),
             );
           }),
-        ],
       ],
     );
   }

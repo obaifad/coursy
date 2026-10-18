@@ -18,6 +18,7 @@ class CourseFavoriteButton extends StatefulWidget {
     required this.courseId,
     this.diameter = 34,
     this.blurBackground = false,
+    this.dark = false,
     this.onPressed,
   });
 
@@ -28,6 +29,10 @@ class CourseFavoriteButton extends StatefulWidget {
 
   /// تمويه ما خلف الدائرة (زجاج حقيقي). مكلف داخل الشبكات أثناء التمرير — لصفحة الدورة فقط.
   final bool blurBackground;
+
+  /// دائرة زجاجية داكنة بحافة فاتحة وقلب أبيض (فوق الأغلفة الداكنة كبطاقة Aurora)؛ عند الإضافة تصبح
+  /// بيضاء بقلب أحمر.
+  final bool dark;
 
   /// بديل للتبديل الافتراضي (شاشة المفضلة: إزالة مع تلاشٍ وتراجع).
   final Future<void> Function()? onPressed;
@@ -120,6 +125,8 @@ class _CourseFavoriteButtonState extends State<CourseFavoriteButton> with Single
                   child: _GlassCircle(
                     diameter: widget.diameter,
                     blur: widget.blurBackground,
+                    dark: widget.dark,
+                    active: isFavorite,
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 200),
                       transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
@@ -127,7 +134,7 @@ class _CourseFavoriteButtonState extends State<CourseFavoriteButton> with Single
                         isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                         key: ValueKey(isFavorite),
                         size: iconSize,
-                        color: isFavorite ? AppColors.danger : AppColors.textPrimary,
+                        color: isFavorite ? AppColors.danger : (widget.dark ? Colors.white : AppColors.textPrimary),
                       ),
                     ),
                   ),
@@ -143,29 +150,47 @@ class _CourseFavoriteButtonState extends State<CourseFavoriteButton> with Single
 
 /// دائرة بيضاء نصف شفافة بحافة لامعة وظل خفيف — تبقى مقروءة فوق الصور الفاتحة والداكنة.
 class _GlassCircle extends StatelessWidget {
-  const _GlassCircle({required this.diameter, required this.blur, required this.child});
+  const _GlassCircle({
+    required this.diameter,
+    required this.blur,
+    required this.child,
+    this.dark = false,
+    this.active = false,
+  });
 
   final double diameter;
   final bool blur;
   final Widget child;
+  final bool dark;
+  final bool active;
 
   @override
   Widget build(BuildContext context) {
-    final fill = DecoratedBox(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: AlignmentDirectional.topStart,
-          end: AlignmentDirectional.bottomEnd,
-          colors: [
-            Colors.white.withValues(alpha: blur ? 0.78 : 0.92),
-            Colors.white.withValues(alpha: blur ? 0.58 : 0.8),
-          ],
-        ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1),
-      ),
-      child: Center(child: child),
-    );
+    final fill = dark
+        ? AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: active ? Colors.white : const Color(0xFF0F0C28).withValues(alpha: 0.45),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+            ),
+            child: Center(child: child),
+          )
+        : DecoratedBox(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: AlignmentDirectional.topStart,
+                end: AlignmentDirectional.bottomEnd,
+                colors: [
+                  Colors.white.withValues(alpha: blur ? 0.78 : 0.92),
+                  Colors.white.withValues(alpha: blur ? 0.58 : 0.8),
+                ],
+              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1),
+            ),
+            child: Center(child: child),
+          );
     return DecoratedBox(
       decoration: const BoxDecoration(
         shape: BoxShape.circle,

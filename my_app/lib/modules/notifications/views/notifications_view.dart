@@ -105,11 +105,11 @@ class NotificationsView extends GetView<NotificationsController> {
                 padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
                 itemBuilder: (_, i) {
                   if (i == items.length) {
-                    if (!hasMore) return const SizedBox.shrink();
-                    return OutlinedButton.icon(
-                      onPressed: loadingMore ? null : controller.loadMoreNotifications,
-                      icon: loadingMore ? const AppInlineLoader() : const Icon(Icons.expand_more_rounded),
-                      label: Text('load_more'.tr),
+                    return AppLoadMoreFooter(
+                      hasMore: hasMore,
+                      isLoading: loadingMore,
+                      failed: controller.loadMoreFailed.value,
+                      onLoadMore: controller.loadMoreNotifications,
                     );
                   }
                   final n = items[i];

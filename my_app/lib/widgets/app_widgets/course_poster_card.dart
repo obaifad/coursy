@@ -77,12 +77,15 @@ class _PosterCover extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        _CourseCardImage(
-          course: course,
-          borderRadius: BorderRadius.zero,
-          fallbackSize: spec.compact ? 26 : 30,
-          // العنوان يغطي النصف السفلي — أيقونة البديل في الأعلى.
-          fallbackIconAlignment: const Alignment(0, -0.4),
+        CourseImageHero(
+          courseId: course.id,
+          child: _CourseCardImage(
+            course: course,
+            borderRadius: BorderRadius.zero,
+            fallbackSize: spec.compact ? 26 : 30,
+            // العنوان يغطي النصف السفلي — أيقونة البديل في الأعلى.
+            fallbackIconAlignment: const Alignment(0, -0.4),
+          ),
         ),
         // تعتيم سفلي يُبقي العنوان الأبيض مقروءاً فوق أي صورة.
         const DecoratedBox(

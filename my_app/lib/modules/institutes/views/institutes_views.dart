@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../theme/app_motion.dart';
 
 import '../../../core/locale/plural.dart';
 
@@ -99,11 +100,11 @@ class InstitutesView extends GetView<InstitutesController> {
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (_, i) {
                     if (i == institutes.length) {
-                      if (!hasMore) return const SizedBox.shrink();
-                      return OutlinedButton.icon(
-                        onPressed: loadingMore ? null : controller.loadMoreInstitutes,
-                        icon: loadingMore ? const AppInlineLoader() : const Icon(Icons.expand_more_rounded),
-                        label: Text('load_more'.tr),
+                      return AppLoadMoreFooter(
+                        hasMore: hasMore,
+                        isLoading: loadingMore,
+                        failed: controller.loadMoreFailed.value,
+                        onLoadMore: controller.loadMoreInstitutes,
                       );
                     }
                     final institute = institutes[i];
@@ -151,18 +152,23 @@ class InstituteDetailsView extends GetView<InstituteDetailsController> {
         child: Scaffold(
           // الشريط أبيض فوق صورة الغلاف وداكن بعد طيّها (كان داكناً فوق الصورة فلا يُقرأ).
           body: CollapsingHeroScope(
-            collapseOffset: 200 - kToolbarHeight - 24,
+            collapseOffset: AppDetailHero.collapseOffset(context, avatarSize: InstituteDetailHero.logoSize),
             builder: (context, collapsed) => NestedScrollView(
               headerSliverBuilder: (context, inner) => [
                 SliverAppBar(
-                  expandedHeight: 200,
+                  expandedHeight: AppDetailHero.expandedHeight(context, avatarSize: InstituteDetailHero.logoSize),
                   pinned: true,
                   backgroundColor: AppColors.surface,
                   iconTheme: HeroAppBarStyle.icons(collapsed),
                   actionsIconTheme: HeroAppBarStyle.icons(collapsed),
                   titleTextStyle: HeroAppBarStyle.title(collapsed),
                   systemOverlayStyle: HeroAppBarStyle.overlay(collapsed),
-                  title: Text(name),
+                  // العنوان في الشريط يظهر بعد انطواء الرأس فقط: وهو مفتوح يعرض الرأس الاسم تحت الشعار.
+                  title: AnimatedOpacity(
+                    opacity: collapsed ? 1 : 0,
+                    duration: AppMotion.fast,
+                    child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
                   flexibleSpace: FlexibleSpaceBar(
                     background: item != null
                         ? InstituteDetailHero(institute: item)

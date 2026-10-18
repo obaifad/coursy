@@ -9,6 +9,7 @@ import '../core/responsive/responsive.dart';
 import '../theme/app_colors.dart';
 
 import '../theme/app_fonts.dart';
+import '../core/utils/app_toast.dart';
 
 /// نافذة منبثقة عند انتهاء فترة التسجيل في الدورة.
 class RegistrationClosedDialog extends StatelessWidget {
@@ -23,12 +24,10 @@ class RegistrationClosedDialog extends StatelessWidget {
   Future<void> _callInstitute(String phone) async {
     if (await ExternalLauncher.openPhone(phone)) return;
     await Clipboard.setData(ClipboardData(text: phone));
-    Get.snackbar(
+    AppToast.show(
       'registration_closed_phone_copied_title'.tr,
       'registration_closed_phone_copied_msg'.tr,
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 3),
+      kind: ToastKind.success,
     );
   }
 

@@ -24,6 +24,7 @@ import '../storage/token_storage.dart';
 import '../../routes/app_routes.dart';
 import 'enrollment_status_coordinator.dart';
 import 'remote_notification_sync.dart';
+import '../utils/app_toast.dart';
 
 /// تنسيق إعادة تحميل الحالة بعد تسجيل الدخول/الخروج والعمليات التي تغيّر البيانات.
 abstract final class SessionRefresh {
@@ -129,7 +130,7 @@ abstract final class SessionRefresh {
       reloadAsGuest();
       AppNavigation.goToRoot(tab: 2);
       Get.toNamed(AppRoutes.login);
-      Get.snackbar('account_inactive_title'.tr, message, duration: const Duration(seconds: 6));
+      AppToast.show('account_inactive_title'.tr, message, duration: const Duration(seconds: 6), kind: ToastKind.error);
     } catch (e) {
       AppDebugLog.api('403', 'account inactive cleanup failed: $e');
     } finally {

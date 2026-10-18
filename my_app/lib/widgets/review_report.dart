@@ -7,6 +7,7 @@ import '../core/network/api_exception.dart';
 import '../core/services/student_id_resolver.dart';
 import 'app_loading.dart';
 import 'app_selection_sheet.dart';
+import '../core/utils/app_toast.dart';
 
 /// الإبلاغ عن تقييم مسيء (سياسة Google Play للمحتوى الذي ينشره المستخدمون): يختار الطالب
 /// السبب ثم يُرسل البلاغ إلى الخادم، ويراجعه المشرف من لوحة التحكم.
@@ -23,7 +24,7 @@ abstract final class ReviewReportFlow {
     try {
       final ownId = await _currentUserId();
       if (ownId != null && review.studentId == ownId) {
-        Get.snackbar('review_report_title'.tr, 'review_report_own'.tr);
+        AppToast.show('review_report_title'.tr, 'review_report_own'.tr);
         return;
       }
       if (!context.mounted) return;
@@ -55,11 +56,11 @@ abstract final class ReviewReportFlow {
   static Future<void> _send(int reviewId, String reason) async {
     try {
       final message = await _withLoading(() => Get.find<ReviewRepository>().reportReview(reviewId, reason: reason));
-      Get.snackbar('review_report_sent_title'.tr, message ?? 'review_report_sent_msg'.tr);
+      AppToast.show('review_report_sent_title'.tr, message ?? 'review_report_sent_msg'.tr, kind: ToastKind.success);
     } on ApiException catch (e) {
-      Get.snackbar('error'.tr, e.message);
+      AppToast.show('error'.tr, e.message);
     } catch (_) {
-      Get.snackbar('error'.tr, 'review_report_failed'.tr);
+      AppToast.show('error'.tr, 'review_report_failed'.tr);
     }
   }
 

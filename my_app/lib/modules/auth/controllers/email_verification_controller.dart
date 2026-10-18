@@ -167,7 +167,7 @@ class EmailVerificationController extends GetxController {
     // لحظة لرؤية علامة النجاح قبل المغادرة.
     await Future<void>.delayed(const Duration(milliseconds: 1200));
     if (isClosed) return;
-    Get.snackbar('email_verified_title'.tr, 'email_verified_msg'.tr);
+    // لا إشعار: الشاشة نفسها تعرض علامة النجاح قبل المغادرة.
     leave();
   }
 

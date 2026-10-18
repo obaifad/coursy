@@ -304,6 +304,14 @@ class EditProfileView extends GetView<ProfileController> {
           child: ListView(
             padding: EdgeInsets.fromLTRB(16, 4, 16, 24 + context.keyboardInset),
             children: [
+              Obx(
+                () => controller.profileLoadFailed.value
+                    ? Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _ProfileLoadFailedBanner(onRetry: controller.refreshForEdit),
+                      )
+                    : const SizedBox.shrink(),
+              ),
               const _EditProfileAvatar(),
               const SizedBox(height: 20),
               _ProfileSection(
@@ -1051,6 +1059,52 @@ class _SettingsDocumentView extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// تعذّر جلب بيانات الملف: النموذج معبأ مما في الجهاز، وقد لا يكون الأحدث. إعادة المحاولة هنا.
+class _ProfileLoadFailedBanner extends StatelessWidget {
+  const _ProfileLoadFailedBanner({required this.onRetry});
+
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 10, 10),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.cloud_off_outlined, color: AppColors.primary, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'profile_load_failed'.tr,
+              style: const TextStyle(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700, color: AppColors.textBody),
+            ),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton(
+            onPressed: onRetry,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primaryInk,
+              side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+              minimumSize: const Size(0, 40),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+            ),
+            child: Text(
+              'retry_action'.tr,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm),
+            ),
+          ),
+        ],
       ),
     );
   }

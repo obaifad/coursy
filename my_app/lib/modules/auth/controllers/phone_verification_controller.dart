@@ -8,6 +8,7 @@ import '../../../core/data/repositories/auth_repository.dart';
 import '../../../core/navigation/app_navigation.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/storage/token_storage.dart';
+import '../../../core/utils/app_toast.dart';
 
 class PhoneVerificationController extends GetxController {
   final AuthRepository _authRepository = Get.find();
@@ -36,7 +37,7 @@ class PhoneVerificationController extends GetxController {
 
   Future<void> sendCode() async {
     if (phone.isEmpty) {
-      Get.snackbar('alert'.tr, 'no_phone_on_account'.tr);
+      AppToast.show('alert'.tr, 'no_phone_on_account'.tr);
       return;
     }
 
@@ -50,12 +51,12 @@ class PhoneVerificationController extends GetxController {
       if (kDebugMode && result.debugCode != null && result.debugCode!.isNotEmpty) {
         debugOtpHint.value = 'dev_otp'.trParams({'code': result.debugCode!});
       }
-      Get.snackbar('verified_success'.tr, result.message);
+      AppToast.show('verified_success'.tr, result.message, kind: ToastKind.success);
     } on ApiException catch (e) {
       errorMessage.value = e.message;
-      Get.snackbar('error'.tr, e.message);
+      AppToast.show('error'.tr, e.message);
     } catch (_) {
-      Get.snackbar('error'.tr, 'otp_send_failed'.tr);
+      AppToast.show('error'.tr, 'otp_send_failed'.tr);
     } finally {
       isSending.value = false;
     }
@@ -64,7 +65,7 @@ class PhoneVerificationController extends GetxController {
   Future<void> verifyCode() async {
     final code = otpController.text.trim();
     if (code.length < 4) {
-      Get.snackbar('alert'.tr, 'enter_full_otp'.tr);
+      AppToast.show('alert'.tr, 'enter_full_otp'.tr);
       return;
     }
 
@@ -74,12 +75,12 @@ class PhoneVerificationController extends GetxController {
       await _authRepository.verifyMobileCode(code);
       await _tokenStorage.markPhoneVerified();
       AppNavigation.goToRoot();
-      Get.snackbar('verified_success'.tr, 'phone_verified_msg'.tr);
+      AppToast.show('verified_success'.tr, 'phone_verified_msg'.tr, kind: ToastKind.success);
     } on ApiException catch (e) {
       errorMessage.value = e.message;
-      Get.snackbar('otp_invalid'.tr, e.message);
+      AppToast.show('otp_invalid'.tr, e.message, kind: ToastKind.error);
     } catch (_) {
-      Get.snackbar('error'.tr, 'otp_verify_failed'.tr);
+      AppToast.show('error'.tr, 'otp_verify_failed'.tr);
     } finally {
       isLoading.value = false;
     }

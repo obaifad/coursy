@@ -14,6 +14,7 @@ class PrivateInstructorsController extends GetxController with LatestLoadGuard, 
   final isLoadingMore = false.obs;
   final isLoadingFilters = false.obs;
   final hasMore = true.obs;
+  final loadMoreFailed = false.obs;
   final errorMessage = RxnString();
   final instructors = <InstructorModel>[].obs;
   final subjects = <InstructorSubjectModel>[].obs;
@@ -105,6 +106,7 @@ class PrivateInstructorsController extends GetxController with LatestLoadGuard, 
   Future<void> loadMore() async {
     if (!hasMore.value || isLoading.value || isLoadingMore.value) return;
     isLoadingMore.value = true;
+    loadMoreFailed.value = false;
     try {
       final nextPage = _page + 1;
       final result = await _repository.fetchInstructorsPage(
@@ -117,8 +119,8 @@ class PrivateInstructorsController extends GetxController with LatestLoadGuard, 
       instructors.addAll(result.items);
       _page = nextPage;
       hasMore.value = result.hasMore;
-    } on ApiException catch (e) {
-      errorMessage.value = e.message;
+    } catch (_) {
+      loadMoreFailed.value = true;
     } finally {
       isLoadingMore.value = false;
     }

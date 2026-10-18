@@ -56,36 +56,32 @@ abstract final class CourseCardMetrics {
     );
   }
 
-  /// مقاسات بطاقة «Aurora Glass» لعرض [width]: الغلاف يملأ البطاقة، واللوح الزجاجي السفلي بأسطر ثابتة
-  /// الارتفاع (تطول مع تكبير الخط) فتتساوى مواضع العنوان والسعر بين بطاقات الصف الواحد.
+  /// مقاسات بطاقة «Aurora Glass» لعرض [width]: الغلاف يملأ البطاقة (236 كالتصميم، وأطول على البطاقات
+  /// العريضة)، واللوح الزجاجي السفلي بأسطر ثابتة الارتفاع (تطول مع تكبير الخط) فتتساوى المواضع في الصف.
   static CourseAuroraSpec auroraSpec(double width, {double textScale = 1}) {
     final s = textScale;
     final compact = isCompactTile(width);
-    final titleSize = compact ? AppTextSize.md : AppTextSize.lg;
     const lineHeight = 16.0;
-    final title = (titleSize * CourseAuroraSpec.titleLineHeight * 2).ceilToDouble() * s;
+    final title = (AppTextSize.md * CourseAuroraSpec.titleLineHeight * 2).ceilToDouble() * s;
     final panel =
         CourseAuroraSpec.panelPaddingV * 2 +
         lineHeight * s +
         CourseAuroraSpec.gapAfterCategory +
         title +
         CourseAuroraSpec.gapAfterTitle +
-        lineHeight * s +
-        CourseAuroraSpec.dividerGap +
-        20 * s;
-    // أقل ارتفاع: صف الشارات + جزء ظاهر من الغلاف فوق اللوح.
-    final minHeight = CourseAuroraSpec.inset + 26 * s + 48 + panel + CourseAuroraSpec.inset;
-    final natural = (width * 1.42).clamp(220.0, 330.0);
+        lineHeight * s;
+    // أقل ارتفاع: صف السعر والمفضلة + جزء ظاهر من الغلاف فوق اللوح.
+    final minHeight = CourseAuroraSpec.inset + 44 + 40 + panel + CourseAuroraSpec.inset;
+    final natural = (width * 1.42).clamp(CourseAuroraSpec.designHeight, 330.0);
     return CourseAuroraSpec(
       compact: compact,
       height: (natural > minHeight ? natural : minHeight).ceilToDouble(),
       panelHeight: panel.ceilToDouble(),
-      panelPadding: compact ? 8 : 12,
-      titleSize: titleSize,
+      panelPadding: compact ? 10 : 12,
+      titleSize: AppTextSize.md,
       categoryHeight: lineHeight * s,
       titleHeight: title,
-      instituteHeight: lineHeight * s,
-      footerHeight: 20 * s,
+      metaHeight: lineHeight * s,
     );
   }
 
@@ -226,18 +222,20 @@ class CourseAuroraSpec {
     required this.titleSize,
     required this.categoryHeight,
     required this.titleHeight,
-    required this.instituteHeight,
-    required this.footerHeight,
+    required this.metaHeight,
   });
 
-  /// بُعد اللوح وصف الشارات عن حواف البطاقة.
+  /// ارتفاع البطاقة في التصميم.
+  static const double designHeight = 236;
+
+  /// بُعد اللوح عن حواف البطاقة.
   static const double inset = 8;
+
+  /// بُعد صف السعر والمفضلة عن الحافة العليا وحافتَي البطاقة.
+  static const double topInset = 10;
   static const double panelPaddingV = 10;
   static const double gapAfterCategory = 3;
-  static const double gapAfterTitle = 4;
-
-  /// المسافة بين سطر المعهد وسطر السعر، وفي منتصفها خط فاصل رفيع.
-  static const double dividerGap = 9;
+  static const double gapAfterTitle = 6;
   static const double titleLineHeight = 1.3;
 
   final bool compact;
@@ -247,8 +245,9 @@ class CourseAuroraSpec {
   final double titleSize;
   final double categoryHeight;
   final double titleHeight;
-  final double instituteHeight;
-  final double footerHeight;
+
+  /// سطر التقييم والمدة.
+  final double metaHeight;
 }
 
 /// تصميم بطاقات صفحة «كل الدورات»: [auroraGlass] (الافتراضي) شبكة عمودين، و[boardingPass] قائمة بطاقات

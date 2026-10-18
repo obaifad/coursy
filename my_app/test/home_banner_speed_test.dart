@@ -162,6 +162,73 @@ void main() {
     });
   });
 
+  group('no flash of the wrong banner while loading', () {
+    Future<void> pumpHome(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      Get.locale = const Locale('ar');
+      await tester.pumpWidget(auditApp(child: const HomeView(), locale: 'ar', scale: 1, boundaryKey: GlobalKey()));
+    }
+
+    testWidgets('student, no saved copy: categories alone keep the skeleton (no default card)', (tester) async {
+      final (c, _, _) = await _setUp(loggedIn: true);
+      // التصنيفات وصلت والدورات لم تصل بعد (الرد الأول جزئي).
+      c.categories.assignAll(sampleCategories());
+      await pumpHome(tester);
+
+      expect(find.byType(AppHomeSkeleton), findsOneWidget);
+      expect(find.byType(FeaturedCourseCarouselPlaceholder), findsOneWidget, reason: 'carousel-sized banner slot');
+      expect(find.byType(GuestSignUpBanner), findsNothing);
+      expect(find.text('smart_suggestions'.tr), findsNothing, reason: 'the default hero card must not flash');
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('student: courses arrived but none fits the banner yet -> placeholder, not the default card', (
+      tester,
+    ) async {
+      final (c, _, _) = await _setUp(loggedIn: true);
+      final closed = sampleCourses().where((x) => !x.isRegistrationOpen).toList();
+      expect(closed, isNotEmpty);
+      c.courses.assignAll(closed);
+      c.categories.assignAll(sampleCategories());
+      expect(c.bannerCourses, isEmpty);
+      await pumpHome(tester);
+
+      expect(find.byType(AppHomeSkeleton), findsNothing);
+      expect(find.byType(FeaturedCourseCarouselPlaceholder), findsOneWidget);
+      expect(find.text('smart_suggestions'.tr), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('the placeholder is exactly as tall as the carousel it stands for', (tester) async {
+      Get.locale = const Locale('ar');
+      late double placeholder;
+      late double carousel;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                placeholder = FeaturedCourseCarouselPlaceholder.heightOf(context);
+                return Column(
+                  children: [
+                    const FeaturedCourseCarouselPlaceholder(),
+                    FeaturedCourseCarousel(courses: sampleCourses().take(3).toList(), onOpenCourse: (_) {}),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      carousel = tester.getSize(find.byType(FeaturedCourseCarousel)).height;
+      expect(tester.getSize(find.byType(FeaturedCourseCarouselPlaceholder)).height, placeholder);
+      expect(placeholder, closeTo(carousel, 0.5));
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  });
+
   group('home cache storage', () {
     late Directory dir;
     late HomeCache cache;

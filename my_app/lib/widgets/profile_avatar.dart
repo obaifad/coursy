@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../core/config/api_config.dart';
 import '../theme/app_colors.dart';
@@ -54,16 +55,24 @@ class ProfileAvatar extends StatelessWidget {
           ),
         ),
         if (showCameraBadge)
-          Material(
-            elevation: 4,
-            color: AppColors.primary,
-            shape: const CircleBorder(),
-            child: InkWell(
-              onTap: onTap,
-              customBorder: const CircleBorder(),
-              child: Padding(
-                padding: EdgeInsets.all(badgeSize * 0.55),
-                child: Icon(Icons.camera_alt_rounded, color: Colors.white, size: badgeSize),
+          Tooltip(
+            message: 'tap_to_change_photo'.tr,
+            child: Semantics(
+              button: true,
+              label: 'tap_to_change_photo'.tr,
+              excludeSemantics: true,
+              child: Material(
+                elevation: 4,
+                color: AppColors.primary,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  onTap: onTap,
+                  customBorder: const CircleBorder(),
+                  child: Padding(
+                    padding: EdgeInsets.all(badgeSize * 0.55),
+                    child: Icon(Icons.camera_alt_rounded, color: Colors.white, size: badgeSize),
+                  ),
+                ),
               ),
             ),
           ),

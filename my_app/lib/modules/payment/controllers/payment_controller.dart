@@ -9,6 +9,7 @@ import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/session/session_refresh.dart';
+import '../../../core/utils/app_toast.dart';
 
 class PaymentController extends GetxController with InitialLoadState {
   /// [enrollmentId] اختياري للاختبارات؛ في التطبيق يأتي رقم التسجيل (أو التسجيل نفسه) من arguments.
@@ -75,7 +76,7 @@ class PaymentController extends GetxController with InitialLoadState {
       if (details.value == null) {
         errorMessage.value = message;
       } else {
-        Get.snackbar('error'.tr, message);
+        AppToast.show('error'.tr, message);
       }
     } finally {
       isLoading.value = false;
@@ -86,7 +87,12 @@ class PaymentController extends GetxController with InitialLoadState {
     final address = details.value?.shamcash.address;
     if (address == null) return;
     await Clipboard.setData(ClipboardData(text: address));
-    Get.snackbar('payment_copied_title'.tr, 'payment_copied_msg'.tr, duration: const Duration(seconds: 2));
+    AppToast.show(
+      'payment_copied_title'.tr,
+      'payment_copied_msg'.tr,
+      duration: const Duration(seconds: 2),
+      kind: ToastKind.success,
+    );
   }
 
   Future<void> submit() async {
@@ -102,14 +108,14 @@ class PaymentController extends GetxController with InitialLoadState {
     try {
       final result = await _repository.submitShamCash(enrollmentId, transactionId);
       transactionController.clear();
-      Get.snackbar('payment_success_title'.tr, 'payment_success_msg'.tr);
+      AppToast.show('payment_success_title'.tr, 'payment_success_msg'.tr, kind: ToastKind.success);
       courseId ??= result.enrollment?.courseId;
       unawaited(SessionRefresh.afterEnrollmentStatusChanged(courseId: courseId, enrollmentId: enrollmentId));
       await load();
     } on ApiException catch (e) {
       _handleSubmitError(e);
     } catch (_) {
-      Get.snackbar('error'.tr, 'error_unexpected'.tr);
+      AppToast.show('error'.tr, 'error_unexpected'.tr);
     } finally {
       isSubmitting.value = false;
     }
@@ -121,9 +127,9 @@ class PaymentController extends GetxController with InitialLoadState {
         fieldError.value = _rejectionMessage(e);
       case 429:
         _startCooldown();
-        Get.snackbar('error'.tr, 'payment_error_rate_limit'.tr);
+        AppToast.show('error'.tr, 'payment_error_rate_limit'.tr);
       default:
-        Get.snackbar('error'.tr, _messageForStatus(e));
+        AppToast.show('error'.tr, _messageForStatus(e));
     }
   }
 

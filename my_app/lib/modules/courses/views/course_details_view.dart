@@ -12,6 +12,7 @@ import '../../../theme/app_colors.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/course_favorite_button.dart';
+import '../../../widgets/course_image_hero.dart';
 import '../../../modules/auth/widgets/register_form_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/registration_closed_dialog.dart';
@@ -159,50 +160,59 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
         body: GestureDetector(
           behavior: HitTestBehavior.translucent,
           onHorizontalDragEnd: _onHorizontalSwipe,
-          child: CustomScrollView(
-            controller: _scrollController,
-            physics: const ClampingScrollPhysics(),
-            slivers: [
-              _buildCourseHeroSliver(context: context, item: item, showTitleInBar: _showTitleInBar),
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _CourseTabBarHeaderDelegate(tabController: _tabController),
-              ),
-              SliverPadding(
-                // الصفحة لا تتقلّص مع لوحة المفاتيح (resizeToAvoidBottomInset: false)، فنضيف ارتفاعها
-                // أسفل المحتوى ليبقى مربع تعليق التقييم قابلاً للتمرير فوقها.
-                padding: EdgeInsets.fromLTRB(
-                  AppLayout.readableInset(context),
-                  12,
-                  AppLayout.readableInset(context),
-                  24 + MediaQuery.viewInsetsOf(context).bottom,
+          child: RefreshIndicator(
+            color: AppColors.primary,
+            // أسفل الشريط المثبّت لا خلفه.
+            edgeOffset: MediaQuery.paddingOf(context).top + kToolbarHeight,
+            onRefresh: controller.refreshDetails,
+            child: CustomScrollView(
+              controller: _scrollController,
+              // AlwaysScrollable: صفحة قصيرة لا تتمرّر عادةً فلا يعمل السحب للتحديث.
+              physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+              slivers: [
+                _buildCourseHeroSliver(context: context, item: item, showTitleInBar: _showTitleInBar),
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _CourseTabBarHeaderDelegate(tabController: _tabController),
                 ),
-                sliver: SliverToBoxAdapter(
-                  child: ListenableBuilder(
-                    listenable: _tabController,
-                    builder: (context, _) => AnimatedSwitcher(
-                      duration: AppMotion.fast,
-                      layoutBuilder: (current, previous) =>
-                          Stack(alignment: Alignment.topCenter, children: [...previous, if (current != null) current]),
-                      child: KeyedSubtree(
-                        key: ValueKey<int>(_tabController.index),
-                        child: Obx(
-                          () => Skeletonizer(
-                            enabled: controller.isLoading.value,
-                            child: switch (_tabController.index) {
-                              0 => _OverviewTab(item: item),
-                              1 => _ScheduleTab(item: item, controller: controller),
-                              2 => _InstructorTab(item: item),
-                              _ => _ReviewsTab(item: item, controller: controller),
-                            },
+                SliverPadding(
+                  // الصفحة لا تتقلّص مع لوحة المفاتيح (resizeToAvoidBottomInset: false)، فنضيف ارتفاعها
+                  // أسفل المحتوى ليبقى مربع تعليق التقييم قابلاً للتمرير فوقها.
+                  padding: EdgeInsets.fromLTRB(
+                    AppLayout.readableInset(context),
+                    12,
+                    AppLayout.readableInset(context),
+                    24 + MediaQuery.viewInsetsOf(context).bottom,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: ListenableBuilder(
+                      listenable: _tabController,
+                      builder: (context, _) => AnimatedSwitcher(
+                        duration: AppMotion.fast,
+                        layoutBuilder: (current, previous) => Stack(
+                          alignment: Alignment.topCenter,
+                          children: [...previous, if (current != null) current],
+                        ),
+                        child: KeyedSubtree(
+                          key: ValueKey<int>(_tabController.index),
+                          child: Obx(
+                            () => Skeletonizer(
+                              enabled: controller.isLoading.value,
+                              child: switch (_tabController.index) {
+                                0 => _OverviewTab(item: item),
+                                1 => _ScheduleTab(item: item, controller: controller),
+                                2 => _InstructorTab(item: item),
+                                _ => _ReviewsTab(item: item, controller: controller),
+                              },
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         bottomNavigationBar: Obx(
@@ -255,7 +265,10 @@ SliverAppBar _buildCourseHeroSliver({
       background: Stack(
         fit: StackFit.expand,
         children: [
-          _CourseHeroImage(imagePath: item.imageUrl),
+          CourseImageHero(
+            courseId: item.id,
+            child: _CourseHeroImage(imagePath: item.imageUrl),
+          ),
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(

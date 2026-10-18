@@ -8,6 +8,7 @@ import 'package:my_app/core/models/paginated_result.dart';
 import 'package:my_app/modules/courses/controllers/courses_controller.dart';
 import 'package:my_app/modules/courses/views/courses_views.dart';
 import 'package:my_app/widgets/app_widgets.dart';
+import 'package:my_app/widgets/course_favorite_button.dart';
 import 'package:my_app/widgets/design_system.dart';
 
 import '../layout/fakes.dart';
@@ -82,7 +83,9 @@ void main() {
 
   group('aurora glass card', () {
     for (final locale in ['ar', 'en']) {
-      testWidgets('title, institute, price and rating sit on the frosted panel ($locale)', (tester) async {
+      testWidgets('price and heart on top; category, title, rating and duration on the frosted panel ($locale)', (
+        tester,
+      ) async {
         final course = sampleCourses().first;
         var taps = 0;
         await _pump(tester, _tile(course, onTap: () => taps++), locale: locale);
@@ -91,6 +94,7 @@ void main() {
         final spec = CourseCardMetrics.auroraSpec(164);
         final card = tester.getRect(find.byType(CourseAuroraCard));
         expect(card.height, spec.height);
+        expect(card.height, greaterThanOrEqualTo(CourseAuroraSpec.designHeight));
 
         final panel = _panel(tester);
         expect(panel.height, spec.panelHeight);
@@ -104,15 +108,25 @@ void main() {
         expect(tester.widget<Text>(title).style?.color, Colors.white);
         expect(tester.widget<Text>(title).style?.fontWeight, FontWeight.w800);
 
-        // السعر في جهة البداية والتقييم في جهة النهاية، كلاهما في السطر الأخير من اللوح.
+        // السعر في كبسولة أعلى البطاقة، بجانب المفضلة في زاوية النهاية — لا داخل اللوح.
         final price = tester.getRect(find.textContaining(course.price.split(' ').first, findRichText: true).last);
-        final rating = tester.getRect(find.text(course.rating.toStringAsFixed(1)));
-        expect(price.bottom, lessThanOrEqualTo(panel.bottom));
-        expect((price.center.dy - rating.center.dy).abs(), lessThan(6));
+        final heart = tester.getRect(find.byType(CourseFavoriteButton));
+        expect(price.bottom, lessThan(panel.top));
+        expect((price.center.dy - heart.center.dy).abs(), lessThan(4));
         if (locale == 'ar') {
-          expect(price.center.dx, greaterThan(rating.center.dx));
+          expect(heart.center.dx, lessThan(price.center.dx), reason: 'heart at the end corner (left in Arabic)');
+          expect(heart.left, lessThan(card.left + 12));
         } else {
-          expect(price.center.dx, lessThan(rating.center.dx));
+          expect(heart.center.dx, greaterThan(price.center.dx));
+          expect(heart.right, greaterThan(card.right - 12));
+        }
+
+        // التقييم في سطر اللوح الأخير، ولا معهد على البطاقة.
+        final rating = tester.getRect(find.text(course.rating.toStringAsFixed(1)));
+        expect(rating.top, greaterThan(tester.getRect(title).bottom));
+        expect(rating.bottom, lessThanOrEqualTo(panel.bottom));
+        if (course.institute.trim().isNotEmpty) {
+          expect(find.textContaining(course.institute.trim()), findsNothing);
         }
 
         await tester.tap(find.byType(CourseAuroraCard));

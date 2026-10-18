@@ -88,11 +88,11 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (_, i) {
             if (i == instructors.length) {
-              if (!hasMore) return const SizedBox(height: 8);
-              return OutlinedButton.icon(
-                onPressed: isLoadingMore ? null : controller.loadMore,
-                icon: isLoadingMore ? const AppInlineLoader() : const Icon(Icons.expand_more_rounded),
-                label: Text('load_more'.tr),
+              return AppLoadMoreFooter(
+                hasMore: hasMore,
+                isLoading: isLoadingMore,
+                failed: controller.loadMoreFailed.value,
+                onLoadMore: controller.loadMore,
               );
             }
 

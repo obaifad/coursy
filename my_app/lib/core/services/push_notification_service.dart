@@ -15,6 +15,7 @@ import '../session/enrollment_status_coordinator.dart';
 import '../session/remote_notification_sync.dart';
 import '../storage/notification_delivery_store.dart';
 import '../storage/token_storage.dart';
+import '../utils/app_toast.dart';
 
 /// FCM: أذونات، تسجيل التوكن، عرض الإشعارات، والتوجيه عند الضغط.
 class PushNotificationService extends GetxService {
@@ -125,7 +126,7 @@ class PushNotificationService extends GetxService {
         final granted = await _requestPermissions();
         notificationsPermissionGranted.value = granted;
         if (!granted) {
-          Get.snackbar('notifications_setting'.tr, 'notifications_permission_denied'.tr);
+          AppToast.show('notifications_setting'.tr, 'notifications_permission_denied'.tr);
           return;
         }
         await _prefs.write(_storageKey, true);
@@ -134,7 +135,7 @@ class PushNotificationService extends GetxService {
         notificationsPermissionGranted.value = true;
         clearSyncedToken();
         await syncDeviceTokenIfLoggedIn(force: true);
-        Get.snackbar('notifications_setting'.tr, 'notifications_enabled_msg'.tr);
+        // لا إشعار: المفتاح نفسه يعرض الحالة الجديدة.
         return;
       }
 
@@ -150,10 +151,10 @@ class PushNotificationService extends GetxService {
       } catch (e) {
         AppDebugLog.fcm('deleteToken failed: $e');
       }
-      Get.snackbar('notifications_setting'.tr, 'notifications_disabled_msg'.tr);
+      // لا إشعار: المفتاح نفسه يعرض الحالة الجديدة.
     } catch (e) {
       AppDebugLog.fcm('toggle failed: $e');
-      Get.snackbar('error'.tr, 'notifications_toggle_failed'.tr);
+      AppToast.show('error'.tr, 'notifications_toggle_failed'.tr);
     } finally {
       isToggling.value = false;
     }

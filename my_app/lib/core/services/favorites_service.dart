@@ -6,6 +6,7 @@ import '../models/favorite_model.dart';
 import '../network/api_exception.dart';
 import '../storage/token_storage.dart';
 import '../utils/auth_guard.dart';
+import '../utils/app_toast.dart';
 
 /// مفضلة مرتبطة بالخادم فقط: القراءة من /student/favorites والتعديل عبر مسار الدورة.
 class FavoritesService extends GetxService {
@@ -146,7 +147,7 @@ class FavoritesService extends GetxService {
         await remove(existing.id);
         items.removeWhere((f) => f.id == existing.id);
         _log('Removed favorite id=${existing.id}');
-        if (showFeedback) Get.snackbar('favorite_removed_title'.tr, removedMsg);
+        // لا إشعار: القلب يرجع فارغاً (وفي المفضلة تتلاشى البطاقة).
         return false;
       }
 
@@ -159,16 +160,16 @@ class FavoritesService extends GetxService {
         // بلا معرّف في الرد: نجلب القائمة الآن (force — وإلا تخطّاها كاش الدقيقتين فلا يتغيّر القلب).
         await syncFromApi(force: true);
       }
-      if (showFeedback) Get.snackbar('favorite_added_title'.tr, addedMsg);
+      // لا إشعار: القلب يصير أحمر مع نبضة وحركة.
       return true;
     } on ApiException catch (e) {
       _log('API failed: ${e.message}');
-      Get.snackbar('error'.tr, e.message);
+      AppToast.show('error'.tr, e.message);
       return find() != null;
     } catch (e) {
       // انقطاع أو رد غير متوقع: رسالة مفهومة بدل استثناء غير معالج.
       _log('Toggle error: $e');
-      Get.snackbar('error'.tr, 'connection_error'.tr);
+      AppToast.show('error'.tr, 'connection_error'.tr);
       return find() != null;
     } finally {
       _inFlight.remove(key);

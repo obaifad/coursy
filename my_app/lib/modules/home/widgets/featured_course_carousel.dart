@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../core/models/app_models.dart';
 import '../../../routes/app_routes.dart';
@@ -618,5 +619,97 @@ class _PillIndicator extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// مكان البانر أثناء التحميل: نفس مقاس البطاقات العائمة (الحالية في المنتصف والجانبيتان أصغر وباهتتان)
+/// ومؤشرها، بوميض هادئ — فلا تظهر بطاقة بديلة ثم تُستبدل.
+/// [shimmer] = false حين يكون داخل هيكل صفحة يضيف الوميض بنفسه ([AppHomeSkeleton]).
+class FeaturedCourseCarouselPlaceholder extends StatelessWidget {
+  const FeaturedCourseCarouselPlaceholder({super.key, this.shimmer = true});
+
+  final bool shimmer;
+
+  /// الارتفاع الكلي (الشرائح + المؤشر) — مطابق لـ [FeaturedCourseCarousel] بعدة شرائح.
+  static double heightOf(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.2);
+    return FeaturedCourseCarousel._cardHeight * textScale +
+        FeaturedCourseCarousel._pagePadTop +
+        FeaturedCourseCarousel._pagePadBottom +
+        _PillIndicator._dot +
+        8;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.2);
+    final cardHeight = FeaturedCourseCarousel._cardHeight * textScale;
+    final width = MediaQuery.sizeOf(context).width;
+    final page = width * FeaturedCourseCarousel._viewportFraction;
+    final cardWidth = page - FeaturedCourseCarousel._pagePadH * 2;
+    final radius = BorderRadius.circular(AppRadius.lg);
+
+    Widget card(double scale, double opacity) => Opacity(
+      opacity: opacity,
+      child: Transform.scale(
+        scale: scale,
+        child: Container(
+          width: cardWidth,
+          height: cardHeight,
+          decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.12), borderRadius: radius),
+        ),
+      ),
+    );
+
+    final content = SizedBox(
+      height: heightOf(context),
+      child: Column(
+        children: [
+          SizedBox(
+            height: cardHeight + FeaturedCourseCarousel._pagePadTop + FeaturedCourseCarousel._pagePadBottom,
+            child: Padding(
+              padding: const EdgeInsets.only(
+                top: FeaturedCourseCarousel._pagePadTop,
+                bottom: FeaturedCourseCarousel._pagePadBottom,
+              ),
+              // الحالية في المنتصف، وحافتا الجارتين ظاهرتان كما في الشرائح الحقيقية.
+              child: OverflowBox(
+                maxWidth: double.infinity,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    card(FeaturedCourseCarousel._sideScale, FeaturedCourseCarousel._sideOpacity),
+                    const SizedBox(width: FeaturedCourseCarousel._pagePadH * 2),
+                    card(1, 1),
+                    const SizedBox(width: FeaturedCourseCarousel._pagePadH * 2),
+                    card(FeaturedCourseCarousel._sideScale, FeaturedCourseCarousel._sideOpacity),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < 3; i++) ...[
+                  if (i > 0) const SizedBox(width: _PillIndicator._gap),
+                  Container(
+                    width: i == 0 ? _PillIndicator._pill : _PillIndicator._dot,
+                    height: _PillIndicator._dot,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    return ExcludeSemantics(child: shimmer ? Skeletonizer(enabled: true, child: content) : content);
   }
 }

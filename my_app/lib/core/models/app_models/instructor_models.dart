@@ -147,6 +147,7 @@ class InstructorModel {
     this.experienceYears = 0,
     this.imageUrl,
     this.isPrivate = false,
+    this.gender,
     this.mobile,
     this.sessionPriceValue,
     this.hourlyPriceValue,
@@ -166,6 +167,9 @@ class InstructorModel {
   final int experienceYears;
   final String? imageUrl;
   final bool isPrivate;
+
+  /// `male` أو `female` إن أرسله الخادم (اختياري)؛ يحدد أيقونة الصورة البديلة. null = غير معروف.
+  final String? gender;
   final String? mobile;
 
   /// الأسعار كأرقام؛ النص («75,000 ل.س») يُبنى عند العرض بلغة الواجهة الحالية.
@@ -243,12 +247,22 @@ class InstructorModel {
       experienceYears: JsonHelpers.parseInt(json['experience_years']),
       imageUrl: json['image']?.toString(),
       isPrivate: JsonHelpers.parseBool(json['is_private']),
+      gender: _normalizeGender(json['gender']),
       mobile: json['mobile']?.toString(),
       sessionPriceValue: _positivePrice(json['session_price']),
       hourlyPriceValue: _positivePrice(json['hourly_price']),
       address: address.isNotEmpty ? address : json['address']?.toString(),
       institutes: institutes,
     );
+  }
+
+  /// يقبل male/female/m/f/ذكر/أنثى/1/2 ويعيد `male` أو `female`، وإلا null.
+  static String? _normalizeGender(dynamic raw) {
+    final v = raw?.toString().trim().toLowerCase();
+    if (v == null || v.isEmpty) return null;
+    if (const {'male', 'm', 'man', 'ذكر', 'ولد', '1'}.contains(v)) return 'male';
+    if (const {'female', 'f', 'woman', 'أنثى', 'انثى', 'بنت', '2'}.contains(v)) return 'female';
+    return null;
   }
 
   static double? _positivePrice(dynamic raw) {
