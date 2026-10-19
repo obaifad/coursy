@@ -239,10 +239,13 @@ class _CenterNavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // onTap هنا لأن excludeSemantics يُسقط نقر InkWell — وإلا يُقرأ «زر» ولا يُفعَّل من TalkBack.
     return Semantics(
+      container: true,
       button: true,
       selected: selected,
       label: label,
+      onTap: onTap,
       excludeSemantics: true,
       child: Material(
         color: Colors.transparent,
@@ -285,42 +288,47 @@ class _SideNavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedContainer(
-                duration: AppMotion.fast,
-                curve: Curves.easeOutCubic,
-                width: 40,
-                height: 28,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  gradient: selected ? AppGradients.primary : null,
-                  color: selected ? null : Colors.transparent,
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
+    // يُقرأ «زر، محدد» كالزر الأوسط (كان يُقرأ نصاً فقط).
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedContainer(
+                  duration: AppMotion.fast,
+                  curve: Curves.easeOutCubic,
+                  width: 40,
+                  height: 28,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    gradient: selected ? AppGradients.primary : null,
+                    color: selected ? null : Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Icon(icon, color: selected ? Colors.white : AppColors.textSecondary, size: 19),
                 ),
-                child: Icon(icon, color: selected ? Colors.white : AppColors.textSecondary, size: 19),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: AppFonts.tajawal(
-                  fontSize: AppTextSize.xs,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? AppColors.primaryInk : AppColors.textSecondary,
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: AppFonts.tajawal(
+                    fontSize: AppTextSize.xs,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    color: selected ? AppColors.primaryInk : AppColors.textSecondary,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

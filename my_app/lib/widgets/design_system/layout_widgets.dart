@@ -81,7 +81,15 @@ class AppIconCircleButton extends StatelessWidget {
     if (label == null) return button;
     return Tooltip(
       message: label,
-      child: Semantics(button: true, label: label, excludeSemantics: true, child: button),
+      // onTap هنا لأن excludeSemantics يُسقط نقر InkWell — وإلا يُقرأ «زر» ولا يُفعَّل من TalkBack.
+      child: Semantics(
+        container: true,
+        button: true,
+        label: label,
+        onTap: onTap,
+        excludeSemantics: true,
+        child: button,
+      ),
     );
   }
 }

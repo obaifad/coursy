@@ -108,10 +108,14 @@ class _CourseFavoriteButtonState extends State<CourseFavoriteButton> with Single
       final isFavorite = _optimistic ?? service.isCourseFavorite(widget.courseId);
       final label = isFavorite ? 'favorite_remove'.tr : 'favorite_add'.tr;
       final iconSize = widget.diameter * 0.53;
+      // عقدة مستقلة (container) لها نقرها: excludeSemantics يُسقط نقر GestureDetector، وبلا container يُدمج
+      // اسم الزر في عنصر البطاقة فلا يُفعَّل من TalkBack إلا فتح الدورة.
       return Semantics(
+        container: true,
         button: true,
         toggled: isFavorite,
         label: label,
+        onTap: () => _toggle(service),
         excludeSemantics: true,
         child: Tooltip(
           message: label,

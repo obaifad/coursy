@@ -631,9 +631,13 @@ class _HomeSettingsButton extends StatelessWidget {
     // الظل على Container خارجي (دائري) والتأثير على Material مقصوص بدائرة — بلا خلفية مربعة حول الزر.
     return Tooltip(
       message: 'settings'.tr,
+      // container + onTap: عقدة مستقلة لقارئ الشاشة تُفعَّل بالنقر المزدوج (excludeSemantics يُسقط نقر
+      // InkWell، وبلا container كانت تُدمج مع شريط البحث المجاور في عنصر واحد).
       child: Semantics(
+        container: true,
         button: true,
         label: 'settings'.tr,
+        onTap: onTap,
         excludeSemantics: true,
         child: Container(
           width: _size,
