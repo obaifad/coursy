@@ -59,6 +59,10 @@ android {
                 // APK تجريبي فقط — حزمة Google Play (AAB) ترفض البناء بدون مفتاح الرفع (انظر أدناه).
                 signingConfigs.getByName("debug")
             }
+            // R8 (تصغير الكود) وحذف الموارد غير المستعملة: يفعّلهما Flutter افتراضياً لنسخ الإصدار — صريحان هنا كي
+            // لا يُعطَّلا دون قصد. قواعد الإبقاء من Flutter ومن Firebase والإضافات نفسها (consumer rules).
+            isMinifyEnabled = true
+            isShrinkResources = true
         }
     }
 }
