@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:my_app/core/locale/app_translations.dart';
 import 'package:my_app/core/navigation/app_page_transition.dart';
 import 'package:my_app/core/navigation/route_motion_builder.dart';
 import 'package:my_app/routes/app_pages.dart';
@@ -10,7 +11,6 @@ import 'package:my_app/theme/app_motion.dart';
 import '../layout/fakes.dart';
 import '../layout/layout_harness.dart';
 import '../layout/sample_data.dart';
-import 'overflow_tolerance.dart';
 
 /// كل صفحة تفاصيل/قائمة تُفتح فوق الرئيسية: ما لديها يظهر فوراً، وطلبات الشبكة تبدأ بعد انتهاء حركة
 /// الفتح فقط (RouteSettle) — ولا تبدأ أبداً إن أُغلقت الصفحة قبل ذلك.
@@ -71,6 +71,8 @@ void main() {
     // كما في التطبيق: نفس الصفحات والانتقال ومراقب الحركة.
     await tester.pumpWidget(
       GetMaterialApp(
+        translations: AppTranslations(),
+        locale: const Locale('ar'),
         getPages: AppPages.pages,
         navigatorObservers: [RouteMotionObserver(), ...observers],
         customTransition: AppPageTransition(),
@@ -89,46 +91,40 @@ void main() {
   }
 
   for (final c in _cases) {
-    testWidgets(
-      '${c.route}: requests start after the opening transition, no Obx rebuild during it',
-      (tester) => ignoringOverflow(() async {
-        await pumpApp(tester);
-        var obxRebuilds = 0;
-        Get.toNamed<void>(c.route, arguments: c.arguments());
-        await tester.pump(); // أول إطار: الصفحة والمتحكّم موجودان، والحركة بدأت.
-        expect(RouteMotion.isMoving, isTrue);
-        debugOnRebuildDirtyWidget = (element, builtOnce) {
-          if (builtOnce && element.widget is ObxWidget) obxRebuilds++;
-        };
-        await tester.pump(const Duration(milliseconds: 60));
-        await tester.pump(const Duration(milliseconds: 60));
-        await tester.pump(const Duration(milliseconds: 60));
-        expect(FakeApi.calls, isEmpty, reason: 'no request while ${c.route} is still animating in');
-        expect(obxRebuilds, 0, reason: 'no data-driven rebuild of ${c.route} during its transition');
-        debugOnRebuildDirtyWidget = null;
+    testWidgets('${c.route}: requests start after the opening transition, no Obx rebuild during it', (tester) async {
+      await pumpApp(tester);
+      var obxRebuilds = 0;
+      Get.toNamed<void>(c.route, arguments: c.arguments());
+      await tester.pump(); // أول إطار: الصفحة والمتحكّم موجودان، والحركة بدأت.
+      expect(RouteMotion.isMoving, isTrue);
+      debugOnRebuildDirtyWidget = (element, builtOnce) {
+        if (builtOnce && element.widget is ObxWidget) obxRebuilds++;
+      };
+      await tester.pump(const Duration(milliseconds: 60));
+      await tester.pump(const Duration(milliseconds: 60));
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(FakeApi.calls, isEmpty, reason: 'no request while ${c.route} is still animating in');
+      expect(obxRebuilds, 0, reason: 'no data-driven rebuild of ${c.route} during its transition');
+      debugOnRebuildDirtyWidget = null;
 
-        await settle(tester);
-        for (final request in c.requests) {
-          expect(FakeApi.calls, contains(request), reason: '${c.route} loads after it settles');
-        }
-      }),
-    );
+      await settle(tester);
+      for (final request in c.requests) {
+        expect(FakeApi.calls, contains(request), reason: '${c.route} loads after it settles');
+      }
+    });
 
-    testWidgets(
-      '${c.route}: closed before the transition ends -> no request at all',
-      (tester) => ignoringOverflow(() async {
-        await pumpApp(tester);
-        Get.toNamed<void>(c.route, arguments: c.arguments());
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 50));
-        Get.back<void>();
-        await settle(tester);
-        expect(find.text('home'), findsOneWidget);
-        for (final request in c.requests) {
-          expect(FakeApi.calls, isNot(contains(request)), reason: '${c.route} was closed before it settled');
-        }
-      }),
-    );
+    testWidgets('${c.route}: closed before the transition ends -> no request at all', (tester) async {
+      await pumpApp(tester);
+      Get.toNamed<void>(c.route, arguments: c.arguments());
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      Get.back<void>();
+      await settle(tester);
+      expect(find.text('home'), findsOneWidget);
+      for (final request in c.requests) {
+        expect(FakeApi.calls, isNot(contains(request)), reason: '${c.route} was closed before it settled');
+      }
+    });
   }
 
   testWidgets('double tap on a card opens the page once', (tester) async {
