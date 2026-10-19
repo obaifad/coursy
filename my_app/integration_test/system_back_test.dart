@@ -18,8 +18,6 @@ void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.fullyLive;
 
-  Finder byTypeName(String name) => find.byWidgetPredicate((w) => w.runtimeType.toString() == name);
-
   Future<bool> waitFor(WidgetTester tester, bool Function() done, {int timeoutMs = 45000}) async {
     final sw = Stopwatch()..start();
     while (sw.elapsedMilliseconds < timeoutMs) {
@@ -37,12 +35,17 @@ void main() {
       () => const [AppRoutes.login, AppRoutes.onboarding, AppRoutes.root].contains(Get.currentRoute),
     );
     if (Get.currentRoute != AppRoutes.root) AppNavigation.enterAsGuest();
-    expect(await waitFor(tester, () => byTypeName('CourseCard').evaluate().isNotEmpty), isTrue);
+    // أول عنصر بيانات ظاهر على الرئيسية (على الشاشات الصغيرة بطاقات الدورات أسفل الجزء المبني من القائمة).
+    final firstContent = find.byWidgetPredicate(
+      (w) => const {'_CategoryGridTile', 'CourseCard', 'InstituteMiniCard'}.contains(w.runtimeType.toString()),
+    );
+    expect(await waitFor(tester, () => firstContent.evaluate().isNotEmpty), isTrue);
     await tester.pump(const Duration(seconds: 2));
 
-    // 1) صفحة دورة ← رجوع النظام ← الرئيسية
-    await tester.tap(byTypeName('CourseCard').first, warnIfMissed: false);
-    await waitFor(tester, () => Get.currentRoute == AppRoutes.courseDetails, timeoutMs: 10000);
+    // 1) صفحة فوق الرئيسية ← رجوع النظام ← الرئيسية
+    await tester.tap(firstContent.first, warnIfMissed: false);
+    await waitFor(tester, () => Get.currentRoute != AppRoutes.root, timeoutMs: 10000);
+    results['opened'] = Get.currentRoute;
     await tester.pump(const Duration(seconds: 2));
     debugPrint('SYSBACK_READY 1');
     results['details_back_to_root'] = await waitFor(tester, () => Get.currentRoute == AppRoutes.root, timeoutMs: 20000);
