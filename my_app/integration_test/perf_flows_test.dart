@@ -79,9 +79,12 @@ void main() {
     expect(reachedEntry, isTrue, reason: 'splash never left');
     if (Get.currentRoute != AppRoutes.root) AppNavigation.enterAsGuest();
 
-    // a) أول محتوى حقيقي: بطاقة دورة على الرئيسية.
-    final homeCards = byTypeName('CourseCard');
-    final gotContent = await waitFor(tester, () => visible(homeCards));
+    // a) أول محتوى حقيقي من الشبكة على الرئيسية: بطاقة تصنيف أو دورة أو معهد (أيّها يُبنى أولاً —
+    // على الشاشات الصغيرة بطاقات الدورات أسفل الجزء المبني من القائمة).
+    final firstContent = find.byWidgetPredicate(
+      (w) => const {'_CategoryGridTile', 'CourseCard', 'InstituteMiniCard'}.contains(w.runtimeType.toString()),
+    );
+    final gotContent = await waitFor(tester, () => visible(firstContent));
     report['first_content_ms'] = startup.elapsedMilliseconds;
     report['first_content_found'] = gotContent;
     debugPrint('PERF_MARK first_content ${DateTime.now().toIso8601String()}');
