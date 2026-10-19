@@ -171,7 +171,7 @@ final _courses = [
         'price': '${(i % 6 + 1) * 250000}',
         if (i % 3 == 0) 'discount_price': '${(i % 6 + 1) * 200000}',
         'level': ['beginner', 'intermediate', 'advanced'][i % 3],
-        'study_type': ['in_person', 'online', 'hybrid'][i % 3],
+        'study_type': ['offline', 'online', 'hybrid'][i % 3],
         'duration_hours': 20 + (i % 5) * 20,
         'sessions_count': 8 + i % 12,
         'current_students': (i * 3) % 25,
