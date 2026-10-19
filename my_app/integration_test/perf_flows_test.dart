@@ -36,6 +36,26 @@ void main() {
 
   bool visible(Finder f) => f.evaluate().isNotEmpty;
 
+  /// يمرّر للأسفل حتى يُبنى العنصر (القوائم الكسولة لا تبني ما بعد الشاشة) — بلا رمي إن لم يوجد.
+  Future<bool> scrollToFind(WidgetTester tester, Finder target, Finder scrollable, {int maxScrolls = 25}) async {
+    for (var i = 0; i < maxScrolls && !visible(target); i++) {
+      await tester.drag(scrollable, const Offset(0, -260), warnIfMissed: false);
+      await wait(tester, 250);
+    }
+    if (!visible(target)) return false;
+    await tester.ensureVisible(target.first);
+    await wait(tester, 400);
+    return true;
+  }
+
+  Future<void> scrollToTop(WidgetTester tester, Finder scrollable) async {
+    for (var i = 0; i < 8; i++) {
+      await tester.fling(scrollable, const Offset(0, 800), 3000, warnIfMissed: false);
+      await wait(tester, 300);
+    }
+    await wait(tester, 500);
+  }
+
   /// فتح أول عنصر ثم الرجوع بزر الرجوع (كالنظام)، مع انتظار يكفي للحركة وجلب البيانات.
   Future<void> openAndBack(WidgetTester tester, Finder target) async {
     await tester.tap(target.first, warnIfMissed: false);
@@ -46,6 +66,8 @@ void main() {
 
   testWidgets('perf flows a-g', (tester) async {
     final report = <String, dynamic>{};
+    final flows = <String>[];
+    report['flows'] = flows;
     final startup = Stopwatch()..start();
     unawaited(app.main());
 
@@ -65,14 +87,17 @@ void main() {
     debugPrint('PERF_MARK first_content ${DateTime.now().toIso8601String()}');
     await wait(tester, 3000);
 
+    final homeScroll = find.byType(Scrollable).first;
+
     // b) الرئيسية ← تصنيف ← رجوع
     final categoryTile = byTypeName('_CategoryGridTile');
-    if (visible(categoryTile)) {
+    if (await scrollToFind(tester, categoryTile, homeScroll)) {
       await binding.traceAction(() => openAndBack(tester, categoryTile), reportKey: 'b_home_category');
+      flows.add('b');
     }
+    await scrollToTop(tester, homeScroll);
 
     // g1) تمرير الرئيسية
-    final homeScroll = find.byType(Scrollable).first;
     await binding.traceAction(() async {
       for (var i = 0; i < 3; i++) {
         await tester.fling(homeScroll, const Offset(0, -500), 1800, warnIfMissed: false);
@@ -83,16 +108,15 @@ void main() {
         await wait(tester, 700);
       }
     }, reportKey: 'g1_home_scroll');
+    flows.add('g1');
 
     // e) مدرّس ← تفاصيل ← رجوع (بطاقات المدرّسين الخصوصيين على الرئيسية)
     final instructorCard = byTypeName('PrivateInstructorMiniCard');
-    if (!visible(instructorCard)) {
-      await tester.scrollUntilVisible(instructorCard.first, 300, scrollable: homeScroll, maxScrolls: 30);
-      await wait(tester, 600);
-    }
-    if (visible(instructorCard)) {
+    if (await scrollToFind(tester, instructorCard, homeScroll)) {
       await binding.traceAction(() => openAndBack(tester, instructorCard), reportKey: 'e_instructor_details');
+      flows.add('e');
     }
+    await scrollToTop(tester, homeScroll);
 
     // c) الدورات ← تفاصيل دورة ← رجوع
     AppNavigation.switchToTab(0);
@@ -101,6 +125,7 @@ void main() {
     final courseCard = byTypeName('CourseAuroraCard');
     if (visible(courseCard)) {
       await binding.traceAction(() => openAndBack(tester, courseCard), reportKey: 'c_course_details');
+      flows.add('c');
     }
 
     // g2) تمرير شبكة الدورات
@@ -115,6 +140,7 @@ void main() {
         await wait(tester, 700);
       }
     }, reportKey: 'g2_courses_scroll');
+    flows.add('g2');
 
     // d) المعاهد ← تفاصيل معهد ← رجوع
     AppNavigation.switchToTab(1);
@@ -123,6 +149,7 @@ void main() {
     final instituteCard = byTypeName('InstituteListCard');
     if (visible(instituteCard)) {
       await binding.traceAction(() => openAndBack(tester, instituteCard), reportKey: 'd_institute_details');
+      flows.add('d');
     }
 
     // f) التبديل بين التبويبات الخمسة (الملف الشخصي للضيف يفتح الدخول، ثم رجوع)
@@ -136,9 +163,13 @@ void main() {
       if (Get.currentRoute != AppRoutes.root) await tester.binding.handlePopRoute();
       await wait(tester, 900);
     }, reportKey: 'f_tabs');
+    flows.add('f');
 
     debugPrint('PERF_MARK end ${DateTime.now().toIso8601String()}');
     await wait(tester, 3000);
     binding.reportData = {...?binding.reportData, 'meta': report};
+    debugPrint('PERF_FLOWS $flows');
+    // مسار لم يُسجَّل = القياس ناقص: نفشل بوضوح بدل جدول ناقص بصمت.
+    expect(flows, containsAll(['b', 'c', 'd', 'e', 'f', 'g1', 'g2']));
   });
 }
