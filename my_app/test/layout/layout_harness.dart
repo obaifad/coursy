@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -25,6 +26,7 @@ const auditViewports = [
   AuditViewport('phone-320', Size(320, 640)),
   AuditViewport('phone-360', Size(360, 780)),
   AuditViewport('phone-390', Size(390, 844)),
+  AuditViewport('phone-411', Size(411, 914)),
   AuditViewport('phone-430', Size(430, 932)),
   AuditViewport('tablet-768', Size(768, 1024)),
   AuditViewport('tablet-1024', Size(1024, 1366)),
@@ -57,6 +59,10 @@ Future<void> loadAuditFonts() async {
     // الأيقونات تظهر مربعات في اللقطات فقط — لا يؤثر على فحص التخطيط.
   }
 }
+
+/// أنواع المشاكل التي تُفشل الفحص: فيض RenderFlex، أو استثناء، أو نص أُعطي أقل من حاجته (يتداخل مع ما
+/// تحته). القصّ بـ "…" مقصود ومسموح، والخط الاحتياطي يُبلَّغ عنه فقط.
+const blockingIssueKinds = {'overflow', 'exception', 'squeezed-text'};
 
 class LayoutIssue {
   LayoutIssue(this.scene, this.config, this.kind, this.detail);
@@ -178,6 +184,14 @@ Future<List<LayoutIssue>> auditScene(
         if (beforeEach != null) await beforeEach();
 
         final errors = <String>[];
+        void collectText() {
+          for (final (kind, detail) in inspectText(tester)) {
+            // القصّ بـ "…" مقصود في أماكن كثيرة — نرصده فقط على مقاس الهاتف الشائع وبالخط الافتراضي.
+            if (kind == 'truncated' && !(viewport.name == 'phone-360' && scale == 1.0)) continue;
+            issues.add(LayoutIssue(sceneName, config, kind, detail));
+          }
+        }
+
         final previous = FlutterError.onError;
         FlutterError.onError = (details) => errors.add(_describeError(details));
         final key = GlobalKey();
@@ -185,23 +199,19 @@ Future<List<LayoutIssue>> auditScene(
           await tester.pumpWidget(auditApp(child: scene(), locale: locale, scale: scale, boundaryKey: key));
           await tester.pump(settle);
           await tester.pump(settle);
+          collectText();
+          if (shouldDump(viewport, scale, locale)) {
+            await _dump(tester, key, '${sceneName}__${viewport.name}_x${scale}_$locale.png');
+          }
+          await _scrollThrough(tester, collectText);
         } finally {
           FlutterError.onError = previous;
         }
         final pending = tester.takeException();
         if (pending != null) errors.add(pending.toString().split('\n').first);
 
-        for (final e in errors) {
+        for (final e in errors.toSet()) {
           issues.add(LayoutIssue(sceneName, config, e.contains('overflowed') ? 'overflow' : 'exception', e));
-        }
-        for (final (kind, detail) in inspectText(tester)) {
-          // القصّ بـ "…" مقصود في أماكن كثيرة — نرصده فقط على مقاس الهاتف الشائع وبالخط الافتراضي.
-          if (kind == 'truncated' && !(viewport.name == 'phone-360' && scale == 1.0)) continue;
-          issues.add(LayoutIssue(sceneName, config, kind, detail));
-        }
-
-        if (shouldDump(viewport, scale, locale)) {
-          await _dump(tester, key, '${sceneName}__${viewport.name}_x${scale}_$locale.png');
         }
         // إغلاق أي Snackbar/Dialog قبل تبديل الشجرة — وإلا يبقى مؤقّت الأنيميشن حياً بعد التخلص من
         // الـ Overlay فيرمي استثناءً عشوائي التوقيت لا علاقة له بتخطيط التطبيق نفسه.
@@ -215,7 +225,31 @@ Future<List<LayoutIssue>> auditScene(
   }
   tester.view.resetPhysicalSize();
   tester.view.resetDevicePixelRatio();
+  final blocking = issues.where((i) => blockingIssueKinds.contains(i.kind)).toList();
+  expect(blocking, isEmpty, reason: 'layout breaks in $sceneName:\n${formatIssues(blocking)}');
   return issues;
+}
+
+/// يمرّر كل قائمة عمودية حتى نهايتها على خطوات: ما تحت أول شاشة لا يُبنى إلا عند ظهوره، فبدون التمرير
+/// لا يُفحص (ومنه الرأس المطوي في صفحات التفاصيل). القوائم تُقرأ من جديد بعد كل خطوة لأن قائمة داخلية
+/// قد تظهر بعد طيّ الرأس.
+Future<void> _scrollThrough(WidgetTester tester, void Function() inspect) async {
+  for (var step = 0; step < 20; step++) {
+    final positions = find
+        .byType(Scrollable)
+        .evaluate()
+        .map((e) => (e as StatefulElement).state as ScrollableState)
+        .where((s) => axisDirectionToAxis(s.axisDirection) == Axis.vertical)
+        .map((s) => s.position)
+        .where((p) => p.hasContentDimensions && p.pixels < p.maxScrollExtent - 0.5)
+        .toList();
+    if (positions.isEmpty) return;
+    final position = positions.first;
+    position.jumpTo(math.min(position.pixels + position.viewportDimension * 0.8, position.maxScrollExtent));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    inspect();
+  }
 }
 
 Future<void> _dump(WidgetTester tester, GlobalKey key, String fileName) async {
