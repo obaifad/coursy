@@ -6,8 +6,9 @@ import '../../../core/data/repositories/instructor_repository.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/locale/locale_request_guard.dart';
+import '../../../core/navigation/route_settle.dart';
 
-class InstructorSubjectInstructorsController extends GetxController with InitialLoadState {
+class InstructorSubjectInstructorsController extends GetxController with InitialLoadState, SettledLoad {
   final InstructorRepository _repository = Get.find();
 
   final isLoading = true.obs;
@@ -46,7 +47,7 @@ class InstructorSubjectInstructorsController extends GetxController with Initial
       markLoaded();
       if (cached.isFresh()) return;
     }
-    loadInstructors();
+    afterRouteSettles(loadInstructors);
   }
 
   String get _cacheKey => MemoryCache.key('subject-instructors', [subjectKey]);

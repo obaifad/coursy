@@ -8,6 +8,7 @@ import '../../../core/data/repositories/city_repository.dart';
 import '../../../core/data/repositories/search_repository.dart';
 import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/navigation/route_settle.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/storage/recent_search_storage.dart';
 
@@ -37,7 +38,7 @@ class SearchFilters {
 /// نوع فلتر واحد — لإزالته منفرداً من شريط الفلاتر النشطة.
 enum SearchFilterKind { category, city, level, studyType }
 
-class SearchPageController extends GetxController with LatestLoadGuard {
+class SearchPageController extends GetxController with LatestLoadGuard, SettledLoad {
   final SearchRepository _searchRepository = Get.find();
   final CategoryRepository _categoryRepository = Get.find();
   final CityRepository _cityRepository = Get.find();
@@ -115,7 +116,7 @@ class SearchPageController extends GetxController with LatestLoadGuard {
   void onInit() {
     super.onInit();
     queryController.addListener(_onQueryChanged);
-    _loadFilters();
+    afterRouteSettles(_loadFilters);
   }
 
   Future<void> _loadFilters() async {

@@ -4,9 +4,10 @@ import 'package:get/get.dart';
 import '../../../core/data/repositories/instructor_repository.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/locale/locale_request_guard.dart';
+import '../../../core/navigation/route_settle.dart';
 import '../../../core/network/api_exception.dart';
 
-class InstructorCoursesController extends GetxController with InitialLoadState {
+class InstructorCoursesController extends GetxController with InitialLoadState, SettledLoad {
   final InstructorRepository _repository = Get.find();
 
   final isLoading = true.obs;
@@ -35,7 +36,8 @@ class InstructorCoursesController extends GetxController with InitialLoadState {
       _restore(cached.value);
       if (cached.isFresh()) return;
     }
-    loadCourses();
+    // الهيكل (أو ما في الذاكرة) يظهر أثناء حركة الفتح، والطلب بعدها.
+    afterRouteSettles(loadCourses);
   }
 
   String get _cacheKey => MemoryCache.key('instructor-courses', [instructorId]);

@@ -19,7 +19,7 @@ import '../../../core/utils/auth_guard.dart';
 import '../../profile/controllers/my_courses_controller.dart';
 import '../../../core/utils/app_toast.dart';
 
-class CourseDetailsController extends GetxController {
+class CourseDetailsController extends GetxController with SettledLoad {
   /// صفحات تفاصيل الدورات المفتوحة الآن — لكلٍّ متحكّمها بوسمٍ خاص، فلا يصلح Get.find بدون وسم.
   static final Set<CourseDetailsController> _open = {};
   static List<CourseDetailsController> get open => List.of(_open);
@@ -70,7 +70,7 @@ class CourseDetailsController extends GetxController {
     }
     if (_tokenStorage.isLoggedIn) {
       // مع مدة الصلاحية (دقيقتان) بدل فرض المزامنة عند كل فتح لصفحة دورة — وبعد حركة الفتح.
-      _afterOpening(() => unawaited(_favoritesService.syncFromApi()));
+      afterRouteSettles(() => unawaited(_favoritesService.syncFromApi()));
     }
   }
 
@@ -84,7 +84,7 @@ class CourseDetailsController extends GetxController {
     final cached = id > 0 ? MemoryCache.get<_CourseSnapshot>(MemoryCache.key('course-details', [id])) : null;
     if (cached == null) {
       if (!hadSeed && id > 0) isLoading.value = true;
-      _afterOpening(() => _loadDetails(id, hadSeed: hadSeed));
+      afterRouteSettles(() => _loadDetails(id, hadSeed: hadSeed));
       return;
     }
     final s = cached.value;
@@ -95,16 +95,11 @@ class CourseDetailsController extends GetxController {
     reviews.assignAll(s.reviews);
     if (cached.isFresh(_detailsTtl)) {
       // حالة التسجيل والتقييم الخاصان بالمستخدم يُجلبان دائماً.
-      _afterOpening(() => unawaited(_loadSecondaryData(id)));
+      afterRouteSettles(() => unawaited(_loadSecondaryData(id)));
     } else {
-      _afterOpening(() => _loadDetails(id, hadSeed: true));
+      afterRouteSettles(() => _loadDetails(id, hadSeed: true));
     }
   }
-
-  /// بعد حركة فتح الصفحة، وليس إن أُغلقت قبلها.
-  void _afterOpening(void Function() work) => RouteSettle.run(() {
-    if (!isClosed) work();
-  });
 
   static const Duration _detailsTtl = Duration(minutes: 2);
 
@@ -208,7 +203,8 @@ class CourseDetailsController extends GetxController {
       isLoading.value = false;
     }
 
-    unawaited(_loadSecondaryData(id));
+    // صفحة أُغلقت أثناء الطلب: لا نبدأ طلبَي التسجيل والتقييم لها.
+    if (!isClosed) unawaited(_loadSecondaryData(id));
   }
 
   Future<void> _loadSecondaryData(int id) async {

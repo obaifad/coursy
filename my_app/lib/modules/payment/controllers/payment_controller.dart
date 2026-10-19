@@ -7,11 +7,12 @@ import 'package:get/get.dart';
 import '../../../core/data/repositories/payment_repository.dart';
 import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/navigation/route_settle.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/session/session_refresh.dart';
 import '../../../core/utils/app_toast.dart';
 
-class PaymentController extends GetxController with InitialLoadState {
+class PaymentController extends GetxController with InitialLoadState, SettledLoad {
   /// [enrollmentId] اختياري للاختبارات؛ في التطبيق يأتي رقم التسجيل (أو التسجيل نفسه) من arguments.
   PaymentController({int? enrollmentId}) : _forcedEnrollmentId = enrollmentId;
 
@@ -47,7 +48,7 @@ class PaymentController extends GetxController with InitialLoadState {
     } else {
       enrollmentId = arg is int ? arg : int.tryParse('$arg') ?? 0;
     }
-    load();
+    afterRouteSettles(load);
   }
 
   @override

@@ -8,7 +8,7 @@ import '../../../core/models/app_models.dart';
 import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/network/api_exception.dart';
 
-class CategoryCoursesController extends GetxController with InitialLoadState {
+class CategoryCoursesController extends GetxController with InitialLoadState, SettledLoad {
   final CourseRepository _repository = Get.find();
 
   final isLoading = true.obs;
@@ -44,7 +44,7 @@ class CategoryCoursesController extends GetxController with InitialLoadState {
       if (cached.isFresh()) return;
     }
     // الهيكل يظهر أثناء حركة الفتح، والبيانات تُجلب بعدها: لا يتبدّل المحتوى والصفحة تتحرك.
-    RouteSettle.run(loadCourses);
+    afterRouteSettles(loadCourses);
   }
 
   String get _cacheKey => MemoryCache.key('category-courses', [categoryId]);

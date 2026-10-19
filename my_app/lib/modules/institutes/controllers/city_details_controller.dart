@@ -4,9 +4,10 @@ import '../../../core/cache/memory_cache.dart';
 import '../../../core/models/json_helpers.dart';
 import '../../../core/data/repositories/city_repository.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/navigation/route_settle.dart';
 import '../../../core/network/api_exception.dart';
 
-class CityDetailsController extends GetxController {
+class CityDetailsController extends GetxController with SettledLoad {
   final CityRepository _cityRepository = Get.find();
 
   final isLoading = true.obs;
@@ -56,7 +57,7 @@ class CityDetailsController extends GetxController {
       isLoading.value = false;
       if (cached.isFresh()) return;
     }
-    load();
+    afterRouteSettles(load);
   }
 
   String get _cityKey => MemoryCache.key('city', [cityId]);

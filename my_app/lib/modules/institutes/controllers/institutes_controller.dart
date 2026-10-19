@@ -110,7 +110,7 @@ class InstitutesController extends GetxController with LatestLoadGuard, InitialL
   }
 }
 
-class InstituteDetailsController extends GetxController {
+class InstituteDetailsController extends GetxController with SettledLoad {
   /// صفحات تفاصيل المعاهد المفتوحة الآن — لكلٍّ متحكّمها بوسمٍ خاص، فلا يصلح Get.find بدون وسم.
   static final Set<InstituteDetailsController> _open = {};
   static List<InstituteDetailsController> get open => List.of(_open);
@@ -147,9 +147,7 @@ class InstituteDetailsController extends GetxController {
     final cached = _restoreFromCache();
     if (cached != null && cached.isFresh()) return;
     // الطلبات بعد حركة الفتح: ردّ أثناء الحركة كان يعيد بناء الصفحة وهي تتحرك.
-    RouteSettle.run(() {
-      if (!isClosed) loadDetails();
-    });
+    afterRouteSettles(loadDetails);
   }
 
   String get _cacheKey => MemoryCache.key('institute-details', [instituteId]);
