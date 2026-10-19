@@ -87,14 +87,15 @@ class InstructorCoursesController extends GetxController with InitialLoadState, 
     }
     isLoading.value = isInitialLoad;
     errorMessage.value = null;
-    _page = 1;
     try {
       final result = await _repository.fetchInstructorCoursesPage(
         instructorId: instructorId,
-        page: _page,
+        page: 1,
         perPage: _perPage,
       );
       courses.assignAll(result.items);
+      // بعد النجاح فقط: تصفيره قبل الطلب كان يجعل «المزيد» بعد تحديث فاشل يكرّر الصفحة الثانية.
+      _page = 1;
       hasMore.value = result.hasMore;
       totalCourses.value = result.total;
       markLoaded();

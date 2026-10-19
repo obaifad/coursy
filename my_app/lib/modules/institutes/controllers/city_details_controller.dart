@@ -74,9 +74,8 @@ class CityDetailsController extends GetxController with SettledLoad {
   Future<void> load() async {
     if (!_hasCityName && institutes.isEmpty) isLoading.value = true;
     errorMessage.value = null;
-    _page = 1;
     try {
-      await Future.wait<void>([_fetchCityIfNeeded(), _fetchInstitutesPage()]);
+      await Future.wait<void>([_fetchCityIfNeeded(), _fetchFirstInstitutesPage()]);
       _remember();
     } catch (e) {
       if (institutes.isEmpty) errorMessage.value = userErrorMessage(e);
@@ -94,9 +93,11 @@ class CityDetailsController extends GetxController with SettledLoad {
     } catch (_) {}
   }
 
-  Future<void> _fetchInstitutesPage() async {
-    final result = await _cityRepository.fetchInstitutesByCity(cityId, page: _page, perPage: _perPage);
+  Future<void> _fetchFirstInstitutesPage() async {
+    final result = await _cityRepository.fetchInstitutesByCity(cityId, page: 1, perPage: _perPage);
     institutes.assignAll(result.items);
+    // بعد النجاح فقط: تصفيره قبل الطلب كان يجعل «المزيد» بعد تحديث فاشل يكرّر الصفحة الثانية.
+    _page = 1;
     hasMore.value = result.hasMore;
   }
 

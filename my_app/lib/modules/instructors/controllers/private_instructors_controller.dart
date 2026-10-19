@@ -87,7 +87,7 @@ class PrivateInstructorsController extends GetxController with LatestLoadGuard, 
     } on ApiCancelledException {
       return;
     } catch (_) {
-      if (shouldApply(session)) subjects.clear();
+      // تحديث فاشل يُبقي المرشّحات المعروضة؛ بلا مرشّحات يبقى الشريط فارغاً كما كان.
     } finally {
       applyIfCurrent(session, () => isLoadingFilters.value = false);
     }
@@ -111,10 +111,9 @@ class PrivateInstructorsController extends GetxController with LatestLoadGuard, 
     final session = beginLoad();
     isLoading.value = isInitialLoad;
     errorMessage.value = null;
-    _page = 1;
     try {
       final result = await _repository.fetchInstructorsPage(
-        page: _page,
+        page: 1,
         perPage: _perPage,
         isPrivate: true,
         subjectKey: _selectedSpecializationId == null ? selectedSubjectKey.value : null,
@@ -122,22 +121,18 @@ class PrivateInstructorsController extends GetxController with LatestLoadGuard, 
       );
       applyIfCurrent(session, () {
         instructors.assignAll(result.items);
+        _page = 1;
         hasMore.value = result.hasMore;
         markLoaded();
         _remember();
       });
     } on ApiCancelledException {
       return;
-    } on ApiException catch (e) {
-      if (shouldApply(session)) {
-        errorMessage.value = e.message;
-        instructors.clear();
-        hasMore.value = false;
-      }
-    } catch (_) {
-      if (shouldApply(session)) {
-        errorMessage.value = 'private_instructors_load_failed'.tr;
-        instructors.clear();
+    } catch (e) {
+      // تحديث فاشل يُبقي القائمة المعروضة (كانت تُمسح وتحلّ محلها رسالة الخطأ)؛ بلا قائمة: الخطأ مع
+      // «إعادة المحاولة».
+      if (shouldApply(session) && instructors.isEmpty) {
+        errorMessage.value = e is ApiException ? e.message : 'private_instructors_load_failed'.tr;
         hasMore.value = false;
       }
     } finally {

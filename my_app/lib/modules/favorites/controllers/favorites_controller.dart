@@ -83,7 +83,8 @@ class FavoritesController extends GetxController with InitialLoadState, SettledL
       return;
     }
 
-    final known = refreshAll ? <int, CourseModel>{} : {for (final c in courses) c.id: c};
+    final shown = {for (final c in courses) c.id: c};
+    final known = refreshAll ? <int, CourseModel>{} : shown;
     final missing = ids.where((id) => !known.containsKey(id)).toList();
     final fetched = <int, CourseModel>{};
     for (var i = 0; i < missing.length; i += _parallelFetches) {
@@ -110,9 +111,10 @@ class FavoritesController extends GetxController with InitialLoadState, SettledL
     }
 
     final current = _favoritesService.allCourseIds;
+    // دورة فشل تحديثها (شبكة متقطعة) تبقى بآخر بيانات معروضة بدل أن تختفي من المفضلة.
     courses.assignAll([
       for (final id in current)
-        if (known[id] ?? fetched[id] case final course?) course,
+        if (known[id] ?? fetched[id] ?? shown[id] case final course?) course,
     ]);
   }
 
