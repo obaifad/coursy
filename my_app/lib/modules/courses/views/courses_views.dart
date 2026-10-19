@@ -70,14 +70,17 @@ class _CoursesScrollViewState extends State<_CoursesScrollView> {
               child: AppPinnedBar(
                 scrollController: c.scrollController,
                 pinOffset: _pinOffset,
+                // الصف 48 (مساحة لمس زر الترتيب) بدل 44: حشوة أقل بـ 2 فوقه وتحته فيبقى الشريط والتصنيفات في مكانها.
+                padding: const EdgeInsets.only(top: 6, bottom: 8),
                 child: Obx(
                   () => Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // الترتيب أول عنصر في الصف: عند حافة البداية (يمين بالعربية، يسار بالإنجليزية) قبل
                       // التصنيفات، بلا عنوان «التصنيف» ولا صف مستقل. الصف يتبع Directionality فلا يُعكس يدوياً.
+                      // مساحة اللمس (48) أوسع من المربع المرئي (44) بـ 2 من كل جهة: الحشوة أقل بـ 2 فيبقى مكانه.
                       Padding(
-                        padding: EdgeInsetsDirectional.only(start: hPad, end: 8),
+                        padding: EdgeInsetsDirectional.only(start: hPad - 2, end: 6),
                         child: CourseSortButton(selected: c.selectedSort.value, onSelected: c.selectSort),
                       ),
                       Expanded(

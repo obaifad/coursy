@@ -140,6 +140,9 @@ class AppSegmentedTabBar extends StatelessWidget {
   /// أقل عرض لتبويب لا نعرف نصّه (ليس Tab(text:)) في وضع التوزيع المتساوي قبل التحوّل للتمرير.
   static const double _minTabExtent = 84;
 
+  /// ارتفاع التبويب = أقل مساحة لمس في إرشادات Android.
+  static const double _tabHeight = 48;
+
   /// هامش حول النص داخل خلية التبويب (يشمل حشوة المؤشر) — كي لا يلامس النص حافة الكبسولة البيضاء.
   static const double _labelGutter = 16;
 
@@ -200,7 +203,22 @@ class AppSegmentedTabBar extends StatelessWidget {
               unselectedLabelColor: AppColors.textSecondary,
               labelStyle: _labelStyle,
               unselectedLabelStyle: _labelStyle,
-              tabs: tabs,
+              // التبويب 48 (مساحة اللمس الدنيا) بدل 46 + سماكة مؤشر 2: الشريط يبقى 48 والكبسولة كما هي، فالمؤشر
+              // هنا BoxDecoration يُرسم بارتفاع الشريط كله ولا يستعمل السماكة.
+              indicatorWeight: 0,
+              tabs: [
+                for (final tab in tabs)
+                  tab is Tab && tab.height == null
+                      ? Tab(
+                          key: tab.key,
+                          text: tab.text,
+                          icon: tab.icon,
+                          iconMargin: tab.iconMargin,
+                          height: _tabHeight,
+                          child: tab.child,
+                        )
+                      : tab,
+              ],
             );
           },
         ),
@@ -219,12 +237,15 @@ class AppTabBarSection extends StatelessWidget {
 
   static const double sectionHeight = 60;
 
+  /// حول الشريط داخل القسم: يترك له 48 (مساحة اللمس الدنيا للتبويب)؛ كان 6/8 فيبقى 46.
+  static const EdgeInsets padding = EdgeInsets.fromLTRB(12, 5, 12, 7);
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: sectionHeight,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+        padding: padding,
         child: AppSegmentedTabBar(controller: controller, isScrollable: isScrollable, tabs: tabs),
       ),
     );

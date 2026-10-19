@@ -20,6 +20,10 @@ class CourseAuroraCard extends StatefulWidget {
 }
 
 class _CourseAuroraCardState extends State<CourseAuroraCard> {
+  /// قطر دائرة المفضلة، والفرق بينها وبين مساحة لمسها من كل جهة.
+  static const _favoriteDiameter = 32.0;
+  static const _favoriteRing = (CourseFavoriteButton.tapTarget - _favoriteDiameter) / 2;
+
   /// موضع اللمس داخل البطاقة (-1..1 على كل محور)؛ يبقى بعد الرفع كي يتلاشى اللمعان من مكانه.
   Offset _touch = Offset.zero;
   bool _pressed = false;
@@ -140,11 +144,11 @@ class _CourseAuroraCardState extends State<CourseAuroraCard> {
                         ),
                       ),
                     ),
-                    // مساحة لمس المفضلة 44 حول دائرة 32: الصف يبدأ قبل الحافة بـ 6 كي تبعد الدائرة 10.
+                    // مساحة لمس المفضلة حول دائرتها: الصف يبدأ قبل الحافة بفرق نصف القطرين كي تبعد الدائرة 10.
                     PositionedDirectional(
-                      top: CourseAuroraSpec.topInset - 6,
+                      top: CourseAuroraSpec.topInset - _favoriteRing,
                       start: CourseAuroraSpec.topInset,
-                      end: CourseAuroraSpec.topInset - 6,
+                      end: CourseAuroraSpec.topInset - _favoriteRing,
                       child: _AuroraTopRow(course: course, onFavoritePressed: widget.onFavoritePressed),
                     ),
                   ],
@@ -257,8 +261,14 @@ class _AuroraTopRow extends StatelessWidget {
         Flexible(
           child: IgnorePointer(child: _AuroraPricePill(course: course)),
         ),
-        const SizedBox(width: 4),
-        CourseFavoriteButton(courseId: course.id, diameter: 32, dark: true, onPressed: onFavoritePressed),
+        // 4 بين السعر ومساحة لمس 44 سابقاً؛ مساحة اللمس الآن أعرض بـ 2 من كل جهة.
+        const SizedBox(width: 2),
+        CourseFavoriteButton(
+          courseId: course.id,
+          diameter: _CourseAuroraCardState._favoriteDiameter,
+          dark: true,
+          onPressed: onFavoritePressed,
+        ),
       ],
     );
   }

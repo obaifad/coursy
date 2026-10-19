@@ -258,7 +258,8 @@ SliverAppBar _buildCourseHeroSliver({
     actions: [
       // نفس زر بطاقات الدورات (دائرة زجاجية + نبضة)، بتمويه حقيقي هنا فوق صورة الغلاف.
       CourseFavoriteButton(courseId: item.id, diameter: 38, blurBackground: true),
-      const SizedBox(width: 6),
+      // مساحة اللمس 48 حول دائرة 38: الفراغ 4 يُبقي الدائرة في مكانها.
+      const SizedBox(width: 4),
     ],
     flexibleSpace: FlexibleSpaceBar(
       background: Stack(
@@ -356,7 +357,7 @@ class _CourseTabBarHeaderDelegate extends SliverPersistentHeaderDelegate {
       child: SizedBox(
         height: AppTabBarSection.sectionHeight,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+          padding: AppTabBarSection.padding,
           child: AppSegmentedTabBar(
             controller: tabController,
             tabs: [

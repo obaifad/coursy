@@ -220,8 +220,8 @@ class _TicketImage extends StatelessWidget {
   final bool compact;
   final Widget? favorite;
 
-  /// مساحة اللمس (44) تبدأ قبل الدائرة بـ 5؛ فتبعد الدائرة عن حافة الصورة كما تبعد الشارة (8).
-  static const _favoriteInset = 2.0;
+  /// مساحة اللمس (48) تبدأ من زاوية الصورة والدائرة في وسطها: تبعد عن الحافة كما تبعد الشارة.
+  static const _favoriteInset = 0.0;
 
   @override
   Widget build(BuildContext context) {

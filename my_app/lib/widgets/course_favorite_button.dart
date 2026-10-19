@@ -38,7 +38,8 @@ class CourseFavoriteButton extends StatefulWidget {
   /// بديل للتبديل الافتراضي (شاشة المفضلة: إزالة مع تلاشٍ وتراجع).
   final Future<void> Function()? onPressed;
 
-  static const tapTarget = 44.0;
+  /// مساحة اللمس (أقل حد في إرشادات Android) مهما صغرت الدائرة.
+  static const tapTarget = 48.0;
 
   @override
   State<CourseFavoriteButton> createState() => _CourseFavoriteButtonState();

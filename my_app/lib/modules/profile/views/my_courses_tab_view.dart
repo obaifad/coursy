@@ -377,12 +377,14 @@ class _BookingActions extends StatelessWidget {
   final bool canCancel;
   final VoidCallback onCancel;
 
+  /// ارتفاع الأزرار المرئي؛ مساحة اللمس 48 (tapTargetSize.padded). كان SizedBox(44) يحصر اللمس في 44.
   static const double _height = 44;
 
   ButtonStyle _outlined(Color color) => OutlinedButton.styleFrom(
     foregroundColor: color,
     side: BorderSide(color: color.withValues(alpha: 0.4)),
     minimumSize: const Size(0, _height),
+    tapTargetSize: MaterialTapTargetSize.padded,
     padding: const EdgeInsets.symmetric(horizontal: 12),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
   );
@@ -401,20 +403,19 @@ class _BookingActions extends StatelessWidget {
       children: [
         if (canPay)
           Expanded(
-            child: SizedBox(
-              height: _height,
-              child: ElevatedButton.icon(
-                onPressed: () => Get.toNamed(AppRoutes.payment, arguments: enrollment),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryStrong,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
-                ),
-                icon: const Icon(Icons.account_balance_wallet_rounded, size: 18),
-                label: fitted('payment_pay_now'.tr),
+            child: ElevatedButton.icon(
+              onPressed: () => Get.toNamed(AppRoutes.payment, arguments: enrollment),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryStrong,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                minimumSize: const Size(0, _height),
+                tapTargetSize: MaterialTapTargetSize.padded,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
               ),
+              icon: const Icon(Icons.account_balance_wallet_rounded, size: 18),
+              label: fitted('payment_pay_now'.tr),
             ),
           ),
         if (canPay && canCancel) const SizedBox(width: 8),
@@ -437,14 +438,11 @@ class _BookingActions extends StatelessWidget {
               );
             }
             return Expanded(
-              child: SizedBox(
-                height: _height,
-                child: OutlinedButton.icon(
-                  onPressed: cancelling ? null : onCancel,
-                  style: _outlined(AppColors.danger),
-                  icon: loader ?? const Icon(Icons.close_rounded, size: 18),
-                  label: fitted('cancel_booking'.tr),
-                ),
+              child: OutlinedButton.icon(
+                onPressed: cancelling ? null : onCancel,
+                style: _outlined(AppColors.danger),
+                icon: loader ?? const Icon(Icons.close_rounded, size: 18),
+                label: fitted('cancel_booking'.tr),
               ),
             );
           }),

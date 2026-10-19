@@ -527,23 +527,28 @@ class _GoButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: 'book_now'.tr,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [BoxShadow(color: Color(0x595B52F0), blurRadius: 12, offset: Offset(0, 6))],
-        ),
-        child: Material(
-          color: AppColors.primaryStrong,
-          shape: const CircleBorder(),
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: onTap,
-            // arrow_forward ينعكس تلقائياً في العربية فيشير لليسار.
-            child: const SizedBox.square(
-              dimension: 44,
-              child: Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 22),
+    // الدائرة المرئية 44 ومساحة اللمس 48.
+    return AppTapTarget(
+      label: 'book_now'.tr,
+      onTap: onTap,
+      child: Tooltip(
+        message: 'book_now'.tr,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [BoxShadow(color: Color(0x595B52F0), blurRadius: 12, offset: Offset(0, 6))],
+          ),
+          child: Material(
+            color: AppColors.primaryStrong,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onTap,
+              // arrow_forward ينعكس تلقائياً في العربية فيشير لليسار.
+              child: const SizedBox.square(
+                dimension: 44,
+                child: Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 22),
+              ),
             ),
           ),
         ),
@@ -566,33 +571,44 @@ class _PillIndicator extends StatelessWidget {
   static const _pill = 22.0;
   static const _pitch = _dot + _gap;
 
+  /// حول كل نقطة: مساحة اللمس 24×24 حولها (8 من كل جهة).
+  static const _touchInset = 8.0;
+
+  /// الارتفاع الكلي (النقاط + 4 فوقها وتحتها) — كما كان.
+  static const _height = _dot + 8;
+
   @override
   Widget build(BuildContext context) {
     final width = count * _dot + (count - 1) * _gap;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: SizedBox(
-        width: width,
-        height: _dot,
-        child: ValueListenableBuilder<int>(
-          valueListenable: index,
-          builder: (context, current, _) => Stack(
-            clipBehavior: Clip.none,
-            children: [
-              for (var i = 0; i < count; i++)
-                PositionedDirectional(
-                  key: ValueKey('carousel-dot-$i'),
-                  start: i * _pitch - 8,
-                  top: -8,
-                  child: Semantics(
-                    button: true,
-                    selected: i == current,
-                    label: '${i + 1} / $count',
+    // الصندوق يشمل مساحات اللمس كلها: كانت النقاط داخل صندوق بارتفاع 8 والمساحة حولها خارجه، فلا يصلها
+    // اللمس (Flutter يختبر اللمس داخل حدود الأب فقط) — عملياً 8px فقط. نفس المكان والشكل.
+    // قارئ الشاشة: عنصر واحد قابل للضبط (اسحب للأعلى/للأسفل) بدل ثلاث نقاط صغيرة.
+    return ValueListenableBuilder<int>(
+      valueListenable: index,
+      builder: (context, current, _) => Semantics(
+        container: true,
+        value: '${current + 1} / $count',
+        increasedValue: current + 1 < count ? '${current + 2} / $count' : null,
+        decreasedValue: current > 0 ? '$current / $count' : null,
+        onIncrease: current + 1 < count ? () => onSelect(current + 1) : null,
+        onDecrease: current > 0 ? () => onSelect(current - 1) : null,
+        child: ExcludeSemantics(
+          child: SizedBox(
+            width: width + 2 * _touchInset,
+            height: _height,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                for (var i = 0; i < count; i++)
+                  PositionedDirectional(
+                    key: ValueKey('carousel-dot-$i'),
+                    start: i * _pitch,
+                    top: (_height - _dot) / 2 - _touchInset,
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () => onSelect(i),
                       child: const Padding(
-                        padding: EdgeInsets.all(8),
+                        padding: EdgeInsets.all(_touchInset),
                         child: DecoratedBox(
                           decoration: BoxDecoration(color: Color(0x2E111827), shape: BoxShape.circle),
                           child: SizedBox.square(dimension: _dot),
@@ -600,25 +616,25 @@ class _PillIndicator extends StatelessWidget {
                       ),
                     ),
                   ),
-                ),
-              AnimatedPositionedDirectional(
-                key: const ValueKey('carousel-pill'),
-                duration: const Duration(milliseconds: 400),
-                curve: const Cubic(0.34, 1.3, 0.5, 1),
-                start: current * _pitch - (_pill - _dot) / 2,
-                top: 0,
-                width: _pill,
-                height: _dot,
-                child: IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryStrong,
-                      borderRadius: BorderRadius.circular(AppRadius.full),
+                AnimatedPositionedDirectional(
+                  key: const ValueKey('carousel-pill'),
+                  duration: const Duration(milliseconds: 400),
+                  curve: const Cubic(0.34, 1.3, 0.5, 1),
+                  start: _touchInset + current * _pitch - (_pill - _dot) / 2,
+                  top: (_height - _dot) / 2,
+                  width: _pill,
+                  height: _dot,
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryStrong,
+                        borderRadius: BorderRadius.circular(AppRadius.full),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

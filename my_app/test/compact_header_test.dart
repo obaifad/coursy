@@ -112,6 +112,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
     }
 
+    // المربع المرئي (44) داخل مساحة اللمس (48).
+    Rect sortSquare(WidgetTester tester) =>
+        tester.getRect(find.descendant(of: find.byType(CourseSortButton), matching: find.byType(Material)).first);
+
     testWidgets('no «category» label and no separate sort row; sort is one icon in the chips row', (tester) async {
       await openCourses(tester);
       expect(find.text('filter_categories'.tr), findsNothing);
@@ -120,9 +124,10 @@ void main() {
       expect(find.byType(CourseSortButton), findsOneWidget);
 
       final chips = tester.getRect(find.byType(HorizontalCategoryFilters));
-      final sort = tester.getRect(find.byType(CourseSortButton));
+      final sort = sortSquare(tester);
       expect((chips.center.dy - sort.center.dy).abs(), lessThan(2), reason: 'same row');
       expect(sort.width, 44);
+      expect(tester.getSize(find.byType(CourseSortButton)), const Size(48, 48), reason: 'touch area');
       // الزر أول الصف عند حافة البداية (يمين بالعربية) وقبل التصنيفات، بهامش الصفحة، بلا تداخل معها.
       expect(sort.right, 360 - 16, reason: 'rests on the right gutter in Arabic');
       expect(chips.right, lessThanOrEqualTo(sort.left), reason: 'the chips start after the button');
@@ -134,7 +139,7 @@ void main() {
       Get.put(CoursesController());
       await pump(tester, const CoursesView(), locale: 'en');
       final chips = tester.getRect(find.byType(HorizontalCategoryFilters));
-      final sort = tester.getRect(find.byType(CourseSortButton));
+      final sort = sortSquare(tester);
       expect(sort.left, 16);
       expect(chips.left, greaterThanOrEqualTo(sort.right));
     });

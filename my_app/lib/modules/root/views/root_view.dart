@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_system_ui.dart';
+import '../../../widgets/app_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../../courses/views/courses_views.dart';
 import '../../home/views/home_view.dart';
@@ -239,14 +240,11 @@ class _CenterNavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // onTap هنا لأن excludeSemantics يُسقط نقر InkWell — وإلا يُقرأ «زر» ولا يُفعَّل من TalkBack.
-    return Semantics(
-      container: true,
-      button: true,
-      selected: selected,
+    // الدائرة 46 ومساحة اللمس 48؛ AppTapTarget يعطي قارئ الشاشة اسمها وحالتها ونقرها (عنصر واحد).
+    return AppTapTarget(
       label: label,
+      selected: selected,
       onTap: onTap,
-      excludeSemantics: true,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
