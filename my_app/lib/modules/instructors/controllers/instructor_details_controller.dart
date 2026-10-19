@@ -96,6 +96,11 @@ class InstructorDetailsController extends GetxController with SettledLoad {
   }
 
   void _readArguments(dynamic arg) {
+    // من إشعار: المعرّف وحده (كان يُعامل كـ 0 فتفتح صفحة فارغة).
+    if (arg is int) {
+      instructorId = arg;
+      return;
+    }
     if (arg is InstructorModel) {
       instructorId = arg.id;
       instructor.value = arg;
