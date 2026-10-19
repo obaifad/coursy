@@ -41,6 +41,13 @@ class FeaturedCourseCarousel extends StatefulWidget {
   static const _sideScale = 0.92;
   static const _sideOpacity = 0.55;
 
+  /// الفراغ تحت الشرائح ومؤشرها قبل عنوان القسم التالي. كان 22 كغيره من الأقسام، ومع هامش المؤشر وأعلى
+  /// العنوان صار ~37 بين النقاط و«التصنيفات» — المؤشر نفسه فاصل.
+  static const double gapBelow = 8;
+
+  /// الفراغ تحت بطاقة البانر (الزائر أو الافتراضية) — كباقي الأقسام.
+  static const double gapBelowCard = 22;
+
   @override
   State<FeaturedCourseCarousel> createState() => _FeaturedCourseCarouselState();
 }

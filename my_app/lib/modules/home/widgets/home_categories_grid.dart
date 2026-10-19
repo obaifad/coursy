@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' show PathMetric;
 
 import 'package:flutter/material.dart';
@@ -25,6 +26,10 @@ class HomeCategoriesGrid extends StatelessWidget {
 
   static const int columns = 4;
   static const int _slots = 8;
+  static const double _gap = 8;
+
+  /// أقصى أسطر لاسم التصنيف.
+  static const int maxNameLines = 2;
 
   @override
   Widget build(BuildContext context) {
@@ -33,27 +38,55 @@ class HomeCategoriesGrid extends StatelessWidget {
     final shown = sorted.take(hasMore ? _slots - 1 : _slots).toList();
     final remaining = sorted.length - shown.length;
 
-    final tiles = <Widget>[
-      for (final category in shown)
-        _CategoryGridTile(category: category, colors: _pastelFor(category), onTap: () => onOpenCategory(category)),
-      if (hasMore) _AllCategoriesTile(remaining: remaining, onTap: onShowAll),
-    ];
+    final names = [for (final category in shown) category.name, if (hasMore) 'all_categories'.tr];
 
-    return Column(
-      children: [
-        for (var row = 0; row * columns < tiles.length; row++) ...[
-          if (row > 0) const SizedBox(height: 14),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (var col = 0; col < columns; col++) ...[
-                if (col > 0) const SizedBox(width: 8),
-                Expanded(child: row * columns + col < tiles.length ? tiles[row * columns + col] : const SizedBox()),
-              ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // الاسم يلتف على سطرين بحجمه الكامل (كان سطراً واحداً يصغر حتى يصعب قراءته). كل صف يحجز عدد أسطر
+        // أطول أسمائه، فتبقى الأسماء والأعداد تحتها على خط واحد في الصف — وصفّ الأسماء القصيرة يبقى بسطر.
+        final column = (constraints.maxWidth - _gap * (columns - 1)) / columns;
+        final metrics = _NameMetrics(context, column);
+        Widget tile(int i, int lines) => i < shown.length
+            ? _CategoryGridTile(
+                category: shown[i],
+                colors: _pastelFor(shown[i]),
+                nameLines: lines,
+                nameLineHeight: metrics.lineHeight,
+                nameFontScale: metrics.fontScaleOf(names[i]),
+                onTap: () => onOpenCategory(shown[i]),
+              )
+            : _AllCategoriesTile(
+                remaining: remaining,
+                nameLines: lines,
+                nameLineHeight: metrics.lineHeight,
+                nameFontScale: metrics.fontScaleOf(names[i]),
+                onTap: onShowAll,
+              );
+
+        return Column(
+          children: [
+            for (var row = 0; row * columns < names.length; row++) ...[
+              if (row > 0) const SizedBox(height: 14),
+              Builder(
+                builder: (context) {
+                  final start = row * columns;
+                  final end = (start + columns).clamp(0, names.length);
+                  final lines = [for (var i = start; i < end; i++) metrics.linesOf(names[i])].reduce(math.max);
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (var col = 0; col < columns; col++) ...[
+                        if (col > 0) const SizedBox(width: _gap),
+                        Expanded(child: start + col < end ? tile(start + col, lines) : const SizedBox()),
+                      ],
+                    ],
+                  );
+                },
+              ),
             ],
-          ),
-        ],
-      ],
+          ],
+        );
+      },
     );
   }
 }
@@ -93,11 +126,79 @@ const double _boxRadius = AppRadius.md;
 
 double _boxSize(double width) => (width * 0.8).clamp(52.0, 72.0);
 
+/// خط اسم التصنيف (و«كل التصنيفات» بلونها).
+TextStyle _nameStyle(Color color) =>
+    AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm, color: color);
+
+/// قياس أسماء التصنيفات بعرض العمود وحجم الخط في الجهاز.
+class _NameMetrics {
+  _NameMetrics(BuildContext context, this.width)
+    : _scaler = MediaQuery.textScalerOf(context),
+      _direction = Directionality.of(context),
+      // كما يرسمه Text: الخط الموروث (تباعد الأحرف…) مدموجاً بخط الاسم.
+      _style = DefaultTextStyle.of(context).style.merge(_nameStyle(AppColors.textPrimary)) {
+    final probe = _painter(' ')..layout();
+    lineHeight = probe.height;
+    probe.dispose();
+  }
+
+  final double width;
+  final TextScaler _scaler;
+  final TextDirection _direction;
+  final TextStyle _style;
+  late final double lineHeight;
+
+  TextPainter _painter(String text, {double fontScale = 1}) {
+    return TextPainter(
+      text: TextSpan(
+        text: text,
+        style: _style.copyWith(fontSize: _style.fontSize! * fontScale),
+      ),
+      textDirection: _direction,
+      textAlign: TextAlign.center,
+      textScaler: _scaler,
+      maxLines: HomeCategoriesGrid.maxNameLines,
+    );
+  }
+
+  /// تصغير الخط فقط حين لا تتّسع أطول كلمة في العمود (مثل «Programming»)، وبقدرها — وإلا انكسرت الكلمة
+  /// في منتصفها. الأسماء الأخرى بحجمها الكامل.
+  double fontScaleOf(String text) {
+    var widest = 0.0;
+    for (final word in text.split(RegExp(r'\s+')).where((w) => w.isNotEmpty)) {
+      final painter = _painter(word)..layout();
+      widest = math.max(widest, painter.width);
+      painter.dispose();
+    }
+    // هامش 4%: تباعد الأحرف لا يصغر مع الخط، وتقريب البكسلات على الجهاز قد يزيد العرض قليلاً.
+    return widest <= width ? 1 : width / widest * 0.96;
+  }
+
+  int linesOf(String text) {
+    final painter = _painter(text, fontScale: fontScaleOf(text))..layout(maxWidth: width);
+    final lines = painter.computeLineMetrics().length;
+    painter.dispose();
+    return lines.clamp(1, HomeCategoriesGrid.maxNameLines);
+  }
+}
+
 class _CategoryGridTile extends StatelessWidget {
-  const _CategoryGridTile({required this.category, required this.colors, required this.onTap});
+  const _CategoryGridTile({
+    required this.category,
+    required this.colors,
+    required this.nameLines,
+    required this.nameLineHeight,
+    required this.nameFontScale,
+    required this.onTap,
+  });
 
   final CategoryModel category;
   final _Pastel colors;
+
+  /// أسطر الاسم المحجوزة (أطول اسم في الصف) — لتتحاذى الأعداد في الصف.
+  final int nameLines;
+  final double nameLineHeight;
+  final double nameFontScale;
   final VoidCallback onTap;
 
   @override
@@ -123,13 +224,12 @@ class _CategoryGridTile extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          _TileLabel(
+          _TileName(
             text: category.name,
-            style: AppFonts.tajawal(
-              fontWeight: FontWeight.w700,
-              fontSize: AppTextSize.sm,
-              color: AppColors.textPrimary,
-            ),
+            lines: nameLines,
+            lineHeight: nameLineHeight,
+            fontScale: nameFontScale,
+            style: _nameStyle(AppColors.textPrimary),
           ),
           const SizedBox(height: 2),
           _TileLabel(
@@ -143,9 +243,18 @@ class _CategoryGridTile extends StatelessWidget {
 }
 
 class _AllCategoriesTile extends StatelessWidget {
-  const _AllCategoriesTile({required this.remaining, required this.onTap});
+  const _AllCategoriesTile({
+    required this.remaining,
+    required this.nameLines,
+    required this.nameLineHeight,
+    required this.nameFontScale,
+    required this.onTap,
+  });
 
   final int remaining;
+  final int nameLines;
+  final double nameLineHeight;
+  final double nameFontScale;
   final VoidCallback onTap;
 
   @override
@@ -176,9 +285,12 @@ class _AllCategoriesTile extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          _TileLabel(
+          _TileName(
             text: 'all_categories'.tr,
-            style: AppFonts.tajawal(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm, color: AppColors.primaryInk),
+            lines: nameLines,
+            lineHeight: nameLineHeight,
+            fontScale: nameFontScale,
+            style: _nameStyle(AppColors.primaryInk),
           ),
           const SizedBox(height: 2),
           _TileLabel(
@@ -191,7 +303,41 @@ class _AllCategoriesTile extends StatelessWidget {
   }
 }
 
-/// سطر واحد يصغّر نفسه بدل القصّ حين يطول الاسم (مثل «الذكاء الاصطناعي» في عمود ضيق).
+/// اسم التصنيف: يلتف على [lines] سطراً بحجمه الكامل، بارتفاع ثابت للصف كله.
+class _TileName extends StatelessWidget {
+  const _TileName({
+    required this.text,
+    required this.lines,
+    required this.lineHeight,
+    required this.fontScale,
+    required this.style,
+  });
+
+  final String text;
+  final int lines;
+  final double lineHeight;
+
+  /// 1 = الحجم الكامل؛ أقل فقط إن لم تتّسع أطول كلمة.
+  final double fontScale;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: lines * lineHeight,
+      child: Text(
+        text,
+        maxLines: lines,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: fontScale < 1 ? style.copyWith(fontSize: style.fontSize! * fontScale) : style,
+      ),
+    );
+  }
+}
+
+/// سطر واحد يصغّر نفسه بدل القصّ حين يطول (عدد الدورات).
 class _TileLabel extends StatelessWidget {
   const _TileLabel({required this.text, required this.style});
 
