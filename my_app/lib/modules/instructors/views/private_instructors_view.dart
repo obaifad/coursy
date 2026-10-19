@@ -34,16 +34,16 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
               badge: count > 0 ? pluralTr('instructor_subject_count', count) : null,
               onBack: Get.back,
             ),
-            pinned: loading
-                ? null
-                : InstructorSpecializationFiltersPanel(
-                    subjects: controller.subjects.toList(growable: false),
-                    selectedKey: controller.selectedSubjectKey.value,
-                    onSelected: controller.selectSubject,
-                    isLoading: controller.isLoadingFilters.value && controller.subjects.isEmpty,
-                  ),
+            // المرشّحات تبقى ظاهرة أثناء التحميل (بهيكلها) — إخفاؤها كان يُنزل القائمة عند وصول البيانات.
+            pinned: InstructorSpecializationFiltersPanel(
+              subjects: controller.subjects.toList(growable: false),
+              selectedKey: controller.selectedSubjectKey.value,
+              onSelected: controller.selectSubject,
+              isLoading: controller.isLoadingFilters.value && controller.subjects.isEmpty,
+            ),
             slivers: loading
-                ? const [AppSliverListSkeleton(padding: EdgeInsets.fromLTRB(16, 12, 16, 24))]
+                // بطاقة المدرّس الحقيقية ببيانات وهمية وبحشوة القائمة نفسها: لا قفزة عند وصول البيانات.
+                ? [AppSliverInstructorListSkeleton(padding: AppLayout.scrollPadding(context, top: 4))]
                 : _content(context),
           );
         }),

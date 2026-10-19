@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
@@ -27,59 +28,65 @@ class InstructorCoursesView extends GetView<InstructorCoursesController> {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        body: controller.isLoading.value
-            ? const AppGridSkeleton()
-            : RefreshIndicator(
-                onRefresh: controller.loadCourses,
-                child: CustomScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(child: _InstructorHeader(controller: controller)),
-                    if (courses.isEmpty && controller.errorMessage.value != null)
-                      SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: AppLoadErrorState(
-                          message: controller.errorMessage.value!,
-                          onRetry: controller.loadCourses,
-                        ),
-                      )
-                    else if (courses.isEmpty)
-                      SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: AppEmptyState(message: 'no_courses_for_instructor'.tr, icon: Icons.menu_book_outlined),
-                      )
-                    else ...[
-                      SliverPadding(
-                        padding: EdgeInsetsDirectional.fromSTEB(
-                          AppLayout.horizontalPage(context),
-                          8,
-                          AppLayout.horizontalPage(context),
-                          8,
-                        ),
-                        sliver: SliverGrid.builder(
-                          gridDelegate: AppGridLayouts.courseGridFor(context),
-                          itemCount: courses.length,
-                          itemBuilder: (_, i) {
-                            final course = courses[i];
-                            return CourseCard(
-                              course: course,
-                              onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
-                            );
-                          },
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: AppLoadMoreFooter(
-                          hasMore: controller.hasMore.value,
-                          isLoading: controller.isLoadingMore.value,
-                          failed: controller.loadMoreFailed.value,
-                          onLoadMore: controller.loadMore,
-                        ),
-                      ),
-                    ],
-                  ],
+        // بطاقة المدرّس معروفة من الانتقال: تظهر فوراً، والهيكل مكان الشبكة فقط (كان يغطي الصفحة كلها ثم تنزل
+        // الشبكة تحت البطاقة عند وصول البيانات).
+        body: RefreshIndicator(
+          onRefresh: controller.loadCourses,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(child: _InstructorHeader(controller: controller)),
+              if (controller.isLoading.value)
+                AppSliverGridSkeleton(
+                  padding: EdgeInsets.fromLTRB(
+                    AppLayout.horizontalPage(context),
+                    8,
+                    AppLayout.horizontalPage(context),
+                    8,
+                  ),
+                )
+              else if (courses.isEmpty && controller.errorMessage.value != null)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: AppLoadErrorState(message: controller.errorMessage.value!, onRetry: controller.loadCourses),
+                )
+              else if (courses.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: AppEmptyState(message: 'no_courses_for_instructor'.tr, icon: Icons.menu_book_outlined),
+                )
+              else ...[
+                SliverPadding(
+                  padding: EdgeInsetsDirectional.fromSTEB(
+                    AppLayout.horizontalPage(context),
+                    8,
+                    AppLayout.horizontalPage(context),
+                    8,
+                  ),
+                  sliver: SliverGrid.builder(
+                    gridDelegate: AppGridLayouts.courseGridFor(context),
+                    itemCount: courses.length,
+                    itemBuilder: (_, i) {
+                      final course = courses[i];
+                      return CourseCard(
+                        course: course,
+                        onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
+                      );
+                    },
+                  ),
                 ),
-              ),
+                SliverToBoxAdapter(
+                  child: AppLoadMoreFooter(
+                    hasMore: controller.hasMore.value,
+                    isLoading: controller.isLoadingMore.value,
+                    failed: controller.loadMoreFailed.value,
+                    onLoadMore: controller.loadMore,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       );
     });
   }
@@ -141,20 +148,30 @@ class _InstructorHeader extends StatelessWidget {
                     ),
                   ),
                 ],
-                if (controller.totalCourses.value > 0) ...[
+                // مكان عدد الدورات محجوز أثناء التحميل (هيكل) كي لا تنزل الشبكة عند وصوله.
+                if (controller.totalCourses.value > 0 || controller.isLoading.value) ...[
                   const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                    ),
-                    child: Text(
-                      pluralTr('instructor_courses_count', controller.totalCourses.value),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: AppTextSize.sm,
+                  Skeletonizer(
+                    enabled: controller.isLoading.value,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                      child: Text(
+                        pluralTr(
+                          'instructor_courses_count',
+                          controller.isLoading.value ? 12 : controller.totalCourses.value,
+                        ),
+                        // سطر واحد: رقم الهيكل كان ينكسر لسطرين على 320 dp ×1.3 فيختلف ارتفاع البطاقة.
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: AppTextSize.sm,
+                        ),
                       ),
                     ),
                   ),

@@ -326,7 +326,8 @@ class _InstructorCoursesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       if (controller.isLoadingCourses.value && controller.courses.isEmpty) {
-        return const AppGridSkeleton();
+        // حشوة الشبكة الحقيقية نفسها (12 من الأعلى) كي لا تتحرك البطاقات عند وصول البيانات.
+        return AppGridSkeleton(padding: EdgeInsets.fromLTRB(16, 12, 16, AppLayout.scrollBottomInset(context)));
       }
       final error = controller.coursesError.value;
       if (controller.courses.isEmpty && error != null) {

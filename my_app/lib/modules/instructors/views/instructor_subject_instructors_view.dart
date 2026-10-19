@@ -24,7 +24,8 @@ class InstructorSubjectInstructorsView extends GetView<InstructorSubjectInstruct
 
       final Widget content;
       if (isLoading) {
-        content = const AppSliverListSkeleton(itemCount: 4, padding: EdgeInsets.fromLTRB(16, 16, 16, 24));
+        // بطاقة المدرّس الحقيقية ببيانات وهمية وبحشوة القائمة نفسها: لا قفزة عند وصول البيانات.
+        content = AppSliverInstructorListSkeleton(itemCount: 4, padding: AppLayout.scrollPadding(context, top: 16));
       } else if (error != null && instructors.isEmpty) {
         // كان نصاً فقط بلا «إعادة المحاولة».
         content = SliverFillRemaining(
