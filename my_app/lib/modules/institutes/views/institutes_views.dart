@@ -290,7 +290,7 @@ class _InstituteContactCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final actions = <({IconData icon, String label, VoidCallback onTap})>[
       if (institute.phone != null)
-        (icon: Icons.call_rounded, label: 'contact_call'.tr, onTap: () => ExternalLauncher.openPhone(institute.phone!)),
+        (icon: Icons.call_rounded, label: 'contact_call'.tr, onTap: () => ExternalLauncher.callOrCopy(institute.phone!)),
       if (institute.whatsapp != null)
         (
           icon: Icons.chat_rounded,

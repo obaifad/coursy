@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'app_toast.dart';
@@ -32,6 +33,14 @@ abstract final class ExternalLauncher {
 
     final uri = Uri(scheme: 'tel', path: normalized);
     return _tryLaunch(uri);
+  }
+
+  /// اتصال؛ وإن لم يوجد تطبيق اتصال (جهاز لوحي أو بلا شريحة) يُنسخ الرقم مع رسالة، بدل ألا يحدث شيء.
+  static Future<bool> callOrCopy(String phone) async {
+    if (await openPhone(phone)) return true;
+    await Clipboard.setData(ClipboardData(text: phone.trim()));
+    AppToast.show('call_failed'.tr, 'phone_copied'.tr);
+    return false;
   }
 
   /// محادثة واتساب. الأرقام السورية المحلية (09…) تتحول إلى الصيغة الدولية (9639…).
