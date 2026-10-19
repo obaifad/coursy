@@ -147,11 +147,9 @@ class HomeController extends GetxController with LatestLoadGuard {
     final session = beginLoad();
     _lastLoadedAt = DateTime.now();
 
-    if (!isLoading.value && !isRefreshing.value) {
-      isRefreshing.value = true;
-    } else {
-      isLoading.value = true;
-    }
+    // الهيكل للتحميل الأول فقط (isLoading يبدأ true). بعده كل تحميل تحديث صامت — حتى لو تداخل مع تحديث
+    // جارٍ (سحب أثناء تحديث العودة للتبويب، أو تغيير اللغة): كان يعيد isLoading إلى true والبيانات ظاهرة.
+    if (!isLoading.value) isRefreshing.value = true;
     errorMessage.value = null;
 
     final errors = <String>[];
