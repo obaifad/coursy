@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 
@@ -24,6 +26,7 @@ import 'package:my_app/core/models/app_models.dart';
 import 'package:my_app/core/models/favorite_model.dart';
 import 'package:my_app/core/models/paginated_result.dart';
 import 'package:my_app/core/network/api_client.dart';
+import 'package:my_app/core/network/api_exception.dart';
 import 'package:my_app/core/services/course_rating_service.dart';
 import 'package:my_app/core/services/favorites_service.dart';
 import 'package:my_app/core/services/push_notification_service.dart';
@@ -36,26 +39,68 @@ import 'sample_data.dart';
 PaginatedResult<T> _page<T>(List<T> items) =>
     PaginatedResult<T>(items: items, currentPage: 1, lastPage: 1, total: items.length, hasMore: false);
 
+/// «الشبكة» الوهمية: كل طلب يمرّ من هنا فيُسجَّل اسمه، ويمكن للاختبار أن يؤخّره ([gate]) أو يُفشله
+/// ([failing]) — لاختبار متى تبدأ الطلبات، وما يبقى ظاهراً حين تفشل.
+abstract final class FakeApi {
+  /// أسماء الطلبات بالترتيب (مثل `fetchCourseById`).
+  static final List<String> calls = [];
+
+  /// طلبات تفشل بـ [failure]؛ `*` = كلها.
+  static final Set<String> failing = {};
+
+  static ApiException failure = ApiException('fake offline', statusCode: 503);
+
+  /// إن وُجد: كل طلب ينتظره قبل الرد (يُكمله الاختبار متى شاء).
+  static Completer<void>? gate;
+
+  static int count(String name) => calls.where((c) => c == name).length;
+
+  static void reset() {
+    calls.clear();
+    failing.clear();
+    failure = ApiException('fake offline', statusCode: 503);
+    gate = null;
+  }
+
+  static Future<T> call<T>(String name, T Function() result) async {
+    calls.add(name);
+    final pending = gate;
+    if (pending != null) await pending.future;
+    if (failing.contains(name) || failing.contains('*')) throw failure;
+    return result();
+  }
+}
+
 class _Categories extends CategoryRepository {
   _Categories(super.client);
   @override
-  Future<List<CategoryModel>> fetchCategories({int perPage = 50}) async => sampleCategories();
+  Future<List<CategoryModel>> fetchCategories({int perPage = 50}) => FakeApi.call('fetchCategories', sampleCategories);
 }
 
 class _Interests extends InterestRepository {
   _Interests(super.client);
   @override
-  Future<List<CategoryModel>> fetchInterests({int perPage = 50}) async => sampleCategories();
+  Future<List<CategoryModel>> fetchInterests({int perPage = 50}) => FakeApi.call('fetchInterests', sampleCategories);
 }
+
+List<CityModel> _sampleCities() => [
+  CityModel.fromJson({'id': 1, 'name_ar': 'دمشق', 'name_en': 'Damascus'}),
+  CityModel.fromJson({'id': 2, 'name_ar': 'ريف دمشق - جرمانا', 'name_en': 'Rural Damascus - Jaramana'}),
+  CityModel.fromJson({'id': 3, 'name_ar': 'حلب', 'name_en': 'Aleppo'}),
+];
 
 class _Cities extends CityRepository {
   _Cities(super.client);
   @override
-  Future<List<CityModel>> fetchCities({int perPage = 100}) async => [
-    CityModel.fromJson({'id': 1, 'name_ar': 'دمشق', 'name_en': 'Damascus'}),
-    CityModel.fromJson({'id': 2, 'name_ar': 'ريف دمشق - جرمانا', 'name_en': 'Rural Damascus - Jaramana'}),
-    CityModel.fromJson({'id': 3, 'name_ar': 'حلب', 'name_en': 'Aleppo'}),
-  ];
+  Future<List<CityModel>> fetchCities({int perPage = 100}) => FakeApi.call('fetchCities', _sampleCities);
+  @override
+  Future<CityModel> fetchCityById(int id) => FakeApi.call(
+    'fetchCityById',
+    () => _sampleCities().firstWhere((c) => c.id == id, orElse: () => throw ApiException('not found', statusCode: 404)),
+  );
+  @override
+  Future<PaginatedResult<InstituteModel>> fetchInstitutesByCity(int cityId, {int page = 1, int perPage = 15}) =>
+      FakeApi.call('fetchInstitutesByCity', () => _page(sampleInstitutes()));
 }
 
 class _Rating extends CourseRatingService {
@@ -73,19 +118,23 @@ class _Courses extends CourseRepository {
     int page = 1,
     int perPage = 15,
     Map<String, dynamic>? query,
-  }) async => _page(sampleCourses());
+  }) => FakeApi.call('fetchCoursesPage', () => _page(sampleCourses()));
   @override
-  Future<List<CourseModel>> fetchCourses({Map<String, dynamic>? query}) async => sampleCourses();
+  Future<List<CourseModel>> fetchCourses({Map<String, dynamic>? query}) => FakeApi.call('fetchCourses', sampleCourses);
   @override
-  Future<List<CourseModel>> fetchSuggestedCourses({int limit = 10}) async => sampleCourses().reversed.toList();
+  Future<List<CourseModel>> fetchSuggestedCourses({int limit = 10}) =>
+      FakeApi.call('fetchSuggestedCourses', () => sampleCourses().reversed.toList());
   @override
-  Future<List<CourseModel>> fetchInstituteCourses(int instituteId) async => sampleCourses();
+  Future<List<CourseModel>> fetchInstituteCourses(int instituteId) =>
+      FakeApi.call('fetchInstituteCourses', sampleCourses);
   @override
-  Future<CourseModel> fetchCourseById(int id) async => sampleCourses().firstWhere((c) => c.id == id);
+  Future<CourseModel> fetchCourseById(int id) =>
+      FakeApi.call('fetchCourseById', () => sampleCourses().firstWhere((c) => c.id == id));
   @override
-  Future<List<ScheduleModel>> fetchCourseSchedules(int courseId) async => [];
+  Future<List<ScheduleModel>> fetchCourseSchedules(int courseId) =>
+      FakeApi.call('fetchCourseSchedules', () => <ScheduleModel>[]);
   @override
-  Future<int> countInstituteCourses(int instituteId) async => 12;
+  Future<int> countInstituteCourses(int instituteId) => FakeApi.call('countInstituteCourses', () => 12);
 }
 
 class _Institutes extends InstituteRepository {
@@ -95,11 +144,13 @@ class _Institutes extends InstituteRepository {
     int page = 1,
     int perPage = 15,
     Map<String, dynamic>? query,
-  }) async => _page(sampleInstitutes());
+  }) => FakeApi.call('fetchInstitutesPage', () => _page(sampleInstitutes()));
   @override
-  Future<List<InstituteModel>> fetchInstitutes({Map<String, dynamic>? query}) async => sampleInstitutes();
+  Future<List<InstituteModel>> fetchInstitutes({Map<String, dynamic>? query}) =>
+      FakeApi.call('fetchInstitutes', sampleInstitutes);
   @override
-  Future<InstituteModel> fetchInstituteById(int id) async => sampleInstitutes().first;
+  Future<InstituteModel> fetchInstituteById(int id) =>
+      FakeApi.call('fetchInstituteById', () => sampleInstitutes().first);
 }
 
 class _Instructors extends InstructorRepository {
@@ -112,19 +163,40 @@ class _Instructors extends InstructorRepository {
     int? instituteId,
     String? subjectKey,
     int? specializationId,
-  }) async => _page(sampleInstructors());
+  }) => FakeApi.call('fetchInstructorsPage', () => _page(sampleInstructors()));
   @override
   Future<List<InstructorModel>> fetchInstructors({
     int? instituteId,
     bool? isPrivate,
     String? subjectKey,
     int? specializationId,
-  }) async => sampleInstructors();
+  }) => FakeApi.call('fetchInstructors', sampleInstructors);
   @override
-  Future<List<InstructorSubjectModel>> fetchInstructorSubjectFilters() async => [
-    InstructorSubjectModel(key: 'spec:1', name: 'هندسة البرمجيات والذكاء الاصطناعي', instructorsCount: 12),
-    InstructorSubjectModel(key: 'spec:2', name: 'رياضيات', instructorsCount: 3),
-  ];
+  Future<List<InstructorSubjectModel>> fetchInstructorSubjectFilters() => FakeApi.call(
+    'fetchInstructorSubjectFilters',
+    () => [
+      InstructorSubjectModel(key: 'spec:1', name: 'هندسة البرمجيات والذكاء الاصطناعي', instructorsCount: 12),
+      InstructorSubjectModel(key: 'spec:2', name: 'رياضيات', instructorsCount: 3),
+    ],
+  );
+  @override
+  Future<List<InstructorModel>> fetchInstructorsBySubject({required String subjectKey, bool privateOnly = true}) =>
+      FakeApi.call('fetchInstructorsBySubject', sampleInstructors);
+  @override
+  Future<InstructorModel> fetchInstructorById(int id) => FakeApi.call(
+    'fetchInstructorById',
+    // معرّف غير موجود في العيّنة = 404 من الخادم (تبقى بيانات البطاقة كما هي).
+    () => sampleInstructors().firstWhere(
+      (i) => i.id == id,
+      orElse: () => throw ApiException('not found', statusCode: 404),
+    ),
+  );
+  @override
+  Future<PaginatedResult<CourseModel>> fetchInstructorCoursesPage({
+    required int instructorId,
+    int page = 1,
+    int perPage = 15,
+  }) => FakeApi.call('fetchInstructorCoursesPage', () => _page(sampleCourses()));
 }
 
 class _Reference extends ReferenceRepository {
@@ -142,21 +214,24 @@ class _Reference extends ReferenceRepository {
 class _Home extends HomeRepository {
   _Home(super.client);
   @override
-  Future<HomePayload?> fetchHomepage() async => HomePayload(
-    courses: sampleCourses(),
-    suggestedCourses: sampleCourses().reversed.toList(),
-    institutes: sampleInstitutes(),
-    categories: sampleCategories(),
+  Future<HomePayload?> fetchHomepage() => FakeApi.call(
+    'fetchHomepage',
+    () => HomePayload(
+      courses: sampleCourses(),
+      suggestedCourses: sampleCourses().reversed.toList(),
+      institutes: sampleInstitutes(),
+      categories: sampleCategories(),
+    ),
   );
 }
 
 class _Enrollments extends EnrollmentRepository {
   _Enrollments(super.client);
   @override
-  Future<PaginatedResult<EnrollmentModel>> fetchEnrollmentsPage({int page = 1, int perPage = 15}) async =>
-      _page(sampleEnrollments());
+  Future<PaginatedResult<EnrollmentModel>> fetchEnrollmentsPage({int page = 1, int perPage = 15}) =>
+      FakeApi.call('fetchEnrollmentsPage', () => _page(sampleEnrollments()));
   @override
-  Future<List<EnrollmentModel>> fetchEnrollments() async => sampleEnrollments();
+  Future<List<EnrollmentModel>> fetchEnrollments() => FakeApi.call('fetchEnrollments', sampleEnrollments);
 }
 
 /// تفاصيل الدفع التي يرجعها المزيّف — يضبطها كل مشهد قبل الرسم.
@@ -165,25 +240,33 @@ Map<String, dynamic> fakePaymentJson = {};
 class _Payments extends PaymentRepository {
   _Payments(super.client);
   @override
-  Future<PaymentDetailsModel> fetchDetails(int enrollmentId) async => PaymentDetailsModel.fromJson(fakePaymentJson);
+  Future<PaymentDetailsModel> fetchDetails(int enrollmentId) =>
+      FakeApi.call('fetchPaymentDetails', () => PaymentDetailsModel.fromJson(fakePaymentJson));
 }
 
 class _Notifications extends NotificationRepository {
   _Notifications(super.client);
   @override
-  Future<PaginatedResult<NotificationModel>> fetchNotificationsPage({int page = 1, int perPage = 15}) async =>
-      _page(sampleNotifications());
+  Future<PaginatedResult<NotificationModel>> fetchNotificationsPage({int page = 1, int perPage = 15}) =>
+      FakeApi.call('fetchNotificationsPage', () => _page(sampleNotifications()));
   @override
-  Future<List<NotificationModel>> fetchNotifications() async => sampleNotifications();
+  Future<List<NotificationModel>> fetchNotifications() => FakeApi.call('fetchNotifications', sampleNotifications);
+  @override
+  Future<void> markRead(int notificationId) => FakeApi.call('markRead', () {});
+  @override
+  Future<void> markAllRead() => FakeApi.call('markAllRead', () {});
 }
 
 class _Favorites extends FavoritesRepository {
   _Favorites(super.client, super.resolver);
   @override
-  Future<List<FavoriteModel>> fetchMine() async => [
-    FavoriteModel.fromJson({'id': 1, 'course_id': 1}),
-    FavoriteModel.fromJson({'id': 2, 'course_id': 4}),
-  ];
+  Future<List<FavoriteModel>> fetchMine() => FakeApi.call(
+    'fetchFavorites',
+    () => [
+      FavoriteModel.fromJson({'id': 1, 'course_id': 1}),
+      FavoriteModel.fromJson({'id': 2, 'course_id': 4}),
+    ],
+  );
   @override
   Future<void> removeFavorite(int favoriteId, {int? courseId}) async {}
 }
@@ -191,7 +274,8 @@ class _Favorites extends FavoritesRepository {
 class _Reviews extends ReviewRepository {
   _Reviews(super.client);
   @override
-  Future<List<ReviewModel>> fetchReviews({int? courseId, int? instituteId, int? instructorId}) async => sampleReviews();
+  Future<List<ReviewModel>> fetchReviews({int? courseId, int? instituteId, int? instructorId}) =>
+      FakeApi.call('fetchReviews', sampleReviews);
 }
 
 class _Search extends SearchRepository {
@@ -208,7 +292,10 @@ class _Search extends SearchRepository {
     int? instituteId,
     bool? featured,
     bool? verified,
-  }) async => SearchResult(courses: sampleCourses(), institutes: sampleInstitutes(), instructors: sampleInstructors());
+  }) => FakeApi.call(
+    'search',
+    () => SearchResult(courses: sampleCourses(), institutes: sampleInstitutes(), instructors: sampleInstructors()),
+  );
 }
 
 class _Profile extends ProfileRepository {
@@ -248,6 +335,7 @@ class _StudentId extends StudentIdResolver {
 /// يسجّل كل التبعيات بنسخ وهمية — نفس ما يفعله AppBindings لكن بلا شبكة.
 Future<TokenStorage> registerFakes({required bool loggedIn, required String locale}) async {
   Get.reset();
+  FakeApi.reset();
   FlutterSecureStorage.setMockInitialValues({});
   // TokenStorage الحقيقي مع تخزين آمن وهمي — القيم observable كما في التطبيق (Obx يعمل كما هو).
   final tokens = Get.put(TokenStorage());
