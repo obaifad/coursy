@@ -93,16 +93,19 @@ class CategoryCoursesView extends GetView<CategoryCoursesController> {
                       ),
                     )
                   else
-                    SliverPadding(
-                      padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
-                      sliver: SliverGrid(
-                        gridDelegate: AppGridLayouts.auroraGridFor(context),
-                        delegate: SliverChildBuilderDelegate(
-                          (_, i) => CourseAuroraCard(
-                            course: courses[i],
-                            onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: courses[i]),
+                    // تمويه ألواح البطاقات مشترك للشبكة كلها (انظر _AuroraGlassPanel).
+                    BackdropGroup(
+                      child: SliverPadding(
+                        padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
+                        sliver: SliverGrid(
+                          gridDelegate: AppGridLayouts.auroraGridFor(context),
+                          delegate: SliverChildBuilderDelegate(
+                            (_, i) => CourseAuroraCard(
+                              course: courses[i],
+                              onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: courses[i]),
+                            ),
+                            childCount: courses.length,
                           ),
-                          childCount: courses.length,
                         ),
                       ),
                     ),

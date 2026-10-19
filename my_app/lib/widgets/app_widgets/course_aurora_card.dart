@@ -357,7 +357,9 @@ class _AuroraGlassPanel extends StatelessWidget {
         );
         return ClipRRect(
           borderRadius: AppCorners.md,
-          child: inMotion ? decorated : BackdropFilter(filter: _frost, child: decorated),
+          // grouped: ألواح البطاقات المتجاورة في شبكة واحدة (BackdropGroup) تتشارك قراءة الخلفية — تمويه واحد
+          // للشبكة بدل واحد لكل بطاقة على Impeller، بنفس الشكل. بلا BackdropGroup يعمل كالمعتاد.
+          child: inMotion ? decorated : BackdropFilter.grouped(filter: _frost, child: decorated),
         );
       },
     );
