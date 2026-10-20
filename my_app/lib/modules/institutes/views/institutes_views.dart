@@ -12,6 +12,7 @@ import '../../../core/utils/external_launcher.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/app_skeletons.dart';
+import '../../../widgets/app_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/filter_chips.dart';
 import '../controllers/institutes_controller.dart';
@@ -214,6 +215,9 @@ class _InfoTab extends StatelessWidget {
   const _InfoTab({required this.controller});
   final InstituteDetailsController controller;
 
+  /// عدد الدورات المعروضة في تبويب المعلومات.
+  static const _previewCourses = 3;
+
   Future<void> _openMaps(double lat, double lng) => ExternalLauncher.openMaps(lat: lat, lng: lng);
 
   @override
@@ -225,6 +229,7 @@ class _InfoTab extends StatelessWidget {
       final coursesCount = controller.displayedCoursesCount;
       final address = institute?.address?.trim();
       final showAddress = address != null && address.isNotEmpty && !JsonHelpers.looksLikeCoordinates(address);
+      final firstCourses = controller.courses.take(_previewCourses).toList(growable: false);
 
       return ListView(
         padding: AppLayout.scrollPadding(context, top: 16),
@@ -271,8 +276,25 @@ class _InfoTab extends StatelessWidget {
               ],
             ),
           ),
+          // أول الدورات بعد «عن المعهد»، و«عرض الكل» يفتح تبويب الدورات. بلا دورات: لا شيء إضافي.
+          if (firstCourses.isNotEmpty) ...[
+            const SizedBox(height: 22),
+            AppSectionHeader(
+              title: 'tab_courses'.tr,
+              actionLabel: 'show_all'.tr,
+              onAction: () => DefaultTabController.of(context).animateTo(1),
+            ),
+            const SizedBox(height: 10),
+            for (var i = 0; i < firstCourses.length; i++) ...[
+              if (i > 0) const SizedBox(height: 12),
+              CourseRowCard(
+                course: firstCourses[i],
+                onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: firstCourses[i]),
+              ),
+            ],
+          ],
           if (institute != null && institute.hasContact) ...[
-            const SizedBox(height: 14),
+            SizedBox(height: firstCourses.isNotEmpty ? 22 : 14),
             _InstituteContactCard(institute: institute),
           ],
         ],
@@ -290,7 +312,11 @@ class _InstituteContactCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final actions = <({IconData icon, String label, VoidCallback onTap})>[
       if (institute.phone != null)
-        (icon: Icons.call_rounded, label: 'contact_call'.tr, onTap: () => ExternalLauncher.callOrCopy(institute.phone!)),
+        (
+          icon: Icons.call_rounded,
+          label: 'contact_call'.tr,
+          onTap: () => ExternalLauncher.callOrCopy(institute.phone!),
+        ),
       if (institute.whatsapp != null)
         (
           icon: Icons.chat_rounded,

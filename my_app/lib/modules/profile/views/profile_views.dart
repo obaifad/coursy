@@ -38,6 +38,8 @@ import '../../../core/locale/plural.dart';
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
 
+  static const double _guestAvatarSize = 64;
+
   @override
   Widget build(BuildContext context) {
     if (!Get.isRegistered<MyCoursesController>()) {
@@ -69,8 +71,9 @@ class ProfileView extends StatelessWidget {
                           final controller = Get.isRegistered<ProfileController>()
                               ? Get.find<ProfileController>()
                               : null;
+                          // الزائر: رأس أقصر (صورة أصغر بلا صورة شخصية فعلية) فتظهر الروابط تحته دون تمرير.
                           return ProfileAvatar(
-                            size: 88,
+                            size: storage.isLoggedIn ? 88 : _guestAvatarSize,
                             imageUrl: controller?.displayAvatarUrl ?? storage.userAvatarUrl.value,
                             localPath: controller?.displayAvatarLocalPath,
                             onTap: storage.isLoggedIn
@@ -81,7 +84,7 @@ class ProfileView extends StatelessWidget {
                                 : null,
                           );
                         }),
-                        const SizedBox(height: 14),
+                        Obx(() => SizedBox(height: Get.find<TokenStorage>().isLoggedIn ? 14 : 8)),
                         Obx(() {
                           final storage = Get.find<TokenStorage>();
                           if (!storage.isLoggedIn) {
@@ -122,7 +125,7 @@ class ProfileView extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  Obx(() => SizedBox(height: Get.find<TokenStorage>().isLoggedIn ? 18 : 14)),
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.symmetric(horizontal: AppLayout.readableInset(context), vertical: 16),
@@ -165,6 +168,9 @@ class ProfileView extends StatelessWidget {
                 onTap: () => Get.toNamed(AppRoutes.settings),
               );
               if (!storage.isLoggedIn) {
+                // روابط الموقع نفسها في الإعدادات (ApiConfig) — للزائر هنا أيضاً دون فتح الإعدادات.
+                final lang = Get.locale?.languageCode == 'en' ? 'en' : 'ar';
+                const external = Icon(Icons.open_in_new_rounded, size: 18, color: AppColors.textSecondary);
                 return Column(
                   children: [
                     ProfileMenuTile(
@@ -173,6 +179,24 @@ class ProfileView extends StatelessWidget {
                       onTap: () => Get.toNamed(AppRoutes.register),
                     ),
                     settings,
+                    ProfileMenuTile(
+                      title: 'contact_us'.tr,
+                      icon: Icons.support_agent_rounded,
+                      trailing: external,
+                      onTap: () => ExternalLauncher.openWebPage(ApiConfig.contactUrl),
+                    ),
+                    ProfileMenuTile(
+                      title: 'privacy_policy'.tr,
+                      icon: Icons.privacy_tip_outlined,
+                      trailing: external,
+                      onTap: () => ExternalLauncher.openWebPage(ApiConfig.privacyUrl(lang)),
+                    ),
+                    ProfileMenuTile(
+                      title: 'terms_of_use'.tr,
+                      icon: Icons.description_outlined,
+                      trailing: external,
+                      onTap: () => ExternalLauncher.openWebPage(ApiConfig.termsUrl(lang)),
+                    ),
                   ],
                 );
               }

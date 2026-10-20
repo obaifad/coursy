@@ -40,6 +40,17 @@ class HomeView extends GetView<HomeController> {
                     ),
                   )
                 : null,
+            gapBelowBanner: controller.isLoggedIn
+                ? FeaturedCourseCarousel.gapBelow
+                : FeaturedCourseCarousel.gapBelowCard,
+            // الشبكة الحقيقية (بالتصنيفات إن وصلت من الكاش) بدل صف كبسولات أقصر بكثير: لا قفزة عند وصول البيانات.
+            categories: HomeCategoriesGrid(
+              categories: controller.categories.isNotEmpty
+                  ? controller.categories.toList(growable: false)
+                  : AppSkeletonData.categories,
+              onOpenCategory: (_) {},
+              onShowAll: () {},
+            ),
           );
         }
         final categories = controller.categories.toList(growable: false);
@@ -127,7 +138,6 @@ class HomeView extends GetView<HomeController> {
                 const SizedBox(height: 12),
               ],
               _HomeBannerSlot(controller: controller),
-              const SizedBox(height: 22),
               Padding(
                 padding: _sectionPad(context),
                 child: AppSectionHeader(
@@ -308,7 +318,21 @@ class _HomeBannerSlot extends StatelessWidget {
           switchOutCurve: Curves.easeIn,
           layoutBuilder: (current, previous) =>
               Stack(alignment: Alignment.topCenter, children: [...previous, if (current != null) current]),
-          child: KeyedSubtree(key: ValueKey(variant), child: child),
+          // الفراغ تحته جزء منه: أقل تحت الشرائح ومؤشرها، ويتغيّر معها بنعومة.
+          child: KeyedSubtree(
+            key: ValueKey(variant),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                child,
+                SizedBox(
+                  height: variant == 'carousel' || variant == 'loading'
+                      ? FeaturedCourseCarousel.gapBelow
+                      : FeaturedCourseCarousel.gapBelowCard,
+                ),
+              ],
+            ),
+          ),
         ),
       );
     });

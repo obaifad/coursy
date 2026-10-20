@@ -8,10 +8,16 @@ import 'app_widgets.dart';
 import 'design_system.dart';
 
 class AppHomeSkeleton extends StatelessWidget {
-  const AppHomeSkeleton({super.key, this.banner});
+  const AppHomeSkeleton({super.key, this.banner, this.gapBelowBanner = 22, this.categories});
 
   /// مكان البانر بمقاسه الحقيقي (بانر الطالب أطول من بطاقة الزائر) — كي لا تقفز الصفحة عند وصول البيانات.
   final Widget? banner;
+
+  /// الفراغ تحت البانر كما في الصفحة (أقل تحت الشرائح ومؤشرها).
+  final double gapBelowBanner;
+
+  /// شبكة التصنيفات نفسها ببيانات وهمية (بارتفاعها الحقيقي)؛ null = صف كبسولات.
+  final Widget? categories;
 
   @override
   Widget build(BuildContext context) {
@@ -37,32 +43,31 @@ class AppHomeSkeleton extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          Container(
-            height: 50,
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.md)),
-          ),
+          // شريط البحث الحقيقي (52) لا مربع 50: ما تحته يبقى في مكانه حين تصل البيانات.
+          const AppHomeSearchBar(onTap: _noop, hint: 'Search courses, institutes'),
           const SizedBox(height: 22),
           banner ??
               Container(
                 height: 168,
                 decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(AppRadius.lg)),
               ),
-          const SizedBox(height: 22),
+          SizedBox(height: gapBelowBanner),
           const _SkeletonSectionHeader(),
           const SizedBox(height: 10),
-          SizedBox(
-            height: 56,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: 4,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (_, __) => Container(
-                width: 116,
-                height: 44,
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.md)),
+          categories ??
+              SizedBox(
+                height: 56,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: 4,
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  itemBuilder: (_, __) => Container(
+                    width: 116,
+                    height: 44,
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.md)),
+                  ),
+                ),
               ),
-            ),
-          ),
           const SizedBox(height: 22),
           const _SkeletonSectionHeader(),
           const SizedBox(height: 10),
@@ -278,6 +283,11 @@ abstract final class AppSkeletonData {
     'experience_years': 5,
     'is_private': 1,
   });
+
+  /// صفّا تصنيفات الرئيسية (8 بلاطات) بأسماء من سطر واحد — كأغلب التصنيفات.
+  static final List<CategoryModel> categories = [
+    for (var i = 1; i <= 8; i++) CategoryModel(id: -i, nameAr: 'تصنيف', nameEn: 'Category', coursesCount: 10),
+  ];
 }
 
 /// هيكل قائمة مدرّسين خصوصيين ([PrivateInstructorListCard]) كـ sliver — البطاقة الحقيقية ببيانات وهمية.
@@ -767,12 +777,13 @@ class _SkeletonListTile extends StatelessWidget {
   }
 }
 
+/// رأس القسم الحقيقي (بارتفاع زر «عرض الكل» 48) — كان صفاً نصياً بارتفاع 20، فتقفز الأقسام 28 عند وصول البيانات.
 class _SkeletonSectionHeader extends StatelessWidget {
   const _SkeletonSectionHeader();
 
   @override
   Widget build(BuildContext context) {
-    return const Row(children: [Text('Section title'), Spacer(), Text('Show all')]);
+    return const AppSectionHeader(title: 'Section title', actionLabel: 'Show all', onAction: _noop);
   }
 }
 
