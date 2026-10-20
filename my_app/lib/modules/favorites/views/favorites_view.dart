@@ -131,15 +131,18 @@ class _FavoritesBody extends StatelessWidget {
       return RefreshIndicator(
         color: AppColors.primary,
         onRefresh: controller.loadFavorites,
-        child: GridView.builder(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(hPad, 16, hPad, AppLayout.scrollBottomInset(context)),
-          gridDelegate: AppGridLayouts.auroraGridFor(context),
-          itemCount: courses.length,
-          itemBuilder: (_, i) {
-            final course = courses[i];
-            return _FavoriteItem(key: ValueKey(course.id), course: course, controller: controller);
-          },
+        // تمويه ألواح البطاقات مشترك للشبكة كلها (انظر _AuroraGlassPanel).
+        child: BackdropGroup(
+          child: GridView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(hPad, 16, hPad, AppLayout.scrollBottomInset(context)),
+            gridDelegate: AppGridLayouts.auroraGridFor(context),
+            itemCount: courses.length,
+            itemBuilder: (_, i) {
+              final course = courses[i];
+              return _FavoriteItem(key: ValueKey(course.id), course: course, controller: controller);
+            },
+          ),
         ),
       );
     });

@@ -22,88 +22,70 @@ class CourseBoardingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = courseCategoryPalette(course.categoryName);
-    const shape = _BoardingShape(radius: AppRadius.md, stubWidth: stubWidth, notchRadius: notchRadius);
-    return DecoratedBox(
-      decoration: const ShapeDecoration(color: AppColors.card, shape: shape, shadows: shadow),
-      child: ClipPath(
-        clipper: ShapeBorderClipper(shape: shape, textDirection: Directionality.of(context)),
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: onTap,
-            splashColor: AppColors.primary.withValues(alpha: 0.08),
-            highlightColor: AppColors.primary.withValues(alpha: 0.04),
-            // الجزء الأبيض وحده يحدد ارتفاع البطاقة (نصوص فقط، فقياسه المسبق آمن)، والملوّن مثبّت فوق جهة
-            // النهاية بطولها كله. لا يدخل الملوّن في IntrinsicHeight: صورته فيها LayoutBuilder، وFlutter يرفض
-            // قياسه مسبقاً (كان يرمي خطأ في كل إطار على الهاتف).
-            child: Stack(
-              children: [
-                ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: minHeight),
-                  child: IntrinsicHeight(
-                    child: Padding(
-                      padding: const EdgeInsetsDirectional.only(end: stubWidth),
-                      child: _BoardingMain(course: course, palette: palette),
-                    ),
-                  ),
-                ),
-                PositionedDirectional(
-                  top: 0,
-                  bottom: 0,
-                  end: 0,
-                  width: stubWidth,
-                  child: _BoardingStub(course: course, palette: palette),
-                ),
-              ],
-            ),
-          ),
+    final radius = BorderRadius.circular(AppRadius.md);
+    // القصّتان: دائرتان بلون خلفية الصفحة فوق حافتي البطاقة على خط الفصل، لا مسار مقصوص (Path.combine +
+    // ClipPath) — مثل بطاقة التذكرة: القصّ بمسار معقّد وظلّه كانا يُرسمان خطأً بمحرّك Impeller على بعض
+    // معالجات الرسوميات (Adreno 618)، والمستطيل المدوّر أرخص رسماً على كل الأجهزة.
+    final notchColor = Theme.of(context).scaffoldBackgroundColor;
+    Widget notch({required bool top}) => PositionedDirectional(
+      top: top ? -notchRadius : null,
+      bottom: top ? null : -notchRadius,
+      end: stubWidth - notchRadius,
+      width: notchRadius * 2,
+      height: notchRadius * 2,
+      child: IgnorePointer(
+        child: DecoratedBox(
+          key: const ValueKey('boarding-notch'),
+          decoration: BoxDecoration(color: notchColor, shape: BoxShape.circle),
         ),
       ),
     );
+
+    return DecoratedBox(
+      decoration: BoxDecoration(color: AppColors.card, borderRadius: radius, boxShadow: shadow),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ClipRRect(
+            borderRadius: radius,
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                onTap: onTap,
+                splashColor: AppColors.primary.withValues(alpha: 0.08),
+                highlightColor: AppColors.primary.withValues(alpha: 0.04),
+                // الجزء الأبيض وحده يحدد ارتفاع البطاقة (نصوص فقط، فقياسه المسبق آمن)، والملوّن مثبّت فوق جهة
+                // النهاية بطولها كله. لا يدخل الملوّن في IntrinsicHeight: صورته فيها LayoutBuilder، وFlutter يرفض
+                // قياسه مسبقاً (كان يرمي خطأ في كل إطار على الهاتف).
+                child: Stack(
+                  children: [
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: minHeight),
+                      child: IntrinsicHeight(
+                        child: Padding(
+                          padding: const EdgeInsetsDirectional.only(end: stubWidth),
+                          child: _BoardingMain(course: course, palette: palette),
+                        ),
+                      ),
+                    ),
+                    PositionedDirectional(
+                      top: 0,
+                      bottom: 0,
+                      end: 0,
+                      width: stubWidth,
+                      child: _BoardingStub(course: course, palette: palette),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          notch(top: true),
+          notch(top: false),
+        ],
+      ),
+    );
   }
-}
-
-/// مستطيل بزوايا مدوّرة تُقصّ منه دائرتان على خط الفصل بين الجزأين: في أعلى البطاقة وأسفلها.
-/// خط الفصل على بُعد [stubWidth] من حافة النهاية (يسار بالعربية، يمين بالإنجليزية).
-class _BoardingShape extends ShapeBorder {
-  const _BoardingShape({required this.radius, required this.stubWidth, required this.notchRadius});
-
-  final double radius;
-  final double stubWidth;
-  final double notchRadius;
-
-  @override
-  EdgeInsetsGeometry get dimensions => EdgeInsets.zero;
-
-  @override
-  Path getInnerPath(Rect rect, {TextDirection? textDirection}) => getOuterPath(rect, textDirection: textDirection);
-
-  @override
-  Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
-    final card = Path()..addRRect(RRect.fromRectAndRadius(rect, Radius.circular(radius)));
-    final x = textDirection == TextDirection.rtl ? rect.left + stubWidth : rect.right - stubWidth;
-    final notches = Path()
-      ..addOval(Rect.fromCircle(center: Offset(x, rect.top), radius: notchRadius))
-      ..addOval(Rect.fromCircle(center: Offset(x, rect.bottom), radius: notchRadius));
-    return Path.combine(PathOperation.difference, card, notches);
-  }
-
-  @override
-  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {}
-
-  @override
-  ShapeBorder scale(double t) =>
-      _BoardingShape(radius: radius * t, stubWidth: stubWidth * t, notchRadius: notchRadius * t);
-
-  @override
-  bool operator ==(Object other) =>
-      other is _BoardingShape &&
-      other.radius == radius &&
-      other.stubWidth == stubWidth &&
-      other.notchRadius == notchRadius;
-
-  @override
-  int get hashCode => Object.hash(radius, stubWidth, notchRadius);
 }
 
 class _BoardingMain extends StatelessWidget {

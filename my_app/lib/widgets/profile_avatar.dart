@@ -105,8 +105,11 @@ class _AvatarImage extends StatelessWidget {
     );
     final provider = _resolveProvider();
     if (provider != null) {
+      // فكّ الصورة بحجم العرض (مثل AppNetworkImage): صورة الكاميرا/المعرض حتى 1024 px كانت تُفكّ كاملة
+      // لدائرة 64–96 dp — ذاكرة بلا فائدة.
+      final cacheWidth = (size * MediaQuery.devicePixelRatioOf(context)).round();
       return Image(
-        image: provider,
+        image: ResizeImage(provider, width: cacheWidth),
         fit: BoxFit.cover,
         width: size,
         height: size,
