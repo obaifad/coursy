@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:get/get.dart';
 
 import 'route_motion_builder.dart';
 
@@ -35,4 +36,12 @@ abstract final class RouteSettle {
     RouteMotion.inMotion.addListener(listener);
     timer = Timer(maxWait, finish);
   }
+}
+
+/// لمتحكّمات الصفحات: الجلب الأول بعد انتهاء حركة الفتح ([RouteSettle.run])، ولا يبدأ أبداً إن أُغلقت
+/// الصفحة قبل ذلك (رجوع سريع) — طلب لصفحة لم تعد موجودة يهدر الشبكة ويكتب في متحكّم مغلق.
+mixin SettledLoad on GetxController {
+  void afterRouteSettles(VoidCallback work) => RouteSettle.run(() {
+    if (!isClosed) work();
+  });
 }

@@ -4,9 +4,10 @@ import '../../../core/cache/memory_cache.dart';
 import '../../../core/data/repositories/instructor_repository.dart';
 import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/navigation/route_settle.dart';
 import '../../../core/network/api_exception.dart';
 
-class PrivateInstructorsController extends GetxController with LatestLoadGuard, InitialLoadState {
+class PrivateInstructorsController extends GetxController with LatestLoadGuard, InitialLoadState, SettledLoad {
   PrivateInstructorsController(this._repository);
 
   final InstructorRepository _repository;
@@ -42,13 +43,17 @@ class PrivateInstructorsController extends GetxController with LatestLoadGuard, 
     }
     final cachedSubjects = MemoryCache.get<List<InstructorSubjectModel>>(_subjectsKey);
     if (cachedSubjects != null) subjects.assignAll(cachedSubjects.value);
-    if (cachedSubjects == null || !cachedSubjects.isFresh()) _loadSubjectFilters();
+    if (cachedSubjects == null || !cachedSubjects.isFresh()) {
+      // هيكل المرشّحات من أول إطار؛ الطلب نفسه بعد حركة الفتح.
+      if (subjects.isEmpty) isLoadingFilters.value = true;
+      afterRouteSettles(_loadSubjectFilters);
+    }
     final cached = MemoryCache.get<PagedSnapshot<InstructorModel>>(_listKey);
     if (cached != null) {
       _restore(cached.value);
       if (cached.isFresh()) return;
     }
-    loadInstructors();
+    afterRouteSettles(loadInstructors);
   }
 
   static const _subjectsKeyScope = 'private-instructor-subjects';

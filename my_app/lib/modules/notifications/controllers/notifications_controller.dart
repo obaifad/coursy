@@ -6,11 +6,12 @@ import '../../../core/data/repositories/notification_repository.dart';
 import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/navigation/push_navigation.dart';
+import '../../../core/navigation/route_settle.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/session/remote_notification_sync.dart';
 import '../../../core/utils/app_toast.dart';
 
-class NotificationsController extends GetxController with LatestLoadGuard, InitialLoadState {
+class NotificationsController extends GetxController with LatestLoadGuard, InitialLoadState, SettledLoad {
   final NotificationRepository _repository = Get.find();
 
   final isLoading = true.obs;
@@ -28,7 +29,7 @@ class NotificationsController extends GetxController with LatestLoadGuard, Initi
   @override
   void onInit() {
     super.onInit();
-    loadNotifications();
+    afterRouteSettles(loadNotifications);
   }
 
   Future<void> loadNotifications() async {

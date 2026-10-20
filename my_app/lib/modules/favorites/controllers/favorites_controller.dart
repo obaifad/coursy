@@ -4,11 +4,12 @@ import 'package:get/get.dart';
 
 import '../../../core/data/repositories/course_repository.dart';
 import '../../../core/models/app_models.dart';
+import '../../../core/navigation/route_settle.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/services/favorites_service.dart';
 import '../../../core/locale/locale_request_guard.dart';
 
-class FavoritesController extends GetxController with InitialLoadState {
+class FavoritesController extends GetxController with InitialLoadState, SettledLoad {
   final FavoritesService _favoritesService = Get.find();
   final CourseRepository _courseRepository = Get.find();
 
@@ -33,7 +34,7 @@ class FavoritesController extends GetxController with InitialLoadState {
       if (_syncing) return;
       unawaited(_hydrateCoursesFromService(refreshAll: false).catchError((Object _) {}));
     });
-    loadFavorites();
+    afterRouteSettles(loadFavorites);
   }
 
   @override

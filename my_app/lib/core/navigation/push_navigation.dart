@@ -55,23 +55,23 @@ abstract final class PushNavigation {
 
     // المعرّفات أولاً: نوع إشعار Laravel قد يكون اسم الصنف (`App\Notifications\…`)، فمطابقة كلمة
     // «notification» قبلها كانت تفتح قائمة الإشعارات بدل الدورة.
+    // صفحات التفاصيل (دورة، معهد، مدرّس) تقبل عدة نسخ في المكدّس؛ وGetX يتجاهل فتح المسار نفسه وهو في
+    // الأعلى (ولو لعنصر آخر)، فكان الضغط لا يفعل شيئاً وصفحة من النوع نفسه مفتوحة.
     final courseId = _readId(data, const ['course_id', 'courseId']);
     if (courseId != null) {
-      // صفحة الدورة تقبل عدة نسخ في المكدّس؛ وGetX يتجاهل فتح المسار نفسه وهو في الأعلى (ولو لدورة أخرى)،
-      // فكان الضغط لا يفعل شيئاً وصفحة دورة مفتوحة.
       Get.toNamed(AppRoutes.courseDetails, arguments: courseId, preventDuplicates: false);
       return;
     }
 
     final instituteId = _readId(data, const ['institute_id', 'instituteId']);
     if (instituteId != null) {
-      Get.toNamed(AppRoutes.instituteDetails, arguments: instituteId);
+      Get.toNamed(AppRoutes.instituteDetails, arguments: instituteId, preventDuplicates: false);
       return;
     }
 
     final instructorId = _readId(data, const ['instructor_id', 'instructorId']);
     if (instructorId != null) {
-      Get.toNamed(AppRoutes.instructorDetails, arguments: instructorId);
+      Get.toNamed(AppRoutes.instructorDetails, arguments: instructorId, preventDuplicates: false);
       return;
     }
 

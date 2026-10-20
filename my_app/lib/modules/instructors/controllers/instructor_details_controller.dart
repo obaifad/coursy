@@ -9,7 +9,7 @@ import '../../../core/models/json_helpers.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/services/favorites_service.dart';
 
-class InstructorDetailsController extends GetxController {
+class InstructorDetailsController extends GetxController with SettledLoad {
   final InstructorRepository _instructorRepository = Get.find();
   final ReviewRepository _reviewRepository = Get.find();
   final FavoritesService _favoritesService = Get.find();
@@ -48,9 +48,7 @@ class InstructorDetailsController extends GetxController {
     if (cached != null && cached.isFresh()) return;
     // ما لدينا يُعرض فوراً (كما كان أول loadDetails يفعل)، والطلبات بعد حركة الفتح.
     if (instructorId > 0 && instructor.value != null) isLoading.value = false;
-    RouteSettle.run(() {
-      if (!isClosed) loadDetails();
-    });
+    afterRouteSettles(loadDetails);
   }
 
   String get _cacheKey => MemoryCache.key('instructor-details', [instructorId]);
@@ -98,6 +96,11 @@ class InstructorDetailsController extends GetxController {
   }
 
   void _readArguments(dynamic arg) {
+    // من إشعار: المعرّف وحده (كان يُعامل كـ 0 فتفتح صفحة فارغة).
+    if (arg is int) {
+      instructorId = arg;
+      return;
+    }
     if (arg is InstructorModel) {
       instructorId = arg.id;
       instructor.value = arg;

@@ -609,21 +609,33 @@ class _SkeletonAuroraCard extends StatelessWidget {
                 height: spec.panelHeight,
                 child: DecoratedBox(
                   decoration: const BoxDecoration(color: AppColors.card, borderRadius: AppCorners.md),
+                  // نفس خانات اللوح الحقيقي (التصنيف، سطرا العنوان، سطر البيانات) وحشوته: نصوص الهيكل
+                  // بارتفاعها الطبيعي كانت أطول من اللوح فتفيض (23 px عند 411 dp).
                   child: Padding(
-                    padding: EdgeInsets.all(spec.panelPadding),
-                    child: const Column(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: spec.panelPadding,
+                      vertical: CourseAuroraSpec.panelPaddingV,
+                    ),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('البرمجة • مبتدئ', style: TextStyle(fontSize: AppTextSize.xs)),
-                        SizedBox(height: 6),
-                        Text(
-                          'عنوان الدورة',
-                          style: TextStyle(fontSize: AppTextSize.md, fontWeight: FontWeight.w800),
+                        SizedBox(
+                          height: spec.categoryHeight,
+                          child: const Text('البرمجة • مبتدئ', maxLines: 1, style: TextStyle(fontSize: AppTextSize.xs)),
                         ),
-                        Spacer(),
-                        Text(
-                          '350,000',
-                          style: TextStyle(fontSize: AppTextSize.lg, fontWeight: FontWeight.w800),
+                        const SizedBox(height: CourseAuroraSpec.gapAfterCategory),
+                        SizedBox(
+                          height: spec.titleHeight,
+                          child: Text(
+                            'عنوان الدورة',
+                            maxLines: 2,
+                            style: TextStyle(fontSize: spec.titleSize, fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                        const SizedBox(height: CourseAuroraSpec.gapAfterTitle),
+                        SizedBox(
+                          height: spec.metaHeight,
+                          child: const Text('350,000', maxLines: 1, style: TextStyle(fontSize: AppTextSize.xs)),
                         ),
                       ],
                     ),
