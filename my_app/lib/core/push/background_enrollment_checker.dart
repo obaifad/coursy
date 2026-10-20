@@ -6,6 +6,7 @@ import 'package:workmanager/workmanager.dart';
 import '../config/api_config.dart';
 import '../locale/app_translations.dart';
 import '../locale/locale_controller.dart';
+import '../network/trusted_roots.dart';
 import '../push/push_local_notifications.dart';
 import '../storage/enrollment_status_store.dart';
 import '../storage/session_keys.dart';
@@ -33,6 +34,10 @@ abstract final class BackgroundEnrollmentChecker {
   );
 
   static Future<void> run() async {
+    // سياق TLS خاص بكل isolate: جذور Android 6.0–7.0 هنا أيضاً.
+    try {
+      await TrustedRoots.install();
+    } catch (_) {}
     // لا نستخدم GetStorage هنا: الكتابة من isolate ثانٍ تمسح بيانات التطبيق الرئيسي.
     await PushLocalNotifications.loadUserEnabled();
     await PushLocalNotifications.ensureInitialized();

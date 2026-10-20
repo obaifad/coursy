@@ -62,15 +62,17 @@ class InstitutesController extends GetxController with LatestLoadGuard, InitialL
     isLoading.value = isInitialLoad;
     errorMessage.value = null;
     loadMoreFailed.value = false;
-    _page = 1;
     try {
       final result = await _repository.fetchInstitutesPage(
-        page: _page,
+        page: 1,
         perPage: _perPage,
         query: {if (selectedCityId.value != null) 'city_id': selectedCityId.value},
       );
       applyIfCurrent(session, () {
         institutes.assignAll(result.items);
+        // العدّاد يعود للصفحة الأولى مع بياناتها فقط: كان يُصفَّر قبل الطلب، فبعد تحديث فاشل يُعيد
+        // «المزيد» الصفحة الثانية فوق قائمة تحتويها (عناصر مكرّرة).
+        _page = 1;
         hasMore.value = result.hasMore;
         markLoaded();
       });
@@ -193,45 +195,54 @@ class InstituteDetailsController extends GetxController with SettledLoad {
     final hasSeed = institute.value != null;
     if (!hasSeed) isLoading.value = true;
     try {
-      await Future.wait<void>([_fetchInstituteDetails(), _fetchCourses(), _fetchInstructors()]);
-      _remember();
+      final ok = await Future.wait<bool>([_fetchInstituteDetails(), _fetchCourses(), _fetchInstructors()]);
+      // لا نحفظ حالة جزئية: كانت تُعلَّم «طازجة» فلا يُعاد الطلب عند العودة.
+      if (ok.every((v) => v)) _remember();
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> _fetchInstituteDetails() async {
-    if (instituteId <= 0) return;
+  Future<bool> _fetchInstituteDetails() async {
+    if (instituteId <= 0) {
+      if (institute.value == null) detailsError.value = 'error_unexpected'.tr;
+      return false;
+    }
     detailsError.value = null;
     try {
       final details = await _instituteRepository.fetchInstituteById(instituteId);
       institute.value = _mergeInstitute(institute.value, details);
+      return true;
     } catch (e) {
       // بيانات الانتقال تكفي للعرض؛ بدونها نعرض الخطأ مع «إعادة المحاولة».
       if (institute.value == null) detailsError.value = userErrorMessage(e);
+      return false;
     }
   }
 
-  Future<void> _fetchCourses() async {
+  /// تحديث فاشل لا يمسح ما يُعرض (من الذاكرة أو التحميل السابق): كان يُفرغ القائمة فتظهر «لا دورات».
+  /// بلا بيانات: الخطأ مع «إعادة المحاولة».
+  Future<bool> _fetchCourses() async {
     coursesError.value = null;
-    var instituteCourses = <CourseModel>[];
     try {
       // يجرّب `/institutes/{id}/courses` ثم `/courses?institute_id=` بكل الصفحات.
-      instituteCourses = await _courseRepository.fetchInstituteCourses(instituteId);
+      courses.assignAll(await _courseRepository.fetchInstituteCourses(instituteId));
+      _syncCoursesCount();
+      return true;
     } catch (e) {
-      coursesError.value = userErrorMessage(e);
+      if (courses.isEmpty) coursesError.value = userErrorMessage(e);
+      return false;
     }
-    courses.assignAll(instituteCourses);
-    _syncCoursesCount();
   }
 
-  Future<void> _fetchInstructors() async {
+  Future<bool> _fetchInstructors() async {
     instructorsError.value = null;
     try {
       instructors.assignAll(await _instructorRepository.fetchInstructors(instituteId: instituteId));
+      return true;
     } catch (e) {
-      instructors.clear();
-      instructorsError.value = userErrorMessage(e);
+      if (instructors.isEmpty) instructorsError.value = userErrorMessage(e);
+      return false;
     }
   }
 

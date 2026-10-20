@@ -110,6 +110,8 @@ flutter:
 
   assets:
     - images/s.png
+    # جذرا Let's Encrypt (ISRG X1/X2) لأجهزة Android 6.0–7.0 — lib/core/network/trusted_roots.dart
+    - assets/certs/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

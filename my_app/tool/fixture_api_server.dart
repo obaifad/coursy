@@ -9,7 +9,7 @@
 //
 // حقن الأعطال للطلبات التالية (من المضيف أو adb):
 //   curl "http://127.0.0.1:8787/__control?mode=slow&delay_ms=4000"
-//   الأنماط: ok | slow | fail500 | timeout | malformed | empty | html403
+//   الأنماط: ok | slow | fail500 | timeout | malformed | empty | html403 | drop (يُغلق الاتصال بلا رد، كانقطاع الشبكة)
 // السجل: GET /__log يعرض عدد الطلبات لكل مسار.
 import 'dart:async';
 import 'dart:convert';
@@ -49,6 +49,10 @@ Future<void> _handle(HttpRequest req) async {
 
     if (_delayMs > 0) await Future<void>.delayed(Duration(milliseconds: _delayMs));
     switch (_mode) {
+      case 'drop':
+        final socket = await req.response.detachSocket(writeHeaders: false);
+        socket.destroy();
+        return;
       case 'timeout':
         await Future<void>.delayed(const Duration(seconds: 90));
       case 'fail500':

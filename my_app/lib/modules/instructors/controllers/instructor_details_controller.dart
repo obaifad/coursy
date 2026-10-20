@@ -29,6 +29,12 @@ class InstructorDetailsController extends GetxController with SettledLoad {
   /// فشل تحميل الدورات: «تعذّر التحميل» مع إعادة المحاولة بدل «لا دورات».
   final coursesError = RxnString();
 
+  /// فشل جلب المدرّس بلا بيانات لعرضها (فتح من إشعار بالمعرّف فقط): خطأ مع «إعادة المحاولة» بدل صفحة فارغة.
+  final detailsError = RxnString();
+
+  /// فشل جلب التقييمات بلا تقييمات معروضة: خطأ مع «إعادة المحاولة» بدل «لا تقييمات».
+  final reviewsError = RxnString();
+
   late int instructorId;
   int _coursesPage = 1;
 
@@ -73,7 +79,7 @@ class InstructorDetailsController extends GetxController with SettledLoad {
 
   void _remember() {
     final current = instructor.value;
-    if (current == null || instructorId <= 0 || coursesError.value != null) return;
+    if (current == null || instructorId <= 0 || coursesError.value != null || reviewsError.value != null) return;
     MemoryCache.put<_InstructorSnapshot>(
       _cacheKey,
       _InstructorSnapshot(
@@ -124,6 +130,7 @@ class InstructorDetailsController extends GetxController with SettledLoad {
 
   Future<void> loadDetails() async {
     if (instructorId <= 0) {
+      if (instructor.value == null) detailsError.value = 'error_unexpected'.tr;
       isLoading.value = false;
       isLoadingCourses.value = false;
       return;
@@ -141,11 +148,13 @@ class InstructorDetailsController extends GetxController with SettledLoad {
   }
 
   Future<void> _refreshInstructor() async {
+    detailsError.value = null;
     try {
       final fresh = await _instructorRepository.fetchInstructorById(instructorId);
       instructor.value = fresh;
-    } catch (_) {
-      // الإبقاء على بيانات الكارد
+    } catch (e) {
+      // الإبقاء على بيانات الكارد؛ بدونها خطأ مع «إعادة المحاولة».
+      if (instructor.value == null) detailsError.value = userErrorMessage(e);
     }
   }
 
@@ -205,14 +214,18 @@ class InstructorDetailsController extends GetxController with SettledLoad {
   Future<void> _loadReviews() async {
     if (instructorId <= 0) return;
     isLoadingReviews.value = true;
+    reviewsError.value = null;
     try {
       reviews.assignAll(await _reviewRepository.fetchReviews(instructorId: instructorId));
-    } catch (_) {
-      reviews.clear();
+    } catch (e) {
+      // تحديث فاشل يُبقي التقييمات المعروضة (كانت تُمسح فتظهر «لا تقييمات»).
+      if (reviews.isEmpty) reviewsError.value = userErrorMessage(e);
     } finally {
       isLoadingReviews.value = false;
     }
   }
+
+  Future<void> retryReviews() => _loadReviews();
 
   Future<void> toggleFavorite() async {
     if (instructorId <= 0) return;

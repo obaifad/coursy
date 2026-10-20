@@ -70,14 +70,11 @@ class CategoryCoursesController extends GetxController with InitialLoadState, Se
   Future<void> loadCourses() async {
     isLoading.value = isInitialLoad;
     errorMessage.value = null;
-    _page = 1;
     try {
-      final result = await _repository.fetchCoursesPage(
-        page: _page,
-        perPage: _perPage,
-        query: {'category_id': categoryId},
-      );
+      final result = await _repository.fetchCoursesPage(page: 1, perPage: _perPage, query: {'category_id': categoryId});
       courses.assignAll(result.items);
+      // بعد النجاح فقط: تصفيره قبل الطلب كان يجعل «المزيد» بعد تحديث فاشل يكرّر الصفحة الثانية.
+      _page = 1;
       hasMore.value = result.hasMore;
       markLoaded();
       _remember();

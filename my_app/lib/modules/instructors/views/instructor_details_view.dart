@@ -36,6 +36,14 @@ class InstructorDetailsView extends GetView<InstructorDetailsController> {
       if (controller.isLoading.value && item == null) {
         return const Scaffold(body: AppDetailSkeleton());
       }
+      // فتح بالمعرّف فقط (إشعار) وفشل الجلب: خطأ مع «إعادة المحاولة» بدل صفحة فارغة.
+      final detailsError = controller.detailsError.value;
+      if (item == null && detailsError != null) {
+        return Scaffold(
+          appBar: AppBar(title: Text('instructor_details'.tr)),
+          body: AppLoadErrorState(message: detailsError, onRetry: controller.loadDetails),
+        );
+      }
 
       final name = item?.name ?? 'instructor_details'.tr;
 
@@ -394,6 +402,15 @@ class _InstructorReviewsTab extends StatelessWidget {
       final reviews = controller.reviews.toList(growable: false);
       if (controller.isLoadingReviews.value && reviews.isEmpty) {
         return const AppListSkeleton(itemCount: 3);
+      }
+      final reviewsError = controller.reviewsError.value;
+      if (reviews.isEmpty && reviewsError != null) {
+        return AppEmptyState.scrollable(
+          context: context,
+          message: reviewsError,
+          icon: Icons.cloud_off_outlined,
+          action: FilledButton(onPressed: controller.retryReviews, child: Text('retry'.tr)),
+        );
       }
       if (reviews.isEmpty) {
         return AppEmptyState.scrollable(

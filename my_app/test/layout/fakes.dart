@@ -36,6 +36,12 @@ import 'package:my_app/core/storage/token_storage.dart';
 
 import 'sample_data.dart';
 
+/// يستبدل تبعية مسجّلة بنسخة أخرى. Get.replace لا يستبدل النسخة المسجّلة بـ Get.put في هذا الإصدار من GetX.
+T replaceFake<T>(T instance) {
+  Get.delete<T>(force: true);
+  return Get.put<T>(instance);
+}
+
 PaginatedResult<T> _page<T>(List<T> items) =>
     PaginatedResult<T>(items: items, currentPage: 1, lastPage: 1, total: items.length, hasMore: false);
 

@@ -209,7 +209,9 @@ class ApiClient extends GetxService {
   bool _isHostingChallengeHtml(dynamic body) {
     if (body is! String) return false;
     final s = body.trim().toLowerCase();
-    return s.contains('<html') && (s.contains('aes.js') || s.contains('__test'));
+    // صفحات تحقق الاستضافة (JS) بدل JSON: القديمة (aes.js) و«Checking your browser» من CDN الاستضافة —
+    // تطبيق لا يحلّ تحدّي JS، فنعرض «استجابة غير متوقعة» بدل «فشل الطلب (403)».
+    return s.contains('<html') && (s.contains('aes.js') || s.contains('__test') || s.contains('checking your browser'));
   }
 
   String _dioMessage(DioException e) {

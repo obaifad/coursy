@@ -65,19 +65,16 @@ class InstructorSubjectInstructorsController extends GetxController with Initial
   Future<void> loadInstructors() async {
     isLoading.value = isInitialLoad;
     errorMessage.value = null;
-    _visibleCount = 0;
     try {
       _apply(await _repository.fetchInstructorsBySubject(subjectKey: subjectKey));
       markLoaded();
       MemoryCache.put<List<InstructorModel>>(_cacheKey, List.of(_allInstructors));
-    } on ApiException catch (e) {
-      errorMessage.value = e.message;
-      instructors.clear();
-      hasMore.value = false;
-    } catch (_) {
-      errorMessage.value = 'private_instructors_load_failed'.tr;
-      instructors.clear();
-      hasMore.value = false;
+    } catch (e) {
+      // تحديث فاشل يُبقي القائمة المعروضة؛ بلا قائمة: الخطأ مع «إعادة المحاولة».
+      if (instructors.isEmpty) {
+        errorMessage.value = e is ApiException ? e.message : 'private_instructors_load_failed'.tr;
+        hasMore.value = false;
+      }
     } finally {
       isLoading.value = false;
     }

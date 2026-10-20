@@ -9,6 +9,7 @@ import 'core/bindings/app_bindings.dart';
 import 'core/config/app_debug_log.dart';
 import 'core/locale/locale_controller.dart';
 import 'core/network/api_client.dart';
+import 'core/network/trusted_roots.dart';
 import 'core/push/firebase_bootstrap.dart';
 import 'core/services/app_config_service.dart';
 import 'core/services/app_lifecycle_sync.dart';
@@ -23,6 +24,8 @@ import 'core/storage/recent_search_storage.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // قبل أي طلب: جذور TLS التي تنقص Android 6.0–7.0 (وإلا فشل كل اتصال بالخادم على هذه الأجهزة).
+  await _step('trusted-roots', TrustedRoots.install);
   // كل خطوة معزولة: فشل واحدة (Firebase، التخزين، الإشعارات…) لا يمنع التطبيق من الإقلاع،
   // وفي أسوأ حال يبدأ بلا جلسة (ضيف) بدل شاشة بيضاء.
   await _step('orientation', _lockPhonesToPortrait);
