@@ -249,6 +249,60 @@ class AppSliverRowListSkeleton extends StatelessWidget {
   }
 }
 
+/// بيانات وهمية لهياكل تُبنى من البطاقة الحقيقية نفسها (كما [AppSliverBoardingSkeleton]): نفس الارتفاع
+/// والحشوة بالضبط، فلا تقفز الصفحة حين تحلّ البطاقات الحقيقية مكانها.
+abstract final class AppSkeletonData {
+  static final InstituteModel institute = InstituteModel.fromJson({
+    'id': 0,
+    'name_ar': 'اسم المعهد التدريبي',
+    'name_en': 'Training institute name',
+    'average_rating': '4.5',
+    'courses_count': 12,
+    'city': {'id': 0, 'name_ar': 'دمشق', 'name_en': 'Damascus'},
+  });
+
+  static final CourseModel course = CourseModel.fromJson({
+    'id': 0,
+    'title_ar': 'عنوان الدورة التدريبية',
+    'title_en': 'Training course title',
+    'level': 'beginner',
+    'price': '350000',
+  });
+
+  static final InstructorModel instructor = InstructorModel.fromJson({
+    'id': 0,
+    'name_ar': 'اسم المدرّس',
+    'name_en': 'Instructor name',
+    'specialization_ar': 'التخصص',
+    'specialization_en': 'Specialization',
+    'experience_years': 5,
+    'is_private': 1,
+  });
+}
+
+/// هيكل قائمة مدرّسين خصوصيين ([PrivateInstructorListCard]) كـ sliver — البطاقة الحقيقية ببيانات وهمية.
+class AppSliverInstructorListSkeleton extends StatelessWidget {
+  const AppSliverInstructorListSkeleton({super.key, this.itemCount = 6, required this.padding});
+
+  final int itemCount;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer.sliver(
+      enabled: true,
+      child: SliverPadding(
+        padding: padding,
+        sliver: SliverList.separated(
+          itemCount: itemCount,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (_, __) => PrivateInstructorListCard(instructor: AppSkeletonData.instructor),
+        ),
+      ),
+    );
+  }
+}
+
 /// نسخة sliver من [AppListSkeleton] — تحت رأس الصفحة داخل CustomScrollView.
 class AppSliverListSkeleton extends StatelessWidget {
   const AppSliverListSkeleton({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16)});
@@ -655,37 +709,14 @@ class _SkeletonRowCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: AppCorners.md,
-        border: Border.all(color: AppColors.borderNeutral),
-      ),
-      child: const Padding(
-        padding: EdgeInsets.all(AppRowCard.padding),
-        child: Row(
-          children: [
-            SizedBox.square(
-              dimension: AppRowCard.thumbSize,
-              child: DecoratedBox(
-                decoration: BoxDecoration(color: AppColors.primary, borderRadius: AppCorners.sm),
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Course title placeholder text', style: TextStyle(fontSize: AppTextSize.lg)),
-                  SizedBox(height: 6),
-                  Text('Institute name', style: TextStyle(fontSize: AppTextSize.sm)),
-                  SizedBox(height: 20),
-                  Text('12 weeks · 350,000', style: TextStyle(fontSize: AppTextSize.sm)),
-                ],
-              ),
-            ),
-          ],
-        ),
+    // البطاقة الصفّية الحقيقية نفسها بنصوص وهمية: نفس ارتفاعها (118 أو أكثر مع تكبير الخط) بكل اللغات —
+    // النسخة المرسومة يدوياً كانت أطول بالعربية (170 بدل 118) فتقفز القوائم عند وصول البيانات.
+    return const AppRowCard(
+      leading: ColoredBox(color: AppColors.primary),
+      title: AppRowTitle('اسم العنصر في القائمة'),
+      subtitle: AppRowMeta(icon: Icons.apartment_rounded, text: 'المعهد • المدينة'),
+      footer: AppRowMetaLine(
+        items: [AppRowMeta(icon: Icons.schedule_rounded, text: '12 أسبوعاً')],
       ),
     );
   }

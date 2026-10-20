@@ -45,9 +45,22 @@ class CategoryCoursesView extends GetView<CategoryCoursesController> {
                       : pluralTr('category_courses_count', controller.courses.length),
                   onBack: Get.back,
                 ),
-                if (isLoading)
-                  AppSliverGridSkeleton(padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0), itemCount: 4, aurora: true)
-                else ...[
+                if (isLoading) ...[
+                  // مكان صف الترتيب محجوز (غير مرئي) كي لا تنزل الشبكة عند وصول البيانات.
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 0),
+                      child: Visibility(
+                        visible: false,
+                        maintainSize: true,
+                        maintainAnimation: true,
+                        maintainState: true,
+                        child: CourseSortDropdown(selected: controller.selectedSort.value, onSelected: (_) {}),
+                      ),
+                    ),
+                  ),
+                  AppSliverGridSkeleton(padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0), itemCount: 4, aurora: true),
+                ] else ...[
                   if (controller.courses.isNotEmpty)
                     SliverToBoxAdapter(
                       child: Padding(

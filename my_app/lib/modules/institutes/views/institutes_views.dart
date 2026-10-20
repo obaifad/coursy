@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../../theme/app_motion.dart';
 
 import '../../../core/locale/plural.dart';
@@ -364,9 +365,20 @@ class _CoursesTab extends StatelessWidget {
         );
       }
       if (courses.isEmpty && controller.isLoading.value) {
-        return AppRowListSkeleton(
-          padding: EdgeInsets.fromLTRB(AppLayout.readableInset(context), 16, AppLayout.readableInset(context), 8),
-          itemCount: 3,
+        // البلاطة الحقيقية نفسها ببيانات وهمية وبحشوة القائمة نفسها: لا قفزة عند وصول الدورات.
+        return Skeletonizer(
+          enabled: true,
+          child: ListView(
+            physics: const NeverScrollableScrollPhysics(),
+            padding: AppLayout.scrollPadding(context, top: 16),
+            children: [
+              for (var i = 0; i < 3; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _InstituteCourseTile(course: AppSkeletonData.course),
+                ),
+            ],
+          ),
         );
       }
       if (courses.isEmpty) {
@@ -383,32 +395,44 @@ class _CoursesTab extends StatelessWidget {
           final c = courses[i];
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: SoftCard(
-              child: ListTile(
-                shape: SoftCard.shape,
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                    gradient: AppGradients.primary,
-                  ),
-                  child: const Icon(Icons.menu_book_rounded, color: Colors.white),
-                ),
-                title: Text(c.title, style: const TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text(
-                  c.hasRating ? '${c.rating.toStringAsFixed(1)} ★ · ${c.level}' : c.level,
-                  style: const TextStyle(fontSize: AppTextSize.xs),
-                ),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: c),
-              ),
+            child: _InstituteCourseTile(
+              course: c,
+              onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: c),
             ),
           );
         },
       );
     });
+  }
+}
+
+class _InstituteCourseTile extends StatelessWidget {
+  const _InstituteCourseTile({required this.course, this.onTap});
+
+  final CourseModel course;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SoftCard(
+      child: ListTile(
+        shape: SoftCard.shape,
+        contentPadding: EdgeInsets.zero,
+        leading: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.sm), gradient: AppGradients.primary),
+          child: const Icon(Icons.menu_book_rounded, color: Colors.white),
+        ),
+        title: Text(course.title, style: const TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: Text(
+          course.hasRating ? '${course.rating.toStringAsFixed(1)} ★ · ${course.level}' : course.level,
+          style: const TextStyle(fontSize: AppTextSize.xs),
+        ),
+        trailing: const Icon(Icons.chevron_right_rounded),
+        onTap: onTap,
+      ),
+    );
   }
 }
 
@@ -431,9 +455,20 @@ class _InstructorsTab extends StatelessWidget {
         );
       }
       if (instructors.isEmpty && controller.isLoading.value) {
-        return AppRowListSkeleton(
-          padding: EdgeInsets.fromLTRB(AppLayout.readableInset(context), 16, AppLayout.readableInset(context), 8),
-          itemCount: 3,
+        // بطاقة المدرّس الحقيقية ببيانات وهمية وبحشوة القائمة نفسها: لا قفزة عند وصول المدرّسين.
+        return Skeletonizer(
+          enabled: true,
+          child: ListView(
+            physics: const NeverScrollableScrollPhysics(),
+            padding: AppLayout.scrollPadding(context, top: 16),
+            children: [
+              for (var i = 0; i < 3; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: PrivateInstructorListCard(instructor: AppSkeletonData.instructor),
+                ),
+            ],
+          ),
         );
       }
       if (instructors.isEmpty) {

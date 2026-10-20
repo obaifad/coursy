@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/locale/plural.dart';
@@ -14,6 +15,22 @@ import '../../../theme/app_fonts.dart';
 
 class CityDetailsView extends GetView<CityDetailsController> {
   const CityDetailsView({super.key});
+
+  /// الإحصاءات وعنوان القسم فوق بطاقات المعاهد — نفسها في الهيكل وبعد وصول البيانات.
+  List<Widget> _header(BuildContext context, {required int institutesCount, required int coursesCount}) => [
+    SoftCard(
+      child: Row(
+        children: [
+          _StatBox(label: 'nav_institutes'.tr, value: '$institutesCount'),
+          const SizedBox(width: 12),
+          _StatBox(label: 'stat_courses'.tr, value: '$coursesCount'),
+        ],
+      ),
+    ),
+    const SizedBox(height: 16),
+    Text('city_institutes_section'.tr, style: Theme.of(context).textTheme.titleMedium),
+    const SizedBox(height: 12),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -44,25 +61,30 @@ class CityDetailsView extends GetView<CityDetailsController> {
                 child: AppTabSafeArea(
                   top: false,
                   child: controller.isLoading.value
-                      ? const AppListSkeleton()
+                      // الصفحة نفسها (الإحصاءات والعنوان وبطاقات المعاهد) ببيانات وهمية: قائمة البلاطات العامة
+                      // كانت أقصر من بطاقات المعاهد وتبدأ من الأعلى، فتقفز الصفحة عند وصول البيانات.
+                      ? Skeletonizer(
+                          enabled: true,
+                          child: ListView(
+                            physics: const NeverScrollableScrollPhysics(),
+                            padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
+                            children: [
+                              ..._header(context, institutesCount: 12, coursesCount: 48),
+                              for (var i = 0; i < 4; i++)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: InstituteListCard(institute: AppSkeletonData.institute),
+                                ),
+                            ],
+                          ),
+                        )
                       : RefreshIndicator(
                           onRefresh: controller.load,
                           child: ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
                             children: [
-                              SoftCard(
-                                child: Row(
-                                  children: [
-                                    _StatBox(label: 'nav_institutes'.tr, value: '$institutesCount'),
-                                    const SizedBox(width: 12),
-                                    _StatBox(label: 'stat_courses'.tr, value: '$coursesCount'),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Text('city_institutes_section'.tr, style: Theme.of(context).textTheme.titleMedium),
-                              const SizedBox(height: 12),
+                              ..._header(context, institutesCount: institutesCount, coursesCount: coursesCount),
                               if (controller.institutes.isEmpty && controller.errorMessage.value != null)
                                 SoftCard(
                                   child: AppLoadErrorState(
