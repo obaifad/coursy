@@ -15,6 +15,8 @@ import 'package:my_app/modules/favorites/views/favorites_view.dart';
 import 'package:my_app/modules/home/controllers/home_controller.dart';
 import 'package:my_app/modules/institutes/controllers/institutes_controller.dart';
 import 'package:my_app/modules/institutes/views/institutes_views.dart';
+import 'package:my_app/modules/instructors/controllers/instructor_details_controller.dart';
+import 'package:my_app/modules/instructors/views/instructor_details_view.dart';
 import 'package:my_app/modules/instructors/controllers/private_instructors_controller.dart';
 import 'package:my_app/modules/instructors/views/private_instructors_view.dart';
 import 'package:my_app/modules/notifications/controllers/notifications_controller.dart';
@@ -186,6 +188,20 @@ void main() {
         beforeEach: () async {
           await registerFakes(loggedIn: true, locale: Get.locale?.languageCode ?? locale);
           Get.put(InstituteDetailsController(), tag: 'institute-test').institute.value = sampleInstitutes().first;
+        },
+      ),
+    );
+  });
+
+  testWidgets('instructor details', (tester) async {
+    allIssues.addAll(
+      await auditScene(
+        tester,
+        'instructor-details',
+        () => const InstructorDetailsView(controllerTag: 'instructor-test'),
+        beforeEach: () async {
+          await registerFakes(loggedIn: true, locale: Get.locale?.languageCode ?? locale);
+          Get.put(InstructorDetailsController(), tag: 'instructor-test').instructor.value = sampleInstructors().first;
         },
       ),
     );

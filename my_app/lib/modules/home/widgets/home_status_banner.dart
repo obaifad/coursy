@@ -68,40 +68,39 @@ class GuestSignUpBanner extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
+          // الزر المرئي 44 كما هو، ومساحة اللمس 48 (tapTargetSize.padded) — كان SizedBox(44) يحصر اللمس في 44.
           Row(
             children: [
               Expanded(
-                child: SizedBox(
-                  height: 44,
-                  child: FilledButton(
-                    onPressed: () => Get.toNamed(AppRoutes.register),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: AppColors.primaryDark,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
-                      textStyle: AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700),
-                    ),
-                    child: FittedBox(fit: BoxFit.scaleDown, child: Text('register'.tr, maxLines: 1)),
+                child: FilledButton(
+                  onPressed: () => Get.toNamed(AppRoutes.register),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppColors.primaryDark,
+                    elevation: 0,
+                    minimumSize: const Size(0, 44),
+                    tapTargetSize: MaterialTapTargetSize.padded,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+                    textStyle: AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700),
                   ),
+                  child: FittedBox(fit: BoxFit.scaleDown, child: Text('register'.tr, maxLines: 1)),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: SizedBox(
-                  height: 44,
-                  child: OutlinedButton(
-                    onPressed: () => AppNavigation.switchToTab(0),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: BorderSide(color: Colors.white.withValues(alpha: 0.75)),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
-                      textStyle: AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700),
-                    ),
-                    child: FittedBox(fit: BoxFit.scaleDown, child: Text('browse_courses_short'.tr, maxLines: 1)),
+                child: OutlinedButton(
+                  onPressed: () => AppNavigation.switchToTab(0),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.75)),
+                    minimumSize: const Size(0, 44),
+                    tapTargetSize: MaterialTapTargetSize.padded,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+                    textStyle: AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700),
                   ),
+                  child: FittedBox(fit: BoxFit.scaleDown, child: Text('browse_courses_short'.tr, maxLines: 1)),
                 ),
               ),
             ],

@@ -178,8 +178,16 @@ void main() {
           children: [
             CategoryHeaderBanner(category: categories[1], coursesCount: 128),
             const SizedBox(height: 12),
-            // في التطبيق: خلفية SliverAppBar بارتفاع ثابت (expandedHeight: 200).
-            SizedBox(height: 200, child: InstituteDetailHero(institute: sampleInstitutes().first)),
+            // في التطبيق: خلفية SliverAppBar بارتفاعه الممتد المحسوب من محتوى الرأس، فوقه شريط الحالة
+            // (institutes_views.dart). كان هنا 200 ثابتة من قبل حساب الارتفاع، فتفيض الصورة والاسم في الفحص فقط.
+            Builder(
+              builder: (context) => SizedBox(
+                height:
+                    MediaQuery.paddingOf(context).top +
+                    AppDetailHero.expandedHeight(context, avatarSize: InstituteDetailHero.logoSize),
+                child: InstituteDetailHero(institute: sampleInstitutes().first),
+              ),
+            ),
             const SizedBox(height: 12),
             AppEmptyState(message: longCourseAr, subtitle: longCourseEn, icon: Icons.inbox_outlined),
           ],

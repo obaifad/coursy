@@ -95,7 +95,7 @@ class InstructorDetailsView extends GetView<InstructorDetailsController> {
                         color: AppColors.surface,
                         child: Builder(
                           builder: (context) => Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+                            padding: AppTabBarSection.padding,
                             child: AppSegmentedTabBar(
                               controller: DefaultTabController.of(context),
                               tabs: [

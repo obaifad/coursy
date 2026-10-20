@@ -72,13 +72,22 @@ class _AppScrollAwayHeaderViewState extends State<AppScrollAwayHeaderView> {
 /// خلفية الصفحة تحت الشريط الملتصق (فلا تظهر البطاقات من خلفه)، وظل خفيف فقط حين يلتصق بالأعلى
 /// والمحتوى يمرّ تحته — فيبدو الفاصل مقصوداً بدل حافة مقطوعة.
 class AppPinnedBar extends StatefulWidget {
-  const AppPinnedBar({super.key, required this.scrollController, required this.pinOffset, required this.child});
+  const AppPinnedBar({
+    super.key,
+    required this.scrollController,
+    required this.pinOffset,
+    required this.child,
+    this.padding = const EdgeInsets.only(top: 8, bottom: 10),
+  });
 
   final ScrollController scrollController;
 
   /// ارتفاع ما يختفي قبل أن يلتصق الشريط.
   final double Function() pinOffset;
   final Widget child;
+
+  /// حول الصف داخل الشريط.
+  final EdgeInsets padding;
 
   @override
   State<AppPinnedBar> createState() => _AppPinnedBarState();
@@ -119,7 +128,7 @@ class _AppPinnedBarState extends State<AppPinnedBar> {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
-      padding: const EdgeInsets.only(top: 8, bottom: 10),
+      padding: widget.padding,
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
         boxShadow: [

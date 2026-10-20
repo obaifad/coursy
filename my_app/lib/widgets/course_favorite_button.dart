@@ -38,7 +38,8 @@ class CourseFavoriteButton extends StatefulWidget {
   /// بديل للتبديل الافتراضي (شاشة المفضلة: إزالة مع تلاشٍ وتراجع).
   final Future<void> Function()? onPressed;
 
-  static const tapTarget = 44.0;
+  /// مساحة اللمس (أقل حد في إرشادات Android) مهما صغرت الدائرة.
+  static const tapTarget = 48.0;
 
   @override
   State<CourseFavoriteButton> createState() => _CourseFavoriteButtonState();
@@ -108,10 +109,14 @@ class _CourseFavoriteButtonState extends State<CourseFavoriteButton> with Single
       final isFavorite = _optimistic ?? service.isCourseFavorite(widget.courseId);
       final label = isFavorite ? 'favorite_remove'.tr : 'favorite_add'.tr;
       final iconSize = widget.diameter * 0.53;
+      // عقدة مستقلة (container) لها نقرها: excludeSemantics يُسقط نقر GestureDetector، وبلا container يُدمج
+      // اسم الزر في عنصر البطاقة فلا يُفعَّل من TalkBack إلا فتح الدورة.
       return Semantics(
+        container: true,
         button: true,
         toggled: isFavorite,
         label: label,
+        onTap: () => _toggle(service),
         excludeSemantics: true,
         child: Tooltip(
           message: label,

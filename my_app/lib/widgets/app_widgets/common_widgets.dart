@@ -316,3 +316,38 @@ class EmptyStateView extends StatelessWidget {
     );
   }
 }
+
+/// مساحة لمس 48dp (إرشاد Android) حول زر مرئي أصغر، دون تغيير شكله: الحلقة الشفافة حول الزر تنفّذ النقر
+/// نفسه، وقارئ الشاشة يرى عنصراً واحداً بالحجم الكامل. [child] يبقى بمقاسه وتأثير ضغطه.
+class AppTapTarget extends StatelessWidget {
+  const AppTapTarget({super.key, required this.label, required this.onTap, required this.child, this.selected});
+
+  static const double size = 48;
+
+  final String label;
+  final VoidCallback onTap;
+  final Widget child;
+
+  /// حالة التحديد لقارئ الشاشة (تبويب التنقّل الحالي)؛ null = ليس عنصر اختيار.
+  final bool? selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      button: true,
+      selected: selected,
+      label: label,
+      onTap: onTap,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: SizedBox.square(
+          dimension: size,
+          child: Center(child: child),
+        ),
+      ),
+    );
+  }
+}

@@ -255,9 +255,10 @@ class CourseSortButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = 'sort_by'.tr;
     final custom = selected != CourseSortOption.newest;
-    return Semantics(
-      button: true,
+    // المربع المرئي 44 ومساحة اللمس 48.
+    return AppTapTarget(
       label: '$label: ${selected.labelKey.tr}',
+      onTap: () => showCourseSortSheet(context: context, selected: selected, onSelected: onSelected),
       child: Tooltip(
         message: label,
         child: Material(

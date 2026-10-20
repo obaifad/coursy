@@ -231,9 +231,12 @@ class _PressableTileState extends State<_PressableTile> {
 
   @override
   Widget build(BuildContext context) {
+    // onTap هنا لأن excludeSemantics يُسقط نقر GestureDetector — وإلا يُقرأ «زر» ولا يُفعَّل من TalkBack.
     return Semantics(
+      container: true,
       button: true,
       label: widget.semanticsLabel,
+      onTap: widget.onTap,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,

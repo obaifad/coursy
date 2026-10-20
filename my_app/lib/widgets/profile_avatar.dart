@@ -57,9 +57,12 @@ class ProfileAvatar extends StatelessWidget {
         if (showCameraBadge)
           Tooltip(
             message: 'tap_to_change_photo'.tr,
+            // onTap هنا لأن excludeSemantics يُسقط نقر InkWell — وإلا يُقرأ «زر» ولا يُفعَّل من TalkBack.
             child: Semantics(
+              container: true,
               button: true,
               label: 'tap_to_change_photo'.tr,
+              onTap: onTap,
               excludeSemantics: true,
               child: Material(
                 elevation: 4,
