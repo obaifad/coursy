@@ -1,8 +1,12 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
+    <!-- WorkManager يضيفها لمهام الواجهة الأمامية (foreground/expedited)، والتطبيق لا يستعملها: فحص التسجيلات
+         مهمة دورية عادية بشرط الاتصال فقط. صلاحية بلا حاجة = سؤال إضافي في Play Console. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove"/>
     <!-- لا حاجة لصلاحيات الصور: image_picker يستخدم Photo Picker (Android 13+) و GET_CONTENT (الأقدم).
          وسياسة Google Play تمنع READ_MEDIA_IMAGES للتطبيقات التي تختار صورة أحياناً فقط. -->
     <application
