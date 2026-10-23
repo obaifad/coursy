@@ -103,6 +103,7 @@ void main() {
     final repo = _FailOneCourse(Get.find<ApiClient>(), Get.find<CourseRatingService>());
     replaceFake<CourseRepository>(repo);
     final c = Get.put(FavoritesController());
+    c.onPageOpened(); // الصفحة تفتح المتحكّم الدائم، وهو لا يحمّل وحده عند إنشائه.
     await settle(tester);
     final before = c.courses.map((e) => e.id).toList();
     expect(before, [1, 4]);
