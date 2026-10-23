@@ -13,6 +13,7 @@ import 'core/network/trusted_roots.dart';
 import 'core/push/firebase_bootstrap.dart';
 import 'core/services/app_config_service.dart';
 import 'core/services/app_lifecycle_sync.dart';
+import 'core/services/course_rating_service.dart';
 import 'core/services/enrollment_sync_service.dart';
 import 'core/services/enrollment_watch_scheduler.dart';
 import 'core/services/favorites_service.dart';
@@ -40,6 +41,8 @@ Future<void> main() async {
   await _step('locale', Get.find<LocaleController>().init);
   // يبدأ جلب إعدادات التطبيق مبكراً؛ يُعرض أي تنبيه بعد الانتقال من شاشة البداية.
   unawaited(_step('app-config', Get.find<AppConfigService>().load));
+  // مراجع التقييمات والمعاهد والمدن تُحمَّل أثناء شاشة البداية، فلا تنتظرها أول قائمة دورات.
+  unawaited(_step('rating-cache', Get.find<CourseRatingService>().warmUp));
   await _step('session', Get.find<TokenStorage>().init);
   await _step('recent-search', Get.find<RecentSearchStorage>().init);
   if (Get.isRegistered<PushNotificationService>()) {
