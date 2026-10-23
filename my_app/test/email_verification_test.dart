@@ -33,7 +33,13 @@ class _FakeAuth extends AuthRepository {
   }
 }
 
-Future<(_FakeAuth, EmailVerificationController)> _open(WidgetTester tester, {void Function(_FakeAuth)? setup}) async {
+/// [send] = true: كما بعد «حفظ وإرسال الرمز» (يرسل عند الفتح). وإلا يُضغط «إرسال الرمز» إن [tapSend].
+Future<(_FakeAuth, EmailVerificationController)> _open(
+  WidgetTester tester, {
+  void Function(_FakeAuth)? setup,
+  bool send = false,
+  bool tapSend = true,
+}) async {
   Get.locale = const Locale('ar');
   await registerFakes(loggedIn: true, locale: 'ar');
   final auth = _FakeAuth(ApiClient(Get.find<TokenStorage>()), Get.find<TokenStorage>());
@@ -42,16 +48,76 @@ Future<(_FakeAuth, EmailVerificationController)> _open(WidgetTester tester, {voi
   Get.put<AuthRepository>(auth);
 
   await tester.pumpWidget(const GetMaterialApp(home: Scaffold(body: SizedBox())));
-  final controller = Get.put(EmailVerificationController(initialEmail: 'student@example.com'));
+  final controller = Get.put(EmailVerificationController(initialEmail: 'student@example.com', sendOnOpen: send));
   Get.to<void>(() => const EmailVerificationView());
   await tester.pumpAndSettle();
+  if (tapSend && !send && !controller.codeSent.value) {
+    await tester.tap(find.text('send_code_button'));
+    await tester.pumpAndSettle();
+  }
   return (auth, controller);
 }
 
-void main() {
-  tearDown(Get.reset);
+Future<void> _close(WidgetTester tester) async {
+  Get.back<void>();
+  await tester.pumpAndSettle();
+  // في التطبيق يُحذف المتحكّم مع الصفحة فيتوقف العدّاد؛ هنا أُنشئ يدوياً.
+  Get.delete<EmailVerificationController>();
+}
 
-  testWidgets('sends a code on open and locks resend during the countdown', (tester) async {
+void main() {
+  var now = DateTime(2026, 1, 1, 12);
+  setUp(() {
+    EmailVerificationController.resetSendHistory();
+    EmailVerificationController.clock = () => now;
+  });
+  tearDown(() {
+    EmailVerificationController.clock = DateTime.now;
+    Get.reset();
+  });
+
+  testWidgets('opening the page does not send a code: the user taps "Send code"', (tester) async {
+    final (auth, c) = await _open(tester, tapSend: false);
+
+    expect(auth.sends, 0);
+    expect(c.resendSeconds.value, 0, reason: 'no countdown before a send');
+    expect(find.byType(TextField), findsNothing, reason: 'no code field before a code exists');
+    expect(find.text('verify_email_send_instruction'), findsOneWidget);
+
+    await tester.tap(find.text('send_code_button'));
+    await tester.pumpAndSettle();
+    expect(auth.sends, 1);
+    expect(c.codeSent.value, isTrue);
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.text('verify_email_instruction'), findsOneWidget);
+    await _close(tester);
+  });
+
+  testWidgets('after "Save and send code" (email change) the page sends once on open', (tester) async {
+    final (auth, c) = await _open(tester, send: true);
+    expect(auth.sends, 1);
+    expect(c.codeSent.value, isTrue);
+    await _close(tester);
+  });
+
+  testWidgets('leaving and coming back during the countdown does not send again', (tester) async {
+    final (auth, _) = await _open(tester);
+    expect(auth.sends, 1);
+    await _close(tester);
+
+    now = now.add(const Duration(seconds: 20));
+    // نفس الصفحة تُفتح من جديد (حتى مع طلب إرسال عند الفتح).
+    final c2 = Get.put(EmailVerificationController(initialEmail: 'Student@Example.com', sendOnOpen: true));
+    Get.to<void>(() => const EmailVerificationView());
+    await tester.pumpAndSettle();
+    expect(auth.sends, 1, reason: 'a code was just sent to this email');
+    expect(c2.codeSent.value, isTrue);
+    expect(find.byType(TextField), findsOneWidget);
+    expect(c2.resendSeconds.value, 40);
+    await _close(tester);
+  });
+
+  testWidgets('sends a code on tap and locks resend during the countdown', (tester) async {
     final (auth, c) = await _open(tester);
 
     expect(auth.sends, 1);
