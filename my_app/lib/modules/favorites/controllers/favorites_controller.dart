@@ -1,15 +1,15 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 import '../../../core/data/repositories/course_repository.dart';
 import '../../../core/models/app_models.dart';
-import '../../../core/navigation/route_settle.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/services/favorites_service.dart';
 import '../../../core/locale/locale_request_guard.dart';
 
-class FavoritesController extends GetxController with InitialLoadState, SettledLoad {
+class FavoritesController extends GetxController with InitialLoadState {
   final FavoritesService _favoritesService = Get.find();
   final CourseRepository _courseRepository = Get.find();
 
@@ -27,6 +27,22 @@ class FavoritesController extends GetxController with InitialLoadState, SettledL
 
   static const _parallelFetches = 4;
 
+  /// قائمة المفضلة المعروضة تُعدّ طازجة هذه المدة: العودة للصفحة خلالها لا تطلب شيئاً (مثل مدة مزامنة الخدمة).
+  static const _listTtl = Duration(minutes: 2);
+
+  /// تفاصيل الدورات (مقاعد وأسعار) تُجدَّد كلها بصمت بعد هذه المدة فقط؛ قبلها تُجلب الدورات الناقصة وحدها.
+  static const _detailsTtl = Duration(minutes: 5);
+
+  /// الساعة: تُستبدل في الاختبارات لتقديم الزمن.
+  @visibleForTesting
+  static DateTime Function() clock = DateTime.now;
+
+  DateTime? _loadedAt;
+  DateTime? _detailsAt;
+
+  /// تحميل جارٍ الآن: فتح الصفحة مرتين متتاليتين (أو مع onInit) لا يبدأ جلباً ثانياً.
+  bool _busy = false;
+
   @override
   void onInit() {
     super.onInit();
@@ -34,7 +50,6 @@ class FavoritesController extends GetxController with InitialLoadState, SettledL
       if (_syncing) return;
       unawaited(_hydrateCoursesFromService(refreshAll: false).catchError((Object _) {}));
     });
-    afterRouteSettles(loadFavorites);
   }
 
   @override
@@ -43,9 +58,52 @@ class FavoritesController extends GetxController with InitialLoadState, SettledL
     super.onClose();
   }
 
+  /// المتحكّم يعيش طوال الجلسة (permanent): كان يُنشأ من جديد عند كل زيارة للصفحة (مسار GetX يحذف ما أنشأه) فيعود
+  /// بلا «تم التحميل» ويُظهر الهيكل ويعيد جلب كل دورة. تفريغه عند الخروج في [clearForLogout] وتحديثه عند
+  /// تغيّر اللغة/الدخول يستدعيه [SessionRefresh] و[LocaleRefresh] أصلاً.
   static void ensureRegistered() {
     if (!Get.isRegistered<FavoritesController>()) {
-      Get.lazyPut<FavoritesController>(() => FavoritesController(), fenix: true);
+      Get.put<FavoritesController>(FavoritesController(), permanent: true);
+    }
+  }
+
+  /// تُستدعى كلما فُتحت الصفحة؛ الواجهة تنتظر انتهاء حركة الفتح قبلها وتتأكد أن الصفحة ما زالت مفتوحة:
+  ///  - أول مرة: تحميل كامل بهيكل؛ المعرّفات من الخدمة (كاش دقيقتين) ثم تفاصيل كل دورة.
+  ///  - بعدها، والقائمة طازجة: لا شيء، تظهر فوراً.
+  ///  - بعدها، والقائمة قديمة: تظهر فوراً وتُحدَّث بصمت (دورات ناقصة فقط، وكلها إن قدمت التفاصيل).
+  void onPageOpened() => unawaited(_refreshOnOpen());
+
+  Future<void> _refreshOnOpen() async {
+    if (_busy) return;
+    if (isInitialLoad) {
+      // المعرّفات من الخدمة (تتخطى الجلب إن كانت مزامنتها حديثة)، ثم تفاصيل الدورات؛ _busy يبقى حتى ينتهي.
+      _busy = true;
+      _syncing = true;
+      try {
+        await _favoritesService.syncFromApi();
+      } finally {
+        _syncing = false;
+      }
+      await reloadFromService(forceSync: false);
+      return;
+    }
+    final loadedAt = _loadedAt;
+    if (loadedAt != null && clock().difference(loadedAt) < _listTtl) return;
+    _busy = true;
+    _syncing = true;
+    try {
+      await _favoritesService.syncFromApi();
+      _syncing = false;
+      final detailsStale = _detailsAt == null || clock().difference(_detailsAt!) >= _detailsTtl;
+      await _hydrateCoursesFromService(refreshAll: detailsStale);
+      final now = clock();
+      _loadedAt = now;
+      if (detailsStale) _detailsAt = now;
+    } catch (_) {
+      // فشل صامت (شبكة متقطعة): تبقى القائمة المعروضة كما هي وتُعاد المحاولة عند الفتح التالي.
+    } finally {
+      _syncing = false;
+      _busy = false;
     }
   }
 
@@ -54,6 +112,7 @@ class FavoritesController extends GetxController with InitialLoadState, SettledL
   Future<void> reloadFromService({bool forceSync = true}) async {
     isLoading.value = isInitialLoad;
     errorMessage.value = null;
+    _busy = true;
     _syncing = true;
     try {
       if (forceSync) {
@@ -67,9 +126,11 @@ class FavoritesController extends GetxController with InitialLoadState, SettledL
       final syncError = _favoritesService.lastSyncError.value;
       if (courses.isEmpty && syncError != null) errorMessage.value = syncError;
       markLoaded();
+      _loadedAt = _detailsAt = clock();
     } catch (e) {
       if (courses.isEmpty) errorMessage.value = userErrorMessage(e);
     } finally {
+      _busy = false;
       isLoading.value = false;
     }
   }
@@ -131,6 +192,7 @@ class FavoritesController extends GetxController with InitialLoadState, SettledL
 
   void clearForLogout() {
     resetInitialLoad();
+    _loadedAt = _detailsAt = null;
     courses.clear();
     removingIds.clear();
     isLoading.value = false;

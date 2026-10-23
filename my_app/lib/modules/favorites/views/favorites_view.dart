@@ -6,6 +6,7 @@ import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/locale/plural.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/navigation/app_navigation.dart';
+import '../../../core/navigation/route_settle.dart';
 import '../../../core/services/favorites_service.dart';
 import '../../../modules/auth/widgets/register_form_widgets.dart';
 import '../../../routes/app_routes.dart';
@@ -39,20 +40,48 @@ class FavoritesView extends GetView<FavoritesController> {
                 onBack: Navigator.canPop(context) ? Get.back : null,
               ),
             ],
-            body: GuestGate(
-              message: 'guest_favorites_hint'.tr,
-              exploreCta: 'favorites_explore'.tr,
-              onExplore: () {
-                AppNavigation.switchToTab(0);
-                Get.back();
-              },
-              child: _FavoritesBody(controller: controller),
+            body: _OnOpen(
+              onOpen: controller.onPageOpened,
+              child: GuestGate(
+                message: 'guest_favorites_hint'.tr,
+                exploreCta: 'favorites_explore'.tr,
+                onExplore: () {
+                  AppNavigation.switchToTab(0);
+                  Get.back();
+                },
+                child: _FavoritesBody(controller: controller),
+              ),
             ),
           ),
         ),
       );
     });
   }
+}
+
+/// يستدعي [onOpen] مرة عند كل فتح للصفحة (المتحكّم يعيش أطول من الصفحة، فلا يكفي onInit).
+class _OnOpen extends StatefulWidget {
+  const _OnOpen({required this.onOpen, required this.child});
+
+  final VoidCallback onOpen;
+  final Widget child;
+
+  @override
+  State<_OnOpen> createState() => _OnOpenState();
+}
+
+class _OnOpenState extends State<_OnOpen> {
+  @override
+  void initState() {
+    super.initState();
+    // بعد انتهاء حركة الفتح، وليس إن أُغلقت الصفحة قبلها (المتحكّم باقٍ، فلا isClosed تحميه).
+    RouteSettle.run(() {
+      if (mounted) widget.onOpen();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class _FavoritesBody extends StatelessWidget {
