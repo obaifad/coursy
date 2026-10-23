@@ -16,6 +16,10 @@ class EnrollmentStatusCoordinator extends GetxService {
   final Map<int, String> _statuses = {};
   final Set<String> _delivered = {};
 
+  /// ما عرضه هذا المراقب بنفسه في الجلسة. منفصل عن [_delivered] الذي يضم أيضاً ما وصل عبر FCM
+  /// وما ألغاه الطالب بنفسه (إشعار الخادم بالإلغاء يجب أن يظهر).
+  final Set<String> _shownHere = {};
+
   /// الطالب الذي حُمّلت حالته من التخزين — قبل التحميل لا نقارن ولا نحفظ
   /// (وإلا تُستبدل الحالات المحفوظة قبل قراءتها ويضيع اكتشاف الموافقة).
   int? _loadedFor;
@@ -23,6 +27,7 @@ class EnrollmentStatusCoordinator extends GetxService {
   void reset() {
     _statuses.clear();
     _delivered.clear();
+    _shownHere.clear();
     _loadedFor = null;
     final sid = Get.find<TokenStorage>().studentId;
     if (sid != null) {
@@ -99,6 +104,14 @@ class EnrollmentStatusCoordinator extends GetxService {
     await _persist();
   }
 
+  /// وصل عبر FCM إشعارُ تغيّرٍ عرضه هذا المراقب قبل لحظات (اكتشفه من قائمة التسجيلات أولاً).
+  bool wasShownLocally(Map<String, dynamic> data) {
+    final change = EnrollmentStatusChange.fromNotificationType(data['type']?.toString());
+    final enrollmentId = JsonHelpers.parseIntOrNull(data['enrollment_id']);
+    if (change == null || enrollmentId == null) return false;
+    return _shownHere.contains(change.deliveredKey(enrollmentId));
+  }
+
   /// FCM أوصل إشعار تغيّر الحالة (`enrollment_approved`…): لا نعرض إشعاراً محلياً ثانياً حين نكتشفه.
   Future<void> recordServerPush(Map<String, dynamic> data) async {
     final change = EnrollmentStatusChange.fromNotificationType(data['type']?.toString());
@@ -124,6 +137,7 @@ class EnrollmentStatusCoordinator extends GetxService {
     final key = change.deliveredKey(enrollment.id);
     if (_delivered.contains(key)) return;
     _delivered.add(key);
+    _shownHere.add(key);
 
     final courseName = enrollment.courseTitle?.trim();
     final title = change.titleKey.tr;

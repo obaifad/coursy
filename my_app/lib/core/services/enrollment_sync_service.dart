@@ -105,12 +105,20 @@ class EnrollmentSyncService extends GetxService {
         continue;
       }
 
+      if (!_deliveryStore.claimShown(
+        notificationId: notification.id,
+        type: notification.type,
+        enrollmentId: notification.enrollmentId,
+      )) {
+        continue;
+      }
+
       final title = notification.title.trim().isEmpty ? 'notification_default_title'.tr : notification.title;
       final body = notification.subtitle.trim();
 
       AppDebugLog.fcm('new server notification id=${notification.id} type=${notification.type}');
       await PushLocalNotifications.showRaw(
-        id: notification.id + 500000,
+        id: PushLocalNotifications.serverNotificationId(notification.id),
         title: title,
         body: body.isEmpty ? title : body,
         payload: _encodeNotificationPayload(notification),

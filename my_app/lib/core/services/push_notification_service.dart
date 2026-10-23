@@ -53,7 +53,8 @@ class PushNotificationService extends GetxService {
     await PushLocalNotifications.ensureInitialized(onTap: _openFromPayload);
 
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
-      await _messaging.setForegroundNotificationPresentationOptions(alert: true, badge: true, sound: true);
+      // لا يعرض النظام الإشعار والتطبيق مفتوح: التطبيق يعرض نسخته المحلية (كان يظهر مرتين على iPhone).
+      await _messaging.setForegroundNotificationPresentationOptions(alert: false, badge: true, sound: false);
     }
 
     _tokenRefreshSub?.cancel();
@@ -250,10 +251,30 @@ class PushNotificationService extends GetxService {
         'data=${message.data}',
       );
       final data = Map<String, dynamic>.from(message.data);
+      // قبل أي انتظار: فحص قائمة الخادم قد يعرض النسخة نفسها في هذه اللحظة.
+      final duplicate = _alreadyShown(data);
       await _recordDelivered(data);
       await RemoteNotificationSync.onMessageReceived(data);
+      if (duplicate) {
+        AppDebugLog.fcm('foreground: already shown, skipped id=${message.messageId}');
+        return;
+      }
       await PushLocalNotifications.showRemoteMessage(message);
     });
+  }
+
+  /// عرضه فحصُ قائمة الخادم أو مراقبُ حالة التسجيل قبل وصول FCM.
+  bool _alreadyShown(Map<String, dynamic> data) {
+    if (Get.isRegistered<EnrollmentStatusCoordinator>() &&
+        Get.find<EnrollmentStatusCoordinator>().wasShownLocally(data)) {
+      return true;
+    }
+    if (!Get.isRegistered<NotificationDeliveryStore>()) return false;
+    return !Get.find<NotificationDeliveryStore>().claimShown(
+      notificationId: JsonHelpers.parseIntOrNull(data['notification_id']),
+      type: data['type']?.toString(),
+      enrollmentId: JsonHelpers.parseIntOrNull(data['enrollment_id']),
+    );
   }
 
   /// FCM أوصل الإشعار: لا يعيد عرضَه فحصُ إشعارات الخادم الدوري، ولا مراقبُ حالة التسجيل بإشعار محلي ثانٍ
