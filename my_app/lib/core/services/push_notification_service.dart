@@ -10,6 +10,7 @@ import '../config/app_debug_log.dart';
 import '../data/repositories/device_repository.dart';
 import '../models/json_helpers.dart';
 import '../navigation/push_navigation.dart';
+import '../navigation/route_motion_builder.dart';
 import '../push/push_local_notifications.dart';
 import '../session/enrollment_status_coordinator.dart';
 import '../session/remote_notification_sync.dart';
@@ -71,13 +72,18 @@ class PushNotificationService extends GetxService {
   }
 
   /// بعد حجز ناجح: يطلب الإذن مرة واحدة إن لم يكن ممنوحاً (نافذة النظام لا تظهر إن رُفض نهائياً).
+  /// يُستدعى بعد بدء الانتقال من صفحة الحجز.
   Future<void> requestPermissionAfterBooking() async {
     if (kIsWeb || !notificationsEnabled.value) return;
     if (await _hasPermission()) return;
-    // بعد ظهور الإطار التالي: نافذة النظام على Android لا تظهر أثناء انتقال الصفحات.
-    final shown = Completer<void>();
-    WidgetsBinding.instance.addPostFrameCallback((_) => shown.complete());
-    await shown.future;
+    // نافذة النظام على Android لا تظهر أثناء انتقال الصفحات، وإطار واحد لا يكفي: ننتظر استقرار كل
+    // الانتقالات (الرئيسية، وصفحة الدفع إن فُتحت بعدها).
+    await RouteMotion.whenSettled();
+    // في الخلفية لا تظهر النافذة، ويُستهلك الطلب الوحيد بلا فائدة (Android يكفّ عن عرضها بعد رفضين).
+    if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+      AppDebugLog.fcm('permission after booking skipped: app not in foreground');
+      return;
+    }
     await ensurePermissionsAndSyncToken();
   }
 

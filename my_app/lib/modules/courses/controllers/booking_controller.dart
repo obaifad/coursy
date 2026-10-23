@@ -63,14 +63,15 @@ class BookingController extends GetxController {
         unawaited(Get.find<EnrollmentSyncService>().checkForStatusChanges());
       }
       unawaited(EnrollmentWatchScheduler.scheduleAfterEnrollment(enrollment.id));
-      if (Get.isRegistered<PushNotificationService>()) {
-        unawaited(Get.find<PushNotificationService>().requestPermissionAfterBooking());
-      }
       AppNavigation.goToRoot(tab: 3);
       // بعد التسجيل فقط يُعرض عنوان شام كاش (التحويل قبل التسجيل يُرفض من الخادم).
       // الدورات الأونلاين لا تُدفع داخل التطبيق: تُدفع للمعهد مباشرة.
       if (!course.isOnline && (course.requiresAdvancePayment || enrollment.canPay)) {
         unawaited(Get.toNamed(AppRoutes.payment, arguments: enrollment));
+      }
+      // بعد بدء الانتقالات: الطلب ينتظر انتهاءها كلها قبل نافذة النظام.
+      if (Get.isRegistered<PushNotificationService>()) {
+        unawaited(Get.find<PushNotificationService>().requestPermissionAfterBooking());
       }
     } on ApiException catch (e) {
       AppToast.show('booking_failed_title'.tr, e.message, kind: ToastKind.error);

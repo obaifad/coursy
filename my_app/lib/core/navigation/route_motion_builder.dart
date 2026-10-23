@@ -30,6 +30,44 @@ abstract final class RouteMotion {
   /// انتقال جارٍ الآن (متزامن؛ [inMotion] يُحدَّث بعد الحدث الحالي).
   static bool get isMoving => _timers.isNotEmpty;
 
+  /// يكتمل حين لا يجري أي انتقال طوال [quiet] متصلة، أو بعد [maxWait] مهما حدث.
+  ///
+  /// يبدأ بعد الإطار الحالي، فيرى انتقالاً دُفع للتو. والهدوء المتصل يغطّي انتقالاً ثانياً يتبع الأول
+  /// (الرئيسية ثم صفحة الدفع بعد الحجز). يُستعمل لما لا يظهر أثناء الحركة، مثل نافذة أذونات Android.
+  static Future<void> whenSettled({
+    Duration quiet = const Duration(milliseconds: 300),
+    Duration maxWait = const Duration(seconds: 3),
+  }) async {
+    await WidgetsBinding.instance.endOfFrame;
+    final done = Completer<void>();
+    Timer? quietTimer;
+    late final Timer cap;
+    late final VoidCallback onMotionChanged;
+
+    void finish() {
+      if (done.isCompleted) return;
+      quietTimer?.cancel();
+      cap.cancel();
+      inMotion.removeListener(onMotionChanged);
+      done.complete();
+    }
+
+    void armQuiet() {
+      quietTimer?.cancel();
+      quietTimer = isMoving
+          ? null
+          : Timer(quiet, () {
+              if (!isMoving) finish();
+            });
+    }
+
+    onMotionChanged = armQuiet;
+    inMotion.addListener(onMotionChanged);
+    cap = Timer(maxWait, finish);
+    armQuiet();
+    return done.future;
+  }
+
   static void resetForTest() {
     for (final t in _timers) {
       t.cancel();
