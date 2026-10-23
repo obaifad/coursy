@@ -99,17 +99,15 @@ void main() {
       expect(find.byIcon(Icons.face_rounded), findsNothing, reason: 'a real photo is shown as is');
     });
 
-    for (final (gender, icon) in [
-      ('male', Icons.face_6_rounded),
-      ('female', Icons.face_3_rounded),
-      (null, Icons.face_rounded),
-    ]) {
-      testWidgets('no photo + gender $gender -> $icon in the theme colour', (tester) async {
+    for (final gender in ['male', 'female', null]) {
+      testWidgets('no photo + gender $gender -> name initial in the theme ink, no cartoon face', (tester) async {
         await pump(tester, person({'gender': ?gender}), 1);
-        final shown = tester.widget<Icon>(find.byIcon(icon));
-        expect(shown.color, AppColors.primary);
-        for (final other in [Icons.face_6_rounded, Icons.face_3_rounded, Icons.face_rounded].where((i) => i != icon)) {
-          expect(find.byIcon(other), findsNothing);
+        final initial = tester.widget<Text>(
+          find.descendant(of: find.byType(InstructorPlaceholder), matching: find.text('أ')),
+        );
+        expect(initial.style?.color, AppColors.primaryInk);
+        for (final face in [Icons.face_6_rounded, Icons.face_3_rounded, Icons.face_rounded]) {
+          expect(find.byIcon(face), findsNothing);
         }
       });
     }

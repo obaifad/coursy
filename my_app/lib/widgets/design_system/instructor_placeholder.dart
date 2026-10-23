@@ -28,13 +28,22 @@ class InstructorPlaceholder extends StatelessWidget {
               ),
             );
           }
+          // حجم صحيح: لا أحجام خط كسرية في التطبيق.
+          final fontSize = (side * 34 / 100).roundToDouble();
           return Center(
             child: Text(
               initials,
               maxLines: 1,
               // الحجم يتبع المساحة لا تكبير خط النظام: الحروف جزء من الصورة.
               textScaler: TextScaler.noScaling,
-              style: AppFonts.tajawal(fontSize: side * 0.34, fontWeight: FontWeight.w700, color: foreground, height: 1),
+              // مسافة خفيفة بين الحرفين، وتوزيع متساوٍ للفراغ فوق الحرف وتحته كي يتوسّط الدائرة.
+              style: AppFonts.tajawal(
+                fontSize: fontSize,
+                fontWeight: FontWeight.w700,
+                color: foreground,
+                height: 1.2,
+                letterSpacing: (fontSize / 20).roundToDouble(),
+              ).copyWith(leadingDistribution: TextLeadingDistribution.even),
             ),
           );
         },
