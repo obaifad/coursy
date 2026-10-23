@@ -13,13 +13,27 @@ import '../../../core/storage/token_storage.dart';
 /// تأكيد البريد برمز من 6 أرقام. اختياري: يمكن تخطيه دائماً.
 ///
 /// المعاملات (Get.arguments كخريطة): `email` البريد الحالي، و`fromRegister` = true بعد إنشاء الحساب
-/// مباشرة (التخطي/النجاح يفتح الرئيسية بدل الرجوع).
+/// مباشرة (التخطي/النجاح يفتح الرئيسية بدل الرجوع)، و`sendOnOpen` = true حين طلب المستخدم الرمز قبل
+/// فتح الصفحة («حفظ وإرسال الرمز» عند تغيير البريد).
+///
+/// لا يُرسل رمز عند الفتح وحده: الصفحة تُفتح تلقائياً بعد التسجيل، وكل إرسال يبدأ العدّاد ويستهلك حدّ الخادم.
 class EmailVerificationController extends GetxController {
-  /// [initialEmail] و[openedFromRegister] يتقدّمان على Get.arguments (للاختبار أو الاستدعاء المباشر).
-  EmailVerificationController({this.initialEmail, this.openedFromRegister});
+  /// [initialEmail] و[openedFromRegister] و[sendOnOpen] تتقدّم على Get.arguments (للاختبار أو الاستدعاء المباشر).
+  EmailVerificationController({this.initialEmail, this.openedFromRegister, this.sendOnOpen});
 
   final String? initialEmail;
   final bool? openedFromRegister;
+  final bool? sendOnOpen;
+
+  /// متى يُسمح بالإرسال التالي لكل بريد، في هذه الجلسة. الخروج والعودة لا يُخفيان رمزاً أُرسل للتو
+  /// ولا يعيدان زر الإرسال قبل انتهاء العدّاد (كان كل فتح يرسل رمزاً جديداً).
+  static final Map<String, DateTime> _resendAllowedAt = {};
+
+  @visibleForTesting
+  static void resetSendHistory() => _resendAllowedAt.clear();
+
+  @visibleForTesting
+  static DateTime Function() clock = DateTime.now;
 
   final AuthRepository _auth = Get.find();
 
@@ -56,20 +70,40 @@ class EmailVerificationController extends GetxController {
   void onInit() {
     super.onInit();
     final args = Get.arguments;
+    var send = false;
     if (args is Map) {
       email.value = args['email']?.toString().trim() ?? '';
       fromRegister = args['fromRegister'] == true;
+      send = args['sendOnOpen'] == true;
     }
     if (initialEmail != null) email.value = initialEmail!.trim();
     if (openedFromRegister != null) fromRegister = openedFromRegister!;
+    if (sendOnOpen != null) send = sendOnOpen!;
     codeController.addListener(_onCodeChanged);
-    unawaited(_start());
+    unawaited(_start(send: send));
   }
 
-  Future<void> _start() async {
+  Future<void> _start({required bool send}) async {
     if (email.value.isEmpty) await _loadEmail();
-    await sendCode();
+    if (_restoreRecentSend()) return;
+    if (send) await sendCode();
   }
+
+  /// أُرسل رمز لهذا البريد قبل قليل: نعرض حقل الرمز مع ما تبقّى من العدّاد بدل زر الإرسال.
+  bool _restoreRecentSend() {
+    final allowedAt = _resendAllowedAt[_emailKey];
+    if (allowedAt == null) return false;
+    final remaining = allowedAt.difference(clock()).inSeconds;
+    if (remaining <= 0) {
+      _resendAllowedAt.remove(_emailKey);
+      return false;
+    }
+    codeSent.value = true;
+    _startTimer(remaining);
+    return true;
+  }
+
+  String get _emailKey => email.value.trim().toLowerCase();
 
   Future<void> _loadEmail() async {
     if (!Get.isRegistered<ProfileRepository>()) return;
@@ -93,7 +127,7 @@ class EmailVerificationController extends GetxController {
     try {
       final result = await _auth.sendEmailVerificationCode();
       codeSent.value = true;
-      _startTimer(result.resendAfterSeconds ?? defaultResendSeconds);
+      _startTimer(result.resendAfterSeconds ?? defaultResendSeconds, remember: true);
       // رمز التطوير يظهر في نسخة debug فقط.
       if (kDebugMode && (result.debugCode ?? '').isNotEmpty) {
         debugCodeHint.value = 'dev_otp'.trParams({'code': result.debugCode!});
@@ -107,7 +141,9 @@ class EmailVerificationController extends GetxController {
       // نصوصنا المترجمة بدل رسالة Laravel الإنجليزية («Too Many Attempts.»).
       switch (e.statusCode) {
         case 429:
-          _startTimer(e.retryAfterSeconds ?? defaultResendSeconds);
+          // رمز سابق ما زال صالحاً على الأرجح: يُعرض حقله مع العدّاد.
+          codeSent.value = true;
+          _startTimer(e.retryAfterSeconds ?? defaultResendSeconds, remember: true);
           errorMessage.value = 'email_code_too_many'.tr;
         case 503:
           errorMessage.value = 'email_code_send_failed'.tr;
@@ -180,7 +216,7 @@ class EmailVerificationController extends GetxController {
     }
   }
 
-  /// يغيّر البريد (بكلمة المرور الحالية) ثم يرسل رمزاً جديداً.
+  /// يغيّر البريد (بكلمة المرور الحالية) ثم يرسل رمزاً جديداً (زر الورقة: «حفظ وإرسال الرمز»).
   /// يُرجع أخطاء الحقول (`email` / `current_password`) أو null عند النجاح.
   Future<Map<String, String>?> changeEmail(String value, String currentPassword) async {
     final next = value.trim();
@@ -194,6 +230,7 @@ class EmailVerificationController extends GetxController {
       final errors = await Get.find<ProfileRepository>().changeEmail(next, currentPassword);
       if (errors != null) return errors;
       email.value = next;
+      codeSent.value = false;
       codeController.clear();
       errorMessage.value = null;
       _timer?.cancel();
@@ -205,7 +242,8 @@ class EmailVerificationController extends GetxController {
     }
   }
 
-  void _startTimer(int seconds) {
+  void _startTimer(int seconds, {bool remember = false}) {
+    if (remember) _resendAllowedAt[_emailKey] = clock().add(Duration(seconds: seconds));
     _timer?.cancel();
     resendSeconds.value = seconds;
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {

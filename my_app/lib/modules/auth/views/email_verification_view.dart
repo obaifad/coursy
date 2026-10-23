@@ -11,8 +11,8 @@ import '../controllers/email_verification_controller.dart';
 import '../widgets/change_email_sheet.dart';
 import '../widgets/register_form_widgets.dart';
 
-/// شاشة تأكيد البريد: أيقونة، البريد مع «تعديل»، 6 خانات للرمز (تأكيد تلقائي عند اكتمالها)،
-/// عدّاد إعادة الإرسال، زر التأكيد، و«تخطي الآن».
+/// شاشة تأكيد البريد: أيقونة، البريد مع «تعديل»، ثم زر «إرسال الرمز» (لا إرسال عند الفتح)، وبعده
+/// 6 خانات للرمز (تأكيد تلقائي عند اكتمالها)، عدّاد إعادة الإرسال، زر التأكيد، و«تخطي الآن».
 class EmailVerificationView extends GetView<EmailVerificationController> {
   const EmailVerificationView({super.key});
 
@@ -88,92 +88,135 @@ class _CodeForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Center(child: _MailIllustration()),
-        const SizedBox(height: 18),
-        Text(
-          'verify_email_instruction'.tr,
-          textAlign: TextAlign.center,
-          style: AppFonts.tajawal(fontSize: AppTextSize.md, color: AppColors.textSecondary, height: 1.5),
-        ),
-        const SizedBox(height: 4),
-        Obx(
-          () => Wrap(
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Text(
-                controller.email.value.isEmpty ? '—' : controller.email.value,
-                textDirection: TextDirection.ltr,
-                style: AppFonts.tajawal(
-                  fontSize: AppTextSize.lg,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              TextButton.icon(
-                onPressed: () => _showEditEmailSheet(context, controller),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: const Size(0, 36),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                icon: const Icon(Icons.edit_rounded, size: 15),
-                label: Text(
-                  'edit_email'.tr,
-                  style: AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700),
-                ),
-              ),
-            ],
+    return Obx(() {
+      final sent = controller.codeSent.value;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Center(child: _MailIllustration()),
+          const SizedBox(height: 18),
+          Text(
+            (sent ? 'verify_email_instruction' : 'verify_email_send_instruction').tr,
+            textAlign: TextAlign.center,
+            style: AppFonts.tajawal(fontSize: AppTextSize.md, color: AppColors.textSecondary, height: 1.5),
           ),
-        ),
-        const SizedBox(height: 18),
-        Obx(
-          () => OtpCodeField(
-            controller: controller.codeController,
-            focusNode: controller.codeFocus,
-            length: EmailVerificationController.codeLength,
-            hasError: controller.errorMessage.value != null,
-            shakeTrigger: controller.errorTick.value,
-            enabled: !controller.isVerifying.value,
-            semanticsLabel: 'verify_email_code_label'.tr,
+          const SizedBox(height: 4),
+          _EmailRow(controller: controller),
+          const SizedBox(height: 18),
+          if (sent) ..._codeStep() else ..._sendStep(),
+        ],
+      );
+    });
+  }
+
+  /// قبل أول رمز: الإرسال بقرار المستخدم.
+  List<Widget> _sendStep() => [
+    _Message(controller: controller),
+    const SizedBox(height: 4),
+    Obx(
+      () => RegisterGradientButton(
+        label: 'send_code_button'.tr,
+        loading: controller.isSending.value,
+        onPressed: controller.isSending.value ? null : controller.sendCode,
+      ),
+    ),
+  ];
+
+  List<Widget> _codeStep() => [
+    Obx(
+      () => OtpCodeField(
+        controller: controller.codeController,
+        focusNode: controller.codeFocus,
+        length: EmailVerificationController.codeLength,
+        hasError: controller.errorMessage.value != null,
+        shakeTrigger: controller.errorTick.value,
+        enabled: !controller.isVerifying.value,
+        semanticsLabel: 'verify_email_code_label'.tr,
+      ),
+    ),
+    _Message(controller: controller),
+    const SizedBox(height: 20),
+    Obx(
+      () => RegisterGradientButton(
+        label: 'verify_email_button'.tr,
+        loading: controller.isVerifying.value,
+        onPressed: controller.isVerifying.value ? null : controller.verify,
+      ),
+    ),
+    const SizedBox(height: 14),
+    _ResendRow(controller: controller),
+  ];
+}
+
+class _EmailRow extends StatelessWidget {
+  const _EmailRow({required this.controller});
+
+  final EmailVerificationController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () => Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(
+            controller.email.value.isEmpty ? '—' : controller.email.value,
+            textDirection: TextDirection.ltr,
+            style: AppFonts.tajawal(
+              fontSize: AppTextSize.lg,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
           ),
-        ),
-        Obx(() {
-          final error = controller.errorMessage.value;
-          final hint = controller.debugCodeHint.value;
-          return AnimatedSize(
-            duration: const Duration(milliseconds: 180),
-            child: error == null && hint == null
-                ? const SizedBox(width: double.infinity)
-                : Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Text(
-                      error ?? hint!,
-                      textAlign: TextAlign.center,
-                      style: AppFonts.tajawal(
-                        fontSize: AppTextSize.sm,
-                        fontWeight: FontWeight.w700,
-                        color: error != null ? AppColors.dangerText : AppColors.successText,
-                      ),
-                    ),
-                  ),
-          );
-        }),
-        const SizedBox(height: 20),
-        Obx(
-          () => RegisterGradientButton(
-            label: 'verify_email_button'.tr,
-            loading: controller.isVerifying.value,
-            onPressed: controller.isVerifying.value ? null : controller.verify,
+          TextButton.icon(
+            onPressed: () => _showEditEmailSheet(context, controller),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: const Size(0, 36),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            icon: const Icon(Icons.edit_rounded, size: 15),
+            label: Text(
+              'edit_email'.tr,
+              style: AppFonts.tajawal(fontSize: AppTextSize.sm, fontWeight: FontWeight.w700),
+            ),
           ),
-        ),
-        const SizedBox(height: 14),
-        _ResendRow(controller: controller),
-      ],
+        ],
+      ),
     );
+  }
+}
+
+/// خطأ الإرسال/التأكيد، أو رمز التطوير في نسخة debug.
+class _Message extends StatelessWidget {
+  const _Message({required this.controller});
+
+  final EmailVerificationController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final error = controller.errorMessage.value;
+      final hint = controller.debugCodeHint.value;
+      return AnimatedSize(
+        duration: const Duration(milliseconds: 180),
+        child: error == null && hint == null
+            ? const SizedBox(width: double.infinity)
+            : Padding(
+                padding: const EdgeInsets.only(top: 10, bottom: 6),
+                child: Text(
+                  error ?? hint!,
+                  textAlign: TextAlign.center,
+                  style: AppFonts.tajawal(
+                    fontSize: AppTextSize.sm,
+                    fontWeight: FontWeight.w700,
+                    color: error != null ? AppColors.dangerText : AppColors.successText,
+                  ),
+                ),
+              ),
+      );
+    });
   }
 }
 

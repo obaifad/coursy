@@ -278,7 +278,7 @@ Future<void> _changeEmail(BuildContext context) async {
     },
   );
   if (saved && changedTo.isNotEmpty) {
-    unawaited(Get.toNamed(AppRoutes.emailVerification, arguments: {'email': changedTo}));
+    unawaited(Get.toNamed(AppRoutes.emailVerification, arguments: {'email': changedTo, 'sendOnOpen': true}));
   }
 }
 
