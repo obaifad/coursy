@@ -60,6 +60,7 @@ class AppNetworkImage extends StatelessWidget {
     this.fit = BoxFit.cover,
     this.borderRadius,
     this.errorWidget,
+    this.placeholder,
     this.ignorePointer = false,
   });
 
@@ -69,6 +70,10 @@ class AppNetworkImage extends StatelessWidget {
   final BoxFit fit;
   final BorderRadius? borderRadius;
   final Widget? errorWidget;
+
+  /// ما يظهر حتى تصل الصورة (ثم تتلاشى فوقه). الافتراضي لافندر ناعم بلون العلامة بدل فراغ تُرى منه خلفية
+  /// البطاقة (كان يبدو كتلة رمادية بنفسجية داكنة تحت طبقات البطاقة).
+  final Widget? placeholder;
 
   /// true داخل كروت قابلة للنقر حتى لا تحجب الصورة ضغطة الـ InkWell.
   final bool ignorePointer;
@@ -80,6 +85,7 @@ class AppNetworkImage extends StatelessWidget {
     Widget imageForSize(double? w, double? h) {
       final hasExplicitSize = w != null && h != null && w.isFinite && h.isFinite && w > 0 && h > 0;
       final fallback = errorWidget ?? const SizedBox.shrink();
+      final waiting = placeholder ?? const ColoredBox(color: AppColors.surfaceVariant);
       if (kIsWeb) {
         return Image.network(
           url,
@@ -87,6 +93,7 @@ class AppNetworkImage extends StatelessWidget {
           height: hasExplicitSize ? h : null,
           fit: fit,
           webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
+          loadingBuilder: (_, child, progress) => progress == null ? child : waiting,
           errorBuilder: (_, __, ___) => fallback,
         );
       }
@@ -98,6 +105,9 @@ class AppNetworkImage extends StatelessWidget {
         fit: fit,
         memCacheWidth: hasExplicitSize ? (w * pixelRatio).round() : null,
         fadeInDuration: AppMotion.fast,
+        // مع placeholder يبقى القديم ظاهراً طوال fadeOutDuration (الافتراضي ثانية كاملة): نقصّره.
+        fadeOutDuration: AppMotion.fast,
+        placeholder: (_, __) => waiting,
         errorWidget: (_, __, ___) => fallback,
       );
     }

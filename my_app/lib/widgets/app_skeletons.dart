@@ -652,6 +652,10 @@ class _SkeletonPosterCard extends StatelessWidget {
 }
 
 /// هيكل [CourseAuroraCard]: غلاف بزاوية lg ولوح سفلي بارتفاع اللوح الزجاجي الحقيقي.
+/// هيكل بطاقة Aurora بشكل البطاقة الحقيقية: غلاف يلمع بلافندر العلامة، وفوقه لوح أبيض شفاف (كاللوح الزجاجي)
+/// بثلاثة أسطر تلمع. الغلاف عنصر `Bone` وحيد يرسمه Skeletonizer بلمعته؛ كان صندوق DecoratedBox
+/// بلون [AppColors.primary] وله أبناء، وهذه لا يلمّعها Skeletonizer فتظهر كتلة بنفسجية صلبة.
+/// الغلاف `Bone` (لا Skeleton.leaf): ما يُرسم داخل منطقة leaf يصير كله لمعاناً بلون واحد فيختفي اللوح.
 class _SkeletonAuroraCard extends StatelessWidget {
   const _SkeletonAuroraCard();
 
@@ -663,51 +667,59 @@ class _SkeletonAuroraCard extends StatelessWidget {
           constraints.maxWidth,
           textScale: CourseCardMetrics.textScaleOf(context),
         );
-        return DecoratedBox(
-          decoration: const BoxDecoration(color: AppColors.primary, borderRadius: AppCorners.lg),
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.all(CourseAuroraSpec.inset),
-              child: SizedBox(
-                height: spec.panelHeight,
-                child: DecoratedBox(
-                  decoration: const BoxDecoration(color: AppColors.card, borderRadius: AppCorners.md),
-                  // نفس خانات اللوح الحقيقي (التصنيف، سطرا العنوان، سطر البيانات) وحشوته: نصوص الهيكل
-                  // بارتفاعها الطبيعي كانت أطول من اللوح فتفيض (23 px عند 411 dp).
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: spec.panelPadding,
-                      vertical: CourseAuroraSpec.panelPaddingV,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          height: spec.categoryHeight,
-                          child: const Text('البرمجة • مبتدئ', maxLines: 1, style: TextStyle(fontSize: AppTextSize.xs)),
-                        ),
-                        const SizedBox(height: CourseAuroraSpec.gapAfterCategory),
-                        SizedBox(
-                          height: spec.titleHeight,
-                          child: Text(
-                            'عنوان الدورة',
-                            maxLines: 2,
-                            style: TextStyle(fontSize: spec.titleSize, fontWeight: FontWeight.w800),
+        // أسطر اللوح بنفس خانات اللوح الحقيقي (التصنيف، سطرا العنوان، سطر البيانات) وارتفاعاتها.
+        Widget line(double height, double widthFactor) => Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: FractionallySizedBox(
+            widthFactor: widthFactor,
+            child: Bone(height: height.clamp(8, 18).toDouble(), borderRadius: AppCorners.xs),
+          ),
+        );
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            // Bone لا Skeleton.leaf: كل ما يُرسم داخل منطقة leaf يلمّعه Skeletonizer (فكان اللوح الأبيض يختفي).
+            const Bone(borderRadius: AppCorners.lg),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.all(CourseAuroraSpec.inset),
+                child: SizedBox(
+                  height: spec.panelHeight,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.62), borderRadius: AppCorners.md),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: spec.panelPadding,
+                        vertical: CourseAuroraSpec.panelPaddingV,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: spec.categoryHeight, child: line(spec.categoryHeight, 0.55)),
+                          const SizedBox(height: CourseAuroraSpec.gapAfterCategory),
+                          SizedBox(
+                            height: spec.titleHeight,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                line(spec.titleSize, 0.95),
+                                const SizedBox(height: 6),
+                                line(spec.titleSize, 0.6),
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: CourseAuroraSpec.gapAfterTitle),
-                        SizedBox(
-                          height: spec.metaHeight,
-                          child: const Text('350,000', maxLines: 1, style: TextStyle(fontSize: AppTextSize.xs)),
-                        ),
-                      ],
+                          const SizedBox(height: CourseAuroraSpec.gapAfterTitle),
+                          SizedBox(height: spec.metaHeight, child: line(spec.metaHeight, 0.4)),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
+          ],
         );
       },
     );
