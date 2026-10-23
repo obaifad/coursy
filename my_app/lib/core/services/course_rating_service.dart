@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 import '../models/app_models.dart';
@@ -36,10 +37,32 @@ class CourseRatingService extends GetxService {
     _loadedAt = null;
   }
 
+  /// الانتظار الأقصى لإكمال الكاش قبل أن تُعرض القائمة بلا إكماله (يستمر التحميل في الخلفية). بطء هذه
+  /// الطلبات الثلاثة كان يؤخر أول قائمة دورات، وهي معلومات تكميلية (تقييم المعهد، اسم المدينة والتصنيف).
+  static const defaultMaxWait = Duration(seconds: 4);
+
+  @visibleForTesting
+  Duration maxWait = defaultMaxWait;
+
+  /// الساعة: تُستبدل في الاختبارات.
+  @visibleForTesting
+  static DateTime Function() clock = DateTime.now;
+
+  /// بعد فشل جزئي (مدن أو تصنيفات لم تصل) يُعاد المحاولة بعد هذه المدة بدل انتظار [_cacheTtl] كاملة.
+  static const _retryAfterPartial = Duration(minutes: 1);
+
+  bool _refreshing = false;
+
+  /// يبدأ تحميل الكاش مبكراً (عند الإقلاع) كي يكون جاهزاً حين تطلب أول قائمة إكماله.
+  Future<void> warmUp() => _ensureLoaded().catchError((Object _) {});
+
+  /// الكاش الصالح يُعاد فوراً. القديم (> [_cacheTtl]) يُخدَّم كما هو ويُجدَّد في الخلفية: كان يُمسح فتنتظر
+  /// أول قائمة بعده ثلاثة طلبات كاملة.
   Future<void> _ensureLoaded() {
     final loadedAt = _loadedAt;
-    if (loadedAt != null && DateTime.now().difference(loadedAt) > _cacheTtl) {
-      invalidateCache();
+    if (loadedAt != null && clock().difference(loadedAt) > _cacheTtl) {
+      _refreshInBackground();
+      return Future<void>.value();
     }
     return _loading ??= _loadCaches().catchError((Object e) {
       // لا نحتفظ بمستقبل فاشل — المحاولة التالية تعيد الجلب.
@@ -48,24 +71,39 @@ class CourseRatingService extends GetxService {
     });
   }
 
-  /// تقييم الدورة يأتي من الخادم (`average_rating`) — لا ننزّل كل تقييمات المنصة لحسابه محلياً.
-  Future<void> _loadCaches() async {
-    final instituteStats = await _fetchInstituteStats();
-    _instituteRatings = instituteStats.ratings;
-    _instituteCoursesCounts = instituteStats.coursesCounts;
-    _cities = await _fetchMap<CityModel>(ApiEndpoints.cities, CityModel.fromJson, (c) => c.id);
-    _categories = await _fetchMap<CategoryModel>(ApiEndpoints.categories, CategoryModel.fromJson, (c) => c.id);
-    _instituteProfiles = {for (final entry in instituteStats.profiles.entries) entry.key: _withCity(entry.value)};
-    _loadedAt = DateTime.now();
+  void _refreshInBackground() {
+    if (_refreshing) return;
+    _refreshing = true;
+    _loadCaches().catchError((Object _) {}).whenComplete(() => _refreshing = false);
   }
 
-  /// قوائم مرجعية صغيرة (مدن/تصنيفات) — فشلها لا يمنع باقي الكاش.
-  Future<Map<int, T>> _fetchMap<T>(String path, T Function(Map<String, dynamic>) parse, int Function(T) idOf) async {
+  /// المعاهد والمدن والتصنيفات مستقلة: تُطلق معاً (كانت تُجلب واحدة بعد أخرى)، وتُطبَّق نتائجها دفعة واحدة.
+  Future<void> _loadCaches() async {
+    final stats = _fetchInstituteStats();
+    final cities = _fetchMap<CityModel>(ApiEndpoints.cities, CityModel.fromJson, (c) => c.id);
+    final categories = _fetchMap<CategoryModel>(ApiEndpoints.categories, CategoryModel.fromJson, (c) => c.id);
+
+    final instituteStats = await stats;
+    final loadedCities = await cities;
+    final loadedCategories = await categories;
+
+    _instituteRatings = instituteStats.ratings;
+    _instituteCoursesCounts = instituteStats.coursesCounts;
+    _cities = loadedCities ?? _cities ?? {};
+    _categories = loadedCategories ?? _categories ?? {};
+    _instituteProfiles = {for (final entry in instituteStats.profiles.entries) entry.key: _withCity(entry.value)};
+    final complete = loadedCities != null && loadedCategories != null && !instituteStats.failed;
+    // ناقص: يُعدّ قديماً بعد دقيقة فقط فيُعاد جلبه بدل أن يبقى فارغاً نصف ساعة.
+    _loadedAt = complete ? clock() : clock().subtract(_cacheTtl - _retryAfterPartial);
+  }
+
+  /// قوائم مرجعية صغيرة (مدن/تصنيفات). null = فشل الطلب (لا خريطة فارغة تُحفَظ كأنها نجاح).
+  Future<Map<int, T>?> _fetchMap<T>(String path, T Function(Map<String, dynamic>) parse, int Function(T) idOf) async {
     try {
       final items = await _client.handle(() => _client.get(path), (data) => extractListMap(data).map(parse).toList());
       return {for (final item in items) idOf(item): item};
     } catch (_) {
-      return {};
+      return null;
     }
   }
 
@@ -77,38 +115,67 @@ class CourseRatingService extends GetxService {
     return institute.copyWith(cityAr: city.nameAr, cityEn: city.nameEn);
   }
 
-  Future<({Map<int, double> ratings, Map<int, int> coursesCounts, Map<int, InstituteModel> profiles})>
+  Future<PaginatedResult<InstituteModel>?> _fetchInstitutesPage(int page) async {
+    try {
+      return await _client.handle(
+        () => _client.get(ApiEndpoints.institutes, query: {'page': page, 'per_page': 100}),
+        (data) => PaginatedResult<InstituteModel>.fromBody(data, InstituteModel.fromJson),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// الصفحة الأولى ثم بقية الصفحات معاً (عددها معروف من الصفحة الأولى)، لا صفحة بعد صفحة.
+  Future<({Map<int, double> ratings, Map<int, int> coursesCounts, Map<int, InstituteModel> profiles, bool failed})>
   _fetchInstituteStats() async {
     final ratings = <int, double>{};
     final coursesCounts = <int, int>{};
     final profiles = <int, InstituteModel>{};
-    var page = 1;
+    var failed = false;
 
-    while (page <= _maxInstitutePages) {
-      try {
-        final pageResult = await _client.handle(
-          () => _client.get(ApiEndpoints.institutes, query: {'page': page, 'per_page': 100}),
-          (data) => PaginatedResult<InstituteModel>.fromBody(data, InstituteModel.fromJson),
-        );
-
-        for (final institute in pageResult.items) {
-          profiles[institute.id] = institute;
-          if (institute.rating > 0) {
-            ratings[institute.id] = institute.rating;
-          }
-          if (institute.coursesCount > 0) {
-            coursesCounts[institute.id] = institute.coursesCount;
-          }
-        }
-
-        if (!pageResult.hasMore) break;
-        page++;
-      } catch (_) {
-        break;
+    void absorb(PaginatedResult<InstituteModel> result) {
+      for (final institute in result.items) {
+        profiles[institute.id] = institute;
+        if (institute.rating > 0) ratings[institute.id] = institute.rating;
+        if (institute.coursesCount > 0) coursesCounts[institute.id] = institute.coursesCount;
       }
     }
 
-    return (ratings: ratings, coursesCounts: coursesCounts, profiles: profiles);
+    final first = await _fetchInstitutesPage(1);
+    if (first == null) {
+      failed = true;
+    } else {
+      absorb(first);
+      if (first.hasMore) {
+        if (first.lastPage > 1) {
+          final last = first.lastPage < _maxInstitutePages ? first.lastPage : _maxInstitutePages;
+          final rest = await Future.wait([for (var p = 2; p <= last; p++) _fetchInstitutesPage(p)]);
+          for (final result in rest) {
+            if (result == null) {
+              failed = true;
+            } else {
+              absorb(result);
+            }
+          }
+        } else {
+          // عدد الصفحات غير معروف: نتابع تتابعياً كما كان (حدّه الأقصى [_maxInstitutePages]).
+          var page = 2;
+          while (page <= _maxInstitutePages) {
+            final result = await _fetchInstitutesPage(page);
+            if (result == null) {
+              failed = true;
+              break;
+            }
+            absorb(result);
+            if (!result.hasMore) break;
+            page++;
+          }
+        }
+      }
+    }
+
+    return (ratings: ratings, coursesCounts: coursesCounts, profiles: profiles, failed: failed);
   }
 
   double resolve(CourseModel course) {
@@ -129,7 +196,7 @@ class CourseRatingService extends GetxService {
     if (courses.isEmpty) return courses;
 
     try {
-      await _ensureLoaded();
+      await _ensureLoaded().timeout(maxWait);
     } catch (_) {
       return courses;
     }
@@ -192,7 +259,7 @@ class CourseRatingService extends GetxService {
     if (institutes.isEmpty) return institutes;
 
     try {
-      await _ensureLoaded();
+      await _ensureLoaded().timeout(maxWait);
     } catch (_) {
       return institutes;
     }
