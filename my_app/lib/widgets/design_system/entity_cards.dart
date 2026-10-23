@@ -453,7 +453,7 @@ class PrivateInstructorListCard extends StatelessWidget {
     final price = instructor.hourlyPrice;
     return AppRowCard(
       onTap: onTap,
-      leading: _InstructorRowThumb(imageUrl: instructor.resolvedImageUrl, gender: instructor.gender),
+      leading: _InstructorRowThumb(imageUrl: instructor.resolvedImageUrl, name: instructor.name),
       title: AppRowTitle(instructor.name),
       trailing: instructor.isPrivate ? const _PrivateBadge() : null,
       subtitle: BidiText(
@@ -496,18 +496,16 @@ class PrivateInstructorListCard extends StatelessWidget {
 }
 
 class _InstructorRowThumb extends StatelessWidget {
-  const _InstructorRowThumb({required this.imageUrl, this.gender});
+  const _InstructorRowThumb({required this.imageUrl, this.name});
 
   final String? imageUrl;
-  final String? gender;
+  final String? name;
 
   @override
   Widget build(BuildContext context) {
-    if (imageUrl != null) return AppNetworkImage(url: imageUrl!, fit: BoxFit.cover, ignorePointer: true);
-    return DecoratedBox(
-      decoration: const BoxDecoration(gradient: AppGradients.primary),
-      child: Center(child: Icon(instructorHeadIcon(gender), color: Colors.white, size: 40)),
-    );
+    final fallback = InstructorPlaceholder(name: name);
+    if (imageUrl == null) return fallback;
+    return AppNetworkImage(url: imageUrl!, fit: BoxFit.cover, ignorePointer: true, errorWidget: fallback);
   }
 }
 
@@ -549,7 +547,7 @@ class PrivateInstructorMiniCard extends StatelessWidget {
               child: _DoctorStyleAvatar(
                 imageUrl: instructor.resolvedImageUrl,
                 size: _avatarSize,
-                gender: instructor.gender,
+                name: instructor.name,
               ),
             ),
             const SizedBox(height: 12),
@@ -607,33 +605,20 @@ class PrivateInstructorMiniCard extends StatelessWidget {
   }
 }
 
-/// أيقونة رأس للمدرّس حين لا توجد صورة: رجل بشعر قصير أو امرأة بشعر طويل بحسب [gender]، ووجه محايد
-/// إن لم يُعرف الجنس. مصدر واحد لكل الشاشات (البطاقات، تفاصيل المدرّس، مدرّس الدورة).
-IconData instructorHeadIcon(String? gender) => switch (gender) {
-  'male' => Icons.face_6_rounded,
-  'female' => Icons.face_3_rounded,
-  _ => Icons.face_rounded,
-};
-
-/// صورة دائرية للمدرّس بإطار بلون الهوية (بنفسجي ناعم) وظل خفيف. بلا صورة (أو فشل تحميلها): رأس رجل أو
-/// امرأة بحسب [gender] ([instructorHeadIcon]) بلون الهوية على خلفية بنفسجية فاتحة.
+/// صورة دائرية للمدرّس بإطار بلون الهوية (بنفسجي ناعم) وظل خفيف. بلا صورة (أو فشل تحميلها):
+/// [InstructorPlaceholder] (الحروف الأولى من الاسم).
 class _DoctorStyleAvatar extends StatelessWidget {
-  const _DoctorStyleAvatar({required this.imageUrl, required this.size, this.gender});
+  const _DoctorStyleAvatar({required this.imageUrl, required this.size, this.name});
 
   final String? imageUrl;
   final double size;
-  final String? gender;
+  final String? name;
 
   static const double _border = 2.5;
 
   @override
   Widget build(BuildContext context) {
-    final fallback = ColoredBox(
-      color: AppColors.primary.withValues(alpha: 0.1),
-      child: Center(
-        child: Icon(instructorHeadIcon(gender), color: AppColors.primary, size: size * 0.62),
-      ),
-    );
+    final fallback = InstructorPlaceholder(name: name);
     return Container(
       width: size,
       height: size,

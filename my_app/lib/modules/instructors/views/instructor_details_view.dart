@@ -138,12 +138,7 @@ class _InstructorHeroAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = instructor?.resolvedImageUrl;
-    final fallback = ColoredBox(
-      color: AppColors.primary.withValues(alpha: 0.1),
-      child: Center(
-        child: Icon(instructorHeadIcon(instructor?.gender), color: AppColors.primary, size: size * 0.6),
-      ),
-    );
+    final fallback = InstructorPlaceholder(name: instructor?.name);
     return Container(
       width: size,
       height: size,

@@ -114,8 +114,12 @@ class _InstructorHeader extends StatelessWidget {
           Container(
             width: 64,
             height: 64,
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.md)),
-            child: Obx(() => Icon(instructorHeadIcon(controller.gender.value), color: AppColors.primary, size: 38)),
+            child: Obx(() {
+              final name = controller.instructorName.value;
+              return InstructorPlaceholder(name: name == 'instructor_default'.tr ? null : name);
+            }),
           ),
           const SizedBox(width: 14),
           Expanded(

@@ -58,34 +58,43 @@ void main() {
     expect(find.text('undo'.tr), findsOneWidget);
   });
 
-  test('head icon per gender, neutral face when unknown', () {
-    expect(instructorHeadIcon('male'), Icons.face_6_rounded);
-    expect(instructorHeadIcon('female'), Icons.face_3_rounded);
-    expect(instructorHeadIcon(null), Icons.face_rounded);
+  test('initials: first and last name, titles and the article dropped, letters kept apart', () {
+    expect(instructorInitials('د. عبد الرحمن محمد الخطيب الحسيني'), 'ع‌ح');
+    expect(instructorInitials('أ. سارة الأحمد'), 'س‌أ');
+    expect(instructorInitials('Dr. john smith'), 'J‌S');
+    expect(instructorInitials('ليلى'), 'ل');
+    expect(instructorInitials('الياس'), 'ي', reason: 'a leading article is skipped even in a single name');
+    expect(instructorInitials('  '), isEmpty);
+    expect(instructorInitials('د.'), isEmpty);
+    expect(instructorInitials(null), isEmpty);
   });
 
-  for (final (gender, icon) in [
-    ('male', Icons.face_6_rounded),
-    ('female', Icons.face_3_rounded),
-    (null, Icons.face_rounded),
-  ]) {
-    testWidgets('instructor details without a photo, gender $gender -> $icon', (tester) async {
+  const faces = [Icons.face_6_rounded, Icons.face_3_rounded, Icons.face_rounded];
+
+  for (final (name, expected) in [('سامر الخطيب', 'س‌خ'), ('', null)]) {
+    testWidgets('instructor details without a photo, name "$name" -> ${expected ?? 'neutral person icon'}', (
+      tester,
+    ) async {
       await registerFakes(loggedIn: true, locale: 'ar');
       Get.routing.args = InstructorModel.fromJson({
         'id': 7,
-        'name_ar': 'مدرّس',
-        'name_en': 'Teacher',
+        'name_ar': name,
+        'name_en': name,
         'is_private': true,
-        'gender': ?gender,
+        'gender': 'male',
       });
-      Get.put(InstructorDetailsController(), tag: 'gender-test');
-      await pumpScreen(tester, const InstructorDetailsView(controllerTag: 'gender-test'));
+      Get.put(InstructorDetailsController(), tag: 'placeholder-test');
+      await pumpScreen(tester, const InstructorDetailsView(controllerTag: 'placeholder-test'));
 
-      expect(find.byIcon(icon), findsWidgets);
-      for (final other in [Icons.face_6_rounded, Icons.face_3_rounded, Icons.face_rounded].where((i) => i != icon)) {
-        expect(find.byIcon(other), findsNothing);
+      for (final face in faces) {
+        expect(find.byIcon(face), findsNothing, reason: 'no cartoon faces');
       }
-      expect(find.byIcon(Icons.person_rounded), findsNothing, reason: 'no full-body/person fallback any more');
+      expect(find.byType(InstructorPlaceholder), findsWidgets);
+      if (expected != null) {
+        expect(find.text(expected), findsWidgets);
+      } else {
+        expect(find.byIcon(Icons.person_outline_rounded), findsWidgets);
+      }
     });
   }
 }
