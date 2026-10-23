@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../routes/app_routes.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/data/repositories/interest_repository.dart';
@@ -15,6 +14,7 @@ import '../../../core/models/json_helpers.dart';
 import '../../../core/models/student_profile_payload.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/network/json_parser.dart';
+import '../../../core/storage/academic_profile_cache.dart';
 import '../../../core/storage/token_storage.dart';
 import '../../../core/utils/education_level_utils.dart';
 import '../../../core/session/session_refresh.dart';
@@ -61,6 +61,12 @@ class ProfileController extends GetxController with LatestLoadGuard {
   final selectedCategoryIds = <int>[].obs;
 
   List<String>? _editFormBaseline;
+
+  /// القيم الأكاديمية عند آخر لقطة أساس: بمقارنتها بالحالية نعرف ما أفرغه المستخدم فيُرسَل صراحة.
+  String? _baseEducation;
+  int? _baseUniversity;
+  int? _baseSpecialization;
+  Set<int> _baseCategories = {};
   final avatarDirty = false.obs;
 
   static const educationLevels = ['High School', 'Diploma', 'Bachelor', 'Master', 'PhD'];
@@ -241,6 +247,10 @@ class ProfileController extends GetxController with LatestLoadGuard {
   void captureEditBaseline() {
     saveSucceeded.value = false;
     _editFormBaseline = _formSnapshot();
+    _baseEducation = selectedEducationLevel.value;
+    _baseUniversity = selectedUniversityId.value;
+    _baseSpecialization = selectedSpecializationId.value;
+    _baseCategories = selectedCategoryIds.toSet();
     _recomputeHasChanges();
   }
 
@@ -313,6 +323,30 @@ class ProfileController extends GetxController with LatestLoadGuard {
     return null;
   }
 
+  /// الحقول الأكاديمية التي كانت ذات قيمة وصارت فارغة: تُرسَل صراحة (انظر [StudentProfilePayload.clearFields]).
+  /// يشمل ذلك الجامعة والتخصص حين يُغيَّر المستوى إلى ما لا يحتاجهما.
+  Set<String> _clearedAcademicFields() {
+    final level = selectedEducationLevel.value ?? '';
+    final university = requiresUniversityFields ? selectedUniversityId.value : null;
+    final specialization = requiresUniversityFields ? selectedSpecializationId.value : null;
+    return {
+      if ((_baseEducation ?? '').isNotEmpty && level.isEmpty) 'education_level',
+      if (_baseUniversity != null && university == null) 'university_id',
+      if (_baseSpecialization != null && specialization == null) 'specialization_id',
+      if (_baseCategories.isNotEmpty && selectedCategoryIds.isEmpty) 'preferred_categories',
+    };
+  }
+
+  /// تراجع عن التعديلات غير المحفوظة: يعيد النموذج إلى آخر ما حُمّل من الخادم (أو النسخة المحلية).
+  Future<void> discardChanges() async {
+    final user = _cachedProfileUser;
+    if (user != null) _applyUserToForm(user);
+    await _fillAcademicGapsFromCache();
+    pickedAvatarPath.value = null;
+    avatarDirty.value = false;
+    captureEditBaseline();
+  }
+
   Future<void> saveProfile() async {
     if (!hasChanges.value) return;
     final validationError = validateProfile();
@@ -360,6 +394,16 @@ class ProfileController extends GetxController with LatestLoadGuard {
           specializationId: requiresUniversityFields ? selectedSpecializationId.value : null,
           preferredCategories: selectedCategoryIds.isEmpty ? null : selectedCategoryIds.toList(),
           birthDate: birthDate.value == null ? null : EducationLevelUtils.formatApiDate(birthDate.value!),
+          clearFields: _clearedAcademicFields(),
+        ),
+      );
+      // النسخة المحلية تطابق ما حُفظ (فارغة إن أُفرغت الحقول) قبل أي إعادة تحميل، وإلا أعادت تعبئتها.
+      await _repository.saveAcademicSnapshot(
+        AcademicProfileCache(
+          educationLevel: selectedEducationLevel.value,
+          universityId: requiresUniversityFields ? selectedUniversityId.value : null,
+          specializationId: requiresUniversityFields ? selectedSpecializationId.value : null,
+          preferredCategoryIds: selectedCategoryIds.toList(),
         ),
       );
       final merged = mergeProfileUserData(result);
@@ -391,10 +435,9 @@ class ProfileController extends GetxController with LatestLoadGuard {
       captureEditBaseline();
       saveSucceeded.value = true;
       _showSavedSnack();
+      // تبقى الصفحة مفتوحة لمتابعة التعديل (كانت تُغلق وحدها بعد 0.7 ثانية)؛ الرجوع بيد المستخدم، وبلا
+      // تغييرات معلّقة لا يُسأل عن شيء.
       await SessionRefresh.afterProfileSaved();
-      await Future<void>.delayed(const Duration(milliseconds: 700));
-      // المستخدم ربما رجع بنفسه خلال المهلة — لا نُغلق صفحة أخرى بدلها.
-      if (Get.currentRoute == AppRoutes.editProfile) Get.back(result: true);
     } on ApiException catch (e) {
       AppToast.show('error'.tr, e.message);
     } catch (_) {

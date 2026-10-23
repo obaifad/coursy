@@ -35,7 +35,12 @@ void main() {
       phone: '0912 345 678',
     );
     await tester.pumpWidget(
-      auditApp(child: const InstituteDetailsView(controllerTag: 't'), locale: 'ar', scale: 1, boundaryKey: GlobalKey()),
+      auditApp(
+        child: const InstituteDetailsView(controllerTag: 't'),
+        locale: 'ar',
+        scale: 1,
+        boundaryKey: GlobalKey(),
+      ),
     );
     await tester.pump(const Duration(milliseconds: 600));
 

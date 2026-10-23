@@ -10,6 +10,10 @@ import '../../theme/app_fonts.dart';
 enum ToastKind { info, success, error, warning }
 
 abstract final class AppToast {
+  /// للاختبارات: يلتقط التنبيه بدل عرضه (Get.snackbar يحتاج Overlay وإطارات مرسومة).
+  @visibleForTesting
+  static void Function(String title, String message, ToastKind kind)? onShow;
+
   static void show(
     String title,
     String message, {
@@ -18,6 +22,11 @@ abstract final class AppToast {
     SnackPosition position = SnackPosition.TOP,
   }) {
     final resolved = kind ?? _guess(title);
+    final hook = onShow;
+    if (hook != null) {
+      hook(title, message, resolved);
+      return;
+    }
     final (color, icon) = switch (resolved) {
       ToastKind.success => (AppColors.successText, Icons.check_circle_rounded),
       ToastKind.error => (AppColors.danger, Icons.error_rounded),

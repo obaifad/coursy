@@ -26,6 +26,12 @@ class MyCoursesController extends GetxController with LatestLoadGuard, InitialLo
 
   bool get isLoggedIn => Get.find<TokenStorage>().isLoggedIn;
 
+  /// يزداد عند كل دخول جديد إلى تبويب «دوراتي» من تبويب آخر: الصفحة حيّة طوال الجلسة (IndexedStack) فتبقى على
+  /// آخر تبويب فرعي كان مفتوحاً؛ الواجهة تسمع هذا العدّاد وتعيد التبويب الفرعي إلى الأول.
+  final subTabResetToken = 0.obs;
+
+  void resetSubTab() => subTabResetToken.value++;
+
   @override
   void onInit() {
     super.onInit();

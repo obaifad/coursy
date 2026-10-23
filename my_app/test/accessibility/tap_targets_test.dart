@@ -53,30 +53,22 @@ void main() {
   for (final tab in [0, 2, 3]) {
     for (final loggedIn in [true, false]) {
       testWidgets('root tab $tab ${loggedIn ? 'user' : 'guest'}', (tester) async {
-        await check(
-          tester,
-          () async {
-            final tokens = await registerFakes(loggedIn: loggedIn, locale: Get.locale?.languageCode ?? 'ar');
-            Get.put(HomeController(tokens));
-            Get.put(CoursesController());
-            Get.put(InstitutesController());
-            Get.put(MyCoursesController());
-            Get.put(RootController()).currentIndex.value = tab;
-          },
-          () => const RootView(),
-        );
+        await check(tester, () async {
+          final tokens = await registerFakes(loggedIn: loggedIn, locale: Get.locale?.languageCode ?? 'ar');
+          Get.put(HomeController(tokens));
+          Get.put(CoursesController());
+          Get.put(InstitutesController());
+          Get.put(MyCoursesController());
+          Get.put(RootController()).currentIndex.value = tab;
+        }, () => const RootView());
       });
     }
   }
 
   testWidgets('course details', (tester) async {
-    await check(
-      tester,
-      () async {
-        await registerFakes(loggedIn: true, locale: Get.locale?.languageCode ?? 'ar');
-        Get.put(CourseDetailsController(), tag: 't').course.value = sampleCourses().first;
-      },
-      () => const CourseDetailsView(controllerTag: 't'),
-    );
+    await check(tester, () async {
+      await registerFakes(loggedIn: true, locale: Get.locale?.languageCode ?? 'ar');
+      Get.put(CourseDetailsController(), tag: 't').course.value = sampleCourses().first;
+    }, () => const CourseDetailsView(controllerTag: 't'));
   });
 }

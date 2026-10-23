@@ -21,6 +21,10 @@ class RootController extends GetxController {
     final alreadyHere = currentIndex.value == index;
     currentIndex.value = index;
     // العودة للرئيسية من تبويب آخر تحفظ موضع التمرير؛ الضغط على "الرئيسية" وأنت فيها يعيدها للأعلى.
+    // دخول جديد إلى «دوراتي» (من الشريط السفلي أو من الملف الشخصي): تبويبها الفرعي الأول، لا آخر ما فُتح.
+    if (index == 3 && !alreadyHere && Get.isRegistered<MyCoursesController>()) {
+      Get.find<MyCoursesController>().resetSubTab();
+    }
     refreshTabData(index, scrollHomeToTop: alreadyHere);
   }
 
