@@ -131,11 +131,15 @@ abstract final class PushLocalNotifications {
     return enabled ?? true;
   }
 
+  /// رقم العرض لإشعار من الخادم — نفسه من فحص القائمة ومن FCM، فيستبدل النظامُ النسخة الأولى إن وصلت الثانية.
+  static int serverNotificationId(int notificationId) => notificationId + 500000;
+
   static Future<void> showRemoteMessage(RemoteMessage message, {bool requirePermission = true}) async {
     final parsed = parseRemoteMessage(message);
     if (parsed == null) return;
+    final notificationId = int.tryParse('${message.data['notification_id'] ?? ''}');
     await showRaw(
-      id: message.hashCode,
+      id: notificationId != null && notificationId > 0 ? serverNotificationId(notificationId) : message.hashCode,
       title: parsed.title,
       body: parsed.body,
       payload: parsed.payload,

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
@@ -24,15 +25,39 @@ class NotificationDeliveryStore extends GetxService {
   void clearForStudent(int studentId) {
     _box.remove(_storageKey(studentId));
     _deliveredIds.clear();
+    _shownKeys.clear();
   }
 
   void clearForCurrentUser() {
     final studentId = Get.find<TokenStorage>().studentId;
     if (studentId != null) clearForStudent(studentId);
     _deliveredIds.clear();
+    _shownKeys.clear();
   }
 
   bool wasDelivered(int notificationId) => _deliveredIds.contains(notificationId);
+
+  /// ما عُرض في هذه الجلسة، من فحص قائمة الخادم أو من FCM والتطبيق مفتوح. كلٌّ منهما يطالب بالإشعار
+  /// قبل عرضه، فلا يظهر مرتين أيّاً سبق (كان «تم استلام الحجز» يظهر مرتين بعد الحجز).
+  /// المطالبة متزامنة: لا سباق بين المسارين.
+  final Set<String> _shownKeys = {};
+
+  /// false = عُرض من المسار الآخر. يُطابَق برقم الإشعار، أو بالنوع ورقم التسجيل إن غاب الرقم عن FCM.
+  bool claimShown({int? notificationId, String? type, int? enrollmentId}) {
+    final keys = shownKeys(notificationId: notificationId, type: type, enrollmentId: enrollmentId);
+    if (keys.any(_shownKeys.contains)) return false;
+    _shownKeys.addAll(keys);
+    return true;
+  }
+
+  @visibleForTesting
+  static List<String> shownKeys({int? notificationId, String? type, int? enrollmentId}) {
+    final normalizedType = type?.trim().toLowerCase() ?? '';
+    return [
+      if (notificationId != null && notificationId > 0) 'n:$notificationId',
+      if (enrollmentId != null && enrollmentId > 0 && normalizedType.isNotEmpty) 'e:$normalizedType:$enrollmentId',
+    ];
+  }
 
   Future<void> markDelivered(Iterable<int> notificationIds) async {
     final studentId = Get.find<TokenStorage>().studentId;
