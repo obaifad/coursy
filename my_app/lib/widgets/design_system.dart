@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -22,3 +24,4 @@ part 'design_system/hero_header.dart';
 part 'design_system/brand_bar.dart';
 part 'design_system/row_cards.dart';
 part 'design_system/entity_cards.dart';
+part 'design_system/instructor_placeholder.dart';

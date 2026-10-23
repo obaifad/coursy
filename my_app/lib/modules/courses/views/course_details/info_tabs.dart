@@ -197,9 +197,9 @@ class _InstructorAvatar extends StatelessWidget {
                 url: url,
                 fit: BoxFit.cover,
                 ignorePointer: true,
-                errorWidget: _InstructorHeadFallback(gender: instructor.gender),
+                errorWidget: InstructorPlaceholder(name: instructor.name),
               )
-            : _InstructorHeadFallback(gender: instructor.gender),
+            : InstructorPlaceholder(name: instructor.name),
       ),
     );
   }
@@ -300,20 +300,6 @@ class _SectionCard extends StatelessWidget {
           child,
         ],
       ),
-    );
-  }
-}
-
-class _InstructorHeadFallback extends StatelessWidget {
-  const _InstructorHeadFallback({required this.gender});
-
-  final String? gender;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: AppColors.indicatorFill,
-      child: Center(child: Icon(instructorHeadIcon(gender), color: AppColors.primary, size: 50)),
     );
   }
 }
