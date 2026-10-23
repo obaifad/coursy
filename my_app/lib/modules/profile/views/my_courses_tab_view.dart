@@ -48,6 +48,7 @@ class _MyCoursesShell extends StatefulWidget {
 
 class _MyCoursesShellState extends State<_MyCoursesShell> with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  late final Worker _resetWorker;
 
   MyCoursesController get controller => widget.controller;
 
@@ -55,10 +56,15 @@ class _MyCoursesShellState extends State<_MyCoursesShell> with SingleTickerProvi
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    // بلا حركة: الصفحة مخفية أصلاً حين يُطلب التصفير (تبديل التبويب السفلي).
+    _resetWorker = ever(controller.subTabResetToken, (_) {
+      if (_tabController.index != 0) _tabController.index = 0;
+    });
   }
 
   @override
   void dispose() {
+    _resetWorker.dispose();
     _tabController.dispose();
     super.dispose();
   }

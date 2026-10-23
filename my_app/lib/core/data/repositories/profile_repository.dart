@@ -141,6 +141,11 @@ class ProfileRepository extends GetxService {
     }
   }
 
+  /// بعد حفظ ناجح: النسخة المحلية تطابق ما حُفظ (فارغة إن أفرغ المستخدم الحقول). كانت لا تُحدَّث بعد الحفظ
+  /// فتعيد [_mergeAcademicCache] تعبئة كل حقل أفرغه المستخدم من نسختها القديمة، ولا يتغيّر ما يراه إلا
+  /// بتسجيل الخروج (يمسحها).
+  Future<void> saveAcademicSnapshot(AcademicProfileCache snapshot) => _tokenStorage.saveAcademicCache(snapshot);
+
   Future<void> _persistAcademicCacheFromUser(Map<String, dynamic> user) async {
     final profile = extractNestedStudentProfile(user);
     if (profile == null) return;

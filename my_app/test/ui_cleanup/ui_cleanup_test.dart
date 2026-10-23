@@ -135,7 +135,11 @@ void main() {
         ),
       );
       final long = find.text('الذكاء الاصطناعي وتعلم الآلة');
-      expect(find.ancestor(of: long, matching: find.byType(FittedBox)), findsNothing, reason: 'not shrunk to fit');
+      expect(
+        find.ancestor(of: long, matching: find.byType(FittedBox)),
+        findsNothing,
+        reason: 'not shrunk to fit',
+      );
       final text = tester.widget<Text>(long);
       expect(text.maxLines, 2);
       expect(text.style?.fontSize, AppTextSize.sm);
@@ -145,7 +149,9 @@ void main() {
       }
 
       expect(textHeight(long), greaterThan(textHeight(find.text('تصميم')) * 1.5), reason: 'wraps to a 2nd line');
-      final counts = [for (final c in categories) tester.getRect(find.text(pluralTr('category_courses_count', c.coursesCount))).top];
+      final counts = [
+        for (final c in categories) tester.getRect(find.text(pluralTr('category_courses_count', c.coursesCount))).top,
+      ];
       expect(counts.toSet(), hasLength(1), reason: 'course counts in a row share one line');
     });
 

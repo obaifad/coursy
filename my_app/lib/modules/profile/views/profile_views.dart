@@ -310,8 +310,41 @@ Future<void> _confirmAndLogout(BuildContext context) async {
 class EditProfileView extends GetView<ProfileController> {
   const EditProfileView({super.key});
 
+  /// الرجوع (زر النظام أو السهم) وفيه تغييرات غير محفوظة: يُسأل المستخدم بدل أن تضيع بصمت.
+  Future<void> _confirmLeave(BuildContext context) async {
+    final discard = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text('unsaved_leave_title'.tr),
+        content: Text('unsaved_leave_message'.tr),
+        actions: [
+          TextButton(onPressed: () => Get.back(result: false), child: Text('keep_editing'.tr)),
+          FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(96, 46), backgroundColor: AppColors.danger),
+            onPressed: () => Get.back(result: true),
+            child: Text('discard_changes'.tr),
+          ),
+        ],
+      ),
+    );
+    if (discard != true) return;
+    await controller.discardChanges();
+    Get.back<void>();
+  }
+
   @override
   Widget build(BuildContext context) {
+    return Obx(
+      () => PopScope(
+        canPop: !controller.hasChanges.value || controller.isSaving.value,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _confirmLeave(context);
+        },
+        child: _buildPage(context),
+      ),
+    );
+  }
+
+  Widget _buildPage(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(

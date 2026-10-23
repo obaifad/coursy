@@ -18,7 +18,20 @@ class StudentProfilePayload {
     this.preferredCategories,
     this.notificationRadiusKm,
     this.currentPassword,
+    this.clearFields = const {},
   });
+
+  /// حقول أكاديمية أفرغها المستخدم: تُرسَل صراحة (`null` أو قائمة فارغة) كي يمسحها الخادم. الحقول الفارغة
+  /// الأخرى تُحذف من الطلب كما كان، فيحتفظ الخادم بقيمها (حذفها كان يعني أن الإفراغ لا يصل أبداً).
+  /// القيم: education_level, university_id, specialization_id, preferred_categories.
+  final Set<String> clearFields;
+
+  static const clearableFields = {'education_level', 'university_id', 'specialization_id', 'preferred_categories'};
+
+  Map<String, dynamic> _clearedJson() => {
+    for (final field in clearFields)
+      if (clearableFields.contains(field)) field: field == 'preferred_categories' ? <int>[] : null,
+  };
 
   final String? firstName;
   final String? lastName;
@@ -49,11 +62,17 @@ class StudentProfilePayload {
     final hasSpecialization = specializationId != null;
     final hasRadius = notificationRadiusKm != null;
 
-    if (!hasEducation && !hasUniversity && !hasSpecialization && !hasCategories && !hasRadius) {
+    if (!hasEducation &&
+        !hasUniversity &&
+        !hasSpecialization &&
+        !hasCategories &&
+        !hasRadius &&
+        _clearedJson().isEmpty) {
       return null;
     }
 
     return {
+      ..._clearedJson(),
       if (hasEducation) 'education_level': educationLevel,
       if (hasUniversity) 'university_id': universityId,
       if (hasSpecialization) 'specialization_id': specializationId,
@@ -66,6 +85,7 @@ class StudentProfilePayload {
     final studentProfile = _studentProfileJson();
 
     return {
+      ..._clearedJson(),
       if (firstName != null && firstName!.isNotEmpty) 'first_name': firstName,
       if (lastName != null && lastName!.isNotEmpty) 'last_name': lastName,
       if (email != null && email!.isNotEmpty) 'email': email,
