@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import './app_fonts.dart';
 import 'app_colors.dart';
 import 'app_system_ui.dart';
 
 class AppTheme {
+  /// ألوان الهيكل: قاعدة لافندر فاتحة (قريبة من [AppColors.surfaceVariant]) ولمعة أفتح منها، دورة 1.6 ثانية.
+  static const SkeletonizerConfigData skeletonConfig = SkeletonizerConfigData(
+    effect: ShimmerEffect(
+      baseColor: Color(0xFFE7E5FA),
+      highlightColor: Color(0xFFF8F7FF),
+      duration: Duration(milliseconds: 1600),
+    ),
+  );
+
   static ThemeData get lightTheme {
     final base = ThemeData(
       useMaterial3: true,
@@ -49,6 +59,8 @@ class AppTheme {
       labelSmall: sized(ramp.labelSmall, AppTextSize.xs),
     );
     return base.copyWith(
+      // هياكل التحميل بألوان العلامة (لافندر) لا الرمادي الافتراضي، بلمعة بطيئة ناعمة. تُطبَّق على كل Skeletonizer.
+      extensions: const [skeletonConfig],
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         centerTitle: true,

@@ -640,6 +640,8 @@ class _CourseCardImage extends StatelessWidget {
               height: h,
               fit: BoxFit.cover,
               ignorePointer: true,
+              // الصورة تتلاشى فوق تدرّج التصنيف نفسه الذي يُعرض عند غيابها (لا فراغ ولا كتلة رمادية).
+              placeholder: _gradientOnly(),
               errorWidget: _fallback(),
             );
           },
@@ -647,6 +649,14 @@ class _CourseCardImage extends StatelessWidget {
       );
     }
     return ClipRRect(borderRadius: borderRadius, child: _fallback());
+  }
+
+  /// تدرّج التصنيف + النقش بلا أيقونة: خلفية الانتظار قبل وصول الصورة.
+  Widget _gradientOnly() {
+    return DecoratedBox(
+      decoration: BoxDecoration(gradient: _categoryGradient(course.categoryName)),
+      child: const BrandBannerPattern(),
+    );
   }
 
   /// بلا صورة: تدرّج التصنيف + نقش خفيف ودائرتان شفافتان، والأيقونة داخل مربع زجاجي.
