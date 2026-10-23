@@ -70,9 +70,13 @@ class _TabFade extends StatefulWidget {
 }
 
 class _TabFadeState extends State<_TabFade> with SingleTickerProviderStateMixin {
+  /// تبدأ الصفحة الجديدة شبه ظاهرة (0.85) لا باهتة (كانت 0.35): الانتقال لمحة لا وميضاً، وبلا طبقة شفافة
+  /// ثقيلة طويلة فوق شبكة فيها تمويه.
+  static const double startOpacity = 0.85;
+
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 160),
+    duration: const Duration(milliseconds: 150),
     value: 1,
   );
   late final Animation<double> _opacity = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
@@ -80,7 +84,9 @@ class _TabFadeState extends State<_TabFade> with SingleTickerProviderStateMixin 
   @override
   void didUpdateWidget(covariant _TabFade old) {
     super.didUpdateWidget(old);
-    if (old.index != widget.index && !MediaQuery.disableAnimationsOf(context)) _controller.forward(from: 0.35);
+    if (old.index != widget.index && !MediaQuery.disableAnimationsOf(context)) {
+      _controller.forward(from: startOpacity);
+    }
   }
 
   @override

@@ -6,6 +6,7 @@ import '../../../core/models/app_models.dart';
 import '../../../routes/app_routes.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/app_skeletons.dart';
+import '../../../widgets/skeleton_switch.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/filter_chips.dart';
 import '../controllers/courses_controller.dart';
@@ -119,20 +120,25 @@ class _CoursesScrollViewState extends State<_CoursesScrollView> {
     );
   }
 
+  /// الهيكل أثناء التحميل الأول لتصنيف، ثم المحتوى بتلاشٍ ([AppSkeletonSwitch]).
   Widget _content(BuildContext context, double hPad) {
-    // لقطة واحدة لكل بناء: عدد العناصر والعناصر نفسها من القائمة ذاتها — قراءة القائمة الحية داخل
-    // itemBuilder بعد تغيّرها كانت ترمي RangeError.
+    final gridPadding = EdgeInsets.fromLTRB(hPad, 12, hPad, 0);
+    final aurora = widget.cardStyle == CourseCardStyle.auroraGlass;
+    // القراءات التفاعلية هنا (داخل Obx): contentBuilder يُستدعى لاحقاً خارج تتبّعها.
     final courses = c.sortedCourses.toList(growable: false);
     final error = c.errorMessage.value;
-    final gridPadding = EdgeInsets.fromLTRB(hPad, 12, hPad, 0);
-
-    final aurora = widget.cardStyle == CourseCardStyle.auroraGlass;
-
-    if (c.isLoading.value && c.courses.isEmpty) {
-      return aurora
+    return AppSkeletonSwitch(
+      sliver: true,
+      loading: c.isLoading.value && c.courses.isEmpty,
+      skeleton: aurora
           ? AppSliverGridSkeleton(padding: gridPadding, aurora: true)
-          : AppSliverBoardingSkeleton(padding: gridPadding);
-    }
+          : AppSliverBoardingSkeleton(padding: gridPadding),
+      contentBuilder: (context) => _loaded(context, gridPadding, aurora, courses, error),
+    );
+  }
+
+  Widget _loaded(BuildContext context, EdgeInsets gridPadding, bool aurora, List<CourseModel> courses, String? error) {
+    // courses لقطة ثابتة: قراءة القائمة الحية داخل itemBuilder بعد تغيّرها كانت ترمي RangeError.
     if (courses.isEmpty) {
       return SliverFillRemaining(
         hasScrollBody: false,
