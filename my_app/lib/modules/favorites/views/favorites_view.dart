@@ -13,6 +13,7 @@ import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_system_ui.dart';
 import '../../../widgets/app_skeletons.dart';
+import '../../../widgets/skeleton_switch.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/guest_access.dart';
@@ -95,86 +96,92 @@ class _FavoritesBody extends StatelessWidget {
       final hPad = AppLayout.readableInset(context);
       // لقطة واحدة لكل بناء: القائمة تبني عناصرها لاحقاً، وقراءة القائمة الحية بعد تغيّرها ترمي RangeError.
       final courses = controller.courses.toList(growable: false);
+      // قراءة تفاعلية هنا (داخل Obx): contentBuilder يُستدعى لاحقاً خارج تتبّعها.
+      final error = controller.errorMessage.value;
 
-      if (controller.isLoading.value) {
-        return CustomScrollView(
+      return AppSkeletonSwitch(
+        loading: controller.isLoading.value,
+        skeleton: CustomScrollView(
           physics: const NeverScrollableScrollPhysics(),
           slivers: [AppSliverGridSkeleton(padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 8), aurora: true)],
-        );
-      }
+        ),
+        contentBuilder: (context) => _loaded(context, hPad, courses, error),
+      );
+    });
+  }
 
-      if (courses.isEmpty && controller.errorMessage.value != null) {
-        return RefreshIndicator(
-          color: AppColors.primary,
-          onRefresh: controller.loadFavorites,
-          child: AppEmptyState.scrollable(
-            context: context,
-            message: controller.errorMessage.value!,
-            icon: Icons.cloud_off_outlined,
-            action: FilledButton(onPressed: controller.loadFavorites, child: Text('retry'.tr)),
-          ),
-        );
-      }
+  Widget _loaded(BuildContext context, double hPad, List<CourseModel> courses, String? error) {
+    if (courses.isEmpty && error != null) {
+      return RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: controller.loadFavorites,
+        child: AppEmptyState.scrollable(
+          context: context,
+          message: error,
+          icon: Icons.cloud_off_outlined,
+          action: FilledButton(onPressed: controller.loadFavorites, child: Text('retry'.tr)),
+        ),
+      );
+    }
 
-      if (courses.isEmpty) {
-        return RefreshIndicator(
-          color: AppColors.primary,
-          onRefresh: controller.loadFavorites,
-          child: LayoutBuilder(
-            builder: (context, constraints) => ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
-              children: [
-                SizedBox(
-                  height: constraints.maxHeight,
-                  child: Center(
-                    child: SingleChildScrollView(
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: EdgeInsets.symmetric(horizontal: AppLayout.readableInset(context, min: 24)),
-                      child: AppEmptyState(
-                        message: 'favorites_empty_title'.tr,
-                        subtitle: 'favorites_empty'.tr,
-                        icon: Icons.favorite_border_rounded,
-                        iconSize: 52,
-                        circleSize: 112,
-                        action: SizedBox(
-                          width: 220,
-                          child: RegisterGradientButton(
-                            label: 'favorites_explore'.tr,
-                            onPressed: () {
-                              AppNavigation.switchToTab(0);
-                              if (Get.currentRoute == AppRoutes.favorites) Get.back();
-                            },
-                          ),
+    if (courses.isEmpty) {
+      return RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: controller.loadFavorites,
+        child: LayoutBuilder(
+          builder: (context, constraints) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            children: [
+              SizedBox(
+                height: constraints.maxHeight,
+                child: Center(
+                  child: SingleChildScrollView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.symmetric(horizontal: AppLayout.readableInset(context, min: 24)),
+                    child: AppEmptyState(
+                      message: 'favorites_empty_title'.tr,
+                      subtitle: 'favorites_empty'.tr,
+                      icon: Icons.favorite_border_rounded,
+                      iconSize: 52,
+                      circleSize: 112,
+                      action: SizedBox(
+                        width: 220,
+                        child: RegisterGradientButton(
+                          label: 'favorites_explore'.tr,
+                          onPressed: () {
+                            AppNavigation.switchToTab(0);
+                            if (Get.currentRoute == AppRoutes.favorites) Get.back();
+                          },
                         ),
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-        );
-      }
-
-      return RefreshIndicator(
-        color: AppColors.primary,
-        onRefresh: controller.loadFavorites,
-        // تمويه ألواح البطاقات مشترك للشبكة كلها (انظر _AuroraGlassPanel).
-        child: BackdropGroup(
-          child: GridView.builder(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.fromLTRB(hPad, 16, hPad, AppLayout.scrollBottomInset(context)),
-            gridDelegate: AppGridLayouts.auroraGridFor(context),
-            itemCount: courses.length,
-            itemBuilder: (_, i) {
-              final course = courses[i];
-              return _FavoriteItem(key: ValueKey(course.id), course: course, controller: controller);
-            },
+              ),
+            ],
           ),
         ),
       );
-    });
+    }
+
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: controller.loadFavorites,
+      // تمويه ألواح البطاقات مشترك للشبكة كلها (انظر _AuroraGlassPanel).
+      child: BackdropGroup(
+        child: GridView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.fromLTRB(hPad, 16, hPad, AppLayout.scrollBottomInset(context)),
+          gridDelegate: AppGridLayouts.auroraGridFor(context),
+          itemCount: courses.length,
+          itemBuilder: (_, i) {
+            final course = courses[i];
+            return _FavoriteItem(key: ValueKey(course.id), course: course, controller: controller);
+          },
+        ),
+      ),
+    );
   }
 }
 

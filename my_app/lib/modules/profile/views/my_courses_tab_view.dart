@@ -13,6 +13,7 @@ import '../../../core/storage/token_storage.dart';
 import '../../../modules/auth/widgets/register_form_widgets.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
+import '../../../widgets/skeleton_switch.dart';
 import '../../../widgets/app_skeletons.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/design_system.dart';
@@ -93,18 +94,23 @@ class _MyCoursesShellState extends State<_MyCoursesShell> with SingleTickerProvi
           ),
         ],
         body: Obx(
-          () => controller.isLoading.value
-              ? AppRowListSkeleton(itemCount: 4, padding: AppLayout.scrollPadding(context, rootTab: true, top: 8))
-              : TabBarView(
-                  controller: _tabController,
-                  physics: const ClampingScrollPhysics(),
-                  children: const [
-                    _EnrollmentList(status: _EnrollmentListStatus.pending),
-                    _EnrollmentList(status: _EnrollmentListStatus.confirmed),
-                    _EnrollmentList(status: _EnrollmentListStatus.completed),
-                    _EnrollmentList(status: _EnrollmentListStatus.cancelled),
-                  ],
-                ),
+          () => AppSkeletonSwitch(
+            loading: controller.isLoading.value,
+            skeleton: AppRowListSkeleton(
+              itemCount: 4,
+              padding: AppLayout.scrollPadding(context, rootTab: true, top: 8),
+            ),
+            contentBuilder: (_) => TabBarView(
+              controller: _tabController,
+              physics: const ClampingScrollPhysics(),
+              children: const [
+                _EnrollmentList(status: _EnrollmentListStatus.pending),
+                _EnrollmentList(status: _EnrollmentListStatus.confirmed),
+                _EnrollmentList(status: _EnrollmentListStatus.completed),
+                _EnrollmentList(status: _EnrollmentListStatus.cancelled),
+              ],
+            ),
+          ),
         ),
       ),
     );

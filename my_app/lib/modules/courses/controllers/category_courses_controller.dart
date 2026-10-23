@@ -20,7 +20,11 @@ class CategoryCoursesController extends GetxController with InitialLoadState, Se
   final title = ''.obs;
   final errorMessage = RxnString();
 
-  List<CourseModel> get sortedCourses => sortCourses(courses, selectedSort.value);
+  /// القائمة المرتّبة: تُحسب مرة عند تغيّر الدورات أو الترتيب (كان getter يُرتّب كل مرة تُقرأ فيها، أي عند كل
+  /// إعادة بناء للصفحة).
+  final sortedCourses = <CourseModel>[].obs;
+
+  late final Worker _sortWorker;
 
   late final int categoryId;
   int _page = 1;
@@ -29,6 +33,10 @@ class CategoryCoursesController extends GetxController with InitialLoadState, Se
   @override
   void onInit() {
     super.onInit();
+    _sortWorker = everAll([
+      courses,
+      selectedSort,
+    ], (_) => sortedCourses.assignAll(sortCourses(courses, selectedSort.value)));
     final arg = Get.arguments;
     if (arg is Map<String, dynamic>) {
       categoryId = JsonHelpers.parseInt(arg['id']);
@@ -45,6 +53,12 @@ class CategoryCoursesController extends GetxController with InitialLoadState, Se
     }
     // الهيكل يظهر أثناء حركة الفتح، والبيانات تُجلب بعدها: لا يتبدّل المحتوى والصفحة تتحرك.
     afterRouteSettles(loadCourses);
+  }
+
+  @override
+  void onClose() {
+    _sortWorker.dispose();
+    super.onClose();
   }
 
   String get _cacheKey => MemoryCache.key('category-courses', [categoryId]);
