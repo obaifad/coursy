@@ -132,25 +132,22 @@ class _Content extends StatelessWidget {
                 ),
               )
             else
-              // تمويه ألواح البطاقات مشترك للشبكة كلها (انظر _AuroraGlassPanel).
-              BackdropGroup(
-                child: SliverPadding(
-                  padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
-                  sliver: SliverGrid(
-                    gridDelegate: AppGridLayouts.auroraGridFor(context),
-                    delegate: SliverChildBuilderDelegate(
-                      (_, i) => CourseAuroraCard(
-                        key: ValueKey(courses[i].id),
-                        course: courses[i],
-                        onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: courses[i]),
-                      ),
-                      childCount: courses.length,
-                      findChildIndexCallback: (key) {
-                        final id = (key as ValueKey<int>).value;
-                        final index = courses.indexWhere((c) => c.id == id);
-                        return index < 0 ? null : index;
-                      },
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
+                sliver: SliverGrid(
+                  gridDelegate: AppGridLayouts.auroraGridFor(context),
+                  delegate: SliverChildBuilderDelegate(
+                    (_, i) => CourseAuroraCard(
+                      key: ValueKey(courses[i].id),
+                      course: courses[i],
+                      onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: courses[i]),
                     ),
+                    childCount: courses.length,
+                    findChildIndexCallback: (key) {
+                      final id = (key as ValueKey<int>).value;
+                      final index = courses.indexWhere((c) => c.id == id);
+                      return index < 0 ? null : index;
+                    },
                   ),
                 ),
               ),

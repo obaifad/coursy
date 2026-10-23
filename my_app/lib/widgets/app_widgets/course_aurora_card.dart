@@ -367,9 +367,9 @@ class _AuroraGlassPanel extends StatelessWidget {
         );
         return ClipRRect(
           borderRadius: AppCorners.md,
-          // grouped: ألواح البطاقات المتجاورة في شبكة واحدة (BackdropGroup) تتشارك قراءة الخلفية — تمويه واحد
-          // للشبكة بدل واحد لكل بطاقة على Impeller، بنفس الشكل. بلا BackdropGroup يعمل كالمعتاد.
-          child: inMotion ? decorated : BackdropFilter.grouped(filter: _frost, child: decorated),
+          // تمويه مستقل لكل بطاقة، لا grouped: اللقطة المشتركة في BackdropGroup تُلتقط عند أول لوح، قبل رسم
+          // صور البطاقات التالية، فكانت ألواحها تموّه خلفية الصفحة الفاتحة فتظهر رمادية (على الجهاز فقط).
+          child: inMotion ? decorated : BackdropFilter(filter: _frost, child: decorated),
         );
       },
     );

@@ -154,10 +154,12 @@ class _SubjectFilterChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppRadius.full),
       child: AnimatedContainer(
         duration: AppMotion.fast,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        // مثل شرائح التصنيف ([_FilterChip]): أبيض بإطار خفيف لا بلون الخلفية.
         decoration: BoxDecoration(
-          color: selected ? AppColors.primaryStrong : AppColors.surfaceSoft,
+          color: selected ? AppColors.primaryStrong : AppColors.card,
           borderRadius: BorderRadius.circular(AppRadius.full),
+          border: Border.all(color: selected ? AppColors.primaryStrong : AppColors.borderSoft),
           boxShadow: selected
               ? const [BoxShadow(color: AppColors.shadowPrimary, blurRadius: 10, offset: Offset(0, 4))]
               : null,
@@ -358,10 +360,13 @@ class _FilterChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppRadius.full),
       child: AnimatedContainer(
         duration: AppMotion.fast,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        // غير المختار أبيض بإطار خفيف: surfaceSoft كان بلون خلفية الصفحة تقريباً فتختفي الشريحة ويبدو
+        // الفراغ بين التصنيفات واسعاً (أوضح على الأجهزة اللوحية). الإطار في الحالتين فلا يتغيّر الحجم.
         decoration: BoxDecoration(
-          color: selected ? AppColors.primaryStrong : AppColors.surfaceSoft,
+          color: selected ? AppColors.primaryStrong : AppColors.card,
           borderRadius: BorderRadius.circular(AppRadius.full),
+          border: Border.all(color: selected ? AppColors.primaryStrong : AppColors.borderSoft),
           boxShadow: selected
               ? const [BoxShadow(color: AppColors.shadowPrimary, blurRadius: 10, offset: Offset(0, 4))]
               : null,
