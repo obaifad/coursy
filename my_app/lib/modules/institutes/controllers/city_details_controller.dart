@@ -3,11 +3,12 @@ import 'package:get/get.dart';
 import '../../../core/cache/memory_cache.dart';
 import '../../../core/models/json_helpers.dart';
 import '../../../core/data/repositories/city_repository.dart';
+import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/navigation/route_settle.dart';
 import '../../../core/network/api_exception.dart';
 
-class CityDetailsController extends GetxController with SettledLoad {
+class CityDetailsController extends GetxController with LatestLoadGuard, SettledLoad {
   final CityRepository _cityRepository = Get.find();
 
   final isLoading = true.obs;
@@ -22,6 +23,9 @@ class CityDetailsController extends GetxController with SettledLoad {
   late final int cityId;
   int _page = 1;
   static const _perPage = 12;
+
+  /// تحديث (الصفحة الأولى) جارٍ: «المزيد» لا يبدأ أثناءه — سيبني على رقم صفحة يتغيّر بعد قليل.
+  int _refreshing = 0;
 
   /// هل لدينا اسم المدينة الفعلي (وليس العنوان الافتراضي المترجم).
   bool _hasCityName = false;
@@ -71,16 +75,21 @@ class CityDetailsController extends GetxController with SettledLoad {
     );
   }
 
+  /// التحديث يُبطل «المزيد» الجاري وأي تحديث أقدم: كان رد «المزيد» يصل بعد التحديث فيُلصق صفحة لاحقة
+  /// بالصفحة الأولى الجديدة (صفحة ناقصة أو مكرّرة).
   Future<void> load() async {
+    final session = beginLoad();
+    _refreshing++;
     if (!_hasCityName && institutes.isEmpty) isLoading.value = true;
     errorMessage.value = null;
     try {
-      await Future.wait<void>([_fetchCityIfNeeded(), _fetchFirstInstitutesPage()]);
-      _remember();
+      await Future.wait<void>([_fetchCityIfNeeded(), _fetchFirstInstitutesPage(session)]);
+      if (shouldApply(session)) _remember();
     } catch (e) {
-      if (institutes.isEmpty) errorMessage.value = userErrorMessage(e);
+      if (shouldApply(session) && institutes.isEmpty) errorMessage.value = userErrorMessage(e);
     } finally {
-      isLoading.value = false;
+      _refreshing--;
+      finishLoad(session, () => isLoading.value = false);
     }
   }
 
@@ -93,27 +102,33 @@ class CityDetailsController extends GetxController with SettledLoad {
     } catch (_) {}
   }
 
-  Future<void> _fetchFirstInstitutesPage() async {
+  Future<void> _fetchFirstInstitutesPage(LoadSession session) async {
     final result = await _cityRepository.fetchInstitutesByCity(cityId, page: 1, perPage: _perPage);
-    institutes.assignAll(result.items);
-    // بعد النجاح فقط: تصفيره قبل الطلب كان يجعل «المزيد» بعد تحديث فاشل يكرّر الصفحة الثانية.
-    _page = 1;
-    hasMore.value = result.hasMore;
+    applyIfCurrent(session, () {
+      institutes.assignAll(result.items);
+      // بعد النجاح فقط: تصفيره قبل الطلب كان يجعل «المزيد» بعد تحديث فاشل يكرّر الصفحة الثانية.
+      _page = 1;
+      hasMore.value = result.hasMore;
+    });
   }
 
   Future<void> loadMore() async {
-    if (!hasMore.value || isLoadingMore.value) return;
+    if (!hasMore.value || isLoadingMore.value || _refreshing > 0) return;
     isLoadingMore.value = true;
     loadMoreFailed.value = false;
+    // تحديث يبدأ بعد هذا يُبطله: الصفحة لا تُلصق بالقائمة الجديدة.
+    final session = currentLoad();
     try {
       final next = _page + 1;
       final result = await _cityRepository.fetchInstitutesByCity(cityId, page: next, perPage: _perPage);
-      institutes.addAll(result.items);
-      _page = next;
-      hasMore.value = result.hasMore;
-      _remember();
+      applyIfCurrent(session, () {
+        institutes.addAll(result.items);
+        _page = next;
+        hasMore.value = result.hasMore;
+        _remember();
+      });
     } catch (_) {
-      loadMoreFailed.value = true;
+      if (shouldApply(session)) loadMoreFailed.value = true;
     } finally {
       isLoadingMore.value = false;
     }

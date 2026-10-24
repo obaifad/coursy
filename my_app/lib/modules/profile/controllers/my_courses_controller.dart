@@ -58,15 +58,17 @@ class MyCoursesController extends GetxController with LatestLoadGuard, InitialLo
     isLoading.value = isInitialLoad;
     errorMessage.value = null;
     try {
-      final result = await _repository.fetchEnrollmentsPage(perPage: 50);
+      // كل الصفحات (50 في الطلب): كانت الصفحة الأولى وحدها تُعرض، فمن له أكثر من 50 حجزاً لا يرى الباقي
+      // والشارة تقف عند 50. القائمة بلا «تحميل المزيد» (مقسومة على تبويبات بالحالة)، فتلزمها كلها.
+      final all = await _repository.fetchEnrollments();
       applyIfCurrent(session, () {
-        enrollments.assignAll(result.items);
+        enrollments.assignAll(all);
         markLoaded();
       });
       if (Get.isRegistered<EnrollmentStatusCoordinator>()) {
-        unawaited(Get.find<EnrollmentStatusCoordinator>().trackFromEnrollments(result.items));
+        unawaited(Get.find<EnrollmentStatusCoordinator>().trackFromEnrollments(all));
       }
-      unawaited(_refreshPaymentAvailability(result.items));
+      unawaited(_refreshPaymentAvailability(all));
     } on ApiCancelledException {
       return;
     } catch (e) {
