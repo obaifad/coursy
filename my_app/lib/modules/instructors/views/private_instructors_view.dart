@@ -24,7 +24,7 @@ class PrivateInstructorsView extends GetView<PrivateInstructorsController> {
         backgroundColor: AppColors.surface,
         body: Obx(() {
           final _ = localeRebuildToken;
-          final count = controller.instructors.length;
+          final count = controller.displayCount;
           final loading = controller.isLoading.value && controller.instructors.isEmpty;
           return AppScrollAwayHeaderView(
             onRefresh: controller.loadInstructors,
