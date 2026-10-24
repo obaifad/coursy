@@ -465,7 +465,7 @@ class EditProfileView extends GetView<ProfileController> {
                 children: [
                   Obx(
                     () => _ProfileDropdown<String>(
-                      label: 'education_level_optional'.tr,
+                      label: 'education_level_label'.tr,
                       icon: Icons.school_outlined,
                       value: controller.selectedEducationLevel.value,
                       hint: 'education_level_hint'.tr,
@@ -487,7 +487,7 @@ class EditProfileView extends GetView<ProfileController> {
                       children: [
                         const SizedBox(height: 12),
                         _ProfileDropdown<int>(
-                          label: 'university_optional'.tr,
+                          label: 'university_label'.tr,
                           icon: Icons.account_balance_rounded,
                           value: controller.selectedUniversityId.value,
                           hint: 'pick_university'.tr,
@@ -504,7 +504,7 @@ class EditProfileView extends GetView<ProfileController> {
                         ),
                         const SizedBox(height: 12),
                         _ProfileDropdown<int>(
-                          label: 'specialization_optional'.tr,
+                          label: 'specialization_label'.tr,
                           icon: Icons.workspace_premium_outlined,
                           value: controller.selectedSpecializationId.value,
                           hint: 'pick_specialization'.tr,
