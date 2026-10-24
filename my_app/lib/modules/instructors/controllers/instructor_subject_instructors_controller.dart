@@ -8,7 +8,8 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/navigation/route_settle.dart';
 
-class InstructorSubjectInstructorsController extends GetxController with InitialLoadState, SettledLoad {
+class InstructorSubjectInstructorsController extends GetxController
+    with LatestLoadGuard, InitialLoadState, SettledLoad {
   final InstructorRepository _repository = Get.find();
 
   final isLoading = true.obs;
@@ -62,21 +63,26 @@ class InstructorSubjectInstructorsController extends GetxController with Initial
     hasMore.value = _visibleCount < _allInstructors.length;
   }
 
+  /// «المزيد» هنا محلي (يكشف المزيد من القائمة المحمّلة كلها) فلا يتسابق مع التحديث. ما يُحمى: تحديثان
+  /// متداخلان (الجلب بعد حركة الفتح ثم سحب للتحديث) — الأحدث يُطبَّق، والرد الأقدم المتأخر يُهمل.
   Future<void> loadInstructors() async {
+    final session = beginLoad();
     isLoading.value = isInitialLoad;
     errorMessage.value = null;
     try {
-      _apply(await _repository.fetchInstructorsBySubject(subjectKey: subjectKey));
+      final all = await _repository.fetchInstructorsBySubject(subjectKey: subjectKey);
+      if (!shouldApply(session)) return;
+      _apply(all);
       markLoaded();
       MemoryCache.put<List<InstructorModel>>(_cacheKey, List.of(_allInstructors));
     } catch (e) {
       // تحديث فاشل يُبقي القائمة المعروضة؛ بلا قائمة: الخطأ مع «إعادة المحاولة».
-      if (instructors.isEmpty) {
+      if (shouldApply(session) && instructors.isEmpty) {
         errorMessage.value = e is ApiException ? e.message : 'private_instructors_load_failed'.tr;
         hasMore.value = false;
       }
     } finally {
-      isLoading.value = false;
+      finishLoad(session, () => isLoading.value = false);
     }
   }
 

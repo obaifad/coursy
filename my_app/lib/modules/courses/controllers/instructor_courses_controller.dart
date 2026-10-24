@@ -7,7 +7,7 @@ import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/navigation/route_settle.dart';
 import '../../../core/network/api_exception.dart';
 
-class InstructorCoursesController extends GetxController with InitialLoadState, SettledLoad {
+class InstructorCoursesController extends GetxController with LatestLoadGuard, InitialLoadState, SettledLoad {
   final InstructorRepository _repository = Get.find();
 
   final isLoading = true.obs;
@@ -26,6 +26,9 @@ class InstructorCoursesController extends GetxController with InitialLoadState, 
   late final int instructorId;
   int _page = 1;
   static const _perPage = 12;
+
+  /// تحديث (الصفحة الأولى) جارٍ: «المزيد» لا يبدأ أثناءه — سيبني على رقم صفحة يتغيّر بعد قليل.
+  int _refreshing = 0;
 
   @override
   void onInit() {
@@ -85,6 +88,10 @@ class InstructorCoursesController extends GetxController with InitialLoadState, 
       hasMore.value = false;
       return;
     }
+    // التحديث يُبطل «المزيد» الجاري وأي تحديث أقدم (كان رد «المزيد» المتأخر يُلصق صفحة لاحقة بالصفحة
+    // الأولى الجديدة).
+    final session = beginLoad();
+    _refreshing++;
     isLoading.value = isInitialLoad;
     errorMessage.value = null;
     try {
@@ -93,24 +100,29 @@ class InstructorCoursesController extends GetxController with InitialLoadState, 
         page: 1,
         perPage: _perPage,
       );
-      courses.assignAll(result.items);
-      // بعد النجاح فقط: تصفيره قبل الطلب كان يجعل «المزيد» بعد تحديث فاشل يكرّر الصفحة الثانية.
-      _page = 1;
-      hasMore.value = result.hasMore;
-      totalCourses.value = result.total;
-      markLoaded();
-      _remember();
+      applyIfCurrent(session, () {
+        courses.assignAll(result.items);
+        // بعد النجاح فقط: تصفيره قبل الطلب كان يجعل «المزيد» بعد تحديث فاشل يكرّر الصفحة الثانية.
+        _page = 1;
+        hasMore.value = result.hasMore;
+        totalCourses.value = result.total;
+        markLoaded();
+        _remember();
+      });
     } catch (e) {
-      if (courses.isEmpty) errorMessage.value = userErrorMessage(e);
+      if (shouldApply(session) && courses.isEmpty) errorMessage.value = userErrorMessage(e);
     } finally {
-      isLoading.value = false;
+      _refreshing--;
+      finishLoad(session, () => isLoading.value = false);
     }
   }
 
   Future<void> loadMore() async {
-    if (!hasMore.value || isLoading.value || isLoadingMore.value || instructorId <= 0) return;
+    if (!hasMore.value || isLoading.value || isLoadingMore.value || instructorId <= 0 || _refreshing > 0) return;
     isLoadingMore.value = true;
     loadMoreFailed.value = false;
+    // تحديث يبدأ بعد هذا يُبطله: الصفحة لا تُلصق بالقائمة الجديدة.
+    final session = currentLoad();
     try {
       final nextPage = _page + 1;
       final result = await _repository.fetchInstructorCoursesPage(
@@ -118,13 +130,15 @@ class InstructorCoursesController extends GetxController with InitialLoadState, 
         page: nextPage,
         perPage: _perPage,
       );
-      courses.addAll(result.items);
-      _page = nextPage;
-      hasMore.value = result.hasMore;
-      totalCourses.value = result.total;
-      _remember();
+      applyIfCurrent(session, () {
+        courses.addAll(result.items);
+        _page = nextPage;
+        hasMore.value = result.hasMore;
+        totalCourses.value = result.total;
+        _remember();
+      });
     } catch (_) {
-      loadMoreFailed.value = true;
+      if (shouldApply(session)) loadMoreFailed.value = true;
     } finally {
       isLoadingMore.value = false;
     }
