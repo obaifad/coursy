@@ -32,18 +32,9 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
   /// التلقائي عند التمرير حتى يضغطها (كانت القائمة تنتهي بصمت كأنه لا توجد دورات أخرى).
   final loadMoreFailed = false.obs;
 
-  /// القائمة المرتّبة — تُحسب مرة عند تغيّر الدورات أو الترتيب (كانت تُرتّب مرتين لكل بطاقة تُرسم).
-  final sortedCourses = <CourseModel>[].obs;
-
-  /// الترتيب على الجهاز يحتاج كل الدورات ليكون صحيحاً — نحمّلها كلها ما دام العدد معقولاً.
-  static const _maxCoursesForFullSort = 300;
-
-  late final Worker _sortWorker;
-
   @override
   void onInit() {
     super.onInit();
-    _sortWorker = everAll([courses, selectedSort], (_) => _resort());
     scrollController.addListener(_onScrollNearEnd);
     _loadCategories();
     loadCourses();
@@ -51,37 +42,9 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
 
   @override
   void onClose() {
-    _sortWorker.dispose();
     scrollController.removeListener(_onScrollNearEnd);
     scrollController.dispose();
     super.onClose();
-  }
-
-  /// أثناء تحميل كل الصفحات للترتيب لا نعيد الترتيب مع كل صفحة (كانت البطاقات تتبدّل تحت إصبع
-  /// المستخدم وهو يمرّر) — نرتّب مرة واحدة في النهاية.
-  int _fullLoads = 0;
-
-  void _resort() {
-    if (_fullLoads > 0) return;
-    sortedCourses.assignAll(sortCourses(courses, selectedSort.value));
-  }
-
-  bool get _needsFullList =>
-      selectedSort.value != CourseSortOption.newest && hasMore.value && totalCount.value <= _maxCoursesForFullSort;
-
-  Future<void> _loadAllRemaining() async {
-    if (!_needsFullList) return;
-    _fullLoads++;
-    try {
-      while (_needsFullList && !isLoading.value) {
-        final before = courses.length;
-        await loadMoreCourses();
-        if (courses.length == before) break;
-      }
-    } finally {
-      _fullLoads--;
-      _resort();
-    }
   }
 
   /// قائمة جديدة (تصنيف أو ترتيب آخر) تبدأ من أولها، لا من موضع القائمة السابقة.
@@ -114,33 +77,52 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
     await loadCourses();
   }
 
-  String _cacheKey(int? category) => MemoryCache.key('courses-tab', [category ?? 'all']);
+  /// التصنيف والترتيب معاً: لكل تركيبة قائمتها وترقيمها (الترتيب على الخادم، فكل ترتيب قائمة مختلفة).
+  String _cacheKey(int? category, CourseSortOption sort) =>
+      MemoryCache.key('courses-tab', [category ?? 'all', sort.name]);
 
-  /// يحفظ ما حُمّل لتصنيف ما (العناصر وحالة الترقيم) كي يعود إليه المستخدم فوراً.
-  void _remember(int? category) {
-    if (selectedCategoryId.value != category) return;
+  Map<String, dynamic> _query() => {
+    if (selectedCategoryId.value != null) 'category_id': selectedCategoryId.value,
+    if (selectedSort.value.apiValue != null) 'sort': selectedSort.value.apiValue,
+  };
+
+  /// يحفظ ما حُمّل لتصنيف وترتيب ما (العناصر وحالة الترقيم) كي يعود إليه المستخدم فوراً.
+  void _remember(int? category, CourseSortOption sort) {
+    if (selectedCategoryId.value != category || selectedSort.value != sort) return;
     MemoryCache.put<PagedSnapshot<CourseModel>>(
-      _cacheKey(category),
+      _cacheKey(category, sort),
       PagedSnapshot<CourseModel>(items: courses, hasMore: hasMore.value, page: _page, total: totalCount.value),
     );
   }
 
   /// تبديل التصنيف:
   ///  - المحدد نفسه: لا شيء (كانت كل ضغطة تجلب من الشبكة وتعيد الرسم).
-  ///  - زرناه قبل قليل: قائمته فوراً بلا هيكل؛ تُحدَّث بصمت إن قدمت (3 دقائق).
-  ///  - جديد: تُفرَّغ القائمة فوراً فيظهر الهيكل (كانت قائمة التصنيف السابق تبقى حتى يصل الرد، فلا يبدو أن
-  ///    الضغطة عملت)، ثم يُجلب.
   void selectCategory(int? id) {
     if (selectedCategoryId.value == id) return;
     selectedCategoryId.value = id;
+    _showCurrentList();
+  }
+
+  /// تبديل الترتيب: الخادم يرتّب، فالقائمة الجديدة تبدأ من صفحتها الأولى (لا تحميل لكل الصفحات).
+  void selectSort(CourseSortOption sort) {
+    if (selectedSort.value == sort) return;
+    selectedSort.value = sort;
+    _showCurrentList();
+  }
+
+  /// يعرض قائمة التصنيف والترتيب الحاليين:
+  ///  - زرناها قبل قليل: فوراً بلا هيكل؛ تُحدَّث بصمت إن قدمت (3 دقائق).
+  ///  - جديدة: تُفرَّغ القائمة فوراً فيظهر الهيكل (كانت القائمة السابقة تبقى حتى يصل الرد، فلا يبدو أن
+  ///    الضغطة عملت)، ثم تُجلب.
+  void _showCurrentList() {
     _scrollToTop();
-    // يُبطل أي رد قادم لتصنيف سابق (طلب الصفحة الأولى أو «المزيد»).
+    // يُبطل أي رد قادم لقائمة سابقة (طلب الصفحة الأولى أو «المزيد»).
     beginLoad();
     isLoadingMore.value = false;
     loadMoreFailed.value = false;
     errorMessage.value = null;
 
-    final cached = MemoryCache.get<PagedSnapshot<CourseModel>>(_cacheKey(id));
+    final cached = MemoryCache.get<PagedSnapshot<CourseModel>>(_cacheKey(selectedCategoryId.value, selectedSort.value));
     if (cached != null) {
       final snapshot = cached.value;
       courses.assignAll(snapshot.items);
@@ -149,11 +131,7 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
       _page = snapshot.page;
       isLoading.value = false;
       markLoaded();
-      if (!cached.isFresh()) {
-        loadCourses();
-      } else {
-        _loadAllRemaining();
-      }
+      if (!cached.isFresh()) loadCourses();
       return;
     }
     courses.clear();
@@ -164,32 +142,22 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
     loadCourses();
   }
 
-  void selectSort(CourseSortOption sort) {
-    if (selectedSort.value == sort) return;
-    selectedSort.value = sort;
-    _scrollToTop();
-    _loadAllRemaining();
-  }
-
   Future<void> loadCourses() async {
     final session = beginLoad();
     final category = selectedCategoryId.value;
+    final sort = selectedSort.value;
     isLoading.value = isInitialLoad;
     errorMessage.value = null;
     loadMoreFailed.value = false;
     _page = 1;
     try {
-      final result = await _repository.fetchCoursesPage(
-        page: _page,
-        perPage: _perPage,
-        query: {if (category != null) 'category_id': category},
-      );
+      final result = await _repository.fetchCoursesPage(page: _page, perPage: _perPage, query: _query());
       applyIfCurrent(session, () {
         courses.assignAll(result.items);
         totalCount.value = result.total;
         hasMore.value = result.hasMore;
         markLoaded();
-        _remember(category);
+        _remember(category, sort);
       });
     } on ApiCancelledException {
       return;
@@ -198,7 +166,6 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
     } finally {
       applyIfCurrent(session, () => isLoading.value = false);
     }
-    if (shouldApply(session)) await _loadAllRemaining();
   }
 
   Future<void> loadMoreCourses() async {
@@ -207,18 +174,16 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
     loadMoreFailed.value = false;
     // إن تغيّر التصنيف أثناء التحميل تُهمل الصفحة القديمة بدل خلطها بالقائمة الجديدة.
     final session = currentLoad();
+    final category = selectedCategoryId.value;
+    final sort = selectedSort.value;
     try {
       final nextPage = _page + 1;
-      final result = await _repository.fetchCoursesPage(
-        page: nextPage,
-        perPage: _perPage,
-        query: {if (selectedCategoryId.value != null) 'category_id': selectedCategoryId.value},
-      );
+      final result = await _repository.fetchCoursesPage(page: nextPage, perPage: _perPage, query: _query());
       applyIfCurrent(session, () {
         courses.addAll(result.items);
         _page = nextPage;
         hasMore.value = result.hasMore;
-        _remember(selectedCategoryId.value);
+        _remember(category, sort);
       });
     } catch (_) {
       if (shouldApply(session)) loadMoreFailed.value = true;

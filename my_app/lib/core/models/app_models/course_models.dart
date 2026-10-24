@@ -461,22 +461,11 @@ extension CourseSortOptionX on CourseSortOption {
     CourseSortOption.priceHigh => 'sort_price_high',
   };
 
-  void apply(List<CourseModel> courses) {
-    switch (this) {
-      case CourseSortOption.newest:
-        break;
-      case CourseSortOption.ratingHigh:
-        courses.sort((a, b) => b.rating.compareTo(a.rating));
-      case CourseSortOption.priceLow:
-        courses.sort((a, b) => a.effectivePrice.compareTo(b.effectivePrice));
-      case CourseSortOption.priceHigh:
-        courses.sort((a, b) => b.effectivePrice.compareTo(a.effectivePrice));
-    }
-  }
-}
-
-List<CourseModel> sortCourses(List<CourseModel> courses, CourseSortOption sort) {
-  final list = List<CourseModel>.from(courses);
-  sort.apply(list);
-  return list;
+  /// قيمة `sort` في الـ API (الترتيب على الخادم). null = الافتراضي (الأحدث) فلا يُرسل.
+  String? get apiValue => switch (this) {
+    CourseSortOption.newest => null,
+    CourseSortOption.ratingHigh => 'rating',
+    CourseSortOption.priceLow => 'price_asc',
+    CourseSortOption.priceHigh => 'price_desc',
+  };
 }

@@ -8,7 +8,7 @@ import '../../../core/models/app_models.dart';
 import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/network/api_exception.dart';
 
-class CategoryCoursesController extends GetxController with InitialLoadState, SettledLoad {
+class CategoryCoursesController extends GetxController with LatestLoadGuard, InitialLoadState, SettledLoad {
   final CourseRepository _repository = Get.find();
 
   final isLoading = true.obs;
@@ -20,12 +20,6 @@ class CategoryCoursesController extends GetxController with InitialLoadState, Se
   final title = ''.obs;
   final errorMessage = RxnString();
 
-  /// القائمة المرتّبة: تُحسب مرة عند تغيّر الدورات أو الترتيب (كان getter يُرتّب كل مرة تُقرأ فيها، أي عند كل
-  /// إعادة بناء للصفحة).
-  final sortedCourses = <CourseModel>[].obs;
-
-  late final Worker _sortWorker;
-
   late final int categoryId;
   int _page = 1;
   static const _perPage = 12;
@@ -33,10 +27,6 @@ class CategoryCoursesController extends GetxController with InitialLoadState, Se
   @override
   void onInit() {
     super.onInit();
-    _sortWorker = everAll([
-      courses,
-      selectedSort,
-    ], (_) => sortedCourses.assignAll(sortCourses(courses, selectedSort.value)));
     final arg = Get.arguments;
     if (arg is Map<String, dynamic>) {
       categoryId = JsonHelpers.parseInt(arg['id']);
@@ -55,13 +45,13 @@ class CategoryCoursesController extends GetxController with InitialLoadState, Se
     afterRouteSettles(loadCourses);
   }
 
-  @override
-  void onClose() {
-    _sortWorker.dispose();
-    super.onClose();
-  }
+  /// الترتيب على الخادم: لكل ترتيب قائمته وترقيمه.
+  String get _cacheKey => MemoryCache.key('category-courses', [categoryId, selectedSort.value.name]);
 
-  String get _cacheKey => MemoryCache.key('category-courses', [categoryId]);
+  Map<String, dynamic> get _query => {
+    'category_id': categoryId,
+    if (selectedSort.value.apiValue != null) 'sort': selectedSort.value.apiValue,
+  };
 
   void _restore(PagedSnapshot<CourseModel> snapshot) {
     courses.assignAll(snapshot.items);
@@ -71,31 +61,55 @@ class CategoryCoursesController extends GetxController with InitialLoadState, Se
     markLoaded();
   }
 
-  void _remember() => MemoryCache.put<PagedSnapshot<CourseModel>>(
-    _cacheKey,
-    PagedSnapshot<CourseModel>(items: courses, hasMore: hasMore.value, page: _page),
-  );
+  void _remember(CourseSortOption sort) {
+    if (selectedSort.value != sort) return;
+    MemoryCache.put<PagedSnapshot<CourseModel>>(
+      _cacheKey,
+      PagedSnapshot<CourseModel>(items: courses, hasMore: hasMore.value, page: _page),
+    );
+  }
 
+  /// تبديل الترتيب: الخادم يرتّب، فالقائمة الجديدة تبدأ من صفحتها الأولى. زرناها قبل قليل: فوراً؛ وإلا
+  /// يظهر الهيكل ثم تُجلب. أي رد قادم لترتيب سابق يُهمل.
   void selectSort(CourseSortOption sort) {
     if (selectedSort.value == sort) return;
     selectedSort.value = sort;
+    beginLoad();
+    isLoadingMore.value = false;
+    loadMoreFailed.value = false;
+    errorMessage.value = null;
+    final cached = MemoryCache.get<PagedSnapshot<CourseModel>>(_cacheKey);
+    if (cached != null) {
+      _restore(cached.value);
+      if (!cached.isFresh()) loadCourses();
+      return;
+    }
+    courses.clear();
+    hasMore.value = true;
+    resetInitialLoad();
+    isLoading.value = true;
+    loadCourses();
   }
 
   Future<void> loadCourses() async {
+    final session = beginLoad();
+    final sort = selectedSort.value;
     isLoading.value = isInitialLoad;
     errorMessage.value = null;
     try {
-      final result = await _repository.fetchCoursesPage(page: 1, perPage: _perPage, query: {'category_id': categoryId});
-      courses.assignAll(result.items);
-      // بعد النجاح فقط: تصفيره قبل الطلب كان يجعل «المزيد» بعد تحديث فاشل يكرّر الصفحة الثانية.
-      _page = 1;
-      hasMore.value = result.hasMore;
-      markLoaded();
-      _remember();
+      final result = await _repository.fetchCoursesPage(page: 1, perPage: _perPage, query: _query);
+      applyIfCurrent(session, () {
+        courses.assignAll(result.items);
+        // بعد النجاح فقط: تصفيره قبل الطلب كان يجعل «المزيد» بعد تحديث فاشل يكرّر الصفحة الثانية.
+        _page = 1;
+        hasMore.value = result.hasMore;
+        markLoaded();
+        _remember(sort);
+      });
     } catch (e) {
-      if (courses.isEmpty) errorMessage.value = userErrorMessage(e);
+      if (shouldApply(session) && courses.isEmpty) errorMessage.value = userErrorMessage(e);
     } finally {
-      isLoading.value = false;
+      finishLoad(session, () => isLoading.value = false);
     }
   }
 
@@ -103,19 +117,20 @@ class CategoryCoursesController extends GetxController with InitialLoadState, Se
     if (!hasMore.value || isLoading.value || isLoadingMore.value) return;
     isLoadingMore.value = true;
     loadMoreFailed.value = false;
+    // إن تغيّر الترتيب أثناء التحميل تُهمل الصفحة القديمة بدل خلطها بالقائمة الجديدة.
+    final session = currentLoad();
+    final sort = selectedSort.value;
     try {
       final nextPage = _page + 1;
-      final result = await _repository.fetchCoursesPage(
-        page: nextPage,
-        perPage: _perPage,
-        query: {'category_id': categoryId},
-      );
-      courses.addAll(result.items);
-      _page = nextPage;
-      hasMore.value = result.hasMore;
-      _remember();
+      final result = await _repository.fetchCoursesPage(page: nextPage, perPage: _perPage, query: _query);
+      applyIfCurrent(session, () {
+        courses.addAll(result.items);
+        _page = nextPage;
+        hasMore.value = result.hasMore;
+        _remember(sort);
+      });
     } catch (_) {
-      loadMoreFailed.value = true;
+      if (shouldApply(session)) loadMoreFailed.value = true;
     } finally {
       isLoadingMore.value = false;
     }

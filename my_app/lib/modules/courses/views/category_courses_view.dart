@@ -81,7 +81,7 @@ class _Content extends StatelessWidget {
       final loading = controller.isLoading.value;
       final sort = controller.selectedSort.value;
       // لقطة ثابتة لهذا البناء: الشبكة تبني عناصرها لاحقاً، وقراءة القائمة الحية بعد تغيّرها ترمي RangeError.
-      final courses = loading ? const <CourseModel>[] : controller.sortedCourses.toList(growable: false);
+      final courses = loading ? const <CourseModel>[] : controller.courses.toList(growable: false);
       final error = loading ? null : controller.errorMessage.value;
       return AppSkeletonSwitch(
         sliver: true,
