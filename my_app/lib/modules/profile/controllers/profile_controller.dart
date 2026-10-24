@@ -281,6 +281,9 @@ class ProfileController extends GetxController with LatestLoadGuard {
     }
     pendingChangesCount.value = count;
     hasChanges.value = count > 0;
+    // تعديل جديد بعد حفظ ناجح: تعود علامة «تم» زرَّ حفظ. كانت تبقى (والزر معطّل ما دامت ظاهرة)، فيعرض الشريط
+    // «تغييرات غير محفوظة» ولا يمكن حفظها إلا بالخروج من الصفحة والعودة.
+    if (count > 0) saveSucceeded.value = false;
   }
 
   Future<void> pickAvatar() async {

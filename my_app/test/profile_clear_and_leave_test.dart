@@ -7,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:my_app/core/data/repositories/profile_repository.dart';
 import 'package:my_app/core/locale/app_translations.dart';
+import 'package:my_app/modules/auth/widgets/register_form_widgets.dart';
+import 'package:my_app/core/locale/plural.dart';
 import 'package:my_app/core/models/student_profile_payload.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/core/storage/token_storage.dart';
@@ -176,6 +178,27 @@ void main() {
       expect(c.saveSucceeded.value, isTrue);
     });
 
+    testWidgets('editing again after a save brings the save button back, and a second save goes through', (
+      tester,
+    ) async {
+      await open(tester);
+      c.firstNameController.text = 'عمر';
+      await run(tester, c.saveProfile);
+      expect(c.saveSucceeded.value, isTrue);
+      expect(c.pendingChangesCount.value, 0);
+
+      // تعديل جديد في الصفحة نفسها: كانت علامة «تم» تبقى والزر معطّلاً حتى الخروج والعودة.
+      c.lastNameController.text = 'الأحمد';
+      expect(c.pendingChangesCount.value, 1);
+      expect(c.saveSucceeded.value, isFalse, reason: 'the check mark must give way to the save button');
+
+      await run(tester, c.saveProfile);
+      expect(server.patches, hasLength(2), reason: 'the second save is sent');
+      expect(server.patches.last['last_name'], 'الأحمد');
+      expect(c.pendingChangesCount.value, 0);
+      expect(c.saveSucceeded.value, isTrue);
+    });
+
     testWidgets('discardChanges restores the last loaded values', (tester) async {
       await open(tester);
       c.firstNameController.text = 'غير محفوظ';
@@ -213,6 +236,21 @@ void main() {
       await tester.pumpAndSettle();
       return c;
     }
+
+    testWidgets('after a save, a new edit re-enables the save button on screen', (tester) async {
+      final c = await pump(tester);
+      c.saveSucceeded.value = true; // الحالة بعد حفظ ناجح: علامة «تم» والزر معطّل
+      await tester.pump();
+      RegisterGradientButton button() => tester.widget<RegisterGradientButton>(find.byType(RegisterGradientButton));
+      expect(button().onPressed, isNull);
+
+      c.firstNameController.text = 'تعديل جديد';
+      await tester.pump();
+      expect(find.text(pluralTr('unsaved_changes', 1)), findsOneWidget);
+      expect(button().success, isFalse);
+      expect(button().onPressed, isNotNull, reason: 'the user can save again without leaving the page');
+      await tester.pumpAndSettle();
+    });
 
     testWidgets('no changes: back leaves at once', (tester) async {
       await pump(tester);
