@@ -22,6 +22,12 @@ class InstitutesController extends GetxController with LatestLoadGuard, InitialL
   final loadMoreFailed = false.obs;
   final errorMessage = RxnString();
   final institutes = <InstituteModel>[].obs;
+
+  /// العدد الكلي من الخادم (`total`) للمدينة المختارة، لا عدد ما حُمّل من صفحات (كانت الشارة تعرض 12 من 60).
+  final totalCount = 0.obs;
+
+  /// ما تعرضه الشارة: الكلي، ولا يقل عمّا ظهر فعلاً (إن لم يرسل الخادم العدد).
+  int get displayCount => totalCount.value > institutes.length ? totalCount.value : institutes.length;
   final cities = <CityModel>[].obs;
   final selectedCityId = RxnInt();
   int _page = 1;
@@ -70,6 +76,7 @@ class InstitutesController extends GetxController with LatestLoadGuard, InitialL
       );
       applyIfCurrent(session, () {
         institutes.assignAll(result.items);
+        totalCount.value = result.total;
         // العدّاد يعود للصفحة الأولى مع بياناتها فقط: كان يُصفَّر قبل الطلب، فبعد تحديث فاشل يُعيد
         // «المزيد» الصفحة الثانية فوق قائمة تحتويها (عناصر مكرّرة).
         _page = 1;
