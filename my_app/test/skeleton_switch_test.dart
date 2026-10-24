@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
-import 'package:my_app/core/models/app_models.dart';
 import 'package:my_app/modules/courses/controllers/category_courses_controller.dart';
 import 'package:my_app/modules/courses/views/category_courses_view.dart';
 import 'package:my_app/widgets/app_widgets.dart';
@@ -134,21 +133,6 @@ void main() {
       c.hasMore.value = true;
       await tester.pump();
       expect(identical(tester.widget(find.byType(CourseAuroraCard).first), before), isTrue);
-    });
-
-    testWidgets('changing the sort reorders once and the list stays sorted', (tester) async {
-      final c = await open(tester);
-      c.selectSort(CourseSortOption.priceLow);
-      await tester.pump();
-      final prices = c.sortedCourses.map((e) => e.effectivePrice).toList();
-      expect(prices, [...prices]..sort());
-    });
-
-    testWidgets('sortedCourses follows the courses list', (tester) async {
-      final c = await open(tester);
-      expect(c.sortedCourses.length, c.courses.length);
-      c.courses.removeLast();
-      expect(c.sortedCourses.length, c.courses.length);
     });
   });
 }

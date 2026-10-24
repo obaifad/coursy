@@ -125,7 +125,7 @@ class _CoursesScrollViewState extends State<_CoursesScrollView> {
     final gridPadding = EdgeInsets.fromLTRB(hPad, 12, hPad, 0);
     final aurora = widget.cardStyle == CourseCardStyle.auroraGlass;
     // القراءات التفاعلية هنا (داخل Obx): contentBuilder يُستدعى لاحقاً خارج تتبّعها.
-    final courses = c.sortedCourses.toList(growable: false);
+    final courses = c.courses.toList(growable: false);
     final error = c.errorMessage.value;
     return AppSkeletonSwitch(
       sliver: true,
