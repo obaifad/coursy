@@ -11,8 +11,8 @@ import 'package:my_app/widgets/app_widgets.dart';
 import '../layout/fakes.dart';
 import '../layout/layout_harness.dart';
 
-/// شبكة بطاقات Aurora: تمويه ألواح البطاقات كلها بمفتاح خلفية واحد (BackdropGroup) — على Impeller قراءة واحدة
-/// للخلفية للشبكة كلها بدل واحدة لكل بطاقة (أغلى ما في الإطار أثناء التمرير)، بنفس الشكل.
+/// شبكة بطاقات Aurora: كل لوح يموّه خلفيته هو. لقطة BackdropGroup المشتركة تُلتقط عند أول لوح قبل رسم صور
+/// البطاقات التالية، فكانت ألواحها رمادية على الجهاز (Impeller) — لا يظهر ذلك في الاختبار، فنتحقق من البنية.
 void main() {
   setUpAll(loadAuditFonts);
   tearDown(() {
@@ -21,7 +21,7 @@ void main() {
     Get.reset();
   });
 
-  testWidgets('aurora card panels share one backdrop key per grid', (tester) async {
+  testWidgets('aurora card panels blur their own backdrop, not a shared grid snapshot', (tester) async {
     tester.view.physicalSize = const Size(360 * 3, 800 * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -50,7 +50,8 @@ void main() {
       final panel = renders.reduce((a, b) => a.localToGlobal(Offset.zero).dy > b.localToGlobal(Offset.zero).dy ? a : b);
       keys.add(panel.backdropKey);
     }
-    expect(keys.first, isNotNull, reason: 'each card blurs its own backdrop copy');
-    expect(keys.toSet(), hasLength(1), reason: 'panels of one grid should share a single backdrop key');
+    expect(keys, hasLength(greaterThan(1)));
+    expect(keys.every((k) => k == null), isTrue, reason: 'no BackdropGroup key: every panel reads its own backdrop');
+    expect(find.byType(BackdropGroup), findsNothing);
   });
 }

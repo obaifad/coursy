@@ -153,18 +153,15 @@ class _CoursesScrollViewState extends State<_CoursesScrollView> {
     }
     void open(CourseModel course) => Get.toNamed(AppRoutes.courseDetails, arguments: course);
     if (aurora) {
-      // تمويه ألواح البطاقات مشترك للشبكة كلها (انظر _AuroraGlassPanel).
-      return BackdropGroup(
-        child: SliverPadding(
-          padding: gridPadding,
-          sliver: SliverGrid.builder(
-            itemCount: courses.length,
-            gridDelegate: AppGridLayouts.auroraGridFor(context),
-            itemBuilder: (_, i) {
-              final course = courses[i];
-              return CourseAuroraCard(course: course, onTap: () => open(course));
-            },
-          ),
+      return SliverPadding(
+        padding: gridPadding,
+        sliver: SliverGrid.builder(
+          itemCount: courses.length,
+          gridDelegate: AppGridLayouts.auroraGridFor(context),
+          itemBuilder: (_, i) {
+            final course = courses[i];
+            return CourseAuroraCard(course: course, onTap: () => open(course));
+          },
         ),
       );
     }
