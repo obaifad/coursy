@@ -58,7 +58,7 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final _ = localeRebuildToken;
-      final count = controller.courses.length;
+      final count = controller.displayCount;
       return AppBrandSliverAppBar(
         title: controller.title.value,
         badge: count == 0 ? null : pluralTr('category_courses_count', count),

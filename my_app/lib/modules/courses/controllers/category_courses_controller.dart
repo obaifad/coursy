@@ -16,6 +16,12 @@ class CategoryCoursesController extends GetxController with LatestLoadGuard, Ini
   final hasMore = true.obs;
   final loadMoreFailed = false.obs;
   final courses = <CourseModel>[].obs;
+
+  /// العدد الكلي لدورات التصنيف من الخادم (`total`)، لا عدد ما حُمّل من صفحات (12 في الصفحة).
+  final totalCount = 0.obs;
+
+  /// ما تعرضه الشارة: الكلي، ولا يقل عمّا ظهر فعلاً (إن لم يرسل الخادم العدد).
+  int get displayCount => totalCount.value > courses.length ? totalCount.value : courses.length;
   final selectedSort = CourseSortOption.newest.obs;
   final title = ''.obs;
   final errorMessage = RxnString();
@@ -55,6 +61,7 @@ class CategoryCoursesController extends GetxController with LatestLoadGuard, Ini
 
   void _restore(PagedSnapshot<CourseModel> snapshot) {
     courses.assignAll(snapshot.items);
+    totalCount.value = snapshot.total;
     hasMore.value = snapshot.hasMore;
     _page = snapshot.page;
     isLoading.value = false;
@@ -65,7 +72,7 @@ class CategoryCoursesController extends GetxController with LatestLoadGuard, Ini
     if (selectedSort.value != sort) return;
     MemoryCache.put<PagedSnapshot<CourseModel>>(
       _cacheKey,
-      PagedSnapshot<CourseModel>(items: courses, hasMore: hasMore.value, page: _page),
+      PagedSnapshot<CourseModel>(items: courses, hasMore: hasMore.value, page: _page, total: totalCount.value),
     );
   }
 
@@ -85,6 +92,7 @@ class CategoryCoursesController extends GetxController with LatestLoadGuard, Ini
       return;
     }
     courses.clear();
+    totalCount.value = 0;
     hasMore.value = true;
     resetInitialLoad();
     isLoading.value = true;
@@ -100,6 +108,7 @@ class CategoryCoursesController extends GetxController with LatestLoadGuard, Ini
       final result = await _repository.fetchCoursesPage(page: 1, perPage: _perPage, query: _query);
       applyIfCurrent(session, () {
         courses.assignAll(result.items);
+        totalCount.value = result.total;
         // بعد النجاح فقط: تصفيره قبل الطلب كان يجعل «المزيد» بعد تحديث فاشل يكرّر الصفحة الثانية.
         _page = 1;
         hasMore.value = result.hasMore;
