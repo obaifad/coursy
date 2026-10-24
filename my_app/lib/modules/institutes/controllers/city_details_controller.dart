@@ -13,6 +13,9 @@ class CityDetailsController extends GetxController with SettledLoad {
   final isLoading = true.obs;
   final isLoadingMore = false.obs;
   final hasMore = true.obs;
+
+  /// العدد الكلي لمعاهد المدينة من الخادم (`total`)، لا عدد ما حُمّل من صفحات.
+  final totalInstitutes = 0.obs;
   final loadMoreFailed = false.obs;
   final city = Rxn<CityModel>();
   final institutes = <InstituteModel>[].obs;
@@ -52,6 +55,7 @@ class CityDetailsController extends GetxController with SettledLoad {
     final cached = cityId > 0 ? MemoryCache.get<PagedSnapshot<InstituteModel>>(_listKey) : null;
     if (cached != null) {
       institutes.assignAll(cached.value.items);
+      totalInstitutes.value = cached.value.total;
       hasMore.value = cached.value.hasMore;
       _page = cached.value.page;
       isLoading.value = false;
@@ -67,7 +71,12 @@ class CityDetailsController extends GetxController with SettledLoad {
     if (city.value != null) MemoryCache.put<CityModel>(_cityKey, city.value!);
     MemoryCache.put<PagedSnapshot<InstituteModel>>(
       _listKey,
-      PagedSnapshot<InstituteModel>(items: institutes, hasMore: hasMore.value, page: _page),
+      PagedSnapshot<InstituteModel>(
+        items: institutes,
+        hasMore: hasMore.value,
+        page: _page,
+        total: totalInstitutes.value,
+      ),
     );
   }
 
@@ -96,6 +105,7 @@ class CityDetailsController extends GetxController with SettledLoad {
   Future<void> _fetchFirstInstitutesPage() async {
     final result = await _cityRepository.fetchInstitutesByCity(cityId, page: 1, perPage: _perPage);
     institutes.assignAll(result.items);
+    totalInstitutes.value = result.total;
     // بعد النجاح فقط: تصفيره قبل الطلب كان يجعل «المزيد» بعد تحديث فاشل يكرّر الصفحة الثانية.
     _page = 1;
     hasMore.value = result.hasMore;

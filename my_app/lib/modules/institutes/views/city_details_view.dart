@@ -40,7 +40,10 @@ class CityDetailsView extends GetView<CityDetailsController> {
       child: Obx(() {
         final _ = localeRebuildToken;
         final cityInstitutesCount = controller.city.value?.institutesCount ?? 0;
-        final institutesCount = cityInstitutesCount > 0 ? cityInstitutesCount : controller.institutes.length;
+        // عدد المدينة من الخادم، وإلا الكلي من ترقيم القائمة، وإلا ما ظهر (كان ما حُمّل من صفحات فقط).
+        final loaded = controller.institutes.length;
+        final listTotal = controller.totalInstitutes.value > loaded ? controller.totalInstitutes.value : loaded;
+        final institutesCount = cityInstitutesCount > 0 ? cityInstitutesCount : listTotal;
         final cityCoursesCount = controller.city.value?.coursesCount ?? 0;
         final coursesCount = cityCoursesCount > 0
             ? cityCoursesCount
