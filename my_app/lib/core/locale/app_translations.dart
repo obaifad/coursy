@@ -1270,7 +1270,7 @@ class AppTranslations extends Translations {
     'student_location': 'Student · Damascus',
     'stat_active': 'Active',
     'stat_completed': 'Completed',
-    'stat_review': 'In review',
+    'stat_review': 'Pending',
     'login_to_see_courses': 'Log in to see your courses',
     'tab_pending': 'Pending',
     'tab_confirmed': 'Confirmed',
