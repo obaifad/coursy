@@ -165,8 +165,10 @@ void main() {
       replaceFake<EnrollmentRepository>(EnrollmentRepository(client));
 
       final c = Get.put<MyCoursesController>(MyCoursesController());
-      await settle();
-      await settle();
+      // ينتظر الشرط لا زمناً ثابتاً: طلبان فعليان عبر المحوّل قد يتأخران تحت ضغط الاختبارات كلها.
+      for (var i = 0; i < 200 && (c.isLoading.value || c.enrollments.length < 60); i++) {
+        await settle();
+      }
 
       expect(server.pages, [1, 2]);
       expect(c.enrollments.length, 60, reason: 'the badge counts enrollments.length');
