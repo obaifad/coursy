@@ -53,7 +53,7 @@ class InstituteListCard extends StatelessWidget {
               message: 'institute_top_rated_badge'.tr,
               child: Semantics(
                 label: 'institute_top_rated_badge'.tr,
-                child: const Icon(Icons.emoji_events_rounded, size: 20, color: AppColors.ratingStar),
+                child: const Icon(Icons.verified_user_rounded, size: 20, color: AppColors.ratingStar),
               ),
             )
           : null,
@@ -237,7 +237,7 @@ class _InstituteHeroCover extends StatelessWidget {
                   const Spacer(),
                   if (topRated)
                     _CoverChip(
-                      icon: Icons.emoji_events_rounded,
+                      icon: Icons.verified_user_rounded,
                       label: 'institute_top_rated_badge'.tr,
                       background: const Color(0xFFFFC94D),
                       foreground: const Color(0xFF4A2A00),
