@@ -11,15 +11,19 @@ import 'package:my_app/core/models/app_models.dart';
 import 'package:my_app/core/network/api_client.dart';
 import 'package:my_app/core/network/api_exception.dart';
 import 'package:my_app/core/utils/app_toast.dart';
+import 'package:my_app/modules/courses/controllers/course_details_controller.dart';
+import 'package:my_app/modules/courses/views/course_details_view.dart';
 import 'package:my_app/modules/institutes/controllers/institutes_controller.dart';
 import 'package:my_app/modules/institutes/views/institutes_views.dart';
 import 'package:my_app/widgets/review_card.dart';
 
 import 'layout/fakes.dart';
 import 'layout/layout_harness.dart';
+import 'layout/sample_data.dart';
 
 /// تقييم المعاهد: الخادم صار يقبل `POST /institutes/{id}/reviews` و`DELETE .../reviews/mine`، ويرسل
-/// `can_review` و`my_review` مع التفاصيل و`type` على كل تقييم.
+/// `can_review` و`my_review` مع التفاصيل و`type` على كل تقييم. التقييم نجوم فقط (دورات ومعاهد): لا حقل
+/// تعليق، ولا يُرسل تعليق، وتعليق قديم من الخادم لا يُعرض.
 
 // ---------- HTTP: شكل الطلبات ----------
 
@@ -75,7 +79,7 @@ class _Reviews extends ReviewRepository {
   _Reviews(super.client, this.institutes);
   final _Institutes institutes;
 
-  final posts = <({int rating, String comment})>[];
+  final posts = <int>[];
   int deletes = 0;
   ApiException? postFailure;
   final list = <Map<String, dynamic>>[
@@ -102,17 +106,12 @@ class _Reviews extends ReviewRepository {
       list.map(ReviewModel.fromJson).toList();
 
   @override
-  Future<ReviewModel> submitInstituteReview({
-    required int instituteId,
-    required int rating,
-    required String comment,
-  }) async {
+  Future<ReviewModel> submitInstituteReview({required int instituteId, required int rating}) async {
     if (postFailure != null) throw postFailure!;
-    posts.add((rating: rating, comment: comment));
+    posts.add(rating);
     final mine = {
       'id': 99,
       'rating': rating,
-      'comment': comment,
       'type': 'institute',
       'course': null,
       'student': {'id': 7, 'name': 'Omar K.'},
@@ -194,20 +193,27 @@ void main() {
       repo = ReviewRepository(client);
     });
 
-    test('submit posts rating and comment as JSON body to /institutes/{id}/reviews', () async {
-      final saved = await repo.submitInstituteReview(instituteId: 56, rating: 4, comment: '  جيد  ');
+    test('institute: only the rating, as JSON body, to /institutes/{id}/reviews', () async {
+      final saved = await repo.submitInstituteReview(instituteId: 56, rating: 4);
       final r = server.requests.single;
       expect(r.method, 'POST');
       expect(r.path, '/institutes/56/reviews');
       expect(r.queryParameters, isEmpty, reason: 'not in the query string like course reviews');
-      expect(r.data, {'rating': 4, 'comment': 'جيد'});
+      expect(r.data, {'rating': 4}, reason: 'no comment is sent');
       expect(saved.id, 9);
       expect(saved.isInstituteReview, isTrue);
     });
 
-    test('an empty comment is left out and the rating is kept within 1-5', () async {
-      await repo.submitInstituteReview(instituteId: 56, rating: 9, comment: '   ');
+    test('the rating is kept within 1-5', () async {
+      await repo.submitInstituteReview(instituteId: 56, rating: 9);
       expect(server.requests.single.data, {'rating': 5});
+    });
+
+    test('course: rating in the query as before, no comment in the body', () async {
+      await repo.submitReview(courseId: 4, rating: 3);
+      final r = server.requests.single;
+      expect(r.path, '/courses/4/reviews?rating=3');
+      expect(r.data, isEmpty);
     });
 
     test('delete sends DELETE /institutes/{id}/reviews/mine and accepts an empty 204', () async {
@@ -225,7 +231,7 @@ void main() {
         ..status = 403
         ..body = {'message': 'You need an approved enrollment.'};
       await expectLater(
-        repo.submitInstituteReview(instituteId: 56, rating: 4, comment: ''),
+        repo.submitInstituteReview(instituteId: 56, rating: 4),
         throwsA(isA<ApiException>().having((e) => e.message, 'message', 'You need an approved enrollment.')),
       );
     });
@@ -258,16 +264,14 @@ void main() {
     test('submitting saves the review, then rating, count and my_review come from the server', () async {
       final c = await open();
       c.reviewRating.value = 5;
-      c.reviewCommentController.text = 'تنظيم ممتاز';
       await c.submitReview();
 
-      expect(reviews.posts.single, (rating: 5, comment: 'تنظيم ممتاز'));
+      expect(reviews.posts.single, 5);
       final i = c.institute.value!;
       expect(i.myReview?.rating, 5);
       expect(i.reviewsCount, 2);
       expect(i.rating, 4.0, reason: '(3 + 5) / 2 from the server');
       expect(c.reviews.first.isInstituteReview, isTrue);
-      expect(c.reviewCommentController.text, isEmpty);
       expect(toasts, ['review_submitted_msg'.tr]);
     });
 
@@ -280,7 +284,7 @@ void main() {
       c.reviewRating.value = 2;
       await c.submitReview();
 
-      expect(reviews.posts.map((p) => p.rating), [5, 2]);
+      expect(reviews.posts, [5, 2]);
       expect(c.reviews.where((r) => r.isInstituteReview), hasLength(1));
       expect(c.institute.value!.myReview?.rating, 2);
       expect(c.isEditingReview.value, isFalse);
@@ -298,11 +302,11 @@ void main() {
     test('a server refusal is shown and the form stays', () async {
       final c = await open();
       reviews.postFailure = ApiException('Not eligible.', statusCode: 403);
-      c.reviewCommentController.text = 'نص';
+      c.reviewRating.value = 2;
       await c.submitReview();
       expect(toasts, ['Not eligible.']);
       expect(c.institute.value!.myReview, isNull);
-      expect(c.reviewCommentController.text, 'نص', reason: 'the text is not lost');
+      expect(c.reviewRating.value, 2, reason: 'the chosen stars are not lost');
       expect(c.isSubmittingReview.value, isFalse);
     });
 
@@ -377,23 +381,30 @@ void main() {
       expect(find.text('Flutter'), findsOneWidget, reason: 'course reviews show the course');
     });
 
-    testWidgets('eligible student without a review sees the form', (tester) async {
+    testWidgets('eligible student without a review sees the stars form, no text field', (tester) async {
       await pump(tester, loggedIn: true);
       expect(find.text('institute_rate_title'.tr), findsOneWidget);
-      expect(find.byType(TextField), findsOneWidget);
+      expect(find.byType(TextField), findsNothing, reason: 'stars only');
+      expect(find.byTooltip('rate_n_of_5'.trParams({'n': '5'})), findsOneWidget);
       expect(find.text('submit_review'.tr), findsOneWidget);
+    });
+
+    testWidgets('comments the server still sends are not shown', (tester) async {
+      await pump(tester, loggedIn: true);
+      expect(find.text('دورة جيدة'), findsNothing);
+      expect(find.text('مكان مريح'), findsNothing);
     });
 
     testWidgets('not eligible: a hint instead of the form', (tester) async {
       await pump(tester, loggedIn: true, extra: {'can_review': false});
       expect(find.text('institute_review_not_eligible'.tr), findsOneWidget);
-      expect(find.byType(TextField), findsNothing);
+      expect(find.text('submit_review'.tr), findsNothing);
     });
 
     testWidgets('logged out: a login hint, no form', (tester) async {
       await pump(tester, loggedIn: false, extra: {'can_review': false});
       expect(find.text('institute_review_login_hint'.tr), findsOneWidget);
-      expect(find.byType(TextField), findsNothing);
+      expect(find.text('submit_review'.tr), findsNothing);
     });
 
     testWidgets('with a review: shown with edit and delete; edit opens the form filled in', (tester) async {
@@ -405,15 +416,46 @@ void main() {
         },
       );
       expect(find.text('institute_your_review'.tr), findsOneWidget);
-      expect(find.text('تعليقي'), findsOneWidget);
-      expect(find.byType(TextField), findsNothing);
+      expect(find.text('تعليقي'), findsNothing, reason: 'stars only');
+      expect(find.text('submit_review'.tr), findsNothing);
 
       await tester.tap(find.text('institute_review_edit'.tr));
       await tester.pump();
-      expect(find.byType(TextField), findsOneWidget);
-      expect(c.reviewCommentController.text, 'تعليقي');
-      expect(c.reviewRating.value, 3);
+      expect(c.reviewRating.value, 3, reason: 'the form starts from the saved stars');
       expect(find.text('institute_review_save'.tr), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
+    });
+  });
+
+  group('course reviews tab', () {
+    testWidgets('stars only: no comment field, and old comments are not shown', (tester) async {
+      tester.view.physicalSize = const Size(360, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await registerFakes(loggedIn: true, locale: 'ar');
+      final c = Get.put(CourseDetailsController(), tag: 'course');
+      c.course.value = sampleCourses().first;
+      c.reviews.assignAll(sampleReviews());
+      await tester.pumpWidget(
+        auditApp(
+          child: const CourseDetailsView(controllerTag: 'course'),
+          locale: 'ar',
+          scale: 1,
+          boundaryKey: GlobalKey(),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 600));
+      c.isCheckingEnrollment.value = false;
+      c.isEnrolled.value = true;
+      c.hasSubmittedReview.value = false;
+      await tester.tap(find.text('tab_reviews'.tr));
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(find.text('submit_review'.tr), findsOneWidget, reason: 'the form is there');
+      expect(find.byType(TextField), findsNothing);
+      expect(find.textContaining('دورة ممتازة جداً'), findsNothing, reason: 'sample review comment is hidden');
+      expect(find.byType(ReviewCard), findsWidgets);
     });
   });
 }

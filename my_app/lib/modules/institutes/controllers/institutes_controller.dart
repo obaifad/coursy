@@ -1,6 +1,5 @@
 import '../../../core/navigation/route_settle.dart';
 import '../../../core/cache/memory_cache.dart';
-import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../../../core/data/repositories/city_repository.dart';
@@ -144,14 +143,11 @@ class InstituteDetailsController extends GetxController with SettledLoad {
   final reviews = <ReviewModel>[].obs;
   final reviewsError = RxnString();
 
-  /// نموذج تقييم المعهد: النجوم والتعليق، ووضع «تعديل» حين يكون للطالب تقييم سابق.
+  /// نموذج تقييم المعهد (نجوم فقط)، ووضع «تعديل» حين يكون للطالب تقييم سابق.
   final reviewRating = 5.obs;
-  final reviewCommentController = TextEditingController();
   final isEditingReview = false.obs;
   final isSubmittingReview = false.obs;
   final isDeletingReview = false.obs;
-
-  static const reviewCommentMaxLength = 1000;
 
   /// أخطاء التحميل: كانت تُبتلع فتظهر «لا دورات/لا مدرّسين» بدل «تعذّر التحميل» مع إعادة المحاولة.
   final detailsError = RxnString();
@@ -214,7 +210,6 @@ class InstituteDetailsController extends GetxController with SettledLoad {
   @override
   void onClose() {
     _open.remove(this);
-    reviewCommentController.dispose();
     super.onClose();
   }
 
@@ -308,14 +303,12 @@ class InstituteDetailsController extends GetxController with SettledLoad {
   void startEditingReview() {
     final mine = institute.value?.myReview;
     reviewRating.value = mine == null ? 5 : mine.rating.clamp(1, 5);
-    reviewCommentController.text = mine?.comment ?? '';
     isEditingReview.value = true;
   }
 
   void cancelEditingReview() {
     isEditingReview.value = false;
     reviewRating.value = 5;
-    reviewCommentController.clear();
   }
 
   /// يضيف تقييم الطالب للمعهد أو يعدّله (الخادم يحفظ تقييماً واحداً لكل طالب)، ثم يجلب التفاصيل
@@ -332,11 +325,7 @@ class InstituteDetailsController extends GetxController with SettledLoad {
         AppToast.show('alert'.tr, 'institute_review_not_eligible'.tr);
         return;
       }
-      final saved = await _reviewRepository.submitInstituteReview(
-        instituteId: instituteId,
-        rating: reviewRating.value,
-        comment: reviewCommentController.text,
-      );
+      final saved = await _reviewRepository.submitInstituteReview(instituteId: instituteId, rating: reviewRating.value);
       // يظهر التقييم فوراً حتى لو فشل التحديث بعده.
       institute.value = institute.value?.copyWith(myReview: saved);
       cancelEditingReview();

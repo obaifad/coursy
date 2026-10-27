@@ -2,7 +2,6 @@ import '../../../core/navigation/route_settle.dart';
 import '../../../core/cache/memory_cache.dart';
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/data/repositories/course_repository.dart';
@@ -50,7 +49,6 @@ class CourseDetailsController extends GetxController with SettledLoad {
   final isSubmittingReview = false.obs;
 
   final courseRating = 5.obs;
-  final reviewCommentController = TextEditingController();
 
   @override
   void onInit() {
@@ -308,11 +306,7 @@ class CourseDetailsController extends GetxController with SettledLoad {
         return;
       }
 
-      await _reviewRepository.submitReview(
-        courseId: item.id,
-        rating: courseRating.value,
-        comment: reviewCommentController.text,
-      );
+      await _reviewRepository.submitReview(courseId: item.id, rating: courseRating.value);
 
       reviews.assignAll(await _reviewRepository.fetchReviews(courseId: item.id));
       _ratingService.invalidateCache();
@@ -323,7 +317,6 @@ class CourseDetailsController extends GetxController with SettledLoad {
         }
       }
       await _updateReviewPermission();
-      reviewCommentController.clear();
       AppToast.show('review_submitted_title'.tr, 'review_submitted_msg'.tr, kind: ToastKind.success);
     } on ApiException catch (e) {
       AppToast.show('error'.tr, e.message);
@@ -341,7 +334,6 @@ class CourseDetailsController extends GetxController with SettledLoad {
     if (latest != null) {
       CourseCatalogSync.patchCourse(latest);
     }
-    reviewCommentController.dispose();
     super.onClose();
   }
 

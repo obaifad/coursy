@@ -14,7 +14,7 @@ import '../../../widgets/review_report.dart';
 import '../controllers/institutes_controller.dart';
 
 /// تبويب «التقييمات» في صفحة المعهد: الملخّص (المتوسط والعدد من الخادم)، تقييم الطالب أو نموذج
-/// التقييم، ثم القائمة — تقييمات المعهد نفسه وتقييمات دوراته، كلٌّ موسوم بنوعه.
+/// التقييم (نجوم فقط، بلا تعليق مكتوب)، ثم القائمة — تقييمات المعهد نفسه وتقييمات دوراته، كلٌّ موسوم بنوعه.
 class InstituteReviewsTab extends StatelessWidget {
   const InstituteReviewsTab({super.key, required this.controller});
   final InstituteDetailsController controller;
@@ -75,12 +75,7 @@ class InstituteReviewsTab extends StatelessWidget {
     });
   }
 
-  static final _skeletonReview = ReviewModel(
-    id: 0,
-    rating: 5,
-    comment: 'تعليق تجريبي يملأ سطرين في البطاقة أثناء التحميل',
-    studentName: 'اسم الطالب',
-  );
+  static final _skeletonReview = ReviewModel(id: 0, rating: 5, comment: '', studentName: 'اسم الطالب');
 }
 
 class _ReviewsSummary extends StatelessWidget {
@@ -238,10 +233,6 @@ class _InstituteReviewForm extends StatelessWidget {
                 );
               }),
             ),
-            if (mine.comment.trim().isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Text(mine.comment.trim(), style: const TextStyle(color: AppColors.textSecondary, height: 1.45)),
-            ],
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
@@ -293,15 +284,6 @@ class _InstituteReviewForm extends StatelessWidget {
                 ),
               );
             }),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: controller.reviewCommentController,
-            maxLines: 3,
-            maxLength: InstituteDetailsController.reviewCommentMaxLength,
-            // منطقة التمرير تمتد تحت لوحة المفاتيح: نرفع الحقل وزر الإرسال فوقها.
-            scrollPadding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom + 96),
-            decoration: InputDecoration(hintText: 'institute_review_comment_hint'.tr),
           ),
           const SizedBox(height: 8),
           SizedBox(

@@ -49,24 +49,20 @@ class ReviewRepository extends GetxService {
   /// حدّ أمان لعدد الصفحات (التقييمات تُعرض كلها في تبويب واحد).
   static const _maxPages = 10;
 
-  /// تقييم المعهد: إرسال ثانٍ يعدّل تقييم الطالب بدل إضافة آخر (الخادم يحفظ تقييماً واحداً لكل طالب).
-  /// التقييم والتعليق في جسم JSON، لا في الرابط كما في الدورة.
-  Future<ReviewModel> submitInstituteReview({required int instituteId, required int rating, required String comment}) {
+  /// تقييم المعهد بالنجوم فقط (لا تعليق مكتوب في التطبيق). إرسال ثانٍ يعدّل تقييم الطالب بدل إضافة آخر
+  /// (الخادم يحفظ تقييماً واحداً لكل طالب). التقييم في جسم JSON، لا في الرابط كما في الدورة.
+  Future<ReviewModel> submitInstituteReview({required int instituteId, required int rating}) {
     final safeRating = rating.clamp(1, 5);
-    final text = comment.trim();
     final path = ApiEndpoints.instituteReviews(instituteId);
-    return _client.handle(
-      () => _client.post(path, data: {'rating': safeRating, if (text.isNotEmpty) 'comment': text}),
-      (raw) {
-        final body = normalizeApiBody(raw);
-        _log('SUBMIT', body, path: path);
-        final map = extractObjectMap(body) ?? (body is Map<String, dynamic> ? body : <String, dynamic>{});
-        if (map.isEmpty) {
-          return ReviewModel(id: 0, rating: safeRating, comment: text, studentName: 'review_you'.tr, type: 'institute');
-        }
-        return ReviewModel.fromJson(map);
-      },
-    );
+    return _client.handle(() => _client.post(path, data: {'rating': safeRating}), (raw) {
+      final body = normalizeApiBody(raw);
+      _log('SUBMIT', body, path: path);
+      final map = extractObjectMap(body) ?? (body is Map<String, dynamic> ? body : <String, dynamic>{});
+      if (map.isEmpty) {
+        return ReviewModel(id: 0, rating: safeRating, comment: '', studentName: 'review_you'.tr, type: 'institute');
+      }
+      return ReviewModel.fromJson(map);
+    });
   }
 
   /// يحذف تقييم الطالب للمعهد (204 بلا جسم).
@@ -75,22 +71,19 @@ class ReviewRepository extends GetxService {
     return _client.handle(() => _client.delete(path), (raw) => _log('DELETE', raw, path: path));
   }
 
-  /// تقييم الدورة (`rating` في الرابط كما يتوقّعه الخادم). تقييم المدرّس قراءة فقط.
-  Future<ReviewModel> submitReview({required int courseId, required int rating, required String comment}) {
+  /// تقييم الدورة بالنجوم فقط (`rating` في الرابط كما يتوقّعه الخادم). تقييم المدرّس قراءة فقط.
+  Future<ReviewModel> submitReview({required int courseId, required int rating}) {
     final safeRating = rating.clamp(1, 5);
     final path = '${ApiEndpoints.courseReviews(courseId)}?rating=$safeRating';
-    return _client.handle(
-      () => _client.post(path, data: comment.trim().isEmpty ? const <String, dynamic>{} : {'comment': comment.trim()}),
-      (raw) {
-        final body = normalizeApiBody(raw);
-        _log('SUBMIT', body, path: path);
-        final map = extractObjectMap(body) ?? (body is Map<String, dynamic> ? body : <String, dynamic>{});
-        if (map.isEmpty) {
-          return ReviewModel(id: 0, rating: safeRating, comment: comment.trim(), studentName: 'review_you'.tr);
-        }
-        return ReviewModel.fromJson(map);
-      },
-    );
+    return _client.handle(() => _client.post(path, data: const <String, dynamic>{}), (raw) {
+      final body = normalizeApiBody(raw);
+      _log('SUBMIT', body, path: path);
+      final map = extractObjectMap(body) ?? (body is Map<String, dynamic> ? body : <String, dynamic>{});
+      if (map.isEmpty) {
+        return ReviewModel(id: 0, rating: safeRating, comment: '', studentName: 'review_you'.tr);
+      }
+      return ReviewModel.fromJson(map);
+    });
   }
 
   /// إبلاغ عن تقييم مسيء (سياسة Google Play للمحتوى من المستخدمين). يُرجع رسالة الخادم إن وُجدت.

@@ -9,7 +9,7 @@ import 'design_system.dart';
 import '../theme/app_fonts.dart';
 
 /// بطاقة تقييم موحّدة (صفحات الدورة والمدرّس والمعهد): صورة صاحب التقييم أو أول حرف من اسمه،
-/// الاسم، النجوم، واسم الدورة إن وُجد (تقييمات المدرّس والمعهد تشمل دوراتهما) أو «تقييم للمعهد»، ثم التعليق.
+/// الاسم، النجوم، واسم الدورة إن وُجد (تقييمات المدرّس والمعهد تشمل دوراتهما) أو «تقييم للمعهد». التقييم نجوم فقط: تعليق قديم إن أرسله الخادم لا يُعرض.
 class ReviewCard extends StatelessWidget {
   const ReviewCard({super.key, required this.review, this.showCourse = false, this.onReport});
 
@@ -109,10 +109,6 @@ class ReviewCard extends StatelessWidget {
                 ),
               ],
             ),
-          ],
-          if (review.comment.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(review.comment, style: const TextStyle(color: AppColors.textSecondary, height: 1.45)),
           ],
         ],
       ),
