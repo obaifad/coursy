@@ -16,6 +16,9 @@ import '../widgets/featured_course_carousel.dart';
 import '../widgets/home_categories_grid.dart';
 import '../widgets/home_status_banner.dart';
 
+/// ما يُطرح من فراغ القسم تحت التصنيفات (انظر موضعه).
+const double _categoriesGapTrim = 8;
+
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
 
@@ -148,7 +151,9 @@ class HomeView extends GetView<HomeController> {
               ),
               const SizedBox(height: 10),
               _CategoriesSection(categories: categories),
-              const SizedBox(height: 22),
+              // عدد الدورات (نص صغير فاتح) يترك فراغاً تحته داخل سطره، وظل البطاقات في باقي الأقسام يبدو جزءاً
+              // منها — بنفس الفراغ بدا هذا أوسع بـ ~9. الأقل هنا يجعله للعين كغيره.
+              const SizedBox(height: AppLayout.homeSectionGap - _categoriesGapTrim),
               Padding(
                 padding: _sectionPad(context),
                 child: AppSectionHeader(
@@ -169,7 +174,6 @@ class HomeView extends GetView<HomeController> {
                 AppHorizontalListView(
                   resetToken: scrollReset,
                   height: CourseCardMetrics.featuredCardHeight(context),
-                  bottomInset: AppHorizontalListView.cardShadowBottomInset,
                   itemCount: courses.length,
                   itemBuilder: (_, i) {
                     final course = courses[i];
@@ -184,7 +188,7 @@ class HomeView extends GetView<HomeController> {
                   },
                 ),
               if (suggestedCourses.isNotEmpty) ...[
-                const SizedBox(height: 22),
+                const SizedBox(height: AppLayout.homeSectionGap),
                 Padding(
                   padding: _sectionPad(context),
                   child: AppSectionHeader(
@@ -198,7 +202,6 @@ class HomeView extends GetView<HomeController> {
                 AppHorizontalListView(
                   resetToken: scrollReset,
                   height: CourseCardMetrics.featuredCardHeight(context),
-                  bottomInset: AppHorizontalListView.cardShadowBottomInset,
                   itemCount: suggestedCourses.length,
                   itemBuilder: (_, i) {
                     final course = suggestedCourses[i];
@@ -214,7 +217,7 @@ class HomeView extends GetView<HomeController> {
                 ),
               ],
               if (privateInstructors.isNotEmpty) ...[
-                const SizedBox(height: 36),
+                const SizedBox(height: AppLayout.homeSectionGap),
                 Padding(
                   padding: _sectionPad(context),
                   child: AppSectionHeader(
@@ -232,7 +235,6 @@ class HomeView extends GetView<HomeController> {
                   resetToken: scrollReset,
                   // ارتفاع البطاقة العمودية (صورة دائرية، الاسم، التخصص، الخبرة، الزر) مع تكبير الخط.
                   height: PrivateInstructorMiniCard.railHeight(context),
-                  bottomInset: AppHorizontalListView.cardShadowBottomInset,
                   itemCount: privateInstructors.length,
                   itemBuilder: (_, i) {
                     final instructor = privateInstructors[i];
@@ -243,7 +245,7 @@ class HomeView extends GetView<HomeController> {
                   },
                 ),
               ],
-              const SizedBox(height: 22),
+              const SizedBox(height: AppLayout.homeSectionGap),
               Padding(
                 padding: _sectionPad(context),
                 child: AppSectionHeader(
@@ -264,7 +266,6 @@ class HomeView extends GetView<HomeController> {
                 AppHorizontalListView(
                   resetToken: scrollReset,
                   height: InstituteMiniCard.railHeight(context),
-                  bottomInset: AppHorizontalListView.cardShadowBottomInset,
                   itemCount: institutes.length,
                   itemBuilder: (_, i) {
                     final institute = institutes[i];
@@ -276,7 +277,7 @@ class HomeView extends GetView<HomeController> {
                 ),
               // محافظة واحدة فقط: القسم بلا فائدة تصفّحية فنخفيه.
               if (cities.length >= 2) ...[
-                const SizedBox(height: 22),
+                const SizedBox(height: AppLayout.homeSectionGap),
                 Padding(
                   padding: _sectionPad(context),
                   child: AppSectionHeader(title: 'section_cities'.tr, subtitle: 'section_cities_subtitle'.tr),
