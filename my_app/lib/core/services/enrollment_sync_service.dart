@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../data/repositories/enrollment_repository.dart';
 import '../data/repositories/notification_repository.dart';
 import '../models/app_models.dart';
+import '../storage/background_push_store.dart';
 import '../storage/token_storage.dart';
 import '../storage/notification_delivery_store.dart';
 import '../config/app_debug_log.dart';
@@ -94,6 +95,8 @@ class EnrollmentSyncService extends GetxService {
     if (!Get.isRegistered<NotificationRepository>()) return;
 
     final notifications = await Get.find<NotificationRepository>().fetchNotifications();
+    // ما عرضه النظام من FCM والتطبيق في الخلفية (سجّله معالج الخلفية في isolate منفصل).
+    final shownInBackground = await _loadShownInBackground();
     for (final notification in notifications) {
       if (!RemoteNotificationSync.isEnrollmentNotificationType(notification.type)) continue;
       if (_deliveryStore.wasDelivered(notification.id)) continue;
@@ -101,6 +104,15 @@ class EnrollmentSyncService extends GetxService {
       await _deliveryStore.markDelivered([notification.id]);
 
       if (notification.isRead) continue;
+      final keys = BackgroundPushStore.keys(
+        notificationId: notification.id,
+        type: notification.type,
+        enrollmentId: notification.enrollmentId,
+      );
+      if (keys.any(shownInBackground.contains)) {
+        AppDebugLog.fcm('server notification id=${notification.id} already shown by FCM in background');
+        continue;
+      }
       if (notification.enrollmentId != null && _coordinator.wasDeliveredForEnrollment(notification.enrollmentId!)) {
         continue;
       }
@@ -125,6 +137,15 @@ class EnrollmentSyncService extends GetxService {
       );
 
       await RemoteNotificationSync.onMessageReceived(RemoteNotificationSync.notificationToPushData(notification));
+    }
+  }
+
+  Future<Set<String>> _loadShownInBackground() async {
+    try {
+      return await BackgroundPushStore.load();
+    } catch (e) {
+      AppDebugLog.fcm('background push keys unreadable: $e');
+      return const <String>{};
     }
   }
 

@@ -151,6 +151,10 @@ abstract final class PushLocalNotifications {
   static Future<void> showRemoteMessageBackground(RemoteMessage message) =>
       showRemoteMessage(message, requirePermission: false);
 
+  /// للاختبارات: يُستدعى بدل العرض الفعلي (لا إضافة إشعارات في بيئة الاختبار).
+  @visibleForTesting
+  static void Function(int id, String title, String body)? onShow;
+
   static Future<void> showRaw({
     required int id,
     required String title,
@@ -158,6 +162,11 @@ abstract final class PushLocalNotifications {
     String payload = '',
     bool requirePermission = true,
   }) async {
+    final hook = onShow;
+    if (hook != null) {
+      hook(id, title, body);
+      return;
+    }
     if (!userEnabled) return;
     if (title.trim().isEmpty && body.trim().isEmpty) return;
 
