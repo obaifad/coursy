@@ -56,6 +56,7 @@ void main() {
 
     expect(controller.courses.length, before - 1);
     expect(find.text('undo'.tr), findsOneWidget);
+    await tester.pump(const Duration(seconds: 7)); // مهلة إغلاق الإشعار الاحتياطية
   });
 
   test('initials: first and last name, titles and the article dropped, letters kept apart', () {
