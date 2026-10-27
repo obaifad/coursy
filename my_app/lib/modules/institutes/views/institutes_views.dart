@@ -16,6 +16,7 @@ import '../../../widgets/app_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/filter_chips.dart';
 import '../controllers/institutes_controller.dart';
+import 'institute_reviews_tab.dart';
 
 import '../../../theme/app_fonts.dart';
 
@@ -149,7 +150,7 @@ class InstituteDetailsView extends GetView<InstituteDetailsController> {
       }
       final name = item?.name ?? 'institute_details'.tr;
       return DefaultTabController(
-        length: 3,
+        length: 4,
         child: Scaffold(
           // الشريط أبيض فوق صورة الغلاف وداكن بعد طيّها (كان داكناً فوق الصورة فلا يُقرأ).
           body: CollapsingHeroScope(
@@ -188,6 +189,7 @@ class InstituteDetailsView extends GetView<InstituteDetailsController> {
                               Tab(text: 'tab_info'.tr),
                               Tab(text: 'tab_courses'.tr),
                               Tab(text: 'tab_instructors'.tr),
+                              Tab(text: 'tab_reviews'.tr),
                             ],
                           ),
                         ),
@@ -201,6 +203,7 @@ class InstituteDetailsView extends GetView<InstituteDetailsController> {
                   _InfoTab(controller: controller),
                   _CoursesTab(controller: controller),
                   _InstructorsTab(controller: controller),
+                  InstituteReviewsTab(controller: controller),
                 ],
               ),
             ),

@@ -191,14 +191,6 @@ class _ReviewFormSection extends StatelessWidget {
         children: [
           _RatingRow(label: 'rate_course'.tr, rating: controller.courseRating),
           const SizedBox(height: 12),
-          TextField(
-            controller: controller.reviewCommentController,
-            maxLines: 3,
-            // منطقة التمرير تمتد تحت لوحة المفاتيح: نرفع الحقل وزر الإرسال فوقها.
-            scrollPadding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom + 96),
-            decoration: InputDecoration(hintText: 'review_comment_hint'.tr),
-          ),
-          const SizedBox(height: 12),
           Obx(
             () => SizedBox(
               width: double.infinity,

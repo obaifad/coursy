@@ -26,6 +26,8 @@ class InstituteModel {
     this.facebook,
     this.instagram,
     this.acceptsShamcash,
+    this.canReview = false,
+    this.myReview,
   }) : nameAr = nameAr ?? name ?? '',
        nameEn = nameEn ?? name ?? '',
        cityAr = cityAr ?? city ?? '',
@@ -60,6 +62,13 @@ class InstituteModel {
   /// هل يقبل المعهد الدفع عبر شام كاش داخل التطبيق (`accepts_shamcash`).
   /// null = الخادم لم يرسل الحقل (نسخة أقدم) — يبقى السلوك السابق.
   final bool? acceptsShamcash;
+
+  /// الطالب الحالي يحق له تقييم المعهد (`can_review`): حجز مقبول أو مكتمل في إحدى دوراته. يصل مع
+  /// تفاصيل المعهد حين يُرسل التوكن، وبدونه false.
+  final bool canReview;
+
+  /// تقييم الطالب الحالي للمعهد (`my_review`) إن وُجد — يُعرض بدل النموذج مع «تعديل» و«حذف».
+  final ReviewModel? myReview;
 
   bool get hasContact => [phone, whatsapp, website, facebook, instagram].any((v) => v != null);
 
@@ -97,6 +106,9 @@ class InstituteModel {
     String? facebook,
     String? instagram,
     bool? acceptsShamcash,
+    bool? canReview,
+    ReviewModel? myReview,
+    bool clearMyReview = false,
   }) {
     return InstituteModel(
       id: id,
@@ -121,6 +133,8 @@ class InstituteModel {
       facebook: facebook ?? this.facebook,
       instagram: instagram ?? this.instagram,
       acceptsShamcash: acceptsShamcash ?? this.acceptsShamcash,
+      canReview: canReview ?? this.canReview,
+      myReview: clearMyReview ? null : (myReview ?? this.myReview),
     );
   }
 
@@ -173,6 +187,10 @@ class InstituteModel {
       facebook: _contact(json['facebook']),
       instagram: _contact(json['instagram']),
       acceptsShamcash: json['accepts_shamcash'] == null ? null : JsonHelpers.parseBool(json['accepts_shamcash']),
+      canReview: JsonHelpers.parseBool(json['can_review']),
+      myReview: json['my_review'] is Map
+          ? ReviewModel.fromJson(Map<String, dynamic>.from(json['my_review'] as Map))
+          : null,
     );
   }
 

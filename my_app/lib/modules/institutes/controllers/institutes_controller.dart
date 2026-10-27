@@ -6,9 +6,14 @@ import '../../../core/data/repositories/city_repository.dart';
 import '../../../core/data/repositories/course_repository.dart';
 import '../../../core/data/repositories/institute_repository.dart';
 import '../../../core/data/repositories/instructor_repository.dart';
+import '../../../core/data/repositories/review_repository.dart';
 import '../../../core/locale/locale_request_guard.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/services/course_rating_service.dart';
+import '../../../core/utils/app_toast.dart';
+import '../../../core/utils/auth_guard.dart';
+import '../../../routes/app_routes.dart';
 
 class InstitutesController extends GetxController with LatestLoadGuard, InitialLoadState {
   final InstituteRepository _repository = Get.find();
@@ -127,11 +132,22 @@ class InstituteDetailsController extends GetxController with SettledLoad {
   final InstituteRepository _instituteRepository = Get.find();
   final CourseRepository _courseRepository = Get.find();
   final InstructorRepository _instructorRepository = Get.find();
+  final ReviewRepository _reviewRepository = Get.find();
 
   final isLoading = true.obs;
   final institute = Rxn<InstituteModel>();
   final courses = <CourseModel>[].obs;
   final instructors = <InstructorModel>[].obs;
+
+  /// تقييمات المعهد كما يرسلها الخادم: تقييمات المعهد نفسه وتقييمات دوراته معاً (`type` يميّزها).
+  final reviews = <ReviewModel>[].obs;
+  final reviewsError = RxnString();
+
+  /// نموذج تقييم المعهد (نجوم فقط)، ووضع «تعديل» حين يكون للطالب تقييم سابق.
+  final reviewRating = 5.obs;
+  final isEditingReview = false.obs;
+  final isSubmittingReview = false.obs;
+  final isDeletingReview = false.obs;
 
   /// أخطاء التحميل: كانت تُبتلع فتظهر «لا دورات/لا مدرّسين» بدل «تعذّر التحميل» مع إعادة المحاولة.
   final detailsError = RxnString();
@@ -170,6 +186,7 @@ class InstituteDetailsController extends GetxController with SettledLoad {
     institute.value = s.institute;
     courses.assignAll(s.courses);
     instructors.assignAll(s.instructors);
+    reviews.assignAll(s.reviews);
     isLoading.value = false;
     return cached;
   }
@@ -178,10 +195,15 @@ class InstituteDetailsController extends GetxController with SettledLoad {
     final current = institute.value;
     if (current == null || instituteId <= 0) return;
     // لا نحفظ حالة ناقصة بسبب خطأ: كانت ستعرض «لا دورات» بدل إعادة المحاولة.
-    if (coursesError.value != null || instructorsError.value != null) return;
+    if (coursesError.value != null || instructorsError.value != null || reviewsError.value != null) return;
     MemoryCache.put<_InstituteSnapshot>(
       _cacheKey,
-      _InstituteSnapshot(institute: current, courses: List.of(courses), instructors: List.of(instructors)),
+      _InstituteSnapshot(
+        institute: current,
+        courses: List.of(courses),
+        instructors: List.of(instructors),
+        reviews: List.of(reviews),
+      ),
     );
   }
 
@@ -202,7 +224,12 @@ class InstituteDetailsController extends GetxController with SettledLoad {
     final hasSeed = institute.value != null;
     if (!hasSeed) isLoading.value = true;
     try {
-      final ok = await Future.wait<bool>([_fetchInstituteDetails(), _fetchCourses(), _fetchInstructors()]);
+      final ok = await Future.wait<bool>([
+        _fetchInstituteDetails(),
+        _fetchCourses(),
+        _fetchInstructors(),
+        _fetchReviews(),
+      ]);
       // لا نحفظ حالة جزئية: كانت تُعلَّم «طازجة» فلا يُعاد الطلب عند العودة.
       if (ok.every((v) => v)) _remember();
     } finally {
@@ -253,6 +280,97 @@ class InstituteDetailsController extends GetxController with SettledLoad {
     }
   }
 
+  Future<bool> _fetchReviews() async {
+    if (instituteId <= 0) return false;
+    reviewsError.value = null;
+    try {
+      reviews.assignAll(await _reviewRepository.fetchReviews(instituteId: instituteId));
+      return true;
+    } catch (e) {
+      if (reviews.isEmpty) reviewsError.value = userErrorMessage(e);
+      return false;
+    }
+  }
+
+  bool get isLoggedIn => AuthGuard.isLoggedIn;
+
+  /// من بطاقة «سجّل الدخول لتقييم المعهد»: بعد العودة مسجّلاً تُعاد التفاصيل كي يصل `can_review`.
+  Future<void> loginToReview() async {
+    await Get.toNamed(AppRoutes.login);
+    if (!isClosed && isLoggedIn) await loadDetails();
+  }
+
+  void startEditingReview() {
+    final mine = institute.value?.myReview;
+    reviewRating.value = mine == null ? 5 : mine.rating.clamp(1, 5);
+    isEditingReview.value = true;
+  }
+
+  void cancelEditingReview() {
+    isEditingReview.value = false;
+    reviewRating.value = 5;
+  }
+
+  /// يضيف تقييم الطالب للمعهد أو يعدّله (الخادم يحفظ تقييماً واحداً لكل طالب)، ثم يجلب التفاصيل
+  /// والتقييمات من جديد: المتوسط والعدد و`my_review` من الخادم، لا محسوبة هنا.
+  Future<void> submitReview() async {
+    final current = institute.value;
+    if (current == null || instituteId <= 0 || isSubmittingReview.value || isDeletingReview.value) return;
+    // القفل قبل أي انتظار: ضغطة ثانية أثناء الإرسال كانت سترسل مرتين.
+    isSubmittingReview.value = true;
+    try {
+      if (!await AuthGuard.requireLogin(message: 'institute_review_login_required'.tr)) return;
+      final updating = current.myReview != null;
+      if (!updating && !current.canReview) {
+        AppToast.show('alert'.tr, 'institute_review_not_eligible'.tr);
+        return;
+      }
+      final saved = await _reviewRepository.submitInstituteReview(instituteId: instituteId, rating: reviewRating.value);
+      // يظهر التقييم فوراً حتى لو فشل التحديث بعده.
+      institute.value = institute.value?.copyWith(myReview: saved);
+      cancelEditingReview();
+      await _refreshAfterReviewChange();
+      AppToast.show(
+        'review_submitted_title'.tr,
+        updating ? 'institute_review_updated_msg'.tr : 'review_submitted_msg'.tr,
+        kind: ToastKind.success,
+      );
+    } on ApiException catch (e) {
+      AppToast.show('error'.tr, e.message);
+    } catch (_) {
+      AppToast.show('error'.tr, 'review_submit_failed'.tr);
+    } finally {
+      isSubmittingReview.value = false;
+    }
+  }
+
+  Future<void> deleteMyReview() async {
+    if (instituteId <= 0 || isDeletingReview.value || isSubmittingReview.value) return;
+    if (institute.value?.myReview == null) return;
+    isDeletingReview.value = true;
+    try {
+      await _reviewRepository.deleteMyInstituteReview(instituteId);
+      institute.value = institute.value?.copyWith(clearMyReview: true);
+      cancelEditingReview();
+      await _refreshAfterReviewChange();
+      AppToast.show('institute_review_deleted_title'.tr, 'institute_review_deleted_msg'.tr, kind: ToastKind.success);
+    } on ApiException catch (e) {
+      AppToast.show('error'.tr, e.message);
+    } catch (_) {
+      AppToast.show('error'.tr, 'institute_review_delete_failed'.tr);
+    } finally {
+      isDeletingReview.value = false;
+    }
+  }
+
+  /// بعد إضافة أو حذف: المتوسط والعدد تغيّرا على الخادم. كاش تقييمات المعاهد (يكمّل تقييم الدورات
+  /// والقوائم) قديم الآن.
+  Future<void> _refreshAfterReviewChange() async {
+    if (Get.isRegistered<CourseRatingService>()) Get.find<CourseRatingService>().invalidateCache();
+    final ok = await Future.wait<bool>([_fetchInstituteDetails(), _fetchReviews()]);
+    if (ok.every((v) => v)) _remember();
+  }
+
   InstituteModel _mergeInstitute(InstituteModel? previous, InstituteModel details) {
     if (previous == null) return details;
     // النسختان العربية والإنجليزية منفصلتان — تمرير `name` المترجم كان يثبّت لغة واحدة.
@@ -266,7 +384,9 @@ class InstituteDetailsController extends GetxController with SettledLoad {
       latitude: details.latitude ?? previous.latitude,
       longitude: details.longitude ?? previous.longitude,
       coursesCount: details.coursesCount > 0 ? details.coursesCount : previous.coursesCount,
-      rating: details.rating > 0 ? details.rating : previous.rating,
+      // الخادم أرسل عدد التقييمات: تقييمه هو الصحيح حتى لو صفراً (حُذف آخر تقييم). بدونه كان يبقى
+      // التقييم السابق من القائمة.
+      rating: details.rating > 0 || details.reviewsCount != null ? details.rating : previous.rating,
       logoUrl: details.logoUrl ?? previous.logoUrl,
       coverImageUrl: details.coverImageUrl ?? previous.coverImageUrl,
     );
@@ -283,11 +403,17 @@ class InstituteDetailsController extends GetxController with SettledLoad {
   }
 }
 
-/// ما يُحفظ لصفحة معهد: بياناته + دوراته + مدرّسوه.
+/// ما يُحفظ لصفحة معهد: بياناته + دوراته + مدرّسوه + تقييماته.
 class _InstituteSnapshot {
-  _InstituteSnapshot({required this.institute, required this.courses, required this.instructors});
+  _InstituteSnapshot({
+    required this.institute,
+    required this.courses,
+    required this.instructors,
+    required this.reviews,
+  });
 
   final InstituteModel institute;
   final List<CourseModel> courses;
   final List<InstructorModel> instructors;
+  final List<ReviewModel> reviews;
 }
