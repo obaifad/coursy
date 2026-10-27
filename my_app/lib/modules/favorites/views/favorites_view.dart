@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -196,28 +198,41 @@ class _FavoriteItem extends StatefulWidget {
 class _FavoriteItemState extends State<_FavoriteItem> {
   bool _leaving = false;
 
+  static const _snackDuration = Duration(seconds: 4);
+
+  /// Flutter لا يُغلق إشعاراً فيه زر حين تعمل خدمة وصول تتنقّل بين العناصر (Switch Access، TalkBack):
+  /// كان يبقى معلّقاً حتى يُسحب باليد. نغلقه نحن بعد مهلة أطول تكفي للوصول إلى «تراجع».
+  static const _accessibleSnackDuration = Duration(seconds: 10);
+
   Future<void> _remove() async {
     if (_leaving) return;
     final messenger = ScaffoldMessenger.maybeOf(context);
+    final accessible = MediaQuery.accessibleNavigationOf(context);
     HapticFeedback.selectionClick();
     setState(() => _leaving = true);
     // ندع التلاشي يظهر قبل حذف العنصر من القائمة.
     await Future<void>.delayed(const Duration(milliseconds: 240));
     final course = widget.course;
     await widget.controller.removeCourse(course);
-    messenger
-      ?..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 4),
-          content: Text('favorite_removed'.tr),
-          action: SnackBarAction(
-            label: 'undo'.tr,
-            onPressed: () => Get.find<FavoritesService>().toggleCourse(course.id),
-          ),
+    if (messenger == null || !messenger.mounted) return;
+    messenger.hideCurrentSnackBar();
+    final shown = messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        duration: _snackDuration,
+        content: Text('favorite_removed'.tr),
+        action: SnackBarAction(
+          label: 'undo'.tr,
+          onPressed: () => Get.find<FavoritesService>().toggleCourse(course.id),
         ),
-      );
+      ),
+    );
+    var closed = false;
+    shown.closed.whenComplete(() => closed = true);
+    // احتياط لكل الأجهزة: كل إشعار هنا يُغلق السابق قبل ظهوره، فإن بقي إشعارنا مفتوحاً فهو الظاهر الآن.
+    Timer(accessible ? _accessibleSnackDuration : _snackDuration + const Duration(seconds: 2), () {
+      if (!closed && messenger.mounted) messenger.hideCurrentSnackBar(reason: SnackBarClosedReason.timeout);
+    });
   }
 
   @override
