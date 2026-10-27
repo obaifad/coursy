@@ -8,8 +8,8 @@ import 'design_system.dart';
 
 import '../theme/app_fonts.dart';
 
-/// بطاقة تقييم موحّدة (صفحة الدورة وصفحة المدرّس): صورة صاحب التقييم أو أول حرف من اسمه،
-/// الاسم، النجوم، واسم الدورة إن وُجد (تقييمات المدرّس تشمل كل دوراته)، ثم التعليق.
+/// بطاقة تقييم موحّدة (صفحات الدورة والمدرّس والمعهد): صورة صاحب التقييم أو أول حرف من اسمه،
+/// الاسم، النجوم، واسم الدورة إن وُجد (تقييمات المدرّس والمعهد تشمل دوراتهما) أو «تقييم للمعهد»، ثم التعليق.
 class ReviewCard extends StatelessWidget {
   const ReviewCard({super.key, required this.review, this.showCourse = false, this.onReport});
 
@@ -23,7 +23,8 @@ class ReviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = review.studentName.trim();
     final image = review.resolvedStudentImageUrl;
-    final course = review.courseTitle?.trim();
+    // في قائمة المعهد: تقييم المعهد نفسه يُوسَم بذلك، وتقييم الدورة باسمها.
+    final course = review.isInstituteReview ? 'review_type_institute'.tr : review.courseTitle?.trim();
     return SoftCard(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -88,7 +89,11 @@ class ReviewCard extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.menu_book_outlined, size: 14, color: AppColors.primary),
+                Icon(
+                  review.isInstituteReview ? Icons.apartment_rounded : Icons.menu_book_outlined,
+                  size: 14,
+                  color: AppColors.primary,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(

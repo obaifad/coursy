@@ -66,6 +66,7 @@ class ReviewModel {
     this.studentId,
     this.studentImageUrl,
     this.courseTitle,
+    this.type,
   });
 
   final int id;
@@ -79,6 +80,11 @@ class ReviewModel {
 
   /// اسم الدورة المقيَّمة (تقييمات المدرّس تشمل كل دوراته).
   final String? courseTitle;
+
+  /// نوع التقييم من الخادم: `course` أو `institute` (قائمة تقييمات المعهد تجمع الاثنين).
+  final String? type;
+
+  bool get isInstituteReview => type == 'institute';
 
   String? get resolvedStudentImageUrl => ApiConfig.resolveMediaUrl(studentImageUrl);
 
@@ -110,6 +116,7 @@ class ReviewModel {
       studentId: studentId,
       studentImageUrl: studentImage,
       courseTitle: courseTitle,
+      type: json['type']?.toString().trim().toLowerCase(),
     );
   }
 }
