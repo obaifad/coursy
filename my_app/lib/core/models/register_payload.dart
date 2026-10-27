@@ -15,7 +15,6 @@ class RegisterPayload {
     this.universityId,
     this.specializationId,
     this.preferredCategories,
-    this.notificationRadiusKm,
     this.role = 'student',
     this.isActive = true,
   });
@@ -36,7 +35,6 @@ class RegisterPayload {
   final int? universityId;
   final int? specializationId;
   final List<int>? preferredCategories;
-  final int? notificationRadiusKm;
   final String role;
   final bool isActive;
 
@@ -48,9 +46,8 @@ class RegisterPayload {
     final hasEducation = educationLevel != null && educationLevel!.isNotEmpty;
     final hasUniversity = universityId != null;
     final hasSpecialization = specializationId != null;
-    final hasRadius = notificationRadiusKm != null;
 
-    if (!hasEducation && !hasUniversity && !hasSpecialization && !hasCategories && !hasRadius) {
+    if (!hasEducation && !hasUniversity && !hasSpecialization && !hasCategories) {
       return null;
     }
 
@@ -59,7 +56,6 @@ class RegisterPayload {
       if (hasUniversity) 'university_id': universityId,
       if (hasSpecialization) 'specialization_id': specializationId,
       if (hasCategories) 'preferred_categories': categories,
-      if (hasRadius) 'notification_radius_km': notificationRadiusKm,
     };
   }
 

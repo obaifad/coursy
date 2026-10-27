@@ -16,7 +16,6 @@ class StudentProfilePayload {
     this.specializationAr,
     this.interests,
     this.preferredCategories,
-    this.notificationRadiusKm,
     this.currentPassword,
     this.clearFields = const {},
   });
@@ -49,7 +48,6 @@ class StudentProfilePayload {
   final String? specializationAr;
   final List<String>? interests;
   final List<int>? preferredCategories;
-  final int? notificationRadiusKm;
 
   /// مطلوبة عند تغيير البريد (حماية من تغييره بتوكن مسروق).
   final String? currentPassword;
@@ -60,13 +58,11 @@ class StudentProfilePayload {
     final hasEducation = educationLevel != null && educationLevel!.isNotEmpty;
     final hasUniversity = universityId != null;
     final hasSpecialization = specializationId != null;
-    final hasRadius = notificationRadiusKm != null;
 
     if (!hasEducation &&
         !hasUniversity &&
         !hasSpecialization &&
         !hasCategories &&
-        !hasRadius &&
         _clearedJson().isEmpty) {
       return null;
     }
@@ -77,7 +73,6 @@ class StudentProfilePayload {
       if (hasUniversity) 'university_id': universityId,
       if (hasSpecialization) 'specialization_id': specializationId,
       if (hasCategories) 'preferred_categories': categories,
-      if (hasRadius) 'notification_radius_km': notificationRadiusKm,
     };
   }
 
@@ -102,7 +97,6 @@ class StudentProfilePayload {
       if (specializationAr != null && specializationAr!.isNotEmpty) 'specialization_ar': specializationAr,
       if (interests != null && interests!.isNotEmpty) 'interests': interests,
       if (preferredCategories != null && preferredCategories!.isNotEmpty) 'preferred_categories': preferredCategories,
-      if (notificationRadiusKm != null) 'notification_radius_km': notificationRadiusKm,
       if (currentPassword != null && currentPassword!.isNotEmpty) 'current_password': currentPassword,
       if (studentProfile != null) 'student_profile': studentProfile,
     };

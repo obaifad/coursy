@@ -663,9 +663,39 @@ class RegisterInterestPicker extends StatelessWidget {
                 ),
               ),
             ),
+            // إشعارات الدورات الجديدة تتبع الاهتمامات فقط (لا المدينة): بلا اهتمامات لا يصل أيّ منها.
+            const InterestsNotifyHint(),
           ],
         );
       },
+    );
+  }
+}
+
+/// سطر تحت حقل الاهتمامات: الخادم يرسل إشعار «دورة جديدة» لمن اختار تصنيفها فقط.
+class InterestsNotifyHint extends StatelessWidget {
+  const InterestsNotifyHint({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(top: 6, start: 4, end: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 1),
+            child: Icon(Icons.notifications_active_outlined, size: 15, color: AppColors.textSecondary),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'interests_notify_hint'.tr,
+              style: AppFonts.tajawal(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

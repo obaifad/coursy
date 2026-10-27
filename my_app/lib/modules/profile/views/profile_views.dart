@@ -624,6 +624,7 @@ class _InterestsControl extends GetView<ProfileController> {
                 ),
             ],
           ),
+          if (categories.isNotEmpty || selectedIds.isNotEmpty) const InterestsNotifyHint(),
           if (loading)
             const Padding(
               padding: EdgeInsets.only(top: 12),
