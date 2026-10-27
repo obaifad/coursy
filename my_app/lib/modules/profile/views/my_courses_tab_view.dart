@@ -366,7 +366,6 @@ class _EnrollmentMeta {
           icon: Icons.schedule_rounded,
           label: '${JsonHelpers.weekdayLabel(course.schedules.first.dayOfWeek)} · ${course.schedules.first.startTime}',
         ),
-      _MetaRow(icon: Icons.confirmation_number_outlined, label: '#${enrollment.id}'),
     ];
     return _EnrollmentMeta(rows);
   }
