@@ -50,8 +50,9 @@ void main() {
         double titleTop(String key) => rect(find.text(key.tr)).top;
         double bottomOf(Finder f) => rect(f.first).bottom;
 
+        // تحت التصنيفات أقل بـ 8: نص العدد الصغير يترك فراغاً داخل سطره فيبدو للعين كغيره.
         final gaps = <String, double>{
-          'categories → featured': titleTop('section_featured') - bottomOf(find.byType(HomeCategoriesGrid)),
+          'categories → featured': titleTop('section_featured') - bottomOf(find.byType(HomeCategoriesGrid)) + 8,
           'featured → suggested': titleTop('section_suggested') - bottomOf(find.byType(CourseCard)),
           'suggested → tutors': titleTop('section_private_instructors') - rect(find.byType(CourseCard).last).bottom,
           'tutors → institutes': titleTop('section_institutes') - bottomOf(_tutorCard),

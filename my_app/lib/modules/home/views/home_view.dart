@@ -16,6 +16,9 @@ import '../widgets/featured_course_carousel.dart';
 import '../widgets/home_categories_grid.dart';
 import '../widgets/home_status_banner.dart';
 
+/// ما يُطرح من فراغ القسم تحت التصنيفات (انظر موضعه).
+const double _categoriesGapTrim = 8;
+
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
 
@@ -148,7 +151,9 @@ class HomeView extends GetView<HomeController> {
               ),
               const SizedBox(height: 10),
               _CategoriesSection(categories: categories),
-              const SizedBox(height: AppLayout.homeSectionGap),
+              // عدد الدورات (نص صغير فاتح) يترك فراغاً تحته داخل سطره، وظل البطاقات في باقي الأقسام يبدو جزءاً
+              // منها — بنفس الفراغ بدا هذا أوسع بـ ~9. الأقل هنا يجعله للعين كغيره.
+              const SizedBox(height: AppLayout.homeSectionGap - _categoriesGapTrim),
               Padding(
                 padding: _sectionPad(context),
                 child: AppSectionHeader(
