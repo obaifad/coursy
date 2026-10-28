@@ -27,12 +27,11 @@ class CourseCard extends StatelessWidget {
             ? constraints.maxHeight
             : spec.totalHeight.clamp(0.0, constraints.maxHeight).toDouble();
         final radius = BorderRadius.circular(_kCourseCardRadius);
-        const notch = CourseTicketSpec.notchRadius;
-        // القصّتان: دائرتان بلون خلفية الصفحة فوق حافتي البطاقة، لا مسار مقصوص (Path.combine + ClipPath).
-        // القصّ بمسار معقّد وظلّه كانا يُرسمان خطأً بمحرّك Impeller على بعض معالجات الرسوميات (Adreno 618:
-        // كبسولة الحسم فارغة والبطاقة رمادية)، والمستطيل المدوّر أرخص رسماً على كل الأجهزة.
-        final notchColor = Theme.of(context).scaffoldBackgroundColor;
-        final notchTop = height - spec.notchFromBottom - notch;
+        // القصّتان فتحتان حقيقيتان: جسم البطاقة الأبيض وظلّه يُرسمان بمسار التذكرة (محيط واحد بنصفي دائرة
+        // على الحافتين)، فيظهر ما خلف البطاقة من الفتحتين ويلتفّ الظل حولهما. رسم لا قصّ: ClipPath بمسار
+        // مركّب (Path.combine) كان يُرسم خطأً بمحرّك Impeller على Adreno 618 (كبسولة الحسم فارغة والبطاقة
+        // رمادية)؛ المحتوى نفسه يبقى في ClipRRect.
+        final notchCenterY = height - spec.notchFromBottom;
 
         return SizedBox(
           width: constraints.maxWidth,
@@ -41,8 +40,9 @@ class CourseCard extends StatelessWidget {
             clipBehavior: Clip.none,
             children: [
               Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(color: AppColors.card, borderRadius: radius, boxShadow: _courseCardShadow),
+                child: CustomPaint(
+                  key: const ValueKey('ticket-body'),
+                  painter: _TicketBodyPainter(notchCenterY: notchCenterY),
                 ),
               ),
               Positioned.fill(
@@ -69,37 +69,62 @@ class CourseCard extends StatelessWidget {
                   ),
                 ),
               ),
-              // داخل حدود البطاقة فقط (قصّ مستطيل، لا مسار): نصف الدائرة الخارجي كان يُرسم في الفراغ بين
-              // البطاقات فيلتقي بقصّة البطاقة المجاورة ويمحو ظلّها — دائرة مدموجة بين البطاقتين.
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: ClipRect(
-                    key: const ValueKey('ticket-notch-clip'),
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        for (final left in [-notch, constraints.maxWidth - notch])
-                          Positioned(
-                            left: left,
-                            top: notchTop,
-                            width: notch * 2,
-                            height: notch * 2,
-                            child: DecoratedBox(
-                              key: const ValueKey('ticket-notch'),
-                              decoration: BoxDecoration(color: notchColor, shape: BoxShape.circle),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         );
       },
     );
   }
+}
+
+/// جسم بطاقة التذكرة: مستطيل مدوّر بفتحتين نصف دائريتين على الحافتين عند الخط المتقطع، مع ظلّ البطاقة
+/// بنفس الشكل (كما يرسم BoxDecoration ظلّه: المسار نفسه بتمويه). محيط واحد بـ arcToPoint، بلا
+/// Path.combine ولا قصّ.
+class _TicketBodyPainter extends CustomPainter {
+  const _TicketBodyPainter({required this.notchCenterY});
+
+  final double notchCenterY;
+
+  static const double _r = _kCourseCardRadius;
+  static const double _notch = CourseTicketSpec.notchRadius;
+
+  /// الظل يُرسم بفتحتين أوسع: ظلّ البطاقة تحتها كان يظهر من الفتحة هلالاً رمادياً داكناً.
+  static const double _shadowNotchExtra = 8;
+
+  @visibleForTesting
+  static Path ticketPath(Size size, double notchCenterY, {double notchRadius = _notch}) {
+    final w = size.width, h = size.height;
+    final n = notchRadius;
+    const corner = Radius.circular(_r);
+    final notch = Radius.circular(n);
+    return Path()
+      ..moveTo(_r, 0)
+      ..lineTo(w - _r, 0)
+      ..arcToPoint(Offset(w, _r), radius: corner)
+      ..lineTo(w, notchCenterY - n)
+      ..arcToPoint(Offset(w, notchCenterY + n), radius: notch, clockwise: false)
+      ..lineTo(w, h - _r)
+      ..arcToPoint(Offset(w - _r, h), radius: corner)
+      ..lineTo(_r, h)
+      ..arcToPoint(Offset(0, h - _r), radius: corner)
+      ..lineTo(0, notchCenterY + n)
+      ..arcToPoint(Offset(0, notchCenterY - n), radius: notch, clockwise: false)
+      ..lineTo(0, _r)
+      ..arcToPoint(const Offset(_r, 0), radius: corner)
+      ..close();
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final shadowPath = ticketPath(size, notchCenterY, notchRadius: _notch + _shadowNotchExtra);
+    for (final shadow in _courseCardShadow) {
+      canvas.drawPath(shadowPath.shift(shadow.offset), shadow.toPaint());
+    }
+    canvas.drawPath(ticketPath(size, notchCenterY), Paint()..color = AppColors.card);
+  }
+
+  @override
+  bool shouldRepaint(_TicketBodyPainter old) => old.notchCenterY != notchCenterY;
 }
 
 class _TicketContent extends StatelessWidget {

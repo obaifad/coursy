@@ -10,7 +10,7 @@ import 'layout/layout_harness.dart';
 
 /// بطاقات الدورات المتجاورة في الرئيسية: القصّتان الجانبيتان كانتا تُرسمان نصفهما خارج البطاقة، في فراغ
 /// 12 فقط بين البطاقات، فتلتقي قصّة البطاقة بقصّة جارتها وتمحوان الظل بينهما (دائرة مدموجة)، والبطاقات
-/// تبدو ملتصقة. الآن القصّة داخل حدود البطاقة فقط، والمسافة 16.
+/// تبدو ملتصقة. الآن القصّة فتحة داخل جسم البطاقة نفسه، والمسافة 16.
 void main() {
   setUpAll(loadAuditFonts);
   tearDown(() {
@@ -42,12 +42,8 @@ void main() {
       expect(gap, moreOrLessEquals(16, epsilon: 0.01));
 
       for (final card in [cards.at(0), cards.at(1)]) {
-        final cardRect = tester.getRect(card);
-        final clip = find.descendant(of: card, matching: find.byKey(const ValueKey('ticket-notch-clip')));
-        expect(tester.widget(clip), isA<ClipRect>());
-        expect(tester.getRect(clip), cardRect, reason: 'the notches are cut at the card edge');
-        final notches = find.descendant(of: clip, matching: find.byKey(const ValueKey('ticket-notch')));
-        expect(notches, findsNWidgets(2));
+        final body = find.descendant(of: card, matching: find.byKey(const ValueKey('ticket-body')));
+        expect(tester.getRect(body), tester.getRect(card), reason: 'the notches are cut at the card edge');
       }
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(seconds: 1));
