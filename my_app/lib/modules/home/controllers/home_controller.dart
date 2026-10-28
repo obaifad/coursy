@@ -62,6 +62,11 @@ class HomeController extends GetxController with LatestLoadGuard {
   /// البانر بلا داعٍ. فارغة = تُعرض بطاقة الترحيب الثابتة بدلها.
   final bannerCourses = <CourseModel>[].obs;
 
+  /// وصلت دورات الرئيسية من الخادم مرة على الأقل (لا من النسخة المحفوظة على الجهاز). قبلها لا تُعرض
+  /// بطاقة «لا دورات» الافتراضية للمسجّل: نسخة محفوظة بلا دورات مفتوحة، أو فشل الشبكة، كانا يُظهرانها
+  /// ثم تُستبدل بالشرائح حين يصل الرد.
+  final coursesFromServer = false.obs;
+
   List<CourseModel> _pickBannerCourses() {
     final open = courses.where((course) => course.isRegistrationOpen).toList();
     final featured = open.where((course) => course.isFeatured);
@@ -167,6 +172,7 @@ class HomeController extends GetxController with LatestLoadGuard {
           _replaceIfNotEmpty(categories, homepage.categories, session);
           if (!forceRefresh) {
             enrichment.add(_applyCourses(courses, homepage.courses, session));
+            if (homepage.courses.isNotEmpty) coursesFromServer.value = true;
             if (!isLoggedIn) {
               enrichment.add(_applyCourses(suggestedCourses, homepage.suggestedCourses, session));
             }
@@ -291,6 +297,8 @@ class HomeController extends GetxController with LatestLoadGuard {
       final fresh = await _courseRepository.fetchCourses();
       if (!shouldApply(session)) return;
       await _applyCourses(courses, fresh, session);
+      // ولو كانت فارغة: الخادم أكّد أن لا دورات، فالبطاقة الافتراضية صحيحة.
+      if (shouldApply(session)) coursesFromServer.value = true;
     } on ApiCancelledException {
       return;
     } on ApiException catch (e) {

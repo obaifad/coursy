@@ -344,8 +344,12 @@ class _HomeBannerSlot extends StatelessWidget {
     }
     final banner = controller.bannerCourses.toList(growable: false);
     if (banner.isEmpty) {
-      // ما زال التحميل الأول جارياً: مكان الشرائح بمقاسها، لا البطاقة الافتراضية (تظهر فقط إن لم تصل دورات).
-      if (controller.isLoading.value) return ('loading', const FeaturedCourseCarouselPlaceholder());
+      // ما زال التحميل جارياً، أو لم يؤكّد الخادم الدورات بعد (نسخة محفوظة / فشل الشبكة): مكان الشرائح
+      // بمقاسها، لا البطاقة الافتراضية ثم الشرائح فوقها. عند الفشل يبقى ثابتاً (بلا وميض) وزر «إعادة
+      // المحاولة» في شريط الخطأ فوقه. البطاقة الافتراضية فقط حين يؤكّد الخادم أن لا دورات مفتوحة.
+      if (controller.isLoading.value || !controller.coursesFromServer.value) {
+        return ('loading', FeaturedCourseCarouselPlaceholder(shimmer: controller.errorMessage.value == null));
+      }
       return ('hero', Padding(padding: pad, child: const _HomeHeroBanner()));
     }
     return ('carousel', FeaturedCourseCarousel(courses: banner));
