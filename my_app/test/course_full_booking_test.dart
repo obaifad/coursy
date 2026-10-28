@@ -11,7 +11,7 @@ import 'package:my_app/widgets/registration_closed_dialog.dart';
 import 'layout/fakes.dart';
 import 'layout/layout_harness.dart';
 
-/// دورة اكتملت مقاعدها تتصرّف كدورة انتهى تسجيلها: مكان «احجز الآن» زر «الدورة ممتلئة» يفتح نافذة
+/// دورة اكتملت مقاعدها تتصرّف كدورة انتهى تسجيلها: مكان «احجز الآن» زر «المقاعد مكتملة» يفتح نافذة
 /// انتهاء التسجيل نفسها (برقم المعهد) بعنوان ورسالة الامتلاء، وبطاقة السعة تقول ذلك، ولا يصل أحد إلى شاشة
 /// الحجز. المسجّل فيها يبقى يرى «تم التسجيل».
 CourseModel _course({required int current, int? max = 14, String? phone, String? deadline}) => CourseModel.fromJson({
@@ -73,7 +73,7 @@ void main() {
       expect(find.byType(RegisterGradientButton), findsNothing, reason: 'no «book now» button');
       final full = find.widgetWithText(OutlinedButton, 'course_full'.tr);
       expect(full, findsOneWidget);
-      // بطاقة السعة: «الدورة ممتلئة» بدل «0 مقعد متبقٍ».
+      // بطاقة السعة: «المقاعد مكتملة» بدل «0 مقعد متبقٍ».
       expect(find.text('course_full'.tr), findsNWidgets(2));
 
       await tester.tap(full);

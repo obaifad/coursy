@@ -674,7 +674,7 @@ class AppTranslations extends Translations {
     'registration_closed_call': 'اتصال',
     'registration_closed_action': 'انتهى التسجيل',
     'enrollment_registered': 'تم التسجيل',
-    'course_full': 'الدورة ممتلئة',
+    'course_full': 'المقاعد مكتملة',
     'course_full_title': 'اكتملت مقاعد الدورة',
     'course_full_message':
         'لم يعد بإمكانك التسجيل عبر التطبيق لأن مقاعد هذه الدورة اكتملت. تواصل مع المعهد مباشرة للاستفسار.',
