@@ -161,15 +161,35 @@ class _StatTile extends StatelessWidget {
         children: [
           Icon(stat.icon, size: 15, color: stat.highlighted ? AppColors.primary : AppColors.textSecondary),
           const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              stat.label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.xs, height: 1.15),
-            ),
-          ),
+          Expanded(child: LayoutBuilder(builder: (context, constraints) => _label(context, constraints.maxWidth))),
         ],
+      ),
+    );
+  }
+
+  static const _style = TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.xs, height: 1.15);
+
+  /// سطران عادةً؛ لكن كلمة واحدة أعرض من الخلية («Intermediate» على هاتف 360) كانت تُقسم من منتصفها
+  /// («Intermedi / ate») — فتُصغَّر حتى تتسع كاملة بدل ذلك.
+  Widget _label(BuildContext context, double width) {
+    final style = DefaultTextStyle.of(context).style.merge(_style);
+    final painter = TextPainter(textDirection: Directionality.of(context), textScaler: MediaQuery.textScalerOf(context));
+    var widest = 0.0;
+    for (final word in stat.label.split(RegExp(r'\s+'))) {
+      painter
+        ..text = TextSpan(text: word, style: style)
+        ..layout();
+      if (painter.width > widest) widest = painter.width;
+    }
+    painter.dispose();
+    if (widest <= width) {
+      return Text(stat.label, maxLines: 2, overflow: TextOverflow.ellipsis, style: _style);
+    }
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(stat.label, maxLines: 1, style: _style),
       ),
     );
   }
