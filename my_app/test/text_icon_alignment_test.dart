@@ -8,6 +8,7 @@ import 'package:my_app/modules/payment/controllers/payment_controller.dart';
 import 'package:my_app/modules/payment/views/payment_view.dart';
 import 'package:my_app/theme/app_fonts.dart';
 import 'package:my_app/theme/app_theme.dart';
+import 'package:my_app/widgets/app_widgets.dart';
 import 'package:my_app/widgets/design_system.dart';
 
 import 'layout/fakes.dart';
@@ -151,6 +152,30 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(seconds: 1));
     });
+
+    for (final locale in ['ar', 'en']) {
+      testWidgets('course row card on a 360 phone: the duration is shown whole, in its short form ($locale)', (
+        tester,
+      ) async {
+        Get.locale = Locale(locale);
+        await registerFakes(loggedIn: true, locale: locale);
+        final courses = sampleCourses();
+        await pumpIn(
+          tester,
+          ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              for (final i in [0, 1, 3]) CourseRowCard(course: courses[i]),
+            ],
+          ),
+          locale: locale,
+        );
+        final expected = locale == 'ar' ? ['120 س', '16 ج', '40 س'] : ['120 h', '16 sess', '40 h'];
+        for (final text in expected) {
+          expect(tester.renderObject<RenderParagraph>(find.text(text)).didExceedMaxLines, isFalse, reason: text);
+        }
+      });
+    }
 
     testWidgets('payment summary: the title stays on one line (the status moves under it when needed)', (tester) async {
       Get.locale = const Locale('en');
