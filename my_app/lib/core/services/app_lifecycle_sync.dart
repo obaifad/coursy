@@ -3,7 +3,11 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
+import '../../modules/profile/controllers/my_courses_controller.dart';
+import '../../modules/root/controllers/root_controller.dart';
+import '../../routes/app_routes.dart';
 import '../navigation/app_navigation.dart';
+import '../navigation/home_scroll_reset.dart';
 import '../storage/token_storage.dart';
 import 'enrollment_sync_service.dart';
 import 'push_notification_service.dart';
@@ -49,6 +53,7 @@ class AppLifecycleSync extends GetxService with WidgetsBindingObserver {
     switch (state) {
       case AppLifecycleState.resumed:
         _isForeground = true;
+        _refreshVisibleTab();
         unawaited(_onResume());
         _startPolling();
       case AppLifecycleState.inactive:
@@ -73,6 +78,17 @@ class AppLifecycleSync extends GetxService with WidgetsBindingObserver {
   void _stopPolling() {
     _pollTimer?.cancel();
     _pollTimer = null;
+  }
+
+  /// العودة من الخلفية بعد مدة: الرئيسية أو «دوراتي» الظاهرة تُحدَّث إن كانت قديمة (دقيقتان)، كما عند
+  /// الرجوع إليها من تبويب آخر — كانت تبقى على بيانات ما قبل الخروج حتى تبديل التبويب أو السحب للتحديث.
+  void _refreshVisibleTab() {
+    if (!Get.isRegistered<RootController>() || Get.currentRoute != AppRoutes.root) return;
+    final tab = Get.find<RootController>().currentIndex.value;
+    if (tab == 2) HomeScrollReset.notifyIfHomeVisible(scrollToTop: false);
+    if (tab == 3 && Get.isRegistered<MyCoursesController>()) {
+      unawaited(Get.find<MyCoursesController>().loadIfStale());
+    }
   }
 
   Future<void> _onResume() async {
