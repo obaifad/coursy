@@ -159,6 +159,7 @@ void main() {
       ) async {
         Get.locale = Locale(locale);
         await registerFakes(loggedIn: true, locale: locale);
+        final semantics = tester.ensureSemantics();
         final courses = sampleCourses();
         await pumpIn(
           tester,
@@ -174,6 +175,12 @@ void main() {
         for (final text in expected) {
           expect(tester.renderObject<RenderParagraph>(find.text(text)).didExceedMaxLines, isFalse, reason: text);
         }
+        // قارئ الشاشة يسمع المدة كاملة (ضمن وصف البطاقة المدموج).
+        for (final i in [0, 1, 3]) {
+          final full = courses[i].duration;
+          expect(find.bySemanticsLabel(RegExp(RegExp.escape(full))), findsOneWidget, reason: full);
+        }
+        semantics.dispose();
       });
     }
 

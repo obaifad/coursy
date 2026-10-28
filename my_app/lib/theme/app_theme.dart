@@ -170,9 +170,9 @@ class AppTheme {
     );
   }
 
-  /// صعود Tajawal أكبر من نزوله: توزيع المسافة الإضافية بالتساوي فوق الحروف وتحتها (افتراض Material 3 مع
-  /// ارتفاع سطر ~1.43) يُنزلها 1–3 تحت منتصف الأيقونة المجاورة. التوزيع النسبي يضعها على خط منتصفها —
-  /// لكل أنماط الثيم، فيرثه كل Text وTextStyle بلا توزيع صريح.
+  /// صعود Tajawal أكبر من نزوله: في الأسطر المضغوطة (ارتفاع 1.2–1.3، أقل من ارتفاع الخط الطبيعي) يقصّ
+  /// التوزيع المتساوي (افتراض Material 3) من فوق الحروف وتحتها بالقدر نفسه، فتنزل ~1 تحت منتصف الأيقونة
+  /// المجاورة. التوزيع النسبي يحفظ موضعها — لكل أنماط الثيم، فيرثه كل Text وTextStyle بلا توزيع صريح.
   static TextTheme _centredOnIcons(TextTheme t) {
     TextStyle? p(TextStyle? s) => s?.copyWith(leadingDistribution: TextLeadingDistribution.proportional);
     return t.copyWith(

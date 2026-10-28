@@ -32,7 +32,13 @@ class CourseRowCard extends StatelessWidget {
             child: AppRowMetaLine(
               spacing: 8,
               items: [
-                if (duration != null) AppRowMeta(icon: Icons.schedule_rounded, text: duration),
+                // قارئ الشاشة يقرأ المدة كاملة («120 ساعة») لا المختصرة.
+                if (duration != null)
+                  Semantics(
+                    label: course.duration,
+                    excludeSemantics: true,
+                    child: AppRowMeta(icon: Icons.schedule_rounded, text: duration),
+                  ),
                 CourseRatingBadge(course: course, showCount: false),
               ],
             ),
