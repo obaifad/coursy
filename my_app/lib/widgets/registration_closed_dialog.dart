@@ -11,7 +11,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_fonts.dart';
 import '../core/utils/app_toast.dart';
 
-/// نافذة منبثقة عند انتهاء فترة التسجيل في الدورة.
+/// نافذة منبثقة عند انتهاء فترة التسجيل في الدورة، أو اكتمال مقاعدها (نفس النافذة مع رقم المعهد).
 class RegistrationClosedDialog extends StatelessWidget {
   const RegistrationClosedDialog({super.key, required this.course});
 
@@ -34,7 +34,9 @@ class RegistrationClosedDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final contact = course.primaryInstituteContact;
-    final deadline = course.registrationDeadline;
+    // انتهاء التسجيل أولاً: دورة انتهى تسجيلها وامتلأت تبقى «انتهت فترة التسجيل» مع آخر موعد.
+    final full = course.isRegistrationOpen && course.isFull;
+    final deadline = full ? null : course.registrationDeadline;
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
@@ -51,17 +53,21 @@ class RegistrationClosedDialog extends StatelessWidget {
                   width: 68,
                   height: 68,
                   decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
-                  child: const Icon(Icons.event_busy_rounded, color: AppColors.primary, size: 34),
+                  child: Icon(
+                    full ? Icons.group_off_rounded : Icons.event_busy_rounded,
+                    color: AppColors.primary,
+                    size: 34,
+                  ),
                 ),
                 const SizedBox(height: 18),
                 Text(
-                  'registration_closed_title'.tr,
+                  full ? 'course_full_title'.tr : 'registration_closed_title'.tr,
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: AppTextSize.xxl, fontWeight: FontWeight.w800, height: 1.25),
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'registration_closed_message'.tr,
+                  full ? 'course_full_message'.tr : 'registration_closed_message'.tr,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: AppColors.textSecondary,

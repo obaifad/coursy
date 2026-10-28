@@ -19,7 +19,8 @@ class _StickyEnrollBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final registrationClosed = item.isRegistrationClosed;
     final alreadyRegistered = hasRegisteredEnrollment;
-    final full = item.isFull;
+    // ممتلئة: نفس زر انتهاء التسجيل ونافذته (رقم المعهد)، والمسجّل فيها يبقى يرى «تم التسجيل».
+    final full = !registrationClosed && !alreadyRegistered && item.isFull;
 
     return Container(
       decoration: BoxDecoration(
@@ -41,7 +42,7 @@ class _StickyEnrollBar extends StatelessWidget {
               _StickyPriceColumn(item: item),
               const SizedBox(width: 12),
               Expanded(
-                child: registrationClosed
+                child: registrationClosed || full
                     ? OutlinedButton(
                         onPressed: onRegistrationClosed,
                         style: OutlinedButton.styleFrom(
@@ -52,20 +53,15 @@ class _StickyEnrollBar extends StatelessWidget {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
                         ),
                         child: Text(
-                          'registration_closed_action'.tr,
+                          full ? 'course_full'.tr : 'registration_closed_action'.tr,
                           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.md),
                         ),
                       )
                     : RegisterGradientButton(
-                        label: alreadyRegistered
-                            ? 'enrollment_registered'.tr
-                            : full
-                            ? 'course_full'.tr
-                            : 'book_now'.tr,
+                        label: alreadyRegistered ? 'enrollment_registered'.tr : 'book_now'.tr,
                         // الحالة غير معروفة بعد → زر بمؤشر تحميل بدل عرض حالة مؤقتة ثم تبديلها.
                         loading: !enrollmentResolved,
-                        // ممتلئة: الزر معطّل، والمسجّل فيها يبقى يرى «تم التسجيل».
-                        onPressed: alreadyRegistered || full || !enrollmentResolved ? null : onBook,
+                        onPressed: alreadyRegistered || !enrollmentResolved ? null : onBook,
                       ),
               ),
             ],

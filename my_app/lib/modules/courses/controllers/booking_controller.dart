@@ -27,7 +27,7 @@ class BookingController extends GetxController {
   void onInit() {
     super.onInit();
     course = Get.arguments as CourseModel;
-    if (course.isRegistrationClosed) {
+    if (course.isRegistrationClosed || course.isFull) {
       SchedulerBinding.instance.addPostFrameCallback((_) async {
         await RegistrationClosedDialog.show(course);
         if (Get.currentRoute == AppRoutes.courseBooking) Get.back<void>();

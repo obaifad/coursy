@@ -675,7 +675,9 @@ class AppTranslations extends Translations {
     'registration_closed_action': 'انتهى التسجيل',
     'enrollment_registered': 'تم التسجيل',
     'course_full': 'الدورة ممتلئة',
-    'course_full_message': 'اكتملت مقاعد هذه الدورة. تواصل مع المعهد لتسأل عن دورة قادمة.',
+    'course_full_title': 'اكتملت مقاعد الدورة',
+    'course_full_message':
+        'لم يعد بإمكانك التسجيل عبر التطبيق لأن مقاعد هذه الدورة اكتملت. تواصل مع المعهد مباشرة للاستفسار.',
     'registration_closed_phone_copied_title': 'تم النسخ',
     'registration_closed_phone_copied_msg': 'تم نسخ رقم المعهد. يمكنك لصقه في تطبيق الاتصال.',
     'book_login_required': 'يجب تسجيل الدخول أولاً للتسجيل في الدورة.',
@@ -1468,7 +1470,9 @@ class AppTranslations extends Translations {
     'registration_closed_action': 'Registration closed',
     'enrollment_registered': 'Registered',
     'course_full': 'Course full',
-    'course_full_message': 'All seats in this course are taken. Contact the institute to ask about the next one.',
+    'course_full_title': 'This course is full',
+    'course_full_message':
+        'You can no longer enroll in this course through the app because all seats are taken. Please contact the institute directly.',
     'registration_closed_phone_copied_title': 'Copied',
     'registration_closed_phone_copied_msg': 'The institute number was copied. Paste it in your phone app to call.',
     'book_login_required': 'Log in to enroll in this course.',
