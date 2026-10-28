@@ -1469,7 +1469,7 @@ class AppTranslations extends Translations {
     'registration_closed_call': 'Call',
     'registration_closed_action': 'Registration closed',
     'enrollment_registered': 'Registered',
-    'course_full': 'Course full',
+    'course_full': 'Fully booked',
     'course_full_title': 'This course is full',
     'course_full_message':
         'You can no longer enroll in this course through the app because all seats are taken. Please contact the institute directly.',
