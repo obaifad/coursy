@@ -74,7 +74,7 @@ class AppHomeSkeleton extends StatelessWidget {
           AppHorizontalListView(
             height: CourseCardMetrics.featuredListHeight(context),
             bottomInset: AppHorizontalListView.cardShadowBottomInset,
-            separatorWidth: 12,
+            separatorWidth: CourseCardMetrics.featuredListSpacing,
             itemCount: 2,
             itemBuilder: (_, __) => SizedBox(
               width: CourseCardMetrics.featuredCardWidth(context),
