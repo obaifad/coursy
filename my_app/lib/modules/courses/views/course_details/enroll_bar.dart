@@ -19,6 +19,7 @@ class _StickyEnrollBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final registrationClosed = item.isRegistrationClosed;
     final alreadyRegistered = hasRegisteredEnrollment;
+    final full = item.isFull;
 
     return Container(
       decoration: BoxDecoration(
@@ -56,10 +57,15 @@ class _StickyEnrollBar extends StatelessWidget {
                         ),
                       )
                     : RegisterGradientButton(
-                        label: alreadyRegistered ? 'enrollment_registered'.tr : 'book_now'.tr,
+                        label: alreadyRegistered
+                            ? 'enrollment_registered'.tr
+                            : full
+                            ? 'course_full'.tr
+                            : 'book_now'.tr,
                         // الحالة غير معروفة بعد → زر بمؤشر تحميل بدل عرض حالة مؤقتة ثم تبديلها.
                         loading: !enrollmentResolved,
-                        onPressed: alreadyRegistered || !enrollmentResolved ? null : onBook,
+                        // ممتلئة: الزر معطّل، والمسجّل فيها يبقى يرى «تم التسجيل».
+                        onPressed: alreadyRegistered || full || !enrollmentResolved ? null : onBook,
                       ),
               ),
             ],
