@@ -69,19 +69,31 @@ class CourseCard extends StatelessWidget {
                   ),
                 ),
               ),
-              for (final left in [-notch, constraints.maxWidth - notch])
-                Positioned(
-                  left: left,
-                  top: notchTop,
-                  width: notch * 2,
-                  height: notch * 2,
-                  child: IgnorePointer(
-                    child: DecoratedBox(
-                      key: const ValueKey('ticket-notch'),
-                      decoration: BoxDecoration(color: notchColor, shape: BoxShape.circle),
+              // داخل حدود البطاقة فقط (قصّ مستطيل، لا مسار): نصف الدائرة الخارجي كان يُرسم في الفراغ بين
+              // البطاقات فيلتقي بقصّة البطاقة المجاورة ويمحو ظلّها — دائرة مدموجة بين البطاقتين.
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: ClipRect(
+                    key: const ValueKey('ticket-notch-clip'),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        for (final left in [-notch, constraints.maxWidth - notch])
+                          Positioned(
+                            left: left,
+                            top: notchTop,
+                            width: notch * 2,
+                            height: notch * 2,
+                            child: DecoratedBox(
+                              key: const ValueKey('ticket-notch'),
+                              decoration: BoxDecoration(color: notchColor, shape: BoxShape.circle),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
+              ),
             ],
           ),
         );
