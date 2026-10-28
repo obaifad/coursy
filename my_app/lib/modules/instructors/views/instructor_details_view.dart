@@ -329,8 +329,8 @@ class _InstructorCoursesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       if (controller.isLoadingCourses.value && controller.courses.isEmpty) {
-        // حشوة الشبكة الحقيقية نفسها (12 من الأعلى) كي لا تتحرك البطاقات عند وصول البيانات.
-        return AppGridSkeleton(padding: EdgeInsets.fromLTRB(16, 12, 16, AppLayout.scrollBottomInset(context)));
+        // حشوة القائمة الحقيقية نفسها (12 من الأعلى) كي لا تتحرك البطاقات عند وصول البيانات.
+        return AppRowListSkeleton(padding: EdgeInsets.fromLTRB(16, 12, 16, AppLayout.scrollBottomInset(context)));
       }
       final error = controller.coursesError.value;
       if (controller.courses.isEmpty && error != null) {
@@ -349,22 +349,17 @@ class _InstructorCoursesTab extends StatelessWidget {
         );
       }
 
-      final crossAxisCount = MediaQuery.sizeOf(context).width >= 900 ? 3 : 2;
+      // بطاقة نتائج البحث نفسها ([CourseRowCard]).
       return CustomScrollView(
         slivers: [
           SliverPadding(
             padding: EdgeInsets.fromLTRB(16, 12, 16, AppLayout.scrollBottomInset(context)),
-            sliver: SliverGrid.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                mainAxisExtent: AppGridLayouts.courseTileHeightFor(context),
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
+            sliver: SliverList.separated(
               itemCount: controller.courses.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (_, i) {
                 final course = controller.courses[i];
-                return CourseCard(
+                return CourseRowCard(
                   course: course,
                   onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: course),
                 );
@@ -471,95 +466,24 @@ class _InstructorInstitutesTab extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (_, i) {
         final linked = institutes[i];
-        return SoftCard(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            onTap: () => Get.toNamed(
-              AppRoutes.instituteDetails,
-              arguments: InstituteModel(
-                id: linked.id,
-                name: linked.name,
-                city: linked.address ?? '—',
-                rating: linked.rating,
-                coursesCount: 0,
-                description: linked.description,
-                address: linked.address,
-                isVerified: linked.isVerified,
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                      gradient: AppGradients.category,
-                    ),
-                    child: const Icon(Icons.apartment_rounded, color: Colors.white),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                linked.name,
-                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.lg),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (linked.isVerified)
-                              const Icon(Icons.verified_rounded, color: AppColors.primary, size: 18),
-                          ],
-                        ),
-                        if (linked.address != null && linked.address!.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            linked.address!,
-                            style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTextSize.sm),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            if (linked.rating > 0) ...[
-                              const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 16),
-                              const SizedBox(width: 4),
-                              Text(
-                                linked.rating.toStringAsFixed(1),
-                                textDirection: TextDirection.ltr,
-                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.sm),
-                              ),
-                            ] else ...[
-                              const Icon(Icons.star_outline_rounded, color: AppColors.textHint, size: 16),
-                              const SizedBox(width: 4),
-                              Text(
-                                'no_ratings_yet'.tr,
-                                style: const TextStyle(
-                                  color: AppColors.textHint,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: AppTextSize.xs,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
-                ],
-              ),
-            ),
+        final address = linked.address?.trim() ?? '';
+        // بطاقة تبويب المعاهد نفسها، ببيانات الربط فقط: لا شعار (أيقونة المبنى) ولا عدد دورات (يُخفى).
+        final institute = InstituteModel(
+          id: linked.id,
+          name: linked.name,
+          city: address,
+          rating: linked.rating,
+          coursesCount: 0,
+          description: linked.description,
+          address: linked.address,
+          isVerified: linked.isVerified,
+        );
+        return InstituteListCard(
+          institute: institute,
+          showCoursesCount: false,
+          onTap: () => Get.toNamed(
+            AppRoutes.instituteDetails,
+            arguments: institute.copyWith(city: address.isEmpty ? '—' : address),
           ),
         );
       },

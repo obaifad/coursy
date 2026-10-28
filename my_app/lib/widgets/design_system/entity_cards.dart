@@ -24,10 +24,13 @@ class InstituteMiniCard extends StatelessWidget {
 /// بطاقة معهد في القوائم (تبويب المعاهد، المحافظة، البحث) — بطاقة صفّية مضغوطة ([AppRowCard]):
 /// الشعار في جهة البداية، الاسم وشارة «الأعلى تقييماً»، المدينة وعلامة الاعتماد، ثم التقييم وعدد الدورات.
 class InstituteListCard extends StatelessWidget {
-  const InstituteListCard({super.key, required this.institute, this.onTap});
+  const InstituteListCard({super.key, required this.institute, this.onTap, this.showCoursesCount = true});
 
   final InstituteModel institute;
   final VoidCallback? onTap;
+
+  /// false حين لا يأتي عدد الدورات من الخادم (معاهد المدرّس): يُخفى بدل «0 دورة».
+  final bool showCoursesCount;
 
   @override
   Widget build(BuildContext context) {
@@ -83,11 +86,12 @@ class InstituteListCard extends StatelessWidget {
             child: AppRowMetaLine(
               items: [
                 rating,
-                AppRowMeta(
-                  icon: Icons.menu_book_outlined,
-                  iconColor: AppColors.primary,
-                  text: pluralTr('category_courses_count', institute.coursesCount),
-                ),
+                if (showCoursesCount)
+                  AppRowMeta(
+                    icon: Icons.menu_book_outlined,
+                    iconColor: AppColors.primary,
+                    text: pluralTr('category_courses_count', institute.coursesCount),
+                  ),
               ],
             ),
           ),

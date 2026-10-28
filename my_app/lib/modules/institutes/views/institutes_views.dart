@@ -218,9 +218,6 @@ class _InfoTab extends StatelessWidget {
   const _InfoTab({required this.controller});
   final InstituteDetailsController controller;
 
-  /// عدد الدورات المعروضة في تبويب المعلومات.
-  static const _previewCourses = 3;
-
   Future<void> _openMaps(double lat, double lng) => ExternalLauncher.openMaps(lat: lat, lng: lng);
 
   @override
@@ -232,7 +229,6 @@ class _InfoTab extends StatelessWidget {
       final coursesCount = controller.displayedCoursesCount;
       final address = institute?.address?.trim();
       final showAddress = address != null && address.isNotEmpty && !JsonHelpers.looksLikeCoordinates(address);
-      final firstCourses = controller.courses.take(_previewCourses).toList(growable: false);
 
       return ListView(
         padding: AppLayout.scrollPadding(context, top: 16),
@@ -279,25 +275,9 @@ class _InfoTab extends StatelessWidget {
               ],
             ),
           ),
-          // أول الدورات بعد «عن المعهد»، و«عرض الكل» يفتح تبويب الدورات. بلا دورات: لا شيء إضافي.
-          if (firstCourses.isNotEmpty) ...[
-            const SizedBox(height: 22),
-            AppSectionHeader(
-              title: 'tab_courses'.tr,
-              actionLabel: 'show_all'.tr,
-              onAction: () => DefaultTabController.of(context).animateTo(1),
-            ),
-            const SizedBox(height: 10),
-            for (var i = 0; i < firstCourses.length; i++) ...[
-              if (i > 0) const SizedBox(height: 12),
-              CourseRowCard(
-                course: firstCourses[i],
-                onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: firstCourses[i]),
-              ),
-            ],
-          ],
+          // الدورات في تبويبها فقط.
           if (institute != null && institute.hasContact) ...[
-            SizedBox(height: firstCourses.isNotEmpty ? 22 : 14),
+            const SizedBox(height: 14),
             _InstituteContactCard(institute: institute),
           ],
         ],
@@ -394,21 +374,8 @@ class _CoursesTab extends StatelessWidget {
         );
       }
       if (courses.isEmpty && controller.isLoading.value) {
-        // البلاطة الحقيقية نفسها ببيانات وهمية وبحشوة القائمة نفسها: لا قفزة عند وصول الدورات.
-        return Skeletonizer(
-          enabled: true,
-          child: ListView(
-            physics: const NeverScrollableScrollPhysics(),
-            padding: AppLayout.scrollPadding(context, top: 16),
-            children: [
-              for (var i = 0; i < 3; i++)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _InstituteCourseTile(course: AppSkeletonData.course),
-                ),
-            ],
-          ),
-        );
+        // هيكل البطاقات الصفّية بحشوة القائمة نفسها: لا قفزة عند وصول الدورات.
+        return AppRowListSkeleton(itemCount: 3, padding: AppLayout.scrollPadding(context, top: 16));
       }
       if (courses.isEmpty) {
         return AppEmptyState.scrollable(
@@ -424,7 +391,7 @@ class _CoursesTab extends StatelessWidget {
           final c = courses[i];
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: _InstituteCourseTile(
+            child: CourseRowCard(
               course: c,
               onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: c),
             ),
@@ -432,36 +399,6 @@ class _CoursesTab extends StatelessWidget {
         },
       );
     });
-  }
-}
-
-class _InstituteCourseTile extends StatelessWidget {
-  const _InstituteCourseTile({required this.course, this.onTap});
-
-  final CourseModel course;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SoftCard(
-      child: ListTile(
-        shape: SoftCard.shape,
-        contentPadding: EdgeInsets.zero,
-        leading: Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.sm), gradient: AppGradients.primary),
-          child: const Icon(Icons.menu_book_rounded, color: Colors.white),
-        ),
-        title: Text(course.title, style: const TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: Text(
-          course.hasRating ? '${course.rating.toStringAsFixed(1)} ★ · ${course.level}' : course.level,
-          style: const TextStyle(fontSize: AppTextSize.xs),
-        ),
-        trailing: const Icon(Icons.chevron_right_rounded),
-        onTap: onTap,
-      ),
-    );
   }
 }
 
