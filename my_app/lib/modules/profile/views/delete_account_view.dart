@@ -59,9 +59,11 @@ class DeleteAccountView extends GetView<DeleteAccountController> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Padding(
-                              padding: EdgeInsets.only(top: 7),
-                              child: Icon(Icons.circle, size: 6, color: AppColors.textSecondary),
+                            AppFirstLineIcon(
+                              Icons.circle,
+                              size: 6,
+                              color: AppColors.textSecondary,
+                              textStyle: AppFonts.tajawal(height: 1.5, fontSize: AppTextSize.md),
                             ),
                             const SizedBox(width: 10),
                             Expanded(

@@ -59,9 +59,9 @@ class AppTheme {
       labelSmall: sized(ramp.labelSmall, AppTextSize.xs),
     );
     return base.copyWith(
+      textTheme: _centredOnIcons(textTheme),
       // هياكل التحميل بألوان العلامة (لافندر) لا الرمادي الافتراضي، بلمعة بطيئة ناعمة. تُطبَّق على كل Skeletonizer.
       extensions: const [skeletonConfig],
-      textTheme: textTheme,
       appBarTheme: AppBarTheme(
         centerTitle: true,
         surfaceTintColor: Colors.transparent,
@@ -167,6 +167,30 @@ class AppTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md), borderSide: BorderSide.none),
       ),
+    );
+  }
+
+  /// صعود Tajawal أكبر من نزوله: توزيع المسافة الإضافية بالتساوي فوق الحروف وتحتها (افتراض Material 3 مع
+  /// ارتفاع سطر ~1.43) يُنزلها 1–3 تحت منتصف الأيقونة المجاورة. التوزيع النسبي يضعها على خط منتصفها —
+  /// لكل أنماط الثيم، فيرثه كل Text وTextStyle بلا توزيع صريح.
+  static TextTheme _centredOnIcons(TextTheme t) {
+    TextStyle? p(TextStyle? s) => s?.copyWith(leadingDistribution: TextLeadingDistribution.proportional);
+    return t.copyWith(
+      displayLarge: p(t.displayLarge),
+      displayMedium: p(t.displayMedium),
+      displaySmall: p(t.displaySmall),
+      headlineLarge: p(t.headlineLarge),
+      headlineMedium: p(t.headlineMedium),
+      headlineSmall: p(t.headlineSmall),
+      titleLarge: p(t.titleLarge),
+      titleMedium: p(t.titleMedium),
+      titleSmall: p(t.titleSmall),
+      bodyLarge: p(t.bodyLarge),
+      bodyMedium: p(t.bodyMedium),
+      bodySmall: p(t.bodySmall),
+      labelLarge: p(t.labelLarge),
+      labelMedium: p(t.labelMedium),
+      labelSmall: p(t.labelSmall),
     );
   }
 }
