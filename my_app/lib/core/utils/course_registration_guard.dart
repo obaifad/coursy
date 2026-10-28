@@ -5,10 +5,10 @@ import '../../widgets/registration_closed_dialog.dart';
 import '../models/app_models.dart';
 import 'auth_guard.dart';
 
-/// يتحقق من فتح فترة التسجيل قبل الانتقال لشاشة الحجز.
+/// يتحقق من فتح فترة التسجيل ومن وجود مقاعد قبل الانتقال لشاشة الحجز.
 abstract final class CourseRegistrationGuard {
   static Future<bool> ensureOpen(CourseModel course) async {
-    if (course.isRegistrationOpen) return true;
+    if (course.isRegistrationOpen && !course.isFull) return true;
     await RegistrationClosedDialog.show(course);
     return false;
   }

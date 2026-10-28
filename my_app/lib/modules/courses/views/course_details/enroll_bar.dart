@@ -19,6 +19,8 @@ class _StickyEnrollBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final registrationClosed = item.isRegistrationClosed;
     final alreadyRegistered = hasRegisteredEnrollment;
+    // ممتلئة: نفس زر انتهاء التسجيل ونافذته (رقم المعهد)، والمسجّل فيها يبقى يرى «تم التسجيل».
+    final full = !registrationClosed && !alreadyRegistered && item.isFull;
 
     return Container(
       decoration: BoxDecoration(
@@ -40,7 +42,7 @@ class _StickyEnrollBar extends StatelessWidget {
               _StickyPriceColumn(item: item),
               const SizedBox(width: 12),
               Expanded(
-                child: registrationClosed
+                child: registrationClosed || full
                     ? OutlinedButton(
                         onPressed: onRegistrationClosed,
                         style: OutlinedButton.styleFrom(
@@ -51,7 +53,7 @@ class _StickyEnrollBar extends StatelessWidget {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
                         ),
                         child: Text(
-                          'registration_closed_action'.tr,
+                          full ? 'course_full'.tr : 'registration_closed_action'.tr,
                           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: AppTextSize.md),
                         ),
                       )

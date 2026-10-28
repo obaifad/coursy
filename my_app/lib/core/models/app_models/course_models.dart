@@ -203,6 +203,12 @@ class CourseModel {
   /// عدد المسجّلين المؤكّدين فقط (بدون المعلقين).
   int get enrolledCountForCapacity => confirmedStudentsCount ?? studentsCount ?? 0;
 
+  /// اكتملت المقاعد (دورة بلا سعة محددة لا تمتلئ).
+  bool get isFull {
+    final max = maxStudents;
+    return max != null && max > 0 && enrolledCountForCapacity >= max;
+  }
+
   double get effectivePrice {
     final discount = JsonHelpers.parseDouble(discountPrice);
     if (discount > 0) return discount;
