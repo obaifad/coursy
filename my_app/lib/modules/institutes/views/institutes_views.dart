@@ -12,6 +12,7 @@ import '../../../core/utils/external_launcher.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/app_skeletons.dart';
+import '../../../widgets/app_widgets.dart';
 import '../../../widgets/design_system.dart';
 import '../../../widgets/filter_chips.dart';
 import '../controllers/institutes_controller.dart';
