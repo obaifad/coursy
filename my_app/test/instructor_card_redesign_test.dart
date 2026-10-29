@@ -74,11 +74,17 @@ void main() {
       expect(find.text(tutor().specializationLabel!), findsOneWidget);
     });
 
-    testWidgets('book badge + experience pill, and an hourglass after the price ($locale)', (tester) async {
+    testWidgets('the experience pill alone, centred, and an hourglass after the price ($locale)', (tester) async {
       await pump(tester, tutor(), locale: locale);
-      final book = tester.getRect(inCard(find.byIcon(Icons.menu_book_outlined)));
+      expect(inCard(find.byIcon(Icons.menu_book_outlined)), findsNothing, reason: 'no book badge');
+      final card = tester.getRect(find.byType(PrivateInstructorMiniCard));
       final medal = tester.getRect(inCard(find.byIcon(Icons.workspace_premium_rounded)));
-      expect((book.center.dy - medal.center.dy).abs(), lessThan(1), reason: 'one row');
+      final pillRect = tester.getRect(
+        find.ancestor(of: find.byIcon(Icons.workspace_premium_rounded), matching: find.byType(DecoratedBox)).first,
+      );
+      expect(pillRect.center.dx, moreOrLessEquals(card.center.dx, epsilon: 0.5), reason: 'pill centred');
+      expect(pillRect.height, 28, reason: 'pill keeps the row height');
+      expect(pillRect.contains(medal.center), isTrue);
 
       final button = find.ancestor(of: find.textContaining('hourly_rate_label'.tr), matching: find.byType(Container));
       final hourglass = tester.getRect(inCard(find.byIcon(Icons.hourglass_bottom_rounded)));
@@ -93,14 +99,14 @@ void main() {
     });
   }
 
-  testWidgets('no experience: the book badge alone, same card height', (tester) async {
+  testWidgets('no experience: no pill, same card height', (tester) async {
     await pump(tester, tutor());
     final withExperience = tester.getSize(find.byType(PrivateInstructorMiniCard)).height;
     // GetMaterialApp لا يعيد بناء home إن تغيّر: شجرة جديدة.
     await tester.pumpWidget(const SizedBox.shrink());
     await pump(tester, tutor(experience: 0));
     expect(find.byIcon(Icons.workspace_premium_rounded), findsNothing);
-    expect(inCard(find.byIcon(Icons.menu_book_outlined)), findsOneWidget, reason: 'the book badge');
+    expect(inCard(find.byIcon(Icons.menu_book_outlined)), findsNothing);
     expect(tester.getSize(find.byType(PrivateInstructorMiniCard)).height, withExperience);
   });
 }

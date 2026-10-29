@@ -510,8 +510,8 @@ class _InstructorRowThumb extends StatelessWidget {
 }
 
 /// بطاقة مدرّس للقائمة الأفقية في الرئيسية: رأس بتدرّج باستيل (بنفسجي فاتح إلى سماوي) عليه رسوم تعليمية
-/// باهتة، والصورة الدائرية تتوسّط حافّته السفلى مع شارة قبعة التخرّج، ثم الاسم والتخصص في المنتصف، شارتا
-/// الخبرة والكتاب، وزر السعر.
+/// باهتة، والصورة الدائرية تتوسّط حافّته السفلى مع شارة قبعة التخرّج، ثم الاسم والتخصص في المنتصف، كبسولة
+/// الخبرة، وزر السعر.
 ///
 /// خفيفة على التمرير: تدرّجات وأيقونات ثابتة (const) وظلّان فقط (البطاقة والصورة)، بلا تمويه أو أقنعة.
 class PrivateInstructorMiniCard extends StatelessWidget {
@@ -601,20 +601,16 @@ class PrivateInstructorMiniCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
+                  // كبسولة الخبرة في المنتصف؛ بلا خبرة يبقى مكانها فارغاً فتبقى بطاقات الشريط بارتفاع واحد.
                   SizedBox(
                     height: _badgeRowHeight,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      // الكبسولة بارتفاع المربّع نفسه.
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const _TutorBookBadge(size: _badgeRowHeight),
-                        if (experience != null) ...[
-                          const SizedBox(width: 8),
-                          Flexible(child: _TutorExperiencePill(label: experience)),
-                        ],
-                      ],
-                    ),
+                    child: experience == null
+                        ? null
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [Flexible(child: _TutorExperiencePill(label: experience))],
+                          ),
                   ),
                   const SizedBox(height: 14),
                   _BookInstructorButton(
@@ -765,23 +761,6 @@ class _GraduationCapBadge extends StatelessWidget {
         border: Border.all(color: Colors.white, width: 2),
       ),
       child: const Icon(Icons.school_rounded, size: 16, color: AppColors.primaryInk),
-    );
-  }
-}
-
-/// مربّع صغير بزوايا ناعمة وخلفية بنفسجية فاتحة، فيه أيقونة كتاب خطّية.
-class _TutorBookBadge extends StatelessWidget {
-  const _TutorBookBadge({required this.size});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(color: Color(0xFFEDE9FE), borderRadius: AppCorners.xs),
-      child: const Icon(Icons.menu_book_outlined, size: 16, color: AppColors.primary),
     );
   }
 }
