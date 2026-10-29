@@ -37,8 +37,15 @@ class AppHomeSkeleton extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const AppHomeBrandLogo(height: 56),
-                const AppIconCircleButton(onTap: _noop, icon: Icons.settings_outlined),
+                const AppHomeBrandLogo(),
+                // مساحة لمس زر الإعدادات الحقيقي (48): نفس ارتفاع الرأس، فلا يتحرك ما تحته حين تصل البيانات.
+                const SizedBox.square(
+                  dimension: 48,
+                  child: Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: AppIconCircleButton(onTap: _noop, icon: Icons.settings_outlined, size: 40),
+                  ),
+                ),
               ],
             ),
           ),
