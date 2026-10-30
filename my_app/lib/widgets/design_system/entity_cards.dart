@@ -509,11 +509,10 @@ class _InstructorRowThumb extends StatelessWidget {
   }
 }
 
-/// بطاقة مدرّس للقائمة الأفقية في الرئيسية: رأس بتدرّج باستيل (بنفسجي فاتح إلى سماوي) عليه رسوم تعليمية
-/// باهتة، والصورة الدائرية تتوسّط حافّته السفلى مع شارة قبعة التخرّج، ثم الاسم والتخصص في المنتصف، كبسولة
-/// الخبرة، وزر السعر.
+/// بطاقة مدرّس للقائمة الأفقية في الرئيسية (تجربة بلا رأس ملوّن): بطاقة بيضاء، الصورة الدائرية في أعلاها مع
+/// شارة قبعة التخرّج، ثم الاسم والتخصص في المنتصف، كبسولة الخبرة، وزر السعر.
 ///
-/// خفيفة على التمرير: تدرّجات وأيقونات ثابتة (const) وظلّان فقط (البطاقة والصورة)، بلا تمويه أو أقنعة.
+/// خفيفة على التمرير: أيقونات ثابتة (const) وظلّان فقط (البطاقة والصورة)، بلا تمويه أو أقنعة.
 class PrivateInstructorMiniCard extends StatelessWidget {
   const PrivateInstructorMiniCard({super.key, required this.instructor, this.onTap});
 
@@ -523,9 +522,8 @@ class PrivateInstructorMiniCard extends StatelessWidget {
   static const double _cardWidth = 200;
   static const double _avatarSize = 88;
 
-  /// الصورة تبدأ تحت أعلى البطاقة بـ [_avatarTop]، ومنتصفها على حافّة الرأس السفلى.
+  /// تجربة بلا رأس ملوّن: الصورة على البطاقة البيضاء مباشرة، تحت أعلاها بـ [_avatarTop].
   static const double _avatarTop = 18;
-  static const double _headerHeight = _avatarTop + _avatarSize / 2;
   static const double _badgeRowHeight = 28;
   static const double _buttonHeight = 44;
 
@@ -554,21 +552,10 @@ class PrivateInstructorMiniCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SizedBox(
-              height: _avatarTop + _avatarSize,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const Positioned(top: 0, left: 0, right: 0, height: _headerHeight, child: _TutorHeaderArt()),
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: _TutorAvatar(
-                      imageUrl: instructor.resolvedImageUrl,
-                      size: _avatarSize,
-                      name: instructor.name,
-                    ),
-                  ),
-                ],
+            Padding(
+              padding: const EdgeInsets.only(top: _avatarTop),
+              child: Center(
+                child: _TutorAvatar(imageUrl: instructor.resolvedImageUrl, size: _avatarSize, name: instructor.name),
               ),
             ),
             Padding(
@@ -625,73 +612,6 @@ class PrivateInstructorMiniCard extends StatelessWidget {
       ),
     );
   }
-}
-
-/// رأس البطاقة: تدرّج باستيل ناعم، وفوقه رسوم خطّية تعليمية باهتة (قلمان وكتاب مفتوح) كعلامة مائية.
-class _TutorHeaderArt extends StatelessWidget {
-  const _TutorHeaderArt();
-
-  static const _gradient = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [Color(0xFFEBD9FB), Color(0xFFD7E3FB), Color(0xFFC9EEF8)],
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    return const DecoratedBox(
-      // زاويتاه السفليتان مستديرتان: يبدو طبقة ناعمة فوق البطاقة لا شريطاً مقصوصاً.
-      decoration: BoxDecoration(
-        gradient: _gradient,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppRadius.md)),
-      ),
-      child: CustomPaint(painter: _TutorArtPainter(), size: Size.infinite),
-    );
-  }
-}
-
-/// الرسوم الخطّية الباهتة في رأس بطاقة المدرّس. رسم واحد بدل ثلاث أيقونات (كلٌّ منها نص يُخطَّط في كل
-/// بطاقة تدخل الشريط): الرموز تُخطَّط مرة واحدة للتطبيق كله ثم تُرسم فقط.
-class _TutorArtPainter extends CustomPainter {
-  const _TutorArtPainter();
-
-  static const _ink = Color(0x2E6C5CE7);
-
-  /// (الأيقونة، الحجم، المسافة من الحافّة اليسرى أو اليمنى (سالبة)، من الأعلى، الدوران بالدورات).
-  static const _items = [
-    (Icons.edit_outlined, 22.0, 14.0, 22.0, -0.1),
-    (Icons.create_outlined, 18.0, 46.0, 8.0, 0.08),
-    (Icons.menu_book_outlined, 26.0, -14.0, 12.0, 0.0),
-  ];
-
-  static final List<TextPainter> _glyphs = [
-    for (final (icon, size, _, _, _) in _items)
-      TextPainter(
-        text: TextSpan(
-          text: String.fromCharCode(icon.codePoint),
-          style: TextStyle(fontFamily: icon.fontFamily, package: icon.fontPackage, fontSize: size, color: _ink),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout(),
-  ];
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    for (var i = 0; i < _items.length; i++) {
-      final (_, _, x, top, turns) = _items[i];
-      final glyph = _glyphs[i];
-      final left = x >= 0 ? x : size.width + x - glyph.width;
-      canvas
-        ..save()
-        ..translate(left + glyph.width / 2, top + glyph.height / 2)
-        ..rotate(turns * 2 * math.pi);
-      glyph.paint(canvas, Offset(-glyph.width / 2, -glyph.height / 2));
-      canvas.restore();
-    }
-  }
-
-  @override
-  bool shouldRepaint(_TutorArtPainter oldDelegate) => false;
 }
 
 /// صورة المدرّس الدائرية: حلقة بلون الهوية حولها إطار أبيض وظل خفيف، وشارة قبعة التخرّج تطفو على حافّتها
