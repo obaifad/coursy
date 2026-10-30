@@ -26,6 +26,7 @@ class HomeController extends GetxController with LatestLoadGuard {
   final CourseRatingService _ratingService = Get.find();
 
   static const int _suggestedLimit = 10;
+  static const int _instructorsLimit = 12;
 
   final isLoading = true.obs;
   final isRefreshing = false.obs;
@@ -42,6 +43,9 @@ class HomeController extends GetxController with LatestLoadGuard {
   /// قوائم تعرض الآن دورات بلا إكمال (تقييم المعهد/اسمه): من الكاش أو قبل انتهاء الإكمال.
   /// بيانات جديدة غير مكمّلة تحلّ محلها فوراً؛ أما المكمّلة فلا يستبدلها إلا مكمّل (بلا وميض).
   final _unenriched = Set<RxList<CourseModel>>.identity();
+
+  /// قوائم رُسمت من القرص ([ApiDiskCache]) ولم يصل ردّ الشبكة لها بعد: ليست «طازجة» فتُجلب.
+  final _fromDisk = Set<RxList<Object?>>.identity();
 
   /// الرئيسية مرسومة من الكاش ولم يصل بعد رد الشبكة: كل القوائم تُجلب حتى لو لم تكن فارغة.
   bool _showingCache = false;
@@ -118,6 +122,7 @@ class HomeController extends GetxController with LatestLoadGuard {
   /// يرسم الرئيسية من آخر رد محفوظ قبل أول إطار: بلا هيكل تحميل، والبانر يظهر فوراً بنسخته الصحيحة
   /// (زائر/طالب). الشبكة تستبدله بعد لحظات.
   void _hydrateFromCache() {
+    _hydrateSectionsFromDisk();
     final cached = _homeRepository.cachedHomepage();
     if (cached == null) return;
     _showingCache = true;
@@ -132,6 +137,27 @@ class HomeController extends GetxController with LatestLoadGuard {
     }
     if (cached.institutes.isNotEmpty) institutes.assignAll(cached.institutes);
     if (cached.cities.isNotEmpty) cities.assignAll(cached.cities);
+  }
+
+  /// أقسام لا يحملها `/homepage` (المدرّسون، ومقترحات الطالب): آخر ما حُفظ منها على القرص — كانت هياكل
+  /// تحميل بعد كل إعادة فتح للتطبيق حتى يصل ردّها.
+  void _hydrateSectionsFromDisk() {
+    final instructors = _instructorRepository.cachedInstructorsPage(
+      page: 1,
+      perPage: _instructorsLimit,
+      isPrivate: true,
+    );
+    if (instructors != null && instructors.items.isNotEmpty) {
+      privateInstructors.assignAll(instructors.items);
+      _fromDisk.add(privateInstructors);
+    }
+    if (isLoggedIn) {
+      final suggested = _courseRepository.cachedSuggestedCourses(limit: _suggestedLimit);
+      if (suggested != null && suggested.isNotEmpty) {
+        suggestedCourses.assignAll(suggested);
+        _unenriched.add(suggestedCourses);
+      }
+    }
   }
 
   Future<void> reloadLocalizedData() => loadHome(forceRefresh: true, refreshStatic: true);
@@ -243,7 +269,7 @@ class HomeController extends GetxController with LatestLoadGuard {
   }
 
   /// القائمة جاهزة ولا تحتاج جلباً (بلا force): غير فارغة ومن الشبكة لا من الكاش.
-  bool _isFresh(RxList<Object?> list) => list.isNotEmpty && !_showingCache;
+  bool _isFresh(RxList<Object?> list) => list.isNotEmpty && !_showingCache && !_fromDisk.contains(list);
 
   /// بصمة حقول العرض فقط — لمنع إعادة بناء القوائم والصور عندما تأتي نفس البيانات من إعادة التحميل.
   /// للدورة كل ما تعرضه البطاقات والبانر أو تبدأ منه صفحة التفاصيل: حقل ناقص هنا = تعديله من لوحة التحكم
@@ -382,8 +408,13 @@ class HomeController extends GetxController with LatestLoadGuard {
   Future<void> _fetchPrivateInstructors(List<String> errors, LoadSession session, {bool force = false}) async {
     if (!force && _isFresh(privateInstructors)) return;
     try {
-      final result = await _instructorRepository.fetchInstructorsPage(page: 1, perPage: 12, isPrivate: true);
+      final result = await _instructorRepository.fetchInstructorsPage(
+        page: 1,
+        perPage: _instructorsLimit,
+        isPrivate: true,
+      );
       applyIfCurrent(session, () {
+        _fromDisk.remove(privateInstructors);
         if (result.items.isNotEmpty) {
           _setIfChanged(privateInstructors, result.items);
         }

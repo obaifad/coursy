@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart' hide FormData, MultipartFile, Response;
@@ -5,7 +7,9 @@ import 'package:get/get.dart' hide FormData, MultipartFile, Response;
 import '../config/api_config.dart';
 import '../config/app_debug_log.dart';
 import '../locale/locale_controller.dart';
+import '../storage/api_disk_cache.dart';
 import '../storage/token_storage.dart';
+import 'api_endpoints.dart';
 import 'api_exception.dart';
 import 'dio_adapter.dart';
 import 'json_parser.dart';
@@ -25,6 +29,17 @@ class ApiClient extends GetxService {
   static void Function(String message)? onAccountInactive;
 
   static const accountInactiveCode = 'account_inactive';
+
+  /// قوائم أول شاشة في كل تبويب: آخر رد ناجح لصفحتها الأولى يُحفظ على القرص ([ApiDiskCache]) لترسم
+  /// الشاشة منه فوراً بعد إعادة فتح التطبيق. ردود الخادم `no-cache`، فلا كاش HTTP يغني عن هذا.
+  static const diskCachedPaths = <String>{
+    ApiEndpoints.courses,
+    ApiEndpoints.institutes,
+    ApiEndpoints.cities,
+    ApiEndpoints.instructors,
+    ApiEndpoints.studentEnrollments,
+    ApiEndpoints.studentSuggestedCourses,
+  };
 
   /// مسارات تُرجع 401 كجزء طبيعي من عملها (دخول/خروج/كلمة مرور) فلا تعني انتهاء الجلسة.
   static const _authFlowPaths = <String>[
@@ -65,6 +80,7 @@ class ApiClient extends GetxService {
         onResponse: (response, handler) {
           if (response.statusCode == 401) _maybeSessionExpired(response.requestOptions);
           if (response.statusCode == 403) _maybeAccountInactive(response);
+          _rememberOnDisk(response);
           handler.next(response);
         },
         onError: (e, handler) {
@@ -95,6 +111,41 @@ class ApiClient extends GetxService {
         },
       ),
     );
+  }
+
+  ApiDiskCache? get _disk => Get.isRegistered<ApiDiskCache>() ? Get.find<ApiDiskCache>() : null;
+
+  String get _lang => Get.isRegistered<LocaleController>() ? Get.find<LocaleController>().code.value : 'ar';
+
+  String _diskKey(String path, Map<String, dynamic> query) => ApiDiskCache.keyFor(
+    path,
+    query,
+    lang: _lang,
+    audience: ApiDiskCache.audience(loggedIn: _tokenStorage.isLoggedIn, studentId: _tokenStorage.studentId),
+  );
+
+  /// الصفحة الأولى فقط من [diskCachedPaths] (ما تعرضه الشاشة عند فتحها)، وردود 200 فقط.
+  void _rememberOnDisk(Response<dynamic> response) {
+    final disk = _disk;
+    final options = response.requestOptions;
+    if (disk == null || response.statusCode != 200 || options.method.toUpperCase() != 'GET') return;
+    if (!diskCachedPaths.contains(options.path)) return;
+    final page = options.queryParameters['page'];
+    if (page != null && '$page' != '1') return;
+    if (response.data is! Map && response.data is! List) return;
+    unawaited(disk.write(_diskKey(options.path, options.queryParameters), response.data));
+  }
+
+  /// آخر رد محفوظ على القرص لهذا الطلب (نفس [path] و[query] المرسلين للشبكة) محوّلاً بـ [mapper]، أو null
+  /// (لا شيء محفوظ، أو تغيّر شكله).
+  T? cached<T>(String path, {Map<String, dynamic>? query, required T Function(dynamic body) mapper}) {
+    final body = _disk?.read(_diskKey(path, {...?query}));
+    if (body == null) return null;
+    try {
+      return mapper(body);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<Response<dynamic>> get(String path, {Map<String, dynamic>? query, CancelToken? cancelToken}) {

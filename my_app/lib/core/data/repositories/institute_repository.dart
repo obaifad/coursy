@@ -12,6 +12,15 @@ class InstituteRepository extends GetxService {
 
   final ApiClient _client;
 
+  /// الصفحة كما حُفظت على القرص بعد آخر جلب ناجح، أو null.
+  PaginatedResult<InstituteModel>? cachedInstitutesPage({int page = 1, int perPage = 15, Map<String, dynamic>? query}) {
+    return _client.cached(
+      ApiEndpoints.institutes,
+      query: <String, dynamic>{...?query, 'page': page, 'per_page': perPage},
+      mapper: (data) => PaginatedResult<InstituteModel>.fromBody(data, InstituteModel.fromJson),
+    );
+  }
+
   Future<PaginatedResult<InstituteModel>> fetchInstitutesPage({
     int page = 1,
     int perPage = 15,

@@ -35,7 +35,19 @@ class MyCoursesController extends GetxController with LatestLoadGuard, InitialLo
   @override
   void onInit() {
     super.onInit();
+    _hydrateFromDisk();
     load();
+  }
+
+  /// بعد إعادة فتح التطبيق: آخر حجوزات محفوظة على القرص لهذا الطالب ([ApiDiskCache]) تُرسم فوراً بلا
+  /// هيكل، والشبكة تحدّثها بصمت.
+  void _hydrateFromDisk() {
+    if (!isLoggedIn) return;
+    final cached = _repository.cachedEnrollments();
+    if (cached == null || cached.isEmpty) return;
+    enrollments.assignAll(cached);
+    isLoading.value = false;
+    markLoaded();
   }
 
   DateTime? _lastLoadedAt;
