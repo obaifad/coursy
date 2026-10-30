@@ -509,7 +509,10 @@ class _InstructorRowThumb extends StatelessWidget {
   }
 }
 
-/// بطاقة مدرّس مضغوطة للقائمة الأفقية في الرئيسية.
+/// بطاقة مدرّس للقائمة الأفقية في الرئيسية (تجربة بلا رأس ملوّن): بطاقة بيضاء، الصورة الدائرية في أعلاها مع
+/// شارة قبعة التخرّج، ثم الاسم والتخصص في المنتصف، كبسولة الخبرة، وزر السعر.
+///
+/// خفيفة على التمرير: أيقونات ثابتة (const) وظلّان فقط (البطاقة والصورة)، بلا تمويه أو أقنعة.
 class PrivateInstructorMiniCard extends StatelessWidget {
   const PrivateInstructorMiniCard({super.key, required this.instructor, this.onTap});
 
@@ -517,14 +520,20 @@ class PrivateInstructorMiniCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   static const double _cardWidth = 200;
-  static const double _avatarSize = 84;
+  static const double _avatarSize = 88;
 
-  /// ارتفاع شريط الرئيسية: الأجزاء الثابتة (الحشوة، الصورة، الزر، المسافات) + أسطر النص الثلاثة مع تكبير الخط.
+  /// تجربة بلا رأس ملوّن: الصورة على البطاقة البيضاء مباشرة، تحت أعلاها بـ [_avatarTop].
+  static const double _avatarTop = 18;
+  static const double _badgeRowHeight = 28;
+  static const double _buttonHeight = 44;
+
+  /// ارتفاع شريط الرئيسية: الأجزاء الثابتة (الرأس والصورة، الشارات، الزر، المسافات) + سطرا الاسم والتخصص
+  /// مع تكبير الخط.
   static double railHeight(BuildContext context) {
     final s = CourseCardMetrics.textScaleOf(context);
-    const fixed = 16 + 14 + _avatarSize + 12 + 2 + 6 + 12 + 42.0;
-    // 1.45 لا 1.3: الأسطر تُقرَّب لأعلى بكسل، والفرق يكبر مع تكبير الخط (قيس: 247 مقابل 244 بلا هامش).
-    final text = (AppTextSize.lg + AppTextSize.sm + AppTextSize.sm) * 1.45 * s;
+    const fixed = _avatarTop + _avatarSize + 10 + 2 + 10 + _badgeRowHeight + 14 + _buttonHeight + 14.0;
+    // 1.45 لا 1.3: الأسطر تُقرَّب لأعلى بكسل، والفرق يكبر مع تكبير الخط.
+    final text = (AppTextSize.lg + AppTextSize.sm) * 1.45 * s;
     return (fixed + text + 2).ceilToDouble();
   }
 
@@ -538,66 +547,66 @@ class PrivateInstructorMiniCard extends StatelessWidget {
       width: _cardWidth,
       child: _TutorCardShell(
         onTap: onTap,
-        padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
+        padding: EdgeInsets.zero,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: _DoctorStyleAvatar(
-                imageUrl: instructor.resolvedImageUrl,
-                size: _avatarSize,
-                name: instructor.name,
+            Padding(
+              padding: const EdgeInsets.only(top: _avatarTop),
+              child: Center(
+                child: _TutorAvatar(imageUrl: instructor.resolvedImageUrl, size: _avatarSize, name: instructor.name),
               ),
             ),
-            const SizedBox(height: 12),
-            BidiText(
-              instructor.name,
-              maxLines: 1,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              style: AppFonts.tajawal(
-                fontSize: AppTextSize.lg,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 2),
-            BidiText(
-              instructor.specializationLabel ?? 'instructor_default'.tr,
-              maxLines: 1,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              style: AppFonts.tajawal(
-                fontSize: AppTextSize.sm,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            if (experience != null) ...[
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.workspace_premium_rounded, size: 15, color: AppColors.ratingStar),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      experience,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppFonts.tajawal(
-                        fontSize: AppTextSize.sm,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textBody,
-                      ),
+                  BidiText(
+                    instructor.name,
+                    maxLines: 1,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.tajawal(
+                      fontSize: AppTextSize.lg,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
                     ),
+                  ),
+                  const SizedBox(height: 2),
+                  BidiText(
+                    instructor.specializationLabel ?? 'instructor_default'.tr,
+                    maxLines: 1,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.tajawal(
+                      fontSize: AppTextSize.sm,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // كبسولة الخبرة في المنتصف؛ بلا خبرة يبقى مكانها فارغاً فتبقى بطاقات الشريط بارتفاع واحد.
+                  SizedBox(
+                    height: _badgeRowHeight,
+                    child: experience == null
+                        ? null
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [Flexible(child: _TutorExperiencePill(label: experience))],
+                          ),
+                  ),
+                  const SizedBox(height: 14),
+                  _BookInstructorButton(
+                    height: _buttonHeight,
+                    label: price == null ? 'book_now'.tr : '${'hourly_rate_label'.tr} $price',
                   ),
                 ],
               ),
-            ],
-            const SizedBox(height: 12),
-            _BookInstructorButton(label: price == null ? 'book_now'.tr : '${'hourly_rate_label'.tr} $price'),
+            ),
           ],
         ),
       ),
@@ -605,63 +614,141 @@ class PrivateInstructorMiniCard extends StatelessWidget {
   }
 }
 
-/// صورة دائرية للمدرّس بإطار بلون الهوية (بنفسجي ناعم) وظل خفيف. بلا صورة (أو فشل تحميلها):
-/// [InstructorPlaceholder] (الحروف الأولى من الاسم).
-class _DoctorStyleAvatar extends StatelessWidget {
-  const _DoctorStyleAvatar({required this.imageUrl, required this.size, this.name});
+/// صورة المدرّس الدائرية: حلقة بلون الهوية حولها إطار أبيض وظل خفيف، وشارة قبعة التخرّج تطفو على حافّتها
+/// العليا اليمنى. بلا صورة (أو فشل تحميلها): [InstructorPlaceholder] (الحروف الأولى من الاسم).
+class _TutorAvatar extends StatelessWidget {
+  const _TutorAvatar({required this.imageUrl, required this.size, this.name});
 
   final String? imageUrl;
   final double size;
   final String? name;
 
-  static const double _border = 2.5;
+  static const double _ring = 2.5;
+  static const double _white = 3;
+  static const double _badgeSize = 28;
 
   @override
   Widget build(BuildContext context) {
     final fallback = InstructorPlaceholder(name: name);
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white,
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.55), width: _border),
-        boxShadow: AppShadows.card,
-      ),
-      child: ClipOval(
-        child: imageUrl != null
-            ? AppNetworkImage(
-                url: imageUrl!,
-                width: size - _border * 2,
-                height: size - _border * 2,
-                fit: BoxFit.cover,
-                errorWidget: fallback,
-              )
-            : fallback,
+    final photo = size - (_ring + _white) * 2;
+    return SizedBox.square(
+      dimension: size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: size,
+            height: size,
+            padding: const EdgeInsets.all(_white),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.45), width: _ring),
+              boxShadow: AppShadows.card,
+            ),
+            child: ClipOval(
+              child: imageUrl != null
+                  ? AppNetworkImage(
+                      url: imageUrl!,
+                      width: photo,
+                      height: photo,
+                      fit: BoxFit.cover,
+                      errorWidget: fallback,
+                    )
+                  : fallback,
+            ),
+          ),
+          const Positioned(top: 0, right: -2, child: _GraduationCapBadge(size: _badgeSize)),
+        ],
       ),
     );
   }
 }
 
-/// زر عريض بلون التطبيق الأساسي (AppColors.primary) وزوايا كاملة.
-class _BookInstructorButton extends StatelessWidget {
-  const _BookInstructorButton({required this.label});
+class _GraduationCapBadge extends StatelessWidget {
+  const _GraduationCapBadge({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: const Color(0xFFE8EEFF),
+        border: Border.all(color: Colors.white, width: 2),
+      ),
+      child: const Icon(Icons.school_rounded, size: 16, color: AppColors.primaryInk),
+    );
+  }
+}
+
+/// شارة الخبرة: كبسولة بخلفية ذهبية فاتحة ونص داكن، والوسام بعد النص.
+class _TutorExperiencePill extends StatelessWidget {
+  const _TutorExperiencePill({required this.label});
 
   final String label;
 
   @override
   Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(color: Color(0xFFFEF0C3), borderRadius: AppCorners.full),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        // يصغر قليلاً حين لا يتّسع («15 years of experience») بدل أن يُقصّ بـ «…».
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                maxLines: 1,
+                style: AppFonts.tajawal(
+                  fontSize: AppTextSize.sm,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textBody,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.workspace_premium_rounded, size: 15, color: AppColors.ratingStar),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// زر عريض كبسولي بتدرّج الهوية: السعر بالأبيض، وساعة رملية بعده.
+class _BookInstructorButton extends StatelessWidget {
+  const _BookInstructorButton({required this.label, required this.height});
+
+  final String label;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      height: 42,
+      height: height,
       alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(color: AppColors.primary, borderRadius: AppCorners.full),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: const BoxDecoration(gradient: AppGradients.primary, borderRadius: AppCorners.full),
       child: FittedBox(
         fit: BoxFit.scaleDown,
-        child: Text(
-          label,
-          maxLines: 1,
-          style: AppFonts.tajawal(fontSize: AppTextSize.md, fontWeight: FontWeight.w700, color: Colors.white),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              maxLines: 1,
+              style: AppFonts.tajawal(fontSize: AppTextSize.md, fontWeight: FontWeight.w700, color: Colors.white),
+            ),
+            const SizedBox(width: 6),
+            const Icon(Icons.hourglass_bottom_rounded, size: 16, color: Colors.white),
+          ],
         ),
       ),
     );
