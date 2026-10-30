@@ -6,8 +6,8 @@ import 'package:my_app/widgets/design_system.dart';
 
 import 'layout/layout_harness.dart';
 
-/// بطاقة المدرّس في شريط الرئيسية (التصميم الجديد): رأس بتدرّج باستيل عليه رسوم خطّية باهتة، الصورة على حافّته
-/// السفلى بشارة قبعة التخرّج، الاسم والتخصص في المنتصف، شارتا الكتاب والخبرة، وزر السعر بساعة رملية بعده.
+/// بطاقة المدرّس في شريط الرئيسية (التصميم الجديد): بطاقة بيضاء بلا رأس ملوّن، الصورة الدائرية في أعلاها بشارة
+/// قبعة التخرّج، الاسم والتخصص في المنتصف، كبسولة الخبرة، وزر السعر بتدرّج الهوية وساعة رملية بعده.
 void main() {
   setUpAll(loadAuditFonts);
   tearDown(Get.reset);
@@ -41,28 +41,29 @@ void main() {
   Finder inCard(Finder f) => find.descendant(of: find.byType(PrivateInstructorMiniCard), matching: f);
 
   for (final locale in ['ar', 'en']) {
-    testWidgets('pastel header, avatar on its bottom edge, cap badge, centred text ($locale)', (tester) async {
+    testWidgets('plain white card: avatar at the top, cap badge, centred text ($locale)', (tester) async {
       await pump(tester, tutor(), locale: locale);
       final card = tester.getRect(find.byType(PrivateInstructorMiniCard));
-      final header = find.byWidgetPredicate(
-        (w) => w is DecoratedBox && w.decoration is BoxDecoration && (w.decoration as BoxDecoration).gradient != null,
-      );
-      final headerRect = tester.getRect(inCard(header).first);
-      expect(headerRect.top, card.top);
-      expect(headerRect.width, card.width, reason: 'the gradient spans the card');
-      // الرسوم الخطّية: رسم واحد مخزّن (لا أيقونات تُخطَّط في كل بطاقة).
-      final art = find.descendant(
-        of: inCard(header).first,
-        matching: find.byWidgetPredicate(
-          (w) => w is CustomPaint && w.painter.runtimeType.toString() == '_TutorArtPainter',
+      // لا رأس ملوّن ولا رسوم: التدرّج الوحيد في البطاقة هو زر السعر.
+      final gradients = inCard(
+        find.byWidgetPredicate(
+          (w) => w is DecoratedBox && w.decoration is BoxDecoration && (w.decoration as BoxDecoration).gradient != null,
         ),
       );
-      expect(art, findsOneWidget);
+      expect(gradients, findsOneWidget);
+      expect(find.descendant(of: gradients, matching: find.textContaining('hourly_rate_label'.tr)), findsOneWidget);
+      expect(
+        inCard(find.byType(CustomPaint)).evaluate().where((e) {
+          final painter = (e.widget as CustomPaint).painter;
+          return painter != null && painter.runtimeType.toString() == '_TutorArtPainter';
+        }),
+        isEmpty,
+      );
 
       final photo = tester.getRect(inCard(find.byType(ClipOval)));
       expect(photo.center.dx, moreOrLessEquals(card.center.dx, epsilon: 0.5), reason: 'avatar centred');
-      expect(photo.top, lessThan(headerRect.bottom));
-      expect(photo.bottom, greaterThan(headerRect.bottom), reason: 'the avatar overlaps the header edge');
+      // الحلقة (2.5) والإطار الأبيض (3) حول الصورة، وأعلاها تحت أعلى البطاقة بـ 18.
+      expect(photo.top - 5.5 - card.top, moreOrLessEquals(18, epsilon: 0.5));
 
       final cap = tester.getRect(inCard(find.byIcon(Icons.school_rounded)));
       expect(cap.center.dx, greaterThan(photo.center.dx), reason: 'badge on the right');
