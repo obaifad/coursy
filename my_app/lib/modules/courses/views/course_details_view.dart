@@ -164,53 +164,57 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
             // أسفل الشريط المثبّت لا خلفه.
             edgeOffset: MediaQuery.paddingOf(context).top + kToolbarHeight,
             onRefresh: controller.refreshDetails,
-            child: CustomScrollView(
-              controller: _scrollController,
-              // AlwaysScrollable: صفحة قصيرة لا تتمرّر عادةً فلا يعمل السحب للتحديث.
-              physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
-              slivers: [
-                _buildCourseHeroSliver(context: context, item: item, showTitleInBar: _showTitleInBar),
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _CourseTabBarHeaderDelegate(tabController: _tabController),
-                ),
-                SliverPadding(
-                  // الصفحة لا تتقلّص مع لوحة المفاتيح (resizeToAvoidBottomInset: false)، فنضيف ارتفاعها
-                  // أسفل المحتوى ليبقى مربع تعليق التقييم قابلاً للتمرير فوقها.
-                  padding: EdgeInsets.fromLTRB(
-                    AppLayout.readableInset(context),
-                    12,
-                    AppLayout.readableInset(context),
-                    24 + MediaQuery.viewInsetsOf(context).bottom,
+            child: AppHeaderSnap(
+              child: CustomScrollView(
+                controller: _scrollController,
+                // AlwaysScrollable: صفحة قصيرة لا تتمرّر عادةً فلا يعمل السحب للتحديث.
+                physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+                slivers: [
+                  _buildCourseHeroSliver(context: context, item: item, showTitleInBar: _showTitleInBar),
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _CourseTabBarHeaderDelegate(tabController: _tabController),
                   ),
-                  sliver: SliverToBoxAdapter(
-                    child: ListenableBuilder(
-                      listenable: _tabController,
-                      builder: (context, _) => AnimatedSwitcher(
-                        duration: AppMotion.fast,
-                        layoutBuilder: (current, previous) => Stack(
-                          alignment: Alignment.topCenter,
-                          children: [...previous, if (current != null) current],
-                        ),
-                        child: KeyedSubtree(
-                          key: ValueKey<int>(_tabController.index),
-                          child: Obx(
-                            () => Skeletonizer(
-                              enabled: controller.isLoading.value,
-                              child: switch (_tabController.index) {
-                                0 => _OverviewTab(item: item),
-                                1 => _ScheduleTab(item: item, controller: controller),
-                                2 => _InstructorTab(item: item),
-                                _ => _ReviewsTab(item: item, controller: controller),
-                              },
+                  SliverPadding(
+                    // الصفحة لا تتقلّص مع لوحة المفاتيح (resizeToAvoidBottomInset: false)، فنضيف ارتفاعها
+                    // أسفل المحتوى ليبقى مربع تعليق التقييم قابلاً للتمرير فوقها.
+                    padding: EdgeInsets.fromLTRB(
+                      AppLayout.readableInset(context),
+                      12,
+                      AppLayout.readableInset(context),
+                      24 + MediaQuery.viewInsetsOf(context).bottom,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: ListenableBuilder(
+                        listenable: _tabController,
+                        builder: (context, _) => AnimatedSwitcher(
+                          duration: AppMotion.fast,
+                          layoutBuilder: (current, previous) => Stack(
+                            alignment: Alignment.topCenter,
+                            children: [...previous, if (current != null) current],
+                          ),
+                          child: KeyedSubtree(
+                            key: ValueKey<int>(_tabController.index),
+                            child: Obx(
+                              () => Skeletonizer(
+                                enabled: controller.isLoading.value,
+                                child: switch (_tabController.index) {
+                                  0 => _OverviewTab(item: item),
+                                  1 => _ScheduleTab(item: item, controller: controller),
+                                  2 => _InstructorTab(item: item),
+                                  _ => _ReviewsTab(item: item, controller: controller),
+                                },
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  // محتوى أطول من الشاشة بقليل (نظرة عامة قصيرة): كان الغلاف يتوقف نصف مطويّ والعنوان مقطوعاً.
+                  AppCollapseRunway(collapseExtent: _CourseHero.collapseExtent(context)),
+                ],
+              ),
             ),
           ),
         ),
@@ -228,15 +232,22 @@ class _CourseDetailsShellState extends State<_CourseDetailsShell> with SingleTic
   }
 }
 
+abstract final class _CourseHero {
+  // ارتفاع الغلاف يكبر مع تكبير الخط (إعدادات الجهاز، حتى 1.3×) — وإلا يفيض عنوان
+  // من ثلاثة أسطر + اسم المعهد + صف التقييم عن الارتفاع الثابت.
+  static double expandedHeight(BuildContext context) => 320 * CourseCardMetrics.textScaleOf(context);
+
+  /// مسافة طيّ الغلاف حتى شريط الأدوات المثبّت.
+  static double collapseExtent(BuildContext context) => expandedHeight(context) - kToolbarHeight;
+}
+
 /// يجب إرجاع [SliverAppBar] مباشرة داخل [headerSliverBuilder] وليس داخل Widget عادي.
 SliverAppBar _buildCourseHeroSliver({
   required BuildContext context,
   required CourseModel item,
   required bool showTitleInBar,
 }) {
-  // ارتفاع الغلاف يكبر مع تكبير الخط (إعدادات الجهاز، حتى 1.3×) — وإلا يفيض عنوان
-  // من ثلاثة أسطر + اسم المعهد + صف التقييم عن الارتفاع الثابت.
-  final expandedHeight = 320 * CourseCardMetrics.textScaleOf(context);
+  final expandedHeight = _CourseHero.expandedHeight(context);
   return SliverAppBar(
     expandedHeight: expandedHeight,
     pinned: true,

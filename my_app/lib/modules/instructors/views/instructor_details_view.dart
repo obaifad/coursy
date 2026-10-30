@@ -51,73 +51,79 @@ class InstructorDetailsView extends GetView<InstructorDetailsController> {
         length: 4,
         child: Scaffold(
           // الشريط أبيض فوق التدرّج البنفسجي وداكن بعد طيّه (كان داكناً فوق البنفسجي فلا يُقرأ).
-          body: CollapsingHeroScope(
-            collapseOffset: AppDetailHero.collapseOffset(context, avatarSize: _InstructorHeroAvatar.size),
-            builder: (context, collapsed) => RefreshIndicator(
-              color: AppColors.primary,
-              edgeOffset: MediaQuery.paddingOf(context).top + kToolbarHeight,
-              // قوائم التبويبات رأسية داخل PageView أفقي: نقبل كل إشعار رأسي (الأفقي للتبديل بين التبويبات لا يحدّث).
-              notificationPredicate: (n) => n.metrics.axis == Axis.vertical,
-              onRefresh: controller.loadDetails,
-              child: NestedScrollView(
-                headerSliverBuilder: (context, inner) => [
-                  SliverAppBar(
-                    expandedHeight: AppDetailHero.expandedHeight(context, avatarSize: _InstructorHeroAvatar.size),
-                    pinned: true,
-                    backgroundColor: AppColors.surface,
-                    iconTheme: HeroAppBarStyle.icons(collapsed),
-                    actionsIconTheme: HeroAppBarStyle.icons(collapsed),
-                    titleTextStyle: HeroAppBarStyle.title(collapsed),
-                    systemOverlayStyle: HeroAppBarStyle.overlay(collapsed),
-                    // مفضلة المدرّسين غير مدعومة في الخادم (POST /student/favorites يقبل الدورات فقط) — مخفية حتى تُضاف.
-                    // العنوان في الشريط بعد الانطواء فقط؛ وهو مفتوح يعرض الرأس الاسم تحت الصورة.
-                    title: AnimatedOpacity(
-                      opacity: collapsed ? 1 : 0,
-                      duration: AppMotion.fast,
-                      child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    ),
-                    flexibleSpace: FlexibleSpaceBar(
-                      background: AppDetailHeroContent(
-                        name: name,
-                        background: const Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.primary)),
-                            BrandBannerPattern(),
-                          ],
+          body: AppHeaderSnap(
+            child: CollapsingHeroScope(
+              collapseOffset: AppDetailHero.collapseOffset(context, avatarSize: _InstructorHeroAvatar.size),
+              builder: (context, collapsed) => RefreshIndicator(
+                color: AppColors.primary,
+                edgeOffset: MediaQuery.paddingOf(context).top + kToolbarHeight,
+                // قوائم التبويبات رأسية داخل PageView أفقي: نقبل كل إشعار رأسي (الأفقي للتبديل بين التبويبات لا يحدّث).
+                notificationPredicate: (n) => n.metrics.axis == Axis.vertical,
+                onRefresh: controller.loadDetails,
+                child: NestedScrollView(
+                  headerSliverBuilder: (context, inner) => [
+                    // الجزء المثبّت (الشريط والتبويبات) يُحسب في كل تبويب ([AppNestedTabScrollView]).
+                    SliverOverlapAbsorber(
+                      handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                      sliver: SliverAppBar(
+                        expandedHeight: AppDetailHero.expandedHeight(context, avatarSize: _InstructorHeroAvatar.size),
+                        pinned: true,
+                        backgroundColor: AppColors.surface,
+                        iconTheme: HeroAppBarStyle.icons(collapsed),
+                        actionsIconTheme: HeroAppBarStyle.icons(collapsed),
+                        titleTextStyle: HeroAppBarStyle.title(collapsed),
+                        systemOverlayStyle: HeroAppBarStyle.overlay(collapsed),
+                        // مفضلة المدرّسين غير مدعومة في الخادم (POST /student/favorites يقبل الدورات فقط) — مخفية حتى تُضاف.
+                        // العنوان في الشريط بعد الانطواء فقط؛ وهو مفتوح يعرض الرأس الاسم تحت الصورة.
+                        title: AnimatedOpacity(
+                          opacity: collapsed ? 1 : 0,
+                          duration: AppMotion.fast,
+                          child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
                         ),
-                        avatar: _InstructorHeroAvatar(instructor: item),
-                      ),
-                    ),
-                    bottom: PreferredSize(
-                      preferredSize: const Size.fromHeight(60),
-                      child: ColoredBox(
-                        color: AppColors.surface,
-                        child: Builder(
-                          builder: (context) => Padding(
-                            padding: AppTabBarSection.padding,
-                            child: AppSegmentedTabBar(
-                              controller: DefaultTabController.of(context),
-                              tabs: [
-                                Tab(text: 'tab_info'.tr),
-                                Tab(text: 'tab_courses'.tr),
-                                Tab(text: 'tab_institutes'.tr),
-                                Tab(text: 'tab_reviews'.tr),
+                        flexibleSpace: FlexibleSpaceBar(
+                          background: AppDetailHeroContent(
+                            name: name,
+                            background: const Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.primary)),
+                                BrandBannerPattern(),
                               ],
+                            ),
+                            avatar: _InstructorHeroAvatar(instructor: item),
+                          ),
+                        ),
+                        bottom: PreferredSize(
+                          preferredSize: const Size.fromHeight(60),
+                          child: ColoredBox(
+                            color: AppColors.surface,
+                            child: Builder(
+                              builder: (context) => Padding(
+                                padding: AppTabBarSection.padding,
+                                child: AppSegmentedTabBar(
+                                  controller: DefaultTabController.of(context),
+                                  tabs: [
+                                    Tab(text: 'tab_info'.tr),
+                                    Tab(text: 'tab_courses'.tr),
+                                    Tab(text: 'tab_institutes'.tr),
+                                    Tab(text: 'tab_reviews'.tr),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-                body: TabBarView(
-                  children: [
-                    _InstructorInfoTab(instructor: item, totalCourses: controller.totalCourses.value),
-                    _InstructorCoursesTab(controller: controller),
-                    _InstructorInstitutesTab(instructor: item),
-                    _InstructorReviewsTab(controller: controller),
                   ],
+                  body: TabBarView(
+                    children: [
+                      _InstructorInfoTab(instructor: item, totalCourses: controller.totalCourses.value),
+                      _InstructorCoursesTab(controller: controller),
+                      _InstructorInstitutesTab(instructor: item),
+                      _InstructorReviewsTab(controller: controller),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -164,152 +170,167 @@ class _InstructorInfoTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (instructor == null) {
-      return AppEmptyState.scrollable(context: context, message: 'no_description'.tr, icon: Icons.info_outline_rounded);
+      return AppNestedTabScrollView(
+        slivers: [AppEmptyState.sliver(message: 'no_description'.tr, icon: Icons.info_outline_rounded)],
+      );
     }
 
-    return ListView(
-      padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
-      children: [
-        SoftCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return AppNestedTabScrollView(
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
+          sliver: SliverList.list(
             children: [
+              SoftCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            instructor!.name,
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.xxl),
+                          ),
+                        ),
+                        if (instructor!.isPrivate)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(AppRadius.full),
+                            ),
+                            child: Text(
+                              'private_instructor_badge'.tr,
+                              style: const TextStyle(
+                                color: AppColors.primaryInk,
+                                fontWeight: FontWeight.w700,
+                                fontSize: AppTextSize.xs,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      instructor!.specializationLabel ?? 'instructor_default'.tr,
+                      style: const TextStyle(color: AppColors.primaryInk, fontWeight: FontWeight.w700),
+                    ),
+                    if (instructor!.experienceYears > 0) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        pluralTr('instructor_experience', instructor!.experienceYears),
+                        style: const TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SoftCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('about_instructor'.tr, style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 10),
+                    Text(
+                      instructor!.bio?.trim().isNotEmpty == true ? instructor!.bio! : 'no_description'.tr,
+                      style: const TextStyle(color: AppColors.textSecondary, height: 1.45),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      instructor!.name,
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.xxl),
+                    child: _StatChip(label: 'stat_courses'.tr, value: '$totalCourses'),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _StatChip(
+                      label: 'stat_experience'.tr,
+                      value: pluralTr('instructor_years_short', instructor!.experienceYears),
                     ),
                   ),
-                  if (instructor!.isPrivate)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppRadius.full),
-                      ),
-                      child: Text(
-                        'private_instructor_badge'.tr,
-                        style: const TextStyle(
-                          color: AppColors.primaryInk,
-                          fontWeight: FontWeight.w700,
-                          fontSize: AppTextSize.xs,
-                        ),
-                      ),
-                    ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                instructor!.specializationLabel ?? 'instructor_default'.tr,
-                style: const TextStyle(color: AppColors.primaryInk, fontWeight: FontWeight.w700),
-              ),
-              if (instructor!.experienceYears > 0) ...[
-                const SizedBox(height: 4),
-                Text(
-                  pluralTr('instructor_experience', instructor!.experienceYears),
-                  style: const TextStyle(color: AppColors.textSecondary),
-                ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        SoftCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('about_instructor'.tr, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 10),
-              Text(
-                instructor!.bio?.trim().isNotEmpty == true ? instructor!.bio! : 'no_description'.tr,
-                style: const TextStyle(color: AppColors.textSecondary, height: 1.45),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _StatChip(label: 'stat_courses'.tr, value: '$totalCourses'),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _StatChip(
-                label: 'stat_experience'.tr,
-                value: pluralTr('instructor_years_short', instructor!.experienceYears),
-              ),
-            ),
-          ],
-        ),
-        if (instructor!.hourlyPrice != null || instructor!.sessionPrice != null) ...[
-          const SizedBox(height: 12),
-          SoftCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('instructor_pricing'.tr, style: Theme.of(context).textTheme.titleMedium),
+              if (instructor!.hourlyPrice != null || instructor!.sessionPrice != null) ...[
                 const SizedBox(height: 12),
-                if (instructor!.hourlyPrice != null)
-                  _InfoRow(icon: Icons.schedule_rounded, label: 'hourly_price'.tr, value: instructor!.hourlyPrice!),
-                if (instructor!.sessionPrice != null) ...[
-                  const SizedBox(height: 10),
-                  _InfoRow(
-                    icon: Icons.event_available_rounded,
-                    label: 'session_price'.tr,
-                    value: instructor!.sessionPrice!,
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-        if (instructor!.mobile != null && instructor!.mobile!.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          SoftCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('contact_instructor'.tr, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 12),
-                _InfoRow(icon: Icons.phone_rounded, label: 'phone'.tr, value: instructor!.mobile!),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _copyPhone(instructor!.mobile!),
-                    icon: const Icon(Icons.copy_rounded, size: 18),
-                    label: Text('copy_phone'.tr),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-        if (instructor!.address != null && instructor!.address!.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          SoftCard(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.location_on_rounded, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Expanded(
+                SoftCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('address'.tr, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 4),
-                      Text(instructor!.address!, style: const TextStyle(color: AppColors.textSecondary, height: 1.4)),
+                      Text('instructor_pricing'.tr, style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 12),
+                      if (instructor!.hourlyPrice != null)
+                        _InfoRow(
+                          icon: Icons.schedule_rounded,
+                          label: 'hourly_price'.tr,
+                          value: instructor!.hourlyPrice!,
+                        ),
+                      if (instructor!.sessionPrice != null) ...[
+                        const SizedBox(height: 10),
+                        _InfoRow(
+                          icon: Icons.event_available_rounded,
+                          label: 'session_price'.tr,
+                          value: instructor!.sessionPrice!,
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ],
-            ),
+              if (instructor!.mobile != null && instructor!.mobile!.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                SoftCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('contact_instructor'.tr, style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 12),
+                      _InfoRow(icon: Icons.phone_rounded, label: 'phone'.tr, value: instructor!.mobile!),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _copyPhone(instructor!.mobile!),
+                          icon: const Icon(Icons.copy_rounded, size: 18),
+                          label: Text('copy_phone'.tr),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (instructor!.address != null && instructor!.address!.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                SoftCard(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.location_on_rounded, color: AppColors.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('address'.tr, style: const TextStyle(fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 4),
+                            Text(
+                              instructor!.address!,
+                              style: const TextStyle(color: AppColors.textSecondary, height: 1.4),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
           ),
-        ],
+        ),
       ],
     );
   }
@@ -330,27 +351,33 @@ class _InstructorCoursesTab extends StatelessWidget {
     return Obx(() {
       if (controller.isLoadingCourses.value && controller.courses.isEmpty) {
         // حشوة القائمة الحقيقية نفسها (12 من الأعلى) كي لا تتحرك البطاقات عند وصول البيانات.
-        return AppRowListSkeleton(padding: EdgeInsets.fromLTRB(16, 12, 16, AppLayout.scrollBottomInset(context)));
+        return AppNestedTabScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          slivers: [
+            AppSliverRowListSkeleton(padding: EdgeInsets.fromLTRB(16, 12, 16, AppLayout.scrollBottomInset(context))),
+          ],
+        );
       }
       final error = controller.coursesError.value;
       if (controller.courses.isEmpty && error != null) {
-        return AppEmptyState.scrollable(
-          context: context,
-          message: error,
-          icon: Icons.cloud_off_outlined,
-          action: FilledButton(onPressed: controller.retryCourses, child: Text('retry'.tr)),
+        return AppNestedTabScrollView(
+          slivers: [
+            AppEmptyState.sliver(
+              message: error,
+              icon: Icons.cloud_off_outlined,
+              action: FilledButton(onPressed: controller.retryCourses, child: Text('retry'.tr)),
+            ),
+          ],
         );
       }
       if (controller.courses.isEmpty) {
-        return AppEmptyState.scrollable(
-          context: context,
-          message: 'no_courses_for_instructor'.tr,
-          icon: Icons.menu_book_outlined,
+        return AppNestedTabScrollView(
+          slivers: [AppEmptyState.sliver(message: 'no_courses_for_instructor'.tr, icon: Icons.menu_book_outlined)],
         );
       }
 
       // بطاقة نتائج البحث نفسها ([CourseRowCard]).
-      return CustomScrollView(
+      return AppNestedTabScrollView(
         slivers: [
           SliverPadding(
             padding: EdgeInsets.fromLTRB(16, 12, 16, AppLayout.scrollBottomInset(context)),
@@ -391,54 +418,64 @@ class _InstructorReviewsTab extends StatelessWidget {
     return Obx(() {
       final reviews = controller.reviews.toList(growable: false);
       if (controller.isLoadingReviews.value && reviews.isEmpty) {
-        return const AppListSkeleton(itemCount: 3);
+        return const AppNestedTabScrollView(
+          physics: NeverScrollableScrollPhysics(),
+          slivers: [AppSliverListSkeleton(itemCount: 3)],
+        );
       }
       final reviewsError = controller.reviewsError.value;
       if (reviews.isEmpty && reviewsError != null) {
-        return AppEmptyState.scrollable(
-          context: context,
-          message: reviewsError,
-          icon: Icons.cloud_off_outlined,
-          action: FilledButton(onPressed: controller.retryReviews, child: Text('retry'.tr)),
+        return AppNestedTabScrollView(
+          slivers: [
+            AppEmptyState.sliver(
+              message: reviewsError,
+              icon: Icons.cloud_off_outlined,
+              action: FilledButton(onPressed: controller.retryReviews, child: Text('retry'.tr)),
+            ),
+          ],
         );
       }
       if (reviews.isEmpty) {
-        return AppEmptyState.scrollable(
-          context: context,
-          message: 'no_instructor_reviews'.tr,
-          icon: Icons.reviews_outlined,
+        return AppNestedTabScrollView(
+          slivers: [AppEmptyState.sliver(message: 'no_instructor_reviews'.tr, icon: Icons.reviews_outlined)],
         );
       }
       final avg = reviews.map((r) => r.rating).reduce((a, b) => a + b) / reviews.length;
-      return ListView.separated(
-        padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
-        itemCount: reviews.length + 1,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (_, i) {
-          if (i == 0) {
-            return Row(
-              children: [
-                const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 22),
-                const SizedBox(width: 6),
-                Text(
-                  avg.toStringAsFixed(1),
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.xl),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  pluralTr('reviews_total', reviews.length),
-                  style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w500),
-                ),
-              ],
-            );
-          }
-          final review = reviews[i - 1];
-          return ReviewCard(
-            review: review,
-            showCourse: true,
-            onReport: Get.find<TokenStorage>().isLoggedIn ? () => ReviewReportFlow.start(context, review) : null,
-          );
-        },
+      return AppNestedTabScrollView(
+        slivers: [
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
+            sliver: SliverList.separated(
+              itemCount: reviews.length + 1,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (_, i) {
+                if (i == 0) {
+                  return Row(
+                    children: [
+                      const Icon(Icons.star_rounded, color: AppColors.ratingStar, size: 22),
+                      const SizedBox(width: 6),
+                      Text(
+                        avg.toStringAsFixed(1),
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: AppTextSize.xl),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        pluralTr('reviews_total', reviews.length),
+                        style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  );
+                }
+                final review = reviews[i - 1];
+                return ReviewCard(
+                  review: review,
+                  showCourse: true,
+                  onReport: Get.find<TokenStorage>().isLoggedIn ? () => ReviewReportFlow.start(context, review) : null,
+                );
+              },
+            ),
+          ),
+        ],
       );
     });
   }
@@ -453,40 +490,44 @@ class _InstructorInstitutesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final institutes = instructor?.institutes ?? const <InstructorInstituteLink>[];
     if (institutes.isEmpty) {
-      return AppEmptyState.scrollable(
-        context: context,
-        message: 'no_institutes_for_instructor'.tr,
-        icon: Icons.apartment_outlined,
+      return AppNestedTabScrollView(
+        slivers: [AppEmptyState.sliver(message: 'no_institutes_for_instructor'.tr, icon: Icons.apartment_outlined)],
       );
     }
 
-    return ListView.separated(
-      padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
-      itemCount: institutes.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (_, i) {
-        final linked = institutes[i];
-        final address = linked.address?.trim() ?? '';
-        // بطاقة تبويب المعاهد نفسها، ببيانات الربط فقط: لا شعار (أيقونة المبنى) ولا عدد دورات (يُخفى).
-        final institute = InstituteModel(
-          id: linked.id,
-          name: linked.name,
-          city: address,
-          rating: linked.rating,
-          coursesCount: 0,
-          description: linked.description,
-          address: linked.address,
-          isVerified: linked.isVerified,
-        );
-        return InstituteListCard(
-          institute: institute,
-          showCoursesCount: false,
-          onTap: () => Get.toNamed(
-            AppRoutes.instituteDetails,
-            arguments: institute.copyWith(city: address.isEmpty ? '—' : address),
+    return AppNestedTabScrollView(
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(16, 16, 16, AppLayout.scrollBottomInset(context)),
+          sliver: SliverList.separated(
+            itemCount: institutes.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (_, i) {
+              final linked = institutes[i];
+              final address = linked.address?.trim() ?? '';
+              // بطاقة تبويب المعاهد نفسها، ببيانات الربط فقط: لا شعار (أيقونة المبنى) ولا عدد دورات (يُخفى).
+              final institute = InstituteModel(
+                id: linked.id,
+                name: linked.name,
+                city: address,
+                rating: linked.rating,
+                coursesCount: 0,
+                description: linked.description,
+                address: linked.address,
+                isVerified: linked.isVerified,
+              );
+              return InstituteListCard(
+                institute: institute,
+                showCoursesCount: false,
+                onTap: () => Get.toNamed(
+                  AppRoutes.instituteDetails,
+                  arguments: institute.copyWith(city: address.isEmpty ? '—' : address),
+                ),
+              );
+            },
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 }
