@@ -43,6 +43,9 @@ class MemoryCache extends GetxService {
   @visibleForTesting
   static DateTime Function() clock = DateTime.now;
 
+  /// الوقت الحالي بنفس الساعة — لمدد «قديمة/طازجة» خارج الذاكرة نفسها (مثل تحديث الرئيسية).
+  static DateTime now() => clock();
+
   final LinkedHashMap<String, CacheEntry<Object?>> _entries = LinkedHashMap();
 
   static MemoryCache? get _instance => Get.isRegistered<MemoryCache>() ? Get.find<MemoryCache>() : null;

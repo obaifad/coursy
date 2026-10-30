@@ -15,7 +15,7 @@ class CourseRowCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final city = course.instituteCity?.trim() ?? '';
     final institute = [course.institute.trim(), city].where((p) => p.isNotEmpty).join(' • ');
-    final duration = course.duration;
+    final duration = _shortDuration(course);
     final percent = course.originalPriceLabel == null ? null : course.discountPercent;
 
     return AppRowCard(
@@ -30,8 +30,15 @@ class CourseRowCard extends StatelessWidget {
           Expanded(
             flex: 5,
             child: AppRowMetaLine(
+              spacing: 8,
               items: [
-                if (duration.isNotEmpty && duration != '—') AppRowMeta(icon: Icons.schedule_rounded, text: duration),
+                // قارئ الشاشة يقرأ المدة كاملة («120 ساعة») لا المختصرة.
+                if (duration != null)
+                  Semantics(
+                    label: course.duration,
+                    excludeSemantics: true,
+                    child: AppRowMeta(icon: Icons.schedule_rounded, text: duration),
+                  ),
                 CourseRatingBadge(course: course, showCount: false),
               ],
             ),
@@ -58,4 +65,14 @@ class CourseRowCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// المدة مختصرة («120 س» / «16 ج»): بجانب التقييم والسعر لا يبقى للمدة على هاتف 360 إلا ~40، فكانت
+/// «120 ساعة» تُقصّ إلى «120…».
+String? _shortDuration(CourseModel course) {
+  final hours = course.durationHours ?? 0;
+  if (hours > 0) return 'hours_short'.trParams({'n': '$hours'});
+  final sessions = course.sessionsCount ?? 0;
+  if (sessions > 0) return 'sessions_short'.trParams({'n': '$sessions'});
+  return null;
 }

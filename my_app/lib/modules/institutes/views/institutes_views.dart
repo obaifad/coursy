@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:skeletonizer/skeletonizer.dart';
 import '../../../theme/app_motion.dart';
 
 import '../../../core/locale/plural.dart';
@@ -41,6 +40,7 @@ class InstitutesView extends GetView<InstitutesController> {
         edgeOffset: MediaQuery.paddingOf(context).top + AppBrandSliverAppBar.toolbarHeight,
         child: CustomScrollView(
           key: const PageStorageKey('institutes_tab'),
+          controller: controller.scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             AppBrandSliverAppBar(
@@ -135,76 +135,110 @@ class InstituteDetailsView extends GetView<InstituteDetailsController> {
 
   @override
   Widget build(BuildContext context) {
+    // لا يقرأ هذا الـ Obx بيانات المعهد نفسها (فقط: هل وصلت؟): كان كل تحديث لها (وصول التفاصيل، عدد
+    // الدورات، إرسال تقييم) يعيد بناء الصفحة كلها — الرأس وشريط التبويبات وجسمها — ولو أثناء تبديل التبويب.
+    // الرأس والعنوان يتابعانها بـ Obx خاص بهما، وكل تبويب يتابع ما يعرضه.
     return Obx(() {
       final _ = localeRebuildToken;
-      final item = controller.institute.value;
-      if (controller.isLoading.value && item == null) {
+      final hasItem = controller.hasInstitute.value;
+      if (controller.isLoading.value && !hasItem) {
         return const Scaffold(body: AppDetailSkeleton());
       }
       final detailsError = controller.detailsError.value;
-      if (item == null && detailsError != null) {
+      if (!hasItem && detailsError != null) {
         return Scaffold(
           appBar: AppBar(title: Text('institute_details'.tr)),
           body: AppLoadErrorState(message: detailsError, onRetry: controller.loadDetails),
         );
       }
-      final name = item?.name ?? 'institute_details'.tr;
       return DefaultTabController(
         length: 4,
+        // الضغط على تبويب ينقل فوراً: انزلاق 300ms كان يُبقي التبويب السابق ظاهراً وهو يخرج. السحب بالإصبع
+        // يبقى كما هو.
+        animationDuration: Duration.zero,
         child: Scaffold(
           // الشريط أبيض فوق صورة الغلاف وداكن بعد طيّها (كان داكناً فوق الصورة فلا يُقرأ).
-          body: CollapsingHeroScope(
-            collapseOffset: AppDetailHero.collapseOffset(context, avatarSize: InstituteDetailHero.logoSize),
-            builder: (context, collapsed) => NestedScrollView(
-              headerSliverBuilder: (context, inner) => [
-                SliverAppBar(
-                  expandedHeight: AppDetailHero.expandedHeight(context, avatarSize: InstituteDetailHero.logoSize),
-                  pinned: true,
-                  backgroundColor: AppColors.surface,
-                  iconTheme: HeroAppBarStyle.icons(collapsed),
-                  actionsIconTheme: HeroAppBarStyle.icons(collapsed),
-                  titleTextStyle: HeroAppBarStyle.title(collapsed),
-                  systemOverlayStyle: HeroAppBarStyle.overlay(collapsed),
-                  // العنوان في الشريط يظهر بعد انطواء الرأس فقط: وهو مفتوح يعرض الرأس الاسم تحت الشعار.
-                  title: AnimatedOpacity(
-                    opacity: collapsed ? 1 : 0,
-                    duration: AppMotion.fast,
-                    child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
-                  flexibleSpace: FlexibleSpaceBar(
-                    background: item != null
-                        ? InstituteDetailHero(institute: item)
-                        : const DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.category)),
-                  ),
-                  bottom: PreferredSize(
-                    preferredSize: const Size.fromHeight(60),
-                    child: ColoredBox(
-                      color: AppColors.surface,
-                      child: Builder(
-                        builder: (context) => Padding(
-                          padding: AppTabBarSection.padding,
-                          child: AppSegmentedTabBar(
-                            controller: DefaultTabController.of(context),
-                            tabs: [
-                              Tab(text: 'tab_info'.tr),
-                              Tab(text: 'tab_courses'.tr),
-                              Tab(text: 'tab_instructors'.tr),
-                              Tab(text: 'tab_reviews'.tr),
-                            ],
+          body: AppHeaderSnap(
+            child: CollapsingHeroScope(
+              collapseOffset: AppDetailHero.collapseOffset(context, avatarSize: InstituteDetailHero.logoSize),
+              builder: (context, collapsed) => NestedScrollView(
+                headerSliverBuilder: (context, inner) => [
+                  // الجزء المثبّت (الشريط والتبويبات) يُحسب في كل تبويب ([AppNestedTabScrollView]).
+                  SliverOverlapAbsorber(
+                    handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                    sliver: SliverAppBar(
+                      expandedHeight: AppDetailHero.expandedHeight(context, avatarSize: InstituteDetailHero.logoSize),
+                      pinned: true,
+                      backgroundColor: AppColors.surface,
+                      iconTheme: HeroAppBarStyle.icons(collapsed),
+                      actionsIconTheme: HeroAppBarStyle.icons(collapsed),
+                      titleTextStyle: HeroAppBarStyle.title(collapsed),
+                      systemOverlayStyle: HeroAppBarStyle.overlay(collapsed),
+                      // العنوان في الشريط يظهر بعد انطواء الرأس فقط: وهو مفتوح يعرض الرأس الاسم تحت الشعار.
+                      title: AnimatedOpacity(
+                        opacity: collapsed ? 1 : 0,
+                        duration: AppMotion.fast,
+                        child: Obx(
+                          () => Text(
+                            controller.institute.value?.name ?? 'institute_details'.tr,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                      flexibleSpace: FlexibleSpaceBar(
+                        background: Obx(() {
+                          final item = controller.institute.value;
+                          return item != null
+                              ? InstituteDetailHero(institute: item)
+                              : const DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.category));
+                        }),
+                      ),
+                      bottom: PreferredSize(
+                        preferredSize: const Size.fromHeight(60),
+                        child: ColoredBox(
+                          color: AppColors.surface,
+                          child: Builder(
+                            builder: (context) => Padding(
+                              padding: AppTabBarSection.padding,
+                              child: AppSegmentedTabBar(
+                                controller: DefaultTabController.of(context),
+                                tabs: [
+                                  Tab(text: 'tab_info'.tr),
+                                  Tab(text: 'tab_courses'.tr),
+                                  Tab(text: 'tab_instructors'.tr),
+                                  Tab(text: 'tab_reviews'.tr),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
-              body: TabBarView(
-                children: [
-                  _InfoTab(controller: controller),
-                  _CoursesTab(controller: controller),
-                  _InstructorsTab(controller: controller),
-                  InstituteReviewsTab(controller: controller),
                 ],
+                // لكل تبويب موضع تمريره المحفوظ (يعود إليه حين يُبنى من جديد). لا keep-alive: NestedScrollView
+                // يحرّك كل القوائم الموصولة به معاً، فتبويب حيّ مخفي كان يُمرَّر مع الظاهر.
+                body: TabBarView(
+                  children: [
+                    KeyedSubtree(
+                      key: const PageStorageKey('institute-info'),
+                      child: _InfoTab(controller: controller),
+                    ),
+                    KeyedSubtree(
+                      key: const PageStorageKey('institute-courses'),
+                      child: _CoursesTab(controller: controller),
+                    ),
+                    KeyedSubtree(
+                      key: const PageStorageKey('institute-instructors'),
+                      child: _InstructorsTab(controller: controller),
+                    ),
+                    KeyedSubtree(
+                      key: const PageStorageKey('institute-reviews'),
+                      child: InstituteReviewsTab(controller: controller),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -218,9 +252,6 @@ class _InfoTab extends StatelessWidget {
   const _InfoTab({required this.controller});
   final InstituteDetailsController controller;
 
-  /// عدد الدورات المعروضة في تبويب المعلومات.
-  static const _previewCourses = 3;
-
   Future<void> _openMaps(double lat, double lng) => ExternalLauncher.openMaps(lat: lat, lng: lng);
 
   @override
@@ -232,74 +263,63 @@ class _InfoTab extends StatelessWidget {
       final coursesCount = controller.displayedCoursesCount;
       final address = institute?.address?.trim();
       final showAddress = address != null && address.isNotEmpty && !JsonHelpers.looksLikeCoordinates(address);
-      final firstCourses = controller.courses.take(_previewCourses).toList(growable: false);
 
-      return ListView(
-        padding: AppLayout.scrollPadding(context, top: 16),
-        children: [
-          SoftCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      return AppNestedTabScrollView(
+        slivers: [
+          SliverPadding(
+            padding: AppLayout.scrollPadding(context, top: 16),
+            sliver: SliverList.list(
               children: [
-                Text('about_institute'.tr, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 10),
-                Text(
-                  institute?.description ?? 'institute_default_desc'.tr,
-                  style: const TextStyle(color: AppColors.textSecondary, height: 1.45),
-                ),
-                if (coursesCount > 0) ...[
-                  const SizedBox(height: 16),
-                  _StatChip(label: 'stat_courses'.tr, value: '$coursesCount'),
-                ],
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_rounded, color: AppColors.primary),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(institute?.city ?? '—', style: const TextStyle(fontWeight: FontWeight.w700)),
-                    ),
-                  ],
-                ),
-                if (showAddress) ...[
-                  const SizedBox(height: 8),
-                  Text(address, style: const TextStyle(color: AppColors.textSecondary)),
-                ],
-                if (coords != null) ...[
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: TextButton.icon(
-                      onPressed: () => _openMaps(coords.lat, coords.lng),
-                      icon: const Icon(Icons.map_outlined, size: 18),
-                      label: Text('open_in_maps'.tr),
-                    ),
+                SoftCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('about_institute'.tr, style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 10),
+                      Text(
+                        institute?.description ?? 'institute_default_desc'.tr,
+                        style: const TextStyle(color: AppColors.textSecondary, height: 1.45),
+                      ),
+                      if (coursesCount > 0) ...[
+                        const SizedBox(height: 16),
+                        _StatChip(label: 'stat_courses'.tr, value: '$coursesCount'),
+                      ],
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_rounded, color: AppColors.primary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(institute?.city ?? '—', style: const TextStyle(fontWeight: FontWeight.w700)),
+                          ),
+                        ],
+                      ),
+                      if (showAddress) ...[
+                        const SizedBox(height: 8),
+                        Text(address, style: const TextStyle(color: AppColors.textSecondary)),
+                      ],
+                      if (coords != null) ...[
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: TextButton.icon(
+                            onPressed: () => _openMaps(coords.lat, coords.lng),
+                            icon: const Icon(Icons.map_outlined, size: 18),
+                            label: Text('open_in_maps'.tr),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
+                ),
+                // الدورات في تبويبها فقط.
+                if (institute != null && institute.hasContact) ...[
+                  const SizedBox(height: 14),
+                  _InstituteContactCard(institute: institute),
                 ],
               ],
             ),
           ),
-          // أول الدورات بعد «عن المعهد»، و«عرض الكل» يفتح تبويب الدورات. بلا دورات: لا شيء إضافي.
-          if (firstCourses.isNotEmpty) ...[
-            const SizedBox(height: 22),
-            AppSectionHeader(
-              title: 'tab_courses'.tr,
-              actionLabel: 'show_all'.tr,
-              onAction: () => DefaultTabController.of(context).animateTo(1),
-            ),
-            const SizedBox(height: 10),
-            for (var i = 0; i < firstCourses.length; i++) ...[
-              if (i > 0) const SizedBox(height: 12),
-              CourseRowCard(
-                course: firstCourses[i],
-                onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: firstCourses[i]),
-              ),
-            ],
-          ],
-          if (institute != null && institute.hasContact) ...[
-            SizedBox(height: firstCourses.isNotEmpty ? 22 : 14),
-            _InstituteContactCard(institute: institute),
-          ],
         ],
       );
     });
@@ -386,82 +406,50 @@ class _CoursesTab extends StatelessWidget {
       final courses = controller.courses.toList();
       final error = controller.coursesError.value;
       if (courses.isEmpty && error != null) {
-        return AppEmptyState.scrollable(
-          context: context,
-          message: error,
-          icon: Icons.cloud_off_outlined,
-          action: FilledButton(onPressed: controller.loadDetails, child: Text('retry'.tr)),
+        return AppNestedTabScrollView(
+          slivers: [
+            AppEmptyState.sliver(
+              message: error,
+              icon: Icons.cloud_off_outlined,
+              action: FilledButton(onPressed: controller.loadDetails, child: Text('retry'.tr)),
+            ),
+          ],
         );
       }
+      final padding = AppLayout.scrollPadding(context, top: 16);
       if (courses.isEmpty && controller.isLoading.value) {
-        // البلاطة الحقيقية نفسها ببيانات وهمية وبحشوة القائمة نفسها: لا قفزة عند وصول الدورات.
-        return Skeletonizer(
-          enabled: true,
-          child: ListView(
-            physics: const NeverScrollableScrollPhysics(),
-            padding: AppLayout.scrollPadding(context, top: 16),
-            children: [
-              for (var i = 0; i < 3; i++)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _InstituteCourseTile(course: AppSkeletonData.course),
-                ),
-            ],
-          ),
+        // هيكل البطاقات الصفّية بحشوة القائمة نفسها: لا قفزة عند وصول الدورات.
+        return AppNestedTabScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          slivers: [AppSliverRowListSkeleton(itemCount: 3, padding: padding)],
         );
       }
       if (courses.isEmpty) {
-        return AppEmptyState.scrollable(
-          context: context,
-          message: 'no_courses_for_institute'.tr,
-          icon: Icons.menu_book_outlined,
+        return AppNestedTabScrollView(
+          slivers: [AppEmptyState.sliver(message: 'no_courses_for_institute'.tr, icon: Icons.menu_book_outlined)],
         );
       }
-      return ListView.builder(
-        padding: AppLayout.scrollPadding(context, top: 16),
-        itemCount: courses.length,
-        itemBuilder: (_, i) {
-          final c = courses[i];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _InstituteCourseTile(
-              course: c,
-              onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: c),
+      return AppNestedTabScrollView(
+        slivers: [
+          SliverPadding(
+            padding: padding,
+            sliver: SliverList.builder(
+              itemCount: courses.length,
+              itemBuilder: (_, i) {
+                final c = courses[i];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: CourseRowCard(
+                    course: c,
+                    onTap: () => Get.toNamed(AppRoutes.courseDetails, arguments: c),
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       );
     });
-  }
-}
-
-class _InstituteCourseTile extends StatelessWidget {
-  const _InstituteCourseTile({required this.course, this.onTap});
-
-  final CourseModel course;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SoftCard(
-      child: ListTile(
-        shape: SoftCard.shape,
-        contentPadding: EdgeInsets.zero,
-        leading: Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.sm), gradient: AppGradients.primary),
-          child: const Icon(Icons.menu_book_rounded, color: Colors.white),
-        ),
-        title: Text(course.title, style: const TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: Text(
-          course.hasRating ? '${course.rating.toStringAsFixed(1)} ★ · ${course.level}' : course.level,
-          style: const TextStyle(fontSize: AppTextSize.xs),
-        ),
-        trailing: const Icon(Icons.chevron_right_rounded),
-        onTap: onTap,
-      ),
-    );
   }
 }
 
@@ -476,50 +464,50 @@ class _InstructorsTab extends StatelessWidget {
       final instructors = controller.instructors.toList();
       final error = controller.instructorsError.value;
       if (instructors.isEmpty && error != null) {
-        return AppEmptyState.scrollable(
-          context: context,
-          message: error,
-          icon: Icons.cloud_off_outlined,
-          action: FilledButton(onPressed: controller.loadDetails, child: Text('retry'.tr)),
+        return AppNestedTabScrollView(
+          slivers: [
+            AppEmptyState.sliver(
+              message: error,
+              icon: Icons.cloud_off_outlined,
+              action: FilledButton(onPressed: controller.loadDetails, child: Text('retry'.tr)),
+            ),
+          ],
         );
       }
+      final padding = AppLayout.scrollPadding(context, top: 16);
       if (instructors.isEmpty && controller.isLoading.value) {
         // بطاقة المدرّس الحقيقية ببيانات وهمية وبحشوة القائمة نفسها: لا قفزة عند وصول المدرّسين.
-        return Skeletonizer(
-          enabled: true,
-          child: ListView(
-            physics: const NeverScrollableScrollPhysics(),
-            padding: AppLayout.scrollPadding(context, top: 16),
-            children: [
-              for (var i = 0; i < 3; i++)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: PrivateInstructorListCard(instructor: AppSkeletonData.instructor),
-                ),
-            ],
-          ),
+        return AppNestedTabScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          slivers: [AppSliverInstructorListSkeleton(itemCount: 3, padding: padding)],
         );
       }
       if (instructors.isEmpty) {
-        return AppEmptyState.scrollable(
-          context: context,
-          message: 'no_instructors_for_institute'.tr,
-          icon: Icons.person_outline_rounded,
+        return AppNestedTabScrollView(
+          slivers: [
+            AppEmptyState.sliver(message: 'no_instructors_for_institute'.tr, icon: Icons.person_outline_rounded),
+          ],
         );
       }
-      return ListView.builder(
-        padding: AppLayout.scrollPadding(context, top: 16),
-        itemCount: instructors.length,
-        itemBuilder: (_, i) {
-          final ins = instructors[i];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: PrivateInstructorListCard(
-              instructor: ins,
-              onTap: () => Get.toNamed(AppRoutes.instructorDetails, arguments: ins),
+      return AppNestedTabScrollView(
+        slivers: [
+          SliverPadding(
+            padding: padding,
+            sliver: SliverList.builder(
+              itemCount: instructors.length,
+              itemBuilder: (_, i) {
+                final ins = instructors[i];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: PrivateInstructorListCard(
+                    instructor: ins,
+                    onTap: () => Get.toNamed(AppRoutes.instructorDetails, arguments: ins),
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       );
     });
   }

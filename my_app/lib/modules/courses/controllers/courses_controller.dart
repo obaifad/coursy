@@ -37,7 +37,21 @@ class CoursesController extends GetxController with LatestLoadGuard, InitialLoad
     super.onInit();
     scrollController.addListener(_onScrollNearEnd);
     _loadCategories();
+    _hydrateFromDisk();
     loadCourses();
+  }
+
+  /// بعد إعادة فتح التطبيق: آخر صفحة أولى محفوظة على القرص ([ApiDiskCache]) تُرسم فوراً بلا هيكل، والشبكة
+  /// تحدّثها بصمت.
+  void _hydrateFromDisk() {
+    final cached = _repository.cachedCoursesPage(page: 1, perPage: _perPage, query: _query());
+    if (cached == null || cached.items.isEmpty) return;
+    courses.assignAll(cached.items);
+    totalCount.value = cached.total;
+    hasMore.value = cached.hasMore;
+    _page = 1;
+    isLoading.value = false;
+    markLoaded();
   }
 
   @override

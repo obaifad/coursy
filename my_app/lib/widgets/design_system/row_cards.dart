@@ -184,19 +184,189 @@ class AppRowMeta extends StatelessWidget {
   }
 }
 
-/// صف معلومات أفقي: كل عنصر بحجمه الطبيعي، ويُقصّ بـ «…» بدل أن يتجاوز العرض.
-class AppRowMetaLine extends StatelessWidget {
-  const AppRowMetaLine({super.key, required this.items, this.spacing = 12});
+/// صف معلومات أفقي: كل عنصر بحجمه الطبيعي، وحين لا يتسع العرض يُقصّ الأطول وحده بـ «…».
+///
+/// لا Flexible متساوية: كانت تعطي كل عنصر نصف العرض، فيحجز التقييم القصير («★ 4.4») نصفاً لا يحتاجه
+/// وتُقصّ المدة إلى «120…» بجانب فراغ. هنا العنصر الذي يحتاج أقل من نصيبه العادل يأخذ حاجته، والباقي
+/// يتوزّع على الأطول.
+class AppRowMetaLine extends MultiChildRenderObjectWidget {
+  const AppRowMetaLine({super.key, required List<Widget> items, this.spacing = 12}) : super(children: items);
 
-  final List<Widget> items;
   final double spacing;
 
   @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderMetaLine(spacing: spacing, textDirection: Directionality.of(context));
+
+  @override
+  void updateRenderObject(BuildContext context, RenderObject renderObject) {
+    (renderObject as _RenderMetaLine)
+      ..spacing = spacing
+      ..textDirection = Directionality.of(context);
+  }
+}
+
+class _MetaLineParentData extends ContainerBoxParentData<RenderBox> {}
+
+class _RenderMetaLine extends RenderBox
+    with
+        ContainerRenderObjectMixin<RenderBox, _MetaLineParentData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, _MetaLineParentData> {
+  _RenderMetaLine({required double spacing, required TextDirection textDirection})
+    : _spacing = spacing,
+      _textDirection = textDirection;
+
+  double _spacing;
+  set spacing(double value) {
+    if (value == _spacing) return;
+    _spacing = value;
+    markNeedsLayout();
+  }
+
+  TextDirection _textDirection;
+  set textDirection(TextDirection value) {
+    if (value == _textDirection) return;
+    _textDirection = value;
+    markNeedsLayout();
+  }
+
+  @override
+  void setupParentData(RenderBox child) {
+    if (child.parentData is! _MetaLineParentData) child.parentData = _MetaLineParentData();
+  }
+
+  List<RenderBox> get _children {
+    final list = <RenderBox>[];
+    var child = firstChild;
+    while (child != null) {
+      list.add(child);
+      child = childAfter(child);
+    }
+    return list;
+  }
+
+  double get _gaps => math.max(0, childCount - 1) * _spacing;
+
+  /// العرض المخصّص لكل عنصر: من يحتاج أقل من نصيبه يأخذ حاجته، والأطول يتقاسمون الباقي.
+  List<double> _widths(double maxWidth, double height) {
+    final kids = _children;
+    final needs = [for (final c in kids) c.getMaxIntrinsicWidth(height)];
+    final widths = List<double>.of(needs);
+    if (!maxWidth.isFinite) return widths;
+    var remaining = math.max(0.0, maxWidth - _gaps);
+    final order = List<int>.generate(kids.length, (i) => i)..sort((a, b) => needs[a].compareTo(needs[b]));
+    for (var k = 0; k < order.length; k++) {
+      final share = remaining / (order.length - k);
+      final i = order[k];
+      if (needs[i] <= share) {
+        remaining -= needs[i];
+      } else {
+        for (final j in order.skip(k)) {
+          widths[j] = share;
+        }
+        break;
+      }
+    }
+    return widths;
+  }
+
+  Size _layout(BoxConstraints constraints, {required bool dry}) {
+    final kids = _children;
+    final widths = _widths(constraints.maxWidth, double.infinity);
+    var height = 0.0;
+    final sizes = <Size>[];
+    for (var i = 0; i < kids.length; i++) {
+      final c = BoxConstraints(maxWidth: widths[i], maxHeight: constraints.maxHeight);
+      final size = dry ? kids[i].getDryLayout(c) : (kids[i]..layout(c, parentUsesSize: true)).size;
+      sizes.add(size);
+      height = math.max(height, size.height);
+    }
+    // مثل Row: يملأ العرض المتاح، والعناصر من جهة البداية.
+    final contentWidth = sizes.fold<double>(0, (sum, s) => sum + s.width) + _gaps;
+    final size = constraints.constrain(
+      Size(constraints.maxWidth.isFinite ? constraints.maxWidth : contentWidth, height),
+    );
+    if (!dry) {
+      final rtl = _textDirection == TextDirection.rtl;
+      var x = 0.0;
+      for (var i = 0; i < kids.length; i++) {
+        final w = sizes[i].width;
+        final dx = rtl ? size.width - x - w : x;
+        (kids[i].parentData! as _MetaLineParentData).offset = Offset(dx, (height - sizes[i].height) / 2);
+        x += w + _spacing;
+      }
+    }
+    return size;
+  }
+
+  @override
+  void performLayout() => size = _layout(constraints, dry: false);
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) => _layout(constraints, dry: true);
+
+  @override
+  double computeMinIntrinsicWidth(double height) => computeMaxIntrinsicWidth(height);
+
+  @override
+  double computeMaxIntrinsicWidth(double height) =>
+      _children.fold<double>(0, (sum, c) => sum + c.getMaxIntrinsicWidth(height)) + _gaps;
+
+  @override
+  double computeMinIntrinsicHeight(double width) => computeMaxIntrinsicHeight(width);
+
+  @override
+  double computeMaxIntrinsicHeight(double width) {
+    final kids = _children;
+    final widths = _widths(width, double.infinity);
+    var height = 0.0;
+    for (var i = 0; i < kids.length; i++) {
+      height = math.max(height, kids[i].getMaxIntrinsicHeight(widths[i]));
+    }
+    return height;
+  }
+
+  @override
+  double? computeDistanceToActualBaseline(TextBaseline baseline) =>
+      defaultComputeDistanceToHighestActualBaseline(baseline);
+
+  @override
+  void paint(PaintingContext context, Offset offset) => defaultPaint(context, offset);
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) =>
+      defaultHitTestChildren(result, position: position);
+}
+
+/// أيقونة بجانب نص قد يلتفّ لأكثر من سطر: بارتفاع سطره الأول وعلى منتصفه (ويتبع تكبير الخط)، في صف
+/// بمحاذاة البداية. بمحاذاة الوسط كانت تقع بين السطرين، وبحشوة علوية ثابتة تنحرف عند تكبير الخط.
+class AppFirstLineIcon extends StatelessWidget {
+  const AppFirstLineIcon(this.icon, {super.key, this.textStyle, this.size = 20, this.color});
+
+  final IconData icon;
+
+  /// نمط النص المجاور (يُدمج مع النمط الافتراضي كما يفعل Text).
+  final TextStyle? textStyle;
+  final double size;
+  final Color? color;
+
+  @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (var i = 0; i < items.length; i++) ...[if (i > 0) SizedBox(width: spacing), Flexible(child: items[i])],
-      ],
+    final painter = TextPainter(
+      text: TextSpan(text: ' ', style: DefaultTextStyle.of(context).style.merge(textStyle)),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final line = painter.preferredLineHeight;
+    painter.dispose();
+    // أيقونة أعلى من السطر تتجاوزه بالتساوي فوقه وتحته، فيبقى منتصفها على منتصف السطر.
+    return SizedBox(
+      width: size,
+      height: line,
+      child: OverflowBox(
+        maxHeight: math.max(line, size),
+        child: Icon(icon, size: size, color: color),
+      ),
     );
   }
 }

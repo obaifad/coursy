@@ -35,6 +35,10 @@ class EnrollmentRepository extends GetxService {
   }
 
   /// كل تسجيلات الطالب عبر كل الصفحات (يُستخدم لمعرفة «هل حجزت هذه الدورة؟» ولمتابعة الحالات).
+  /// حجوزات الطالب كما حُفظت على القرص (الصفحة الأولى: 50 حجزاً)، أو null.
+  List<EnrollmentModel>? cachedEnrollments() =>
+      cachedFirstPage(_client, ApiEndpoints.studentEnrollments, EnrollmentModel.fromJson);
+
   Future<List<EnrollmentModel>> fetchEnrollments() {
     return fetchAllPages(_client, ApiEndpoints.studentEnrollments, EnrollmentModel.fromJson, strict: false);
   }

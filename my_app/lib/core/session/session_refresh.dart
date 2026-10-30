@@ -20,6 +20,7 @@ import '../services/push_notification_service.dart';
 import '../config/app_debug_log.dart';
 import '../navigation/app_navigation.dart';
 import '../storage/recent_search_storage.dart';
+import '../storage/api_disk_cache.dart';
 import '../storage/home_cache.dart';
 import '../storage/token_storage.dart';
 import '../../routes/app_routes.dart';
@@ -80,6 +81,9 @@ abstract final class SessionRefresh {
     }
     if (Get.isRegistered<HomeCache>()) {
       await Get.find<HomeCache>().clearStudentEntries();
+    }
+    if (Get.isRegistered<ApiDiskCache>()) {
+      await Get.find<ApiDiskCache>().clearStudentEntries();
     }
     if (Get.isRegistered<FavoritesService>()) {
       Get.find<FavoritesService>().clearForLogout();

@@ -27,49 +27,65 @@ class InstituteReviewsTab extends StatelessWidget {
       final reviews = controller.reviews.toList(growable: false);
       final error = controller.reviewsError.value;
       if (reviews.isEmpty && error != null) {
-        return AppEmptyState.scrollable(
-          context: context,
-          message: error,
-          icon: Icons.cloud_off_outlined,
-          action: FilledButton(onPressed: controller.loadDetails, child: Text('retry'.tr)),
+        return AppNestedTabScrollView(
+          slivers: [
+            AppEmptyState.sliver(
+              message: error,
+              icon: Icons.cloud_off_outlined,
+              action: FilledButton(onPressed: controller.loadDetails, child: Text('retry'.tr)),
+            ),
+          ],
         );
       }
+      final padding = AppLayout.scrollPadding(context, top: 16);
       if (reviews.isEmpty && controller.isLoading.value) {
-        return Skeletonizer(
-          enabled: true,
-          child: ListView(
-            physics: const NeverScrollableScrollPhysics(),
-            padding: AppLayout.scrollPadding(context, top: 16),
-            children: [
-              for (var i = 0; i < 3; i++)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: ReviewCard(review: _skeletonReview),
-                ),
-            ],
-          ),
-        );
-      }
-      return ListView(
-        padding: AppLayout.scrollPadding(context, top: 16),
-        children: [
-          _ReviewsSummary(institute: institute, reviews: reviews),
-          const SizedBox(height: 16),
-          _InstituteReviewForm(controller: controller),
-          if (reviews.isNotEmpty) ...[
-            const SizedBox(height: 22),
-            Text('recent_reviews'.tr, style: AppTypography.sectionTitle()),
-            const SizedBox(height: 10),
-            for (final r in reviews)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: ReviewCard(
-                  review: r,
-                  showCourse: true,
-                  onReport: controller.isLoggedIn ? () => ReviewReportFlow.start(context, r) : null,
+        return AppNestedTabScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          slivers: [
+            Skeletonizer.sliver(
+              enabled: true,
+              child: SliverPadding(
+                padding: padding,
+                sliver: SliverList.list(
+                  children: [
+                    for (var i = 0; i < 3; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: ReviewCard(review: _skeletonReview),
+                      ),
+                  ],
                 ),
               ),
+            ),
           ],
+        );
+      }
+      return AppNestedTabScrollView(
+        slivers: [
+          SliverPadding(
+            padding: padding,
+            sliver: SliverList.list(
+              children: [
+                _ReviewsSummary(institute: institute, reviews: reviews),
+                const SizedBox(height: 16),
+                _InstituteReviewForm(controller: controller),
+                if (reviews.isNotEmpty) ...[
+                  const SizedBox(height: 22),
+                  Text('recent_reviews'.tr, style: AppTypography.sectionTitle()),
+                  const SizedBox(height: 10),
+                  for (final r in reviews)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: ReviewCard(
+                        review: r,
+                        showCourse: true,
+                        onReport: controller.isLoggedIn ? () => ReviewReportFlow.start(context, r) : null,
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          ),
         ],
       );
     });
@@ -364,8 +380,14 @@ class _HintCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.info_outline_rounded, color: AppColors.primary),
+              const AppFirstLineIcon(
+                Icons.info_outline_rounded,
+                size: 24,
+                color: AppColors.primary,
+                textStyle: TextStyle(height: 1.4),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(message, style: const TextStyle(height: 1.4, color: AppColors.textSecondary)),

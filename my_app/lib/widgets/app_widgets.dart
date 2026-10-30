@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../theme/app_fonts.dart';
+import '../core/cache/app_image_cache.dart';
 import '../core/navigation/route_motion_builder.dart';
 import '../core/locale/plural.dart';
 import '../core/models/app_models.dart';

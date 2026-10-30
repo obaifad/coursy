@@ -8,8 +8,8 @@ import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
 import '../../../widgets/app_selection_sheet.dart';
 import '../../../theme/app_colors.dart';
-import '../../../widgets/app_loading.dart';
 import '../../../widgets/app_widgets.dart';
+import '../../../widgets/design_system.dart';
 import '../../../widgets/interest_picker_sheet.dart';
 import 'login_page_metrics.dart';
 import '../../../theme/app_motion.dart';
@@ -683,9 +683,11 @@ class InterestsNotifyHint extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 1),
-            child: Icon(Icons.notifications_active_outlined, size: 15, color: AppColors.textSecondary),
+          AppFirstLineIcon(
+            Icons.notifications_active_outlined,
+            size: 15,
+            color: AppColors.textSecondary,
+            textStyle: AppFonts.tajawal(fontSize: 13, height: 1.4),
           ),
           const SizedBox(width: 6),
           Expanded(

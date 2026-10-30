@@ -98,16 +98,20 @@ class AppNetworkImage extends StatelessWidget {
         );
       }
       // كاش على القرص (لا يُعاد التنزيل عند كل تشغيل) + فك الصورة بحجم العرض فقط لا بحجمها الأصلي.
+      // صورة في المخزن أصلاً: تظهر حين تُقرأ (أجزاء من الثانية) بلا مربع ولا تلاشٍ — كانت تبدو كأنها تُنزَّل من
+      // جديد بعد كل إعادة فتح للتطبيق.
+      final onDisk = AppImageCache.isOnDisk(url);
       return CachedNetworkImage(
         imageUrl: url,
+        cacheManager: AppImageCache.manager,
         width: hasExplicitSize ? w : null,
         height: hasExplicitSize ? h : null,
         fit: fit,
         memCacheWidth: hasExplicitSize ? (w * pixelRatio).round() : null,
-        fadeInDuration: AppMotion.fast,
+        fadeInDuration: onDisk ? Duration.zero : AppMotion.fast,
         // مع placeholder يبقى القديم ظاهراً طوال fadeOutDuration (الافتراضي ثانية كاملة): نقصّره.
-        fadeOutDuration: AppMotion.fast,
-        placeholder: (_, __) => waiting,
+        fadeOutDuration: onDisk ? Duration.zero : AppMotion.fast,
+        placeholder: onDisk ? null : (_, __) => waiting,
         errorWidget: (_, __, ___) => fallback,
       );
     }
@@ -330,13 +334,23 @@ class EmptyStateView extends StatelessWidget {
 /// مساحة لمس 48dp (إرشاد Android) حول زر مرئي أصغر، دون تغيير شكله: الحلقة الشفافة حول الزر تنفّذ النقر
 /// نفسه، وقارئ الشاشة يرى عنصراً واحداً بالحجم الكامل. [child] يبقى بمقاسه وتأثير ضغطه.
 class AppTapTarget extends StatelessWidget {
-  const AppTapTarget({super.key, required this.label, required this.onTap, required this.child, this.selected});
+  const AppTapTarget({
+    super.key,
+    required this.label,
+    required this.onTap,
+    required this.child,
+    this.selected,
+    this.alignment = Alignment.center,
+  });
 
   static const double size = 48;
 
   final String label;
   final VoidCallback onTap;
   final Widget child;
+
+  /// موضع الزر المرئي داخل مساحة اللمس: على حافّتها حين يجب أن تقع حافّته على خط المحتوى.
+  final AlignmentGeometry alignment;
 
   /// حالة التحديد لقارئ الشاشة (تبويب التنقّل الحالي)؛ null = ليس عنصر اختيار.
   final bool? selected;
@@ -355,7 +369,7 @@ class AppTapTarget extends StatelessWidget {
         onTap: onTap,
         child: SizedBox.square(
           dimension: size,
-          child: Center(child: child),
+          child: Align(alignment: alignment, child: child),
         ),
       ),
     );

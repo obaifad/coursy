@@ -2,6 +2,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
+import '../../../core/cache/memory_cache.dart';
 import '../../../core/data/repositories/category_repository.dart';
 import '../../../core/data/repositories/course_repository.dart';
 import '../../../core/data/repositories/home_repository.dart';
@@ -25,6 +26,7 @@ class HomeController extends GetxController with LatestLoadGuard {
   final CourseRatingService _ratingService = Get.find();
 
   static const int _suggestedLimit = 10;
+  static const int _instructorsLimit = 12;
 
   final isLoading = true.obs;
   final isRefreshing = false.obs;
@@ -41,6 +43,9 @@ class HomeController extends GetxController with LatestLoadGuard {
   /// قوائم تعرض الآن دورات بلا إكمال (تقييم المعهد/اسمه): من الكاش أو قبل انتهاء الإكمال.
   /// بيانات جديدة غير مكمّلة تحلّ محلها فوراً؛ أما المكمّلة فلا يستبدلها إلا مكمّل (بلا وميض).
   final _unenriched = Set<RxList<CourseModel>>.identity();
+
+  /// قوائم رُسمت من القرص ([ApiDiskCache]) ولم يصل ردّ الشبكة لها بعد: ليست «طازجة» فتُجلب.
+  final _fromDisk = Set<RxList<Object?>>.identity();
 
   /// الرئيسية مرسومة من الكاش ولم يصل بعد رد الشبكة: كل القوائم تُجلب حتى لو لم تكن فارغة.
   bool _showingCache = false;
@@ -61,6 +66,11 @@ class HomeController extends GetxController with LatestLoadGuard {
   /// تُحسب مرة عند تغيّر [courses] (لا في كل بناء) ولا تتغيّر إلا إن تغيّر محتواها — فلا يُعاد بناء
   /// البانر بلا داعٍ. فارغة = تُعرض بطاقة الترحيب الثابتة بدلها.
   final bannerCourses = <CourseModel>[].obs;
+
+  /// وصلت دورات الرئيسية من الخادم مرة على الأقل (لا من النسخة المحفوظة على الجهاز). قبلها لا تُعرض
+  /// بطاقة «لا دورات» الافتراضية للمسجّل: نسخة محفوظة بلا دورات مفتوحة، أو فشل الشبكة، كانا يُظهرانها
+  /// ثم تُستبدل بالشرائح حين يصل الرد.
+  final coursesFromServer = false.obs;
 
   List<CourseModel> _pickBannerCourses() {
     final open = courses.where((course) => course.isRegistrationOpen).toList();
@@ -112,6 +122,7 @@ class HomeController extends GetxController with LatestLoadGuard {
   /// يرسم الرئيسية من آخر رد محفوظ قبل أول إطار: بلا هيكل تحميل، والبانر يظهر فوراً بنسخته الصحيحة
   /// (زائر/طالب). الشبكة تستبدله بعد لحظات.
   void _hydrateFromCache() {
+    _hydrateSectionsFromDisk();
     final cached = _homeRepository.cachedHomepage();
     if (cached == null) return;
     _showingCache = true;
@@ -128,6 +139,27 @@ class HomeController extends GetxController with LatestLoadGuard {
     if (cached.cities.isNotEmpty) cities.assignAll(cached.cities);
   }
 
+  /// أقسام لا يحملها `/homepage` (المدرّسون، ومقترحات الطالب): آخر ما حُفظ منها على القرص — كانت هياكل
+  /// تحميل بعد كل إعادة فتح للتطبيق حتى يصل ردّها.
+  void _hydrateSectionsFromDisk() {
+    final instructors = _instructorRepository.cachedInstructorsPage(
+      page: 1,
+      perPage: _instructorsLimit,
+      isPrivate: true,
+    );
+    if (instructors != null && instructors.items.isNotEmpty) {
+      privateInstructors.assignAll(instructors.items);
+      _fromDisk.add(privateInstructors);
+    }
+    if (isLoggedIn) {
+      final suggested = _courseRepository.cachedSuggestedCourses(limit: _suggestedLimit);
+      if (suggested != null && suggested.isNotEmpty) {
+        suggestedCourses.assignAll(suggested);
+        _unenriched.add(suggestedCourses);
+      }
+    }
+  }
+
   Future<void> reloadLocalizedData() => loadHome(forceRefresh: true, refreshStatic: true);
 
   static const _staleAfter = Duration(minutes: 2);
@@ -136,7 +168,7 @@ class HomeController extends GetxController with LatestLoadGuard {
   /// إعادة تحميل عند العودة للرئيسية فقط إن مرّ [_staleAfter] على آخر تحميل.
   Future<void> refreshIfStale() {
     final last = _lastLoadedAt;
-    if (last != null && DateTime.now().difference(last) < _staleAfter) return Future<void>.value();
+    if (last != null && MemoryCache.now().difference(last) < _staleAfter) return Future<void>.value();
     return loadHome(forceRefresh: true);
   }
 
@@ -145,7 +177,7 @@ class HomeController extends GetxController with LatestLoadGuard {
   /// للتحديث أو تغيير اللغة فقط؛ لا تتغير بتسجيل الدخول، وجلبها مكلف (عدّ المدرّسين عبر عدة صفحات).
   Future<void> loadHome({bool forceRefresh = false, bool refreshStatic = false}) async {
     final session = beginLoad();
-    _lastLoadedAt = DateTime.now();
+    _lastLoadedAt = MemoryCache.now();
 
     // الهيكل للتحميل الأول فقط (isLoading يبدأ true). بعده كل تحميل تحديث صامت — حتى لو تداخل مع تحديث
     // جارٍ (سحب أثناء تحديث العودة للتبويب، أو تغيير اللغة): كان يعيد isLoading إلى true والبيانات ظاهرة.
@@ -167,6 +199,7 @@ class HomeController extends GetxController with LatestLoadGuard {
           _replaceIfNotEmpty(categories, homepage.categories, session);
           if (!forceRefresh) {
             enrichment.add(_applyCourses(courses, homepage.courses, session));
+            if (homepage.courses.isNotEmpty) coursesFromServer.value = true;
             if (!isLoggedIn) {
               enrichment.add(_applyCourses(suggestedCourses, homepage.suggestedCourses, session));
             }
@@ -198,11 +231,11 @@ class HomeController extends GetxController with LatestLoadGuard {
 
       if (!shouldApply(session)) return;
 
+      // الرسالة فقط حين لا يوجد ما يُعرض. قسم فشل تحديثه والرئيسية ممتلئة (من الشبكة أو القرص) يبقى بآخر
+      // ما عُرض بصمت — كانت بطاقة «تعذر تحميل بعض الأقسام» تظهر فوق رئيسية كاملة عند أي انقطاع.
       if (categories.isEmpty && courses.isEmpty && institutes.isEmpty && errors.isNotEmpty) {
         errorMessage.value = errors.first;
-      } else if (errors.isNotEmpty) {
-        errorMessage.value = 'home_partial_load_error'.tr;
-      } else {
+      } else if (errors.isEmpty) {
         _showingCache = false;
       }
     } on ApiCancelledException {
@@ -236,13 +269,18 @@ class HomeController extends GetxController with LatestLoadGuard {
   }
 
   /// القائمة جاهزة ولا تحتاج جلباً (بلا force): غير فارغة ومن الشبكة لا من الكاش.
-  bool _isFresh(RxList<Object?> list) => list.isNotEmpty && !_showingCache;
+  bool _isFresh(RxList<Object?> list) => list.isNotEmpty && !_showingCache && !_fromDisk.contains(list);
 
   /// بصمة حقول العرض فقط — لمنع إعادة بناء القوائم والصور عندما تأتي نفس البيانات من إعادة التحميل.
+  /// للدورة كل ما تعرضه البطاقات والبانر أو تبدأ منه صفحة التفاصيل: حقل ناقص هنا = تعديله من لوحة التحكم
+  /// لا يظهر حتى إعادة فتح التطبيق.
   String _sig(Object? o) => switch (o) {
     CourseModel c =>
-      '${c.id}|${c.title}|${c.imageUrl}|${c.price}|${c.rating}|${c.studentsCount}|${c.isRegistrationClosed}'
-          '|${c.institute}|${c.instituteCity}|${c.categoryName}',
+      '${c.id}|${c.titleAr}|${c.titleEn}|${c.imageUrl}|${c.rawPrice}|${c.discountPrice}|${c.isFree}'
+          '|${c.rating}|${c.reviewsCount}|${c.studentsCount}|${c.confirmedStudentsCount}|${c.maxStudents}'
+          '|${c.levelCode}|${c.studyTypeCode}|${c.durationHours}|${c.sessionsCount}|${c.startDate}|${c.endDate}'
+          '|${c.registrationDeadline}|${c.certificateAvailable}|${c.isFeatured}|${c.institute}|${c.instituteCity}'
+          '|${c.categoryName}|${c.instructor?.id}|${c.instructor?.name}',
     InstituteModel i => '${i.id}|${i.name}|${i.logoUrl}|${i.coursesCount}|${i.rating}|${i.city}',
     CategoryModel c => '${c.id}|${c.name}|${c.icon}|${c.coursesCount}',
     CityModel c => '${c.id}|${c.name}|${c.institutesCount}|${c.coursesCount}',
@@ -291,6 +329,8 @@ class HomeController extends GetxController with LatestLoadGuard {
       final fresh = await _courseRepository.fetchCourses();
       if (!shouldApply(session)) return;
       await _applyCourses(courses, fresh, session);
+      // ولو كانت فارغة: الخادم أكّد أن لا دورات، فالبطاقة الافتراضية صحيحة.
+      if (shouldApply(session)) coursesFromServer.value = true;
     } on ApiCancelledException {
       return;
     } on ApiException catch (e) {
@@ -368,8 +408,13 @@ class HomeController extends GetxController with LatestLoadGuard {
   Future<void> _fetchPrivateInstructors(List<String> errors, LoadSession session, {bool force = false}) async {
     if (!force && _isFresh(privateInstructors)) return;
     try {
-      final result = await _instructorRepository.fetchInstructorsPage(page: 1, perPage: 12, isPrivate: true);
+      final result = await _instructorRepository.fetchInstructorsPage(
+        page: 1,
+        perPage: _instructorsLimit,
+        isPrivate: true,
+      );
       applyIfCurrent(session, () {
+        _fromDisk.remove(privateInstructors);
         if (result.items.isNotEmpty) {
           _setIfChanged(privateInstructors, result.items);
         }
