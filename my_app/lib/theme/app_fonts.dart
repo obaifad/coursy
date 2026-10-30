@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 /// خط Tajawal مضمّن داخل التطبيق (assets/fonts/tajawal) — بلا اتصال بالإنترنت وقت التشغيل،
 /// بديل عن حزمة google_fonts التي كانت تنزّل الخط من الشبكة عند أول استخدام.
 ///
-/// التوقيع مطابق تماماً لِـ `GoogleFonts.tajawal(...)` و`GoogleFonts.tajawalTextTheme(...)`
-/// اللتين تستبدلهما — استبدال حرفي بلا تغيير في السلوك.
+/// التوقيع مطابق لِـ `GoogleFonts.tajawal(...)` و`GoogleFonts.tajawalTextTheme(...)` اللتين تستبدلهما،
+/// مع فرق واحد: توزيع المسافة الإضافية نسبي افتراضياً (انظر `AppTheme._centredOnIcons`) كي يبقى النص على
+/// خط منتصف الأيقونة المجاورة حتى في الأنماط التي لا ترث من الثيم (أشرطة، أزرار، حوارات).
 abstract final class AppFonts {
   static const String familyName = 'Tajawal';
 
@@ -16,6 +17,7 @@ abstract final class AppFonts {
     double? letterSpacing,
     TextDecoration? decoration,
     Color? decorationColor,
+    TextLeadingDistribution leadingDistribution = TextLeadingDistribution.proportional,
   }) {
     return TextStyle(
       fontFamily: familyName,
@@ -26,6 +28,7 @@ abstract final class AppFonts {
       letterSpacing: letterSpacing,
       decoration: decoration,
       decorationColor: decorationColor,
+      leadingDistribution: leadingDistribution,
     );
   }
 

@@ -309,7 +309,12 @@ class _InstructorInfoTab extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.location_on_rounded, color: AppColors.primary),
+                      const AppFirstLineIcon(
+                        Icons.location_on_rounded,
+                        size: 22,
+                        color: AppColors.primary,
+                        textStyle: TextStyle(fontWeight: FontWeight.w700),
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(

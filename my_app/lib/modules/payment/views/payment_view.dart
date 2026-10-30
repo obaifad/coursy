@@ -113,22 +113,34 @@ class _SummaryCard extends StatelessWidget {
                 child: const Icon(Icons.receipt_long_rounded, size: 20, color: AppColors.primary),
               ),
               const SizedBox(width: 10),
-              Expanded(child: Text('payment_summary'.tr, style: AppTypography.sectionTitle())),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppRadius.full)),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+              // العنوان والحالة في سطر واحد حين يتسعان، وإلا تنزل الحالة تحت العنوان — بدل أن ينكسر
+              // «Payment summary» إلى سطرين بجانبها على هاتف 360.
+              Expanded(
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 6,
                   children: [
+                    Text('payment_summary'.tr, style: AppTypography.sectionTitle()),
                     Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      label,
-                      style: AppFonts.tajawal(color: fg, fontWeight: FontWeight.w700, fontSize: AppTextSize.xs),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppRadius.full)),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 7,
+                            height: 7,
+                            decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            label,
+                            style: AppFonts.tajawal(color: fg, fontWeight: FontWeight.w700, fontSize: AppTextSize.xs),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
