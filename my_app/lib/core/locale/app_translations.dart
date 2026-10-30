@@ -505,6 +505,9 @@ class AppTranslations extends Translations {
     'sessions_unit_two': 'جلستان',
     'sessions_unit_few': '@n جلسات',
     'sessions_unit_other': '@n جلسة',
+    // مختصرة لسطر البطاقة الصفّية الضيق («120 س» بدل «120 ساعة» المقصوصة إلى «120…»).
+    'hours_short': '@n س',
+    'sessions_short': '@n ج',
     'category_prefix': 'تصنيف: @name',
     'category_courses_count': '@count دورة',
     'category_courses_count_zero': 'لا توجد دورات',
@@ -1317,6 +1320,8 @@ class AppTranslations extends Translations {
     'sessions_unit': '@n sessions',
     'sessions_unit_one': '1 session',
     'sessions_unit_other': '@n sessions',
+    'hours_short': '@n h',
+    'sessions_short': '@n sess',
     'category_prefix': 'Category: @name',
     'category_courses_count': '@count courses',
     'category_courses_count_one': '1 course',

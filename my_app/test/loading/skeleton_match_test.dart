@@ -19,7 +19,7 @@ import '../layout/sample_data.dart';
 /// يجب أن تأخذ مكان أول بطاقة هيكل وارتفاعها نفسه (لا قفزة)، والهيكل نفسه بلا overflow، والصفحة تنتهي
 /// ببيانات لا بهيكل.
 class _Case {
-  const _Case(this.route, this.arguments, this.realItem, {this.matchSize = true, this.tab, this.tolerance = 1});
+  const _Case(this.route, this.arguments, this.realItem, {this.matchSize = true, this.tab});
 
   final String route;
   final Object? Function() arguments;
@@ -32,10 +32,10 @@ class _Case {
 
   /// مفتاح ترجمة تبويب يُفتح أثناء التحميل (تبويبات صفحات التفاصيل).
   final String? tab;
-
-  /// فرق مسموح بالبكسل.
-  final double tolerance;
 }
+
+/// فرق مسموح بالبكسل بين الهيكل والبطاقة الحقيقية.
+const _tolerance = 1.0;
 
 final _cases = <_Case>[
   _Case(AppRoutes.cityDetails, () => {'id': 1, 'name': 'دمشق'}, 'InstituteListCard'),
@@ -49,21 +49,14 @@ final _cases = <_Case>[
   _Case(AppRoutes.instructorCourses, () => sampleInstructors().first, 'CourseCard'),
   _Case(AppRoutes.favorites, () => null, 'CourseAuroraCard'),
   _Case(AppRoutes.notifications, () => null, 'NotificationCard', matchSize: false),
-  _Case(
-    AppRoutes.instituteDetails,
-    () => sampleInstitutes().first,
-    '_InstituteCourseTile',
-    tab: 'tab_courses',
-    matchSize: false,
-  ),
+  _Case(AppRoutes.instituteDetails, () => sampleInstitutes().first, 'CourseRowCard', tab: 'tab_courses'),
   _Case(
     AppRoutes.instituteDetails,
     () => sampleInstitutes().first,
     'PrivateInstructorListCard',
     tab: 'tab_instructors',
   ),
-  // شبكة التبويب الحقيقية بلا هامش +2 الموحّد لشبكة الدورات: فرق 2 px في ارتفاع الخلية.
-  _Case(AppRoutes.instructorDetails, () => sampleInstructors().first, 'CourseCard', tab: 'tab_courses', tolerance: 2.5),
+  _Case(AppRoutes.instructorDetails, () => sampleInstructors().first, 'CourseRowCard', tab: 'tab_courses'),
 ];
 
 const _configs = [(360.0, 1.0, 'ar'), (320.0, 1.3, 'en'), (411.0, 1.0, 'en')];
@@ -164,13 +157,13 @@ void main() {
           final realRect = tester.getRect(real.first);
           expect(
             (realRect.top - skeletonRect.top).abs(),
-            lessThanOrEqualTo(c.tolerance),
+            lessThanOrEqualTo(_tolerance),
             reason: 'first item jumps from y=${skeletonRect.top} to y=${realRect.top}',
           );
           if (c.matchSize) {
             expect(
               (realRect.height - skeletonRect.height).abs(),
-              lessThanOrEqualTo(c.tolerance),
+              lessThanOrEqualTo(_tolerance),
               reason: 'skeleton item ${skeletonRect.height} vs real ${realRect.height}',
             );
           }

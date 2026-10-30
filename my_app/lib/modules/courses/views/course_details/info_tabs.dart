@@ -272,7 +272,7 @@ class _InstituteInfoLine extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: AppColors.textSecondary),
+          AppFirstLineIcon(icon, size: 16, color: AppColors.textSecondary, textStyle: const TextStyle(height: 1.35)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(text, style: const TextStyle(color: AppColors.textSecondary, height: 1.35)),

@@ -1,5 +1,6 @@
 import '../../../core/navigation/route_settle.dart';
 import '../../../core/cache/memory_cache.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../../../core/data/repositories/city_repository.dart';
@@ -38,11 +39,20 @@ class InstitutesController extends GetxController with LatestLoadGuard, InitialL
   int _page = 1;
   static const _perPage = 12;
 
+  /// قائمة مدينة أخرى تبدأ من أولها، لا من موضع القائمة السابقة.
+  final ScrollController scrollController = ScrollController();
+
   @override
   void onInit() {
     super.onInit();
     _loadCities();
     loadInstitutes();
+  }
+
+  @override
+  void onClose() {
+    scrollController.dispose();
+    super.onClose();
   }
 
   Future<void> _loadCities() async {
@@ -62,14 +72,60 @@ class InstitutesController extends GetxController with LatestLoadGuard, InitialL
     await loadInstitutes();
   }
 
+  /// لكل مدينة (و«الكل») قائمتها وترقيمها.
+  String _cacheKey(int? cityId) => MemoryCache.key('institutes-tab', [cityId ?? 'all']);
+
+  /// يحفظ ما حُمّل لمدينة (العناصر وحالة الترقيم) كي يعود إليها المستخدم فوراً.
+  void _remember(int? cityId) {
+    if (selectedCityId.value != cityId) return;
+    MemoryCache.put<PagedSnapshot<InstituteModel>>(
+      _cacheKey(cityId),
+      PagedSnapshot<InstituteModel>(items: institutes, hasMore: hasMore.value, page: _page, total: totalCount.value),
+    );
+  }
+
+  /// تبديل المدينة:
+  ///  - المحددة نفسها: لا شيء.
+  ///  - زرناها قبل قليل: فوراً بلا هيكل؛ تُحدَّث بصمت إن قدمت (3 دقائق).
+  ///  - جديدة: تُفرَّغ القائمة فوراً فيظهر الهيكل — كانت قائمة المدينة السابقة وشارة عددها تبقيان ظاهرتين
+  ///    حتى يصل الرد، بجانب شريحة المدينة الجديدة.
   void selectCity(int? id) {
+    if (selectedCityId.value == id) return;
     selectedCityId.value = id;
+    _scrollToTop();
+    // يُبطل أي رد قادم لمدينة سابقة (الصفحة الأولى أو «المزيد»).
+    beginLoad();
+    isLoadingMore.value = false;
+    loadMoreFailed.value = false;
+    errorMessage.value = null;
+
+    final cached = MemoryCache.get<PagedSnapshot<InstituteModel>>(_cacheKey(id));
+    if (cached != null) {
+      final snapshot = cached.value;
+      institutes.assignAll(snapshot.items);
+      totalCount.value = snapshot.total;
+      hasMore.value = snapshot.hasMore;
+      _page = snapshot.page;
+      isLoading.value = false;
+      markLoaded();
+      if (!cached.isFresh()) loadInstitutes();
+      return;
+    }
+    institutes.clear();
+    totalCount.value = 0;
+    hasMore.value = true;
     resetInitialLoad();
+    isLoading.value = true;
     loadInstitutes();
+  }
+
+  void _scrollToTop() {
+    if (scrollController.hasClients && scrollController.offset > 0) scrollController.jumpTo(0);
   }
 
   Future<void> loadInstitutes() async {
     final session = beginLoad();
+    final cityId = selectedCityId.value;
     isLoading.value = isInitialLoad;
     errorMessage.value = null;
     loadMoreFailed.value = false;
@@ -77,7 +133,7 @@ class InstitutesController extends GetxController with LatestLoadGuard, InitialL
       final result = await _repository.fetchInstitutesPage(
         page: 1,
         perPage: _perPage,
-        query: {if (selectedCityId.value != null) 'city_id': selectedCityId.value},
+        query: {if (cityId != null) 'city_id': cityId},
       );
       applyIfCurrent(session, () {
         institutes.assignAll(result.items);
@@ -87,6 +143,7 @@ class InstitutesController extends GetxController with LatestLoadGuard, InitialL
         _page = 1;
         hasMore.value = result.hasMore;
         markLoaded();
+        _remember(cityId);
       });
     } on ApiCancelledException {
       return;
@@ -103,17 +160,19 @@ class InstitutesController extends GetxController with LatestLoadGuard, InitialL
     loadMoreFailed.value = false;
     // إن تغيّرت المدينة أثناء التحميل تُهمل الصفحة القديمة بدل خلطها بالقائمة الجديدة.
     final session = currentLoad();
+    final cityId = selectedCityId.value;
     try {
       final nextPage = _page + 1;
       final result = await _repository.fetchInstitutesPage(
         page: nextPage,
         perPage: _perPage,
-        query: {if (selectedCityId.value != null) 'city_id': selectedCityId.value},
+        query: {if (cityId != null) 'city_id': cityId},
       );
       applyIfCurrent(session, () {
         institutes.addAll(result.items);
         _page = nextPage;
         hasMore.value = result.hasMore;
+        _remember(cityId);
       });
     } catch (_) {
       // الذيل يعرض الفشل مع «إعادة المحاولة» (كانت القائمة تنتهي بصمت عند انقطاع الشبكة).
@@ -136,6 +195,9 @@ class InstituteDetailsController extends GetxController with SettledLoad {
 
   final isLoading = true.obs;
   final institute = Rxn<InstituteModel>();
+
+  /// هل وصلت بيانات المعهد؟ لا يتغيّر مع كل تحديث لها، فيتابعه هيكل الصفحة بدل [institute].
+  final hasInstitute = false.obs;
   final courses = <CourseModel>[].obs;
   final instructors = <InstructorModel>[].obs;
 
@@ -160,6 +222,7 @@ class InstituteDetailsController extends GetxController with SettledLoad {
   void onInit() {
     super.onInit();
     _open.add(this);
+    ever<InstituteModel?>(institute, (value) => hasInstitute.value = value != null);
     final arg = Get.arguments;
     if (arg is InstituteModel) {
       instituteId = arg.id;
@@ -169,6 +232,7 @@ class InstituteDetailsController extends GetxController with SettledLoad {
     } else {
       instituteId = 0;
     }
+    hasInstitute.value = institute.value != null;
     final cached = _restoreFromCache();
     if (cached != null && cached.isFresh()) return;
     // الطلبات بعد حركة الفتح: ردّ أثناء الحركة كان يعيد بناء الصفحة وهي تتحرك.
