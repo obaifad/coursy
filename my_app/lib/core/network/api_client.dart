@@ -36,6 +36,7 @@ class ApiClient extends GetxService {
     ApiEndpoints.courses,
     ApiEndpoints.institutes,
     ApiEndpoints.cities,
+    ApiEndpoints.categories,
     ApiEndpoints.instructors,
     ApiEndpoints.studentEnrollments,
     ApiEndpoints.studentSuggestedCourses,
@@ -87,6 +88,11 @@ class ApiClient extends GetxService {
           final response = e.response;
           if (response?.statusCode == 401) _maybeSessionExpired(e.requestOptions);
           if (response != null && response.statusCode == 403) _maybeAccountInactive(response);
+          final saved = _savedResponseOnFailure(e);
+          if (saved != null) {
+            handler.resolve(saved);
+            return;
+          }
           handler.next(e);
         },
         onRequest: (options, handler) {
@@ -134,6 +140,34 @@ class ApiClient extends GetxService {
     if (page != null && '$page' != '1') return;
     if (response.data is! Map && response.data is! List) return;
     unawaited(disk.write(_diskKey(options.path, options.queryParameters), response.data));
+  }
+
+  /// علامة في [Response.extra] لرد جاء من القرص بدل الشبكة (انقطاع أو خطأ خادم).
+  static const fromDiskExtra = 'from_disk_cache';
+
+  /// انقطاع الشبكة أو مهلتها أو خطأ خادم (5xx) على قائمة محفوظة: يُعاد آخر رد ناجح لها بصمت بدل الخطأ —
+  /// كانت الشاشات تُستبدل برسالة «تعذر الاتصال بالخادم» وبياناتها على القرص. أخطاء الطلب نفسه (4xx،
+  /// الإلغاء، الشهادة) تبقى أخطاء.
+  Response<dynamic>? _savedResponseOnFailure(DioException e) {
+    final options = e.requestOptions;
+    if (options.method.toUpperCase() != 'GET' || !diskCachedPaths.contains(options.path)) return null;
+    final page = options.queryParameters['page'];
+    if (page != null && '$page' != '1') return null;
+    final transient = switch (e.type) {
+      DioExceptionType.connectionError ||
+      DioExceptionType.connectionTimeout ||
+      DioExceptionType.sendTimeout ||
+      DioExceptionType.receiveTimeout ||
+      DioExceptionType.transformTimeout ||
+      DioExceptionType.unknown => true,
+      DioExceptionType.badResponse => (e.response?.statusCode ?? 0) >= 500,
+      DioExceptionType.cancel || DioExceptionType.badCertificate => false,
+    };
+    if (!transient) return null;
+    final body = _disk?.read(_diskKey(options.path, options.queryParameters));
+    if (body == null) return null;
+    if (kDebugMode) AppDebugLog.api('FROM DISK', options.path);
+    return Response<dynamic>(requestOptions: options, data: body, statusCode: 200, extra: {fromDiskExtra: true});
   }
 
   /// آخر رد محفوظ على القرص لهذا الطلب (نفس [path] و[query] المرسلين للشبكة) محوّلاً بـ [mapper]، أو null

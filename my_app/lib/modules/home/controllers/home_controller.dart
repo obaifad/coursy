@@ -231,11 +231,11 @@ class HomeController extends GetxController with LatestLoadGuard {
 
       if (!shouldApply(session)) return;
 
+      // الرسالة فقط حين لا يوجد ما يُعرض. قسم فشل تحديثه والرئيسية ممتلئة (من الشبكة أو القرص) يبقى بآخر
+      // ما عُرض بصمت — كانت بطاقة «تعذر تحميل بعض الأقسام» تظهر فوق رئيسية كاملة عند أي انقطاع.
       if (categories.isEmpty && courses.isEmpty && institutes.isEmpty && errors.isNotEmpty) {
         errorMessage.value = errors.first;
-      } else if (errors.isNotEmpty) {
-        errorMessage.value = 'home_partial_load_error'.tr;
-      } else {
+      } else if (errors.isEmpty) {
         _showingCache = false;
       }
     } on ApiCancelledException {

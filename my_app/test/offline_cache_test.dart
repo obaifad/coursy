@@ -11,6 +11,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:my_app/core/cache/app_image_cache.dart';
 import 'package:my_app/core/network/api_client.dart';
+import 'package:my_app/core/network/api_exception.dart';
 import 'package:my_app/core/storage/api_disk_cache.dart';
 import 'package:my_app/modules/courses/controllers/courses_controller.dart';
 import 'package:my_app/modules/home/controllers/home_controller.dart';
@@ -26,7 +27,10 @@ import 'layout/fakes.dart';
 class _JsonAdapter implements HttpClientAdapter {
   _JsonAdapter(this.body, {this.status = 200});
   final Object body;
-  final int status;
+  int status;
+
+  /// true: الشبكة منقطعة (كل طلب يفشل باتصال).
+  bool offline = false;
   final requested = <String>[];
 
   @override
@@ -36,6 +40,7 @@ class _JsonAdapter implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     requested.add(options.uri.toString());
+    if (offline) throw DioException.connectionError(requestOptions: options, reason: 'offline');
     return ResponseBody.fromString(
       jsonEncode(body),
       status,
@@ -159,6 +164,78 @@ void main() {
       expect(cachedBody(c, '/student/enrollments', {'page': 1, 'per_page': 50}), isNotNull);
       final (guest, _) = await client();
       expect(cachedBody(guest, '/student/enrollments', {'page': 1, 'per_page': 50}), isNull);
+    });
+  });
+
+  group('network failures fall back to the saved response silently', () {
+    Future<(ApiClient, _JsonAdapter)> client() async {
+      await registerFakes(loggedIn: false, locale: 'ar');
+      Get.put(ApiDiskCache());
+      final c = Get.find<ApiClient>();
+      final adapter = _JsonAdapter(
+        _page([
+          {'id': 9},
+        ]),
+      );
+      c.dio.httpClientAdapter = adapter;
+      return (c, adapter);
+    }
+
+    Future<Object?> load(ApiClient c, String path, Map<String, dynamic> query) =>
+        c.handle(() => c.get(path, query: query), (body) => body);
+
+    test('offline: the saved first page comes back instead of "could not connect"', () async {
+      final (c, adapter) = await client();
+      await load(c, '/courses', {'page': 1, 'per_page': 10});
+      await Future<void>.delayed(Duration.zero);
+      adapter.offline = true;
+      final response = await c.get('/courses', query: {'page': 1, 'per_page': 10});
+      expect(response.statusCode, 200);
+      expect(response.extra[ApiClient.fromDiskExtra], isTrue);
+      expect(
+        await load(c, '/courses', {'page': 1, 'per_page': 10}),
+        _page([
+          {'id': 9},
+        ]),
+      );
+    });
+
+    test('a server error (5xx) falls back too', () async {
+      final (c, adapter) = await client();
+      await load(c, '/institutes', {'page': 1, 'per_page': 12});
+      await Future<void>.delayed(Duration.zero);
+      adapter.status = 503;
+      expect(await load(c, '/institutes', {'page': 1, 'per_page': 12}), isNotNull);
+    });
+
+    test('nothing saved, a later page, or a real request error: still an error', () async {
+      final (c, adapter) = await client();
+      await load(c, '/courses', {'page': 1, 'per_page': 10});
+      await Future<void>.delayed(Duration.zero);
+      adapter.offline = true;
+      await expectLater(load(c, '/courses', {'page': 2, 'per_page': 10}), throwsA(isA<ApiException>()));
+      await expectLater(load(c, '/institutes', {'page': 1, 'per_page': 12}), throwsA(isA<ApiException>()));
+      adapter
+        ..offline = false
+        ..status = 404;
+      await expectLater(load(c, '/courses', {'page': 1, 'per_page': 10}), throwsA(isA<ApiException>()));
+    });
+
+    test('home: a section that fails beside a full page shows no error card', () async {
+      final tokens = await registerFakes(loggedIn: false, locale: 'ar');
+      FakeApi.failing.addAll({'fetchInstructorsPage', 'fetchSuggestedCourses'});
+      final home = Get.put(HomeController(tokens));
+      await home.loadHome(forceRefresh: true);
+      expect(home.courses, isNotEmpty);
+      expect(home.errorMessage.value, isNull, reason: 'was "some sections could not load"');
+    });
+
+    test('home: nothing at all to show still explains why', () async {
+      final tokens = await registerFakes(loggedIn: false, locale: 'ar');
+      FakeApi.failing.add('*');
+      final home = Get.put(HomeController(tokens));
+      await home.loadHome(forceRefresh: true);
+      expect(home.errorMessage.value, isNotNull);
     });
   });
 
