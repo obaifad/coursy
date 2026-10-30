@@ -51,15 +51,20 @@ class _MyCoursesShellState extends State<_MyCoursesShell> with SingleTickerProvi
   late final TabController _tabController;
   late final Worker _resetWorker;
 
+  /// يزداد مع كل تصفير: TabBarView جديد يبدأ عند التبويب الأول مباشرة. ضبط الفهرس وحده كان يجعل TabBarView
+  /// يُزلق صفحاته من التبويب السابق إلى الأول (~300ms) بعد ظهور «دوراتي»، فيُرى التبويب القديم ثم القفزة.
+  int _pagesGeneration = 0;
+
   MyCoursesController get controller => widget.controller;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    // بلا حركة: الصفحة مخفية أصلاً حين يُطلب التصفير (تبديل التبويب السفلي).
     _resetWorker = ever(controller.subTabResetToken, (_) {
-      if (_tabController.index != 0) _tabController.index = 0;
+      if (_tabController.index == 0) return;
+      _tabController.index = 0;
+      if (mounted) setState(() => _pagesGeneration++);
     });
   }
 
@@ -107,6 +112,7 @@ class _MyCoursesShellState extends State<_MyCoursesShell> with SingleTickerProvi
               padding: AppLayout.scrollPadding(context, rootTab: true, top: 8),
             ),
             contentBuilder: (_) => TabBarView(
+              key: ValueKey(_pagesGeneration),
               controller: _tabController,
               physics: const ClampingScrollPhysics(),
               children: const [

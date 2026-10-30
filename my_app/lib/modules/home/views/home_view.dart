@@ -81,7 +81,7 @@ class HomeView extends GetView<HomeController> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const AppHomeBrandLogo(height: 56),
+                          const AppHomeBrandLogo(),
                           _HomeSettingsButton(onTap: () => Get.toNamed(AppRoutes.settings)),
                         ],
                       ),
@@ -648,7 +648,9 @@ class _HomeSettingsButton extends StatelessWidget {
   const _HomeSettingsButton({required this.onTap});
 
   final VoidCallback onTap;
-  static const double _size = 46;
+
+  /// بحجم الشعار المجاور (كلمته 30): بقطر 46 وظل ثقيل كان الزر أثقل من الشعار بوضوح.
+  static const double _size = 40;
 
   @override
   Widget build(BuildContext context) {
@@ -656,17 +658,19 @@ class _HomeSettingsButton extends StatelessWidget {
     return Tooltip(
       message: 'settings'.tr,
       // AppTapTarget: عنصر مستقل لقارئ الشاشة يُفعَّل بالنقر المزدوج (كان يُدمج مع شريط البحث المجاور)،
-      // والدائرة 46 بمساحة لمس 48.
+      // والدائرة 40 بمساحة لمس 48.
       child: AppTapTarget(
         label: 'settings'.tr,
         onTap: onTap,
+        // حافّة الدائرة على حافّة شريط البحث تحتها (في المنتصف كانت تبتعد عنها 4).
+        alignment: AlignmentDirectional.centerEnd,
         child: Container(
           width: _size,
           height: _size,
           decoration: const BoxDecoration(
             gradient: AppGradients.primary,
             shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 16, offset: Offset(0, 8))],
+            boxShadow: [BoxShadow(color: AppColors.shadowPrimaryStrong, blurRadius: 10, offset: Offset(0, 4))],
           ),
           child: Material(
             type: MaterialType.transparency,
@@ -675,7 +679,7 @@ class _HomeSettingsButton extends StatelessWidget {
             child: InkWell(
               onTap: onTap,
               customBorder: const CircleBorder(),
-              child: const Center(child: Icon(Icons.settings_rounded, color: Colors.white, size: 22)),
+              child: const Center(child: Icon(Icons.settings_rounded, color: Colors.white, size: 20)),
             ),
           ),
         ),
