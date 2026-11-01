@@ -9,7 +9,7 @@ import 'layout/fakes.dart';
 import 'layout/layout_harness.dart';
 
 /// بطاقة التذكرة بلا قصّ بمسار معقّد (Path.combine + ClipPath): كان يُرسم خطأً بمحرّك Impeller على Adreno 618
-/// (Redmi Note 9 Pro) فتظهر كبسولة الحسم فارغة. القصّتان دائرتان بلون خلفية الصفحة.
+/// (Redmi Note 9 Pro) فتظهر كبسولة الحسم فارغة. القصّتان فتحتان في جسم البطاقة المرسوم (لا قصّ).
 void main() {
   setUpAll(loadAuditFonts);
   tearDown(Get.reset);
@@ -50,7 +50,7 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('no path clip in the card; two notch circles on the card edges', (tester) async {
+  testWidgets('no path clip in the card; the body is painted with the two notches on its edges', (tester) async {
     await pump(tester);
     // Material(transparency) يضيف ClipPath بلا قصّ (Clip.none) — لا يُرسم. المطلوب: لا قصّ فعلي بمسار.
     final realPathClips = find.descendant(
@@ -58,15 +58,10 @@ void main() {
       matching: find.byWidgetPredicate((w) => w is ClipPath && w.clipBehavior != Clip.none),
     );
     expect(realPathClips, findsNothing);
-    final notches = find.byKey(const ValueKey('ticket-notch'));
-    expect(notches, findsNWidgets(2));
+    final body = find.descendant(of: find.byType(CourseCard), matching: find.byKey(const ValueKey('ticket-body')));
+    expect(body, findsOneWidget);
     final card = tester.getRect(find.byType(CourseCard));
-    final a = tester.getRect(notches.at(0));
-    final b = tester.getRect(notches.at(1));
-    final centers = [a.center.dx, b.center.dx]..sort();
-    expect(centers.first, closeTo(card.left, 0.5));
-    expect(centers.last, closeTo(card.right, 0.5));
-    expect(a.center.dy, closeTo(b.center.dy, 0.01));
+    expect(tester.getRect(body), card);
   });
 
   testWidgets('the discount pill and both prices are there', (tester) async {

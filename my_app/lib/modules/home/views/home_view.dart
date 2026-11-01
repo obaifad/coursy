@@ -173,6 +173,7 @@ class HomeView extends GetView<HomeController> {
               else
                 AppHorizontalListView(
                   resetToken: scrollReset,
+                  separatorWidth: CourseCardMetrics.featuredListSpacing,
                   height: CourseCardMetrics.featuredCardHeight(context),
                   itemCount: courses.length,
                   itemBuilder: (_, i) {
@@ -201,6 +202,7 @@ class HomeView extends GetView<HomeController> {
                 const SizedBox(height: 10),
                 AppHorizontalListView(
                   resetToken: scrollReset,
+                  separatorWidth: CourseCardMetrics.featuredListSpacing,
                   height: CourseCardMetrics.featuredCardHeight(context),
                   itemCount: suggestedCourses.length,
                   itemBuilder: (_, i) {

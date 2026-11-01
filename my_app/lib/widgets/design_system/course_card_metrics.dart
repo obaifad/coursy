@@ -5,6 +5,10 @@ abstract final class CourseCardMetrics {
   CourseCardMetrics._();
 
   static const double gridSpacing = 12;
+
+  /// المسافة بين بطاقات الدورات في قوائم الرئيسية الأفقية: أوسع من الافتراضي (12) حتى لا تبدو البطاقات
+  /// ملتصقة وظلالها متداخلة.
+  static const double featuredListSpacing = 16;
   static const double cardRadius = AppRadius.md;
 
   /// معامل تكبير الخط الفعلي (إعداد الجهاز محصور بين 1.0 و1.3 في app.dart).
