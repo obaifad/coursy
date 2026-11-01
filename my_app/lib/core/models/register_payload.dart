@@ -1,4 +1,6 @@
 /// بيانات إنشاء حساب طالب — مطابقة لـ `/api/student/register` و`student_profile`.
+///
+/// لا `role` ولا `is_active`: نوع الحساب وتفعيله قرار الخادم، وإرسالهما من التطبيق يدعو لتجاوزهما.
 class RegisterPayload {
   RegisterPayload({
     required this.firstName,
@@ -15,8 +17,6 @@ class RegisterPayload {
     this.universityId,
     this.specializationId,
     this.preferredCategories,
-    this.role = 'student',
-    this.isActive = true,
   });
 
   final String firstName;
@@ -35,8 +35,6 @@ class RegisterPayload {
   final int? universityId;
   final int? specializationId;
   final List<int>? preferredCategories;
-  final String role;
-  final bool isActive;
 
   String get fullName => '$firstName $lastName'.trim();
 
@@ -69,10 +67,8 @@ class RegisterPayload {
       'email': email,
       'password': password,
       'password_confirmation': passwordConfirmation,
-      'role': role,
       if (cityId != null) 'city_id': cityId,
       'device_name': deviceName,
-      'is_active': isActive ? 1 : 0,
       if (phone != null && phone!.isNotEmpty) 'phone': phone,
       if (gender != null && gender!.isNotEmpty) 'gender': gender,
       if (birthDate != null && birthDate!.isNotEmpty) 'birth_date': birthDate,

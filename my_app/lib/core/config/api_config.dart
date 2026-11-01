@@ -23,9 +23,14 @@ abstract final class ApiConfig {
   /// على الويب في وضع التطوير نستخدم بروكسي محلياً لتجاوز CORS (localhost → coursy.sy).
   static bool get usesWebDevProxy => kIsWeb && kDebugMode && _apiBaseUrlOverride.isEmpty;
 
-  static String get baseUrl {
-    if (_apiBaseUrlOverride.isNotEmpty) return _apiBaseUrlOverride;
-    if (usesWebDevProxy) {
+  static String get baseUrl => resolveBaseUrl(_apiBaseUrlOverride, release: kReleaseMode);
+
+  /// نسخة الإصدار لا تقبل عنواناً بلا https: بناء بـ `--dart-define=API_BASE_URL=http://...` (خادم تجريبي)
+  /// كان يرسل كلمة المرور والتوكن نصاً واضحاً. يُتجاهل العنوان ويُستخدم الخادم الحقيقي.
+  @visibleForTesting
+  static String resolveBaseUrl(String override, {required bool release}) {
+    if (override.isNotEmpty && (!release || override.startsWith('https://'))) return override;
+    if (usesWebDevProxy && !release) {
       return 'http://127.0.0.1:$webDevProxyPort/api';
     }
     return '$siteUrl/api';

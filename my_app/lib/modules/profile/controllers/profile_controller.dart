@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -368,9 +367,7 @@ class ProfileController extends GetxController with LatestLoadGuard {
       if (avatarDirty.value && pickedAvatarPath.value != null && pickedAvatarPath.value!.isNotEmpty) {
         try {
           final path = pickedAvatarPath.value!;
-          final avatarResult = kIsWeb
-              ? await _repository.uploadAvatarBytes(await XFile(path).readAsBytes(), filename: 'avatar.jpg')
-              : await _repository.uploadAvatar(path);
+          final avatarResult = await _repository.uploadAvatarBytes(await XFile(path).readAsBytes());
           final avatarUser = extractProfileUserMap(avatarResult);
           if (avatarUser.isNotEmpty) {
             final remoteAvatar = _repository.extractAvatarUrl(avatarUser);

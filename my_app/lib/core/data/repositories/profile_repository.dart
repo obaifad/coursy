@@ -12,6 +12,7 @@ import '../../network/api_endpoints.dart';
 import '../../network/api_exception.dart';
 import '../../network/json_parser.dart';
 import '../../storage/token_storage.dart';
+import '../../utils/image_metadata.dart';
 
 class ProfileRepository extends GetxService {
   ProfileRepository(this._client, this._tokenStorage);
@@ -205,17 +206,12 @@ class ProfileRepository extends GetxService {
     return null;
   }
 
-  Future<Map<String, dynamic>> uploadAvatarBytes(List<int> bytes, {String filename = 'avatar.jpg'}) async {
-    final formData = dio.FormData.fromMap({'avatar': dio.MultipartFile.fromBytes(bytes, filename: filename)});
-    return _client.handle(
-      () => _client.postMultipart(ApiEndpoints.studentProfile, formData),
-      (data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{},
-    );
-  }
-
-  Future<Map<String, dynamic>> uploadAvatar(String filePath) async {
-    final fileName = filePath.split(RegExp(r'[\\/]')).last;
-    final formData = dio.FormData.fromMap({'avatar': await dio.MultipartFile.fromFile(filePath, filename: fileName)});
+  /// الصورة تُرفع بلا بيانات وصفية (الموقع، تاريخ التصوير، رقم الجهاز) وباسم ثابت: يراها الآخرون في المراجعات.
+  Future<Map<String, dynamic>> uploadAvatarBytes(Uint8List bytes) async {
+    final clean = stripImageMetadata(bytes);
+    final formData = dio.FormData.fromMap({
+      'avatar': dio.MultipartFile.fromBytes(clean, filename: avatarFileName(clean)),
+    });
     return _client.handle(
       () => _client.postMultipart(ApiEndpoints.studentProfile, formData),
       (data) => extractObjectMap(normalizeApiBody(data)) ?? <String, dynamic>{},

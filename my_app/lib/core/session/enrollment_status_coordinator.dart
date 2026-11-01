@@ -156,10 +156,9 @@ class EnrollmentStatusCoordinator extends GetxService {
     await _persist();
   }
 
-  String _payloadFor(EnrollmentModel enrollment, {required String type}) {
-    final parts = <String>['type=$type'];
-    if (enrollment.courseId != null) parts.add('course_id=${enrollment.courseId}');
-    parts.add('enrollment_id=${enrollment.id}');
-    return parts.join('&');
-  }
+  String _payloadFor(EnrollmentModel enrollment, {required String type}) => PushLocalNotifications.encodePayload({
+    'type': type,
+    if (enrollment.courseId != null) 'course_id': enrollment.courseId,
+    'enrollment_id': enrollment.id,
+  });
 }
