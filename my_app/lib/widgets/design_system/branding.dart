@@ -59,16 +59,41 @@ class AppLogo extends StatelessWidget {
 }
 
 /// شعار العلامة في رأس الصفحة الرئيسية.
+///
+/// [height] ارتفاع الكلمة المرئية نفسها: صورة الشعار فيها هوامش شفافة (الكلمة 39% من ارتفاعها)، فكان
+/// ارتفاع 56 يرسم كلمة بارتفاع ~22 فقط بجانب زر إعدادات قطره 46. الهوامش تُقصّ هنا فيأخذ الشعار مساحة
+/// كلمته فقط.
 class AppHomeBrandLogo extends StatelessWidget {
-  const AppHomeBrandLogo({super.key, this.height = 56});
+  const AppHomeBrandLogo({super.key, this.height = 30});
 
   final double height;
 
+  // حدود الكلمة داخل images/s.png (677×368): الأعمدة 133–569 والصفوف 113–257.
+  static const double _inkLeft = 133 / 677;
+  static const double _inkWidth = 436 / 677;
+  static const double _inkTop = 113 / 368;
+  static const double _inkHeight = 144 / 368;
+  static const double _imageAspect = 677 / 368;
+
   @override
   Widget build(BuildContext context) {
+    final imageHeight = height / _inkHeight;
+    final imageWidth = imageHeight * _imageAspect;
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: 6),
-      child: AppLogo(height: height, alignment: AlignmentDirectional.centerStart),
+      child: SizedBox(
+        width: imageWidth * _inkWidth,
+        height: height,
+        child: ClipRect(
+          child: OverflowBox(
+            maxWidth: imageWidth,
+            maxHeight: imageHeight,
+            // يضع حافّتي الكلمة على حافّتي الصندوق (الكلمة ليست في منتصف الصورة تماماً).
+            alignment: Alignment(2 * _inkLeft / (1 - _inkWidth) - 1, 2 * _inkTop / (1 - _inkHeight) - 1),
+            child: AppLogo(height: imageHeight, alignment: Alignment.center),
+          ),
+        ),
+      ),
     );
   }
 }
