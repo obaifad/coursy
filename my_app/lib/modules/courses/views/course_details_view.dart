@@ -7,6 +7,7 @@ import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
 import '../../../core/models/json_helpers.dart';
 import '../../../core/utils/course_registration_guard.dart';
+import '../../../core/utils/language_label.dart';
 import '../../../routes/app_routes.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/app_skeletons.dart';
