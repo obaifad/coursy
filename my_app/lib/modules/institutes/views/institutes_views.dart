@@ -41,6 +41,7 @@ class InstitutesView extends GetView<InstitutesController> {
         edgeOffset: MediaQuery.paddingOf(context).top + AppBrandSliverAppBar.toolbarHeight,
         child: CustomScrollView(
           key: const PageStorageKey('institutes_tab'),
+          controller: controller.scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             AppBrandSliverAppBar(
@@ -135,22 +136,27 @@ class InstituteDetailsView extends GetView<InstituteDetailsController> {
 
   @override
   Widget build(BuildContext context) {
+    // لا يقرأ هذا الـ Obx بيانات المعهد نفسها (فقط: هل وصلت؟): كان كل تحديث لها (وصول التفاصيل، عدد
+    // الدورات، إرسال تقييم) يعيد بناء الصفحة كلها — الرأس وشريط التبويبات وجسمها — ولو أثناء تبديل التبويب.
+    // الرأس والعنوان يتابعانها بـ Obx خاص بهما، وكل تبويب يتابع ما يعرضه.
     return Obx(() {
       final _ = localeRebuildToken;
-      final item = controller.institute.value;
-      if (controller.isLoading.value && item == null) {
+      final hasItem = controller.hasInstitute.value;
+      if (controller.isLoading.value && !hasItem) {
         return const Scaffold(body: AppDetailSkeleton());
       }
       final detailsError = controller.detailsError.value;
-      if (item == null && detailsError != null) {
+      if (!hasItem && detailsError != null) {
         return Scaffold(
           appBar: AppBar(title: Text('institute_details'.tr)),
           body: AppLoadErrorState(message: detailsError, onRetry: controller.loadDetails),
         );
       }
-      final name = item?.name ?? 'institute_details'.tr;
       return DefaultTabController(
         length: 4,
+        // الضغط على تبويب ينقل فوراً: انزلاق 300ms كان يُبقي التبويب السابق ظاهراً وهو يخرج. السحب بالإصبع
+        // يبقى كما هو.
+        animationDuration: Duration.zero,
         child: Scaffold(
           // الشريط أبيض فوق صورة الغلاف وداكن بعد طيّها (كان داكناً فوق الصورة فلا يُقرأ).
           body: CollapsingHeroScope(
@@ -169,12 +175,21 @@ class InstituteDetailsView extends GetView<InstituteDetailsController> {
                   title: AnimatedOpacity(
                     opacity: collapsed ? 1 : 0,
                     duration: AppMotion.fast,
-                    child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    child: Obx(
+                      () => Text(
+                        controller.institute.value?.name ?? 'institute_details'.tr,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ),
                   flexibleSpace: FlexibleSpaceBar(
-                    background: item != null
-                        ? InstituteDetailHero(institute: item)
-                        : const DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.category)),
+                    background: Obx(() {
+                      final item = controller.institute.value;
+                      return item != null
+                          ? InstituteDetailHero(institute: item)
+                          : const DecoratedBox(decoration: BoxDecoration(gradient: AppGradients.category));
+                    }),
                   ),
                   bottom: PreferredSize(
                     preferredSize: const Size.fromHeight(60),
@@ -198,12 +213,26 @@ class InstituteDetailsView extends GetView<InstituteDetailsController> {
                   ),
                 ),
               ],
+              // لكل تبويب موضع تمريره المحفوظ (يعود إليه حين يُبنى من جديد). لا keep-alive: NestedScrollView
+              // يحرّك كل القوائم الموصولة به معاً، فتبويب حيّ مخفي كان يُمرَّر مع الظاهر.
               body: TabBarView(
                 children: [
-                  _InfoTab(controller: controller),
-                  _CoursesTab(controller: controller),
-                  _InstructorsTab(controller: controller),
-                  InstituteReviewsTab(controller: controller),
+                  KeyedSubtree(
+                    key: const PageStorageKey('institute-info'),
+                    child: _InfoTab(controller: controller),
+                  ),
+                  KeyedSubtree(
+                    key: const PageStorageKey('institute-courses'),
+                    child: _CoursesTab(controller: controller),
+                  ),
+                  KeyedSubtree(
+                    key: const PageStorageKey('institute-instructors'),
+                    child: _InstructorsTab(controller: controller),
+                  ),
+                  KeyedSubtree(
+                    key: const PageStorageKey('institute-reviews'),
+                    child: InstituteReviewsTab(controller: controller),
+                  ),
                 ],
               ),
             ),
