@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
+import '../session/session_diagnostics.dart';
 import 'legacy_session_cleanup.dart';
 import 'academic_profile_cache.dart';
 import 'secure_session_store.dart';
@@ -14,8 +15,13 @@ class TokenStorage extends GetxService {
   /// علامة في GetStorage (تُحذف مع التطبيق) — غيابها مع صندوق فارغ يعني تثبيتاً جديداً.
   static const _installMarkerKey = 'install_marker';
 
+  /// علامة «كان مسجّلاً» خارج التخزين الآمن (ليست سراً): إن وُجدت ولم يوجد التوكن عند الإقلاع فقد ضاعت
+  /// الجلسة من التخزين الآمن، لا خروجاً من المستخدم ([SessionDiagnostics]).
+  static const _signedInMarkerKey = 'session_signed_in';
+
   final SecureSessionStore _secure;
   late final GetStorage _legacyBox;
+  bool _boxReady = false;
 
   final RxnString _token = RxnString();
   final RxnInt _studentId = RxnInt();
@@ -35,12 +41,36 @@ class TokenStorage extends GetxService {
 
   Future<void> init() async {
     _legacyBox = GetStorage();
+    _boxReady = true;
     await _clearKeychainAfterReinstall();
     // قراءة واحدة لكل المفاتيح بدل 7 قراءات متتالية من Keystore/Keychain قبل runApp.
-    final stored = Map<String, String>.of(await _secure.readAll());
+    final watch = Stopwatch()..start();
+    final Map<String, String> stored;
+    try {
+      stored = Map<String, String>.of(await _secure.readAll());
+    } catch (e, st) {
+      SessionDiagnostics.record(SessionBootOutcome.readFailed, took: watch.elapsed, error: e, stack: st);
+      rethrow;
+    }
     await _migrateLegacyIfNeeded(stored);
     await LegacySessionCleanup.purge(_legacyBox);
     await _load(stored);
+    await _recordBoot(watch.elapsed, stored.length);
+  }
+
+  Future<void> _recordBoot(Duration took, int keys) async {
+    final wasSignedIn = _legacyBox.read<bool>(_signedInMarkerKey) == true;
+    if (isLoggedIn) {
+      // مستخدمون من إصدار سابق بلا العلامة: تُضاف الآن.
+      if (!wasSignedIn) await _legacyBox.write(_signedInMarkerKey, true);
+      SessionDiagnostics.record(SessionBootOutcome.signedIn, took: took, keys: keys);
+    } else if (wasSignedIn) {
+      // مرة واحدة: بعدها ضيف عادي حتى يدخل من جديد.
+      await _legacyBox.remove(_signedInMarkerKey);
+      SessionDiagnostics.record(SessionBootOutcome.lost, took: took, keys: keys);
+    } else {
+      SessionDiagnostics.record(SessionBootOutcome.guest, took: took, keys: keys);
+    }
   }
 
   /// على iOS يبقى Keychain بعد حذف التطبيق، فيعود المستخدم مسجّلاً بعد إعادة التثبيت.
@@ -142,6 +172,7 @@ class TokenStorage extends GetxService {
       _token.value = token;
       await _secure.write(SessionKeys.accessToken, token);
       await _secure.write(SessionKeys.storageVersion, SessionKeys.currentStorageVersion);
+      if (_boxReady) await _legacyBox.write(_signedInMarkerKey, true);
     }
 
     if (name != null && name.isNotEmpty && userName.value != name) {
@@ -186,6 +217,8 @@ class TokenStorage extends GetxService {
     emailVerified.value = null;
     _studentId.value = null;
 
+    // خروج مقصود (أو انتهاء الجلسة): ليس «فقداناً» عند الإقلاع التالي.
+    if (_boxReady) await _legacyBox.remove(_signedInMarkerKey);
     await _secure.deleteAll();
     // نُبقي إصدار التخزين حتى لا يُعاد الترحيل/التنظيف عند التشغيل التالي.
     await _secure.write(SessionKeys.storageVersion, SessionKeys.currentStorageVersion);

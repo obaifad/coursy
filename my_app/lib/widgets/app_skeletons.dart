@@ -75,13 +75,12 @@ class AppHomeSkeleton extends StatelessWidget {
                   ),
                 ),
               ),
-          const SizedBox(height: 22),
+          const SizedBox(height: AppLayout.homeSectionGap),
           const _SkeletonSectionHeader(),
           const SizedBox(height: 10),
           AppHorizontalListView(
             height: CourseCardMetrics.featuredListHeight(context),
-            bottomInset: AppHorizontalListView.cardShadowBottomInset,
-            separatorWidth: 12,
+            separatorWidth: CourseCardMetrics.featuredListSpacing,
             itemCount: 2,
             itemBuilder: (_, __) => SizedBox(
               width: CourseCardMetrics.featuredCardWidth(context),
@@ -89,7 +88,7 @@ class AppHomeSkeleton extends StatelessWidget {
               child: const _SkeletonCourseCard(),
             ),
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: AppLayout.homeSectionGap),
           const _SkeletonSectionHeader(),
           const SizedBox(height: 10),
           AppHorizontalListView(

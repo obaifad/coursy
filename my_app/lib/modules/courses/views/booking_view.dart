@@ -32,7 +32,6 @@ class CourseBookingView extends GetView<BookingController> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _InfoChip(icon: Icons.schedule_rounded, label: c.duration),
                     _InfoChip(icon: Icons.bar_chart_rounded, label: c.level),
                     if (c.studyType != null) _InfoChip(icon: Icons.laptop_mac_rounded, label: c.studyType!),
                   ],

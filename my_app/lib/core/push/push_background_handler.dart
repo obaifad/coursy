@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 
 import '../config/app_debug_log.dart';
 import '../../firebase_options.dart';
+import '../storage/background_push_store.dart';
 import 'background_enrollment_checker.dart';
 import 'push_local_notifications.dart';
 
@@ -15,18 +16,24 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     'hasNotification=${message.notification != null} data=${message.data}',
   );
 
-  // الخادم أوصل تغيّر الحالة بنفسه — لا يكرره الفحص الخلفي أو التطبيق بإشعار محلي ثانٍ.
-  try {
-    await BackgroundEnrollmentChecker.recordDeliveredPush(Map<String, dynamic>.from(message.data));
-  } catch (e) {
-    AppDebugLog.fcm('background: record delivered failed: $e');
-  }
+  await recordBackgroundDelivery(Map<String, dynamic>.from(message.data));
 
   if (!backgroundMessageNeedsLocalNotification(message)) return;
 
   await PushLocalNotifications.loadUserEnabled();
   await PushLocalNotifications.ensureInitialized();
   await PushLocalNotifications.showRemoteMessageBackground(message);
+}
+
+/// الخادم أوصل الإشعار بنفسه والتطبيق في الخلفية: لا يكرره الفحص الخلفي، ولا فحص قائمة الخادم عند العودة
+/// للتطبيق (كان «تم استلام طلب التسجيل» يظهر مرتين).
+Future<void> recordBackgroundDelivery(Map<String, dynamic> data) async {
+  try {
+    await BackgroundPushStore.recordPush(data);
+    await BackgroundEnrollmentChecker.recordDeliveredPush(data);
+  } catch (e) {
+    AppDebugLog.fcm('background: record delivered failed: $e');
+  }
 }
 
 /// رسائل الخادم فيها كتلة `notification` (FcmClient.php)، والنظام يعرضها بنفسه والتطبيق في الخلفية —

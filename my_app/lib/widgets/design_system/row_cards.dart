@@ -171,12 +171,14 @@ class AppRowMeta extends StatelessWidget {
             text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+            // توزيع المسافة الإضافية حسب صعود الخط ونزوله (لا بالتساوي كافتراض Material 3): بالتساوي تنزل
+            // حروف Tajawal ~1.4 تحت منتصف الأيقونة المجاورة («5.0 (2)» أوطأ من النجمة).
             style: AppFonts.tajawal(
               fontSize: AppTextSize.sm,
               fontWeight: emphasized ? FontWeight.w700 : FontWeight.w500,
               height: 1.3,
               color: emphasized ? AppColors.textBody : AppColors.textSecondary,
-            ),
+            ).copyWith(leadingDistribution: TextLeadingDistribution.proportional),
           ),
         ),
       ],
