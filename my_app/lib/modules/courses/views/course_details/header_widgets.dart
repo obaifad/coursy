@@ -197,7 +197,7 @@ class _SeatsProgressCard extends StatelessWidget {
               Text('course_capacity'.tr, style: AppTypography.sectionTitle()),
               const Spacer(),
               Text(
-                pluralTr('seats_available', remaining),
+                remaining == 0 ? 'course_full'.tr : pluralTr('seats_available', remaining),
                 style: const TextStyle(
                   color: AppColors.primaryInk,
                   fontWeight: FontWeight.w700,
