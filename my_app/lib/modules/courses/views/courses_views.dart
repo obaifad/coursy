@@ -54,67 +54,71 @@ class _CoursesScrollViewState extends State<_CoursesScrollView> {
       edgeOffset: MediaQuery.paddingOf(context).top + AppBrandSliverAppBar.toolbarHeight,
       child: Obx(() {
         final _ = localeRebuildToken;
-        return CustomScrollView(
-          controller: c.scrollController,
-          key: const PageStorageKey('courses_tab'),
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            Obx(
-              () => AppBrandSliverAppBar(
-                title: 'all_courses'.tr,
-                badge: _countBadge(c.totalCount.value > c.courses.length ? c.totalCount.value : c.courses.length),
+        return AppHeaderSnap(
+          child: CustomScrollView(
+            controller: c.scrollController,
+            key: const PageStorageKey('courses_tab'),
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              Obx(
+                () => AppBrandSliverAppBar(
+                  title: 'all_courses'.tr,
+                  badge: _countBadge(c.totalCount.value > c.courses.length ? c.totalCount.value : c.courses.length),
+                ),
               ),
-            ),
-            // فراغ بين الرأس وشريط الفلاتر؛ يختفي بالنزول قبل أن يلتصق الشريط.
-            const SliverToBoxAdapter(child: SizedBox(height: _filtersGap)),
-            PinnedHeaderSliver(
-              child: AppPinnedBar(
-                scrollController: c.scrollController,
-                pinOffset: _pinOffset,
-                // الصف 48 (مساحة لمس زر الترتيب) بدل 44: حشوة أقل بـ 2 فوقه وتحته فيبقى الشريط والتصنيفات في مكانها.
-                padding: const EdgeInsets.only(top: 6, bottom: 8),
-                child: Obx(
-                  () => Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // الترتيب أول عنصر في الصف: عند حافة البداية (يمين بالعربية، يسار بالإنجليزية) قبل
-                      // التصنيفات، بلا عنوان «التصنيف» ولا صف مستقل. الصف يتبع Directionality فلا يُعكس يدوياً.
-                      // مساحة اللمس (48) أوسع من المربع المرئي (44) بـ 2 من كل جهة: الحشوة أقل بـ 2 فيبقى مكانه.
-                      Padding(
-                        padding: EdgeInsetsDirectional.only(start: hPad - 2, end: 6),
-                        child: CourseSortButton(selected: c.selectedSort.value, onSelected: c.selectSort),
-                      ),
-                      Expanded(
-                        child: c.categories.isEmpty
-                            ? const SizedBox(height: CourseSortButton.size)
-                            : HorizontalCategoryFilters(
-                                categories: c.categories.toList(growable: false),
-                                selectedId: c.selectedCategoryId.value,
-                                onSelected: c.selectCategory,
-                                // الزر وحشوته يسبقانه: لا حشوة بداية مزدوجة (حشوة النهاية تبقى هامش الصفحة).
-                                startInset: 0,
-                              ),
-                      ),
-                    ],
+              // فراغ بين الرأس وشريط الفلاتر؛ يختفي بالنزول قبل أن يلتصق الشريط.
+              const SliverToBoxAdapter(child: SizedBox(height: _filtersGap)),
+              PinnedHeaderSliver(
+                child: AppPinnedBar(
+                  scrollController: c.scrollController,
+                  pinOffset: _pinOffset,
+                  // الصف 48 (مساحة لمس زر الترتيب) بدل 44: حشوة أقل بـ 2 فوقه وتحته فيبقى الشريط والتصنيفات في مكانها.
+                  padding: const EdgeInsets.only(top: 6, bottom: 8),
+                  child: Obx(
+                    () => Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // الترتيب أول عنصر في الصف: عند حافة البداية (يمين بالعربية، يسار بالإنجليزية) قبل
+                        // التصنيفات، بلا عنوان «التصنيف» ولا صف مستقل. الصف يتبع Directionality فلا يُعكس يدوياً.
+                        // مساحة اللمس (48) أوسع من المربع المرئي (44) بـ 2 من كل جهة: الحشوة أقل بـ 2 فيبقى مكانه.
+                        Padding(
+                          padding: EdgeInsetsDirectional.only(start: hPad - 2, end: 6),
+                          child: CourseSortButton(selected: c.selectedSort.value, onSelected: c.selectSort),
+                        ),
+                        Expanded(
+                          child: c.categories.isEmpty
+                              ? const SizedBox(height: CourseSortButton.size)
+                              : HorizontalCategoryFilters(
+                                  categories: c.categories.toList(growable: false),
+                                  selectedId: c.selectedCategoryId.value,
+                                  onSelected: c.selectCategory,
+                                  // الزر وحشوته يسبقانه: لا حشوة بداية مزدوجة (حشوة النهاية تبقى هامش الصفحة).
+                                  startInset: 0,
+                                ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            Obx(() => _content(context, hPad)),
-            Obx(
-              () => SliverToBoxAdapter(
-                // المشغّل هنا مستمع التمرير في المتحكم (ويحمّل كل الصفحات عند الترتيب)؛ الذيل يعرض الحالة فقط.
-                child: AppLoadMoreFooter(
-                  hasMore: false,
-                  isLoading: c.isLoadingMore.value,
-                  failed: c.loadMoreFailed.value,
-                  onLoadMore: c.loadMoreCourses,
-                  autoLoad: false,
+              Obx(() => _content(context, hPad)),
+              Obx(
+                () => SliverToBoxAdapter(
+                  // المشغّل هنا مستمع التمرير في المتحكم (ويحمّل كل الصفحات عند الترتيب)؛ الذيل يعرض الحالة فقط.
+                  child: AppLoadMoreFooter(
+                    hasMore: false,
+                    isLoading: c.isLoadingMore.value,
+                    failed: c.loadMoreFailed.value,
+                    onLoadMore: c.loadMoreCourses,
+                    autoLoad: false,
+                  ),
                 ),
               ),
-            ),
-            SliverToBoxAdapter(child: SizedBox(height: AppLayout.scrollBottomInset(context, rootTab: true))),
-          ],
+              SliverToBoxAdapter(child: SizedBox(height: AppLayout.scrollBottomInset(context, rootTab: true))),
+              // قائمة أطول من الشاشة بقليل: الرأس ينطوي كاملاً بدل أن يتوقف بعد بضع بكسلات.
+              AppCollapseRunway(collapseExtent: AppBrandSliverAppBar.collapseDistance(context)),
+            ],
+          ),
         );
       }),
     );

@@ -681,6 +681,20 @@ class AppEmptyState extends StatelessWidget {
     );
   }
 
+  /// كـ sliver يملأ ما تبقّى من القائمة (تبويب داخل [AppNestedTabScrollView]): نفس [scrollable] شكلاً.
+  static Widget sliver({
+    required String message,
+    String? subtitle,
+    IconData icon = Icons.inbox_outlined,
+    Widget? action,
+    bool compact = false,
+  }) {
+    return SliverFillRemaining(
+      hasScrollBody: false,
+      child: AppEmptyState(message: message, subtitle: subtitle, icon: icon, action: action, compact: compact),
+    );
+  }
+
   /// داخل SoftCard أو قسم أفقي في الصفحة الرئيسية.
   static Widget inline({required String message, IconData icon = Icons.inbox_outlined, String? subtitle}) {
     return AppEmptyState(message: message, subtitle: subtitle, icon: icon, compact: true);

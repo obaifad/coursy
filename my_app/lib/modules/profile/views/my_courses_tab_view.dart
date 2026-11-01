@@ -80,47 +80,60 @@ class _MyCoursesShellState extends State<_MyCoursesShell> with SingleTickerProvi
   Widget build(BuildContext context) {
     return ColoredBox(
       color: AppColors.surface,
-      child: NestedScrollView(
-        headerSliverBuilder: (context, _) => [
-          Obx(
-            () => AppBrandSliverAppBar(
-              title: 'my_courses'.tr,
-              badge: controller.enrollments.isEmpty ? null : pluralTr('bookings_count', controller.enrollments.length),
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(AppTabBarSection.sectionHeight + 6),
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: AppTabBarSection(
-                    controller: _tabController,
-                    tabs: [
-                      Tab(text: 'tab_pending'.tr),
-                      Tab(text: 'tab_confirmed'.tr),
-                      Tab(text: 'tab_done'.tr),
-                      Tab(text: 'tab_cancelled'.tr),
-                    ],
+      child: AppHeaderSnap(
+        child: NestedScrollView(
+          headerSliverBuilder: (context, _) => [
+            // الجزء المثبّت (الشريط وتبويبات الحالة) يُحسب في كل تبويب ([AppNestedTabScrollView]) فلا تختفي
+            // أول بطاقة تحته.
+            SliverOverlapAbsorber(
+              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+              sliver: Obx(
+                () => AppBrandSliverAppBar(
+                  title: 'my_courses'.tr,
+                  badge: controller.enrollments.isEmpty
+                      ? null
+                      : pluralTr('bookings_count', controller.enrollments.length),
+                  bottom: PreferredSize(
+                    preferredSize: const Size.fromHeight(AppTabBarSection.sectionHeight + 6),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: AppTabBarSection(
+                        controller: _tabController,
+                        tabs: [
+                          Tab(text: 'tab_pending'.tr),
+                          Tab(text: 'tab_confirmed'.tr),
+                          Tab(text: 'tab_done'.tr),
+                          Tab(text: 'tab_cancelled'.tr),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
-        body: Obx(
-          () => AppSkeletonSwitch(
-            loading: controller.isLoading.value,
-            skeleton: AppRowListSkeleton(
-              itemCount: 4,
-              padding: AppLayout.scrollPadding(context, rootTab: true, top: 8),
-            ),
-            contentBuilder: (_) => TabBarView(
-              key: ValueKey(_pagesGeneration),
-              controller: _tabController,
-              physics: const ClampingScrollPhysics(),
-              children: const [
-                _EnrollmentList(status: _EnrollmentListStatus.pending),
-                _EnrollmentList(status: _EnrollmentListStatus.confirmed),
-                _EnrollmentList(status: _EnrollmentListStatus.completed),
-                _EnrollmentList(status: _EnrollmentListStatus.cancelled),
-              ],
+          ],
+          body: Obx(
+            () => AppSkeletonSwitch(
+              loading: controller.isLoading.value,
+              skeleton: AppNestedTabScrollView(
+                slivers: [
+                  AppSliverRowListSkeleton(
+                    itemCount: 4,
+                    padding: AppLayout.scrollPadding(context, rootTab: true, top: 8),
+                  ),
+                ],
+              ),
+              contentBuilder: (_) => TabBarView(
+                key: ValueKey(_pagesGeneration),
+                controller: _tabController,
+                physics: const ClampingScrollPhysics(),
+                children: const [
+                  _EnrollmentList(status: _EnrollmentListStatus.pending),
+                  _EnrollmentList(status: _EnrollmentListStatus.confirmed),
+                  _EnrollmentList(status: _EnrollmentListStatus.completed),
+                  _EnrollmentList(status: _EnrollmentListStatus.cancelled),
+                ],
+              ),
             ),
           ),
         ),
@@ -159,22 +172,31 @@ class _EnrollmentList extends GetView<MyCoursesController> {
         return RefreshIndicator(
           onRefresh: controller.load,
           color: AppColors.primary,
-          child: AppEmptyState.scrollable(
-            context: context,
-            message: error,
-            icon: Icons.cloud_off_outlined,
-            action: FilledButton(onPressed: controller.load, child: Text('retry'.tr)),
+          child: AppNestedTabScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              AppEmptyState.sliver(
+                message: error,
+                icon: Icons.cloud_off_outlined,
+                action: FilledButton(onPressed: controller.load, child: Text('retry'.tr)),
+              ),
+            ],
           ),
         );
       }
+      final padding = AppLayout.scrollPadding(context, rootTab: true, top: 8);
       if (items.isEmpty) {
         return RefreshIndicator(
           onRefresh: controller.load,
           color: AppColors.primary,
-          child: ListView(
+          child: AppNestedTabScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: AppLayout.scrollPadding(context, rootTab: true, top: 8),
-            children: [_MyCoursesEmptyState(status: status)],
+            slivers: [
+              SliverPadding(
+                padding: padding,
+                sliver: SliverToBoxAdapter(child: _MyCoursesEmptyState(status: status)),
+              ),
+            ],
           ),
         );
       }
@@ -182,12 +204,18 @@ class _EnrollmentList extends GetView<MyCoursesController> {
       return RefreshIndicator(
         onRefresh: controller.load,
         color: AppColors.primary,
-        child: ListView.separated(
+        child: AppNestedTabScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: AppLayout.scrollPadding(context, rootTab: true, top: 8),
-          itemCount: items.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (_, i) => _EnrollmentCard(enrollment: items[i], controller: controller),
+          slivers: [
+            SliverPadding(
+              padding: padding,
+              sliver: SliverList.separated(
+                itemCount: items.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (_, i) => _EnrollmentCard(enrollment: items[i], controller: controller),
+              ),
+            ),
+          ],
         ),
       );
     });

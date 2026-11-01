@@ -74,30 +74,33 @@ class _SearchScrollViewState extends State<_SearchScrollView> {
         lightIcons: true,
         child: Scaffold(
           backgroundColor: AppColors.surface,
-          body: CustomScrollView(
-            controller: _scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            slivers: [
-              Obx(() {
-                final total = controller.countFor(SearchScope.all);
-                return AppBrandSliverAppBar(
-                  title: 'search_title'.tr,
-                  badge: controller.hasQuery && total != null ? pluralTr('search_results_count', total) : null,
-                  onBack: Navigator.canPop(context) ? Get.back : null,
-                );
-              }),
-              PinnedHeaderSliver(
-                child: AppPinnedBar(
-                  scrollController: _scrollController,
-                  // لا شيء يختفي بين الرأس والشريط: يلتصق حين ينطوي الرأس تماماً.
-                  pinOffset: () => AppBrandSliverAppBar.collapseDistance(context),
-                  child: _SearchControls(controller: controller, edgeInset: hPad, onOpenFilters: _openFilters),
+          body: AppHeaderSnap(
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              slivers: [
+                Obx(() {
+                  final total = controller.countFor(SearchScope.all);
+                  return AppBrandSliverAppBar(
+                    title: 'search_title'.tr,
+                    badge: controller.hasQuery && total != null ? pluralTr('search_results_count', total) : null,
+                    onBack: Navigator.canPop(context) ? Get.back : null,
+                  );
+                }),
+                PinnedHeaderSliver(
+                  child: AppPinnedBar(
+                    scrollController: _scrollController,
+                    // لا شيء يختفي بين الرأس والشريط: يلتصق حين ينطوي الرأس تماماً.
+                    pinOffset: () => AppBrandSliverAppBar.collapseDistance(context),
+                    child: _SearchControls(controller: controller, edgeInset: hPad, onOpenFilters: _openFilters),
+                  ),
                 ),
-              ),
-              Obx(() => _results(context, hPad)),
-              SliverToBoxAdapter(child: SizedBox(height: AppLayout.scrollBottomInset(context))),
-            ],
+                Obx(() => _results(context, hPad)),
+                SliverToBoxAdapter(child: SizedBox(height: AppLayout.scrollBottomInset(context))),
+                AppCollapseRunway(collapseExtent: AppBrandSliverAppBar.collapseDistance(context)),
+              ],
+            ),
           ),
         ),
       );
