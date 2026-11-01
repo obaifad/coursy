@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
+import 'background_push_store.dart';
 import 'token_storage.dart';
 
 /// يتذكّر الإشعارات التي عُرضت مسبقاً حتى لا تُعاد عند كل فتح للتطبيق.
@@ -51,13 +52,8 @@ class NotificationDeliveryStore extends GetxService {
   }
 
   @visibleForTesting
-  static List<String> shownKeys({int? notificationId, String? type, int? enrollmentId}) {
-    final normalizedType = type?.trim().toLowerCase() ?? '';
-    return [
-      if (notificationId != null && notificationId > 0) 'n:$notificationId',
-      if (enrollmentId != null && enrollmentId > 0 && normalizedType.isNotEmpty) 'e:$normalizedType:$enrollmentId',
-    ];
-  }
+  static List<String> shownKeys({int? notificationId, String? type, int? enrollmentId}) =>
+      BackgroundPushStore.keys(notificationId: notificationId, type: type, enrollmentId: enrollmentId);
 
   Future<void> markDelivered(Iterable<int> notificationIds) async {
     final studentId = Get.find<TokenStorage>().studentId;

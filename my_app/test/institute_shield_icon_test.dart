@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_app/core/models/app_models.dart';
+import 'package:my_app/theme/app_colors.dart';
 import 'package:my_app/widgets/design_system.dart';
 
 import 'layout/layout_harness.dart';
 
 /// شارة «الأعلى تقييماً» (تقييم 4.5 فأكثر) بأيقونة درع التوثيق لا الكأس، في بطاقة القائمة وبطاقة الرئيسية.
+/// في بطاقة القائمة الدرع أخضر: البرتقالي لنجمة التقييم بجانبه.
 InstituteModel _institute(double rating) => InstituteModel.fromJson({
   'id': 5,
   'name_ar': 'معهد',
@@ -29,6 +31,12 @@ void main() {
     await pump(tester, InstituteListCard(institute: _institute(4.8)));
     expect(find.byIcon(Icons.verified_user_rounded), findsOneWidget);
     expect(find.byIcon(Icons.emoji_events_rounded), findsNothing);
+  });
+
+  testWidgets('list card: the shield is green, not the orange of the rating star', (tester) async {
+    await pump(tester, InstituteListCard(institute: _institute(4.8)));
+    final shield = tester.widget<Icon>(find.byIcon(Icons.verified_user_rounded));
+    expect(shield.color, AppColors.success);
   });
 
   testWidgets('list card: a lower rating shows neither', (tester) async {

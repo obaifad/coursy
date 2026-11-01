@@ -128,6 +128,10 @@ abstract final class AppTypography {
 abstract final class AppLayout {
   AppLayout._();
 
+  /// الفراغ بين أقسام الرئيسية قبل عنوان القسم التالي (مع هامش العنوان الداخلي ~10 يظهر ~28 حتى النص).
+  /// ظل البطاقات يُرسم خارج قوائمها (Clip.none) داخل هذا الفراغ، فلا يُحجز له ارتفاع إضافي.
+  static const double homeSectionGap = 18;
+
   /// ارتفاع شريط التنقل السفلي العائم في [RootView] (extendBody: true).
   static double horizontalPage(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
