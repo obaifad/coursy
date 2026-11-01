@@ -27,6 +27,14 @@ abstract final class AppDebugLog {
     debugPrint('[FCM] $message');
   }
 
+  /// نتيجة قراءة الجلسة عند الإقلاع (مسجّل / ضيف / فُقدت / فشلت القراءة).
+  static const logSession = true;
+
+  static void session(String message) {
+    if (!kDebugMode || !logSession) return;
+    debugPrint('[Session] $message');
+  }
+
   static void repo(String tag, String message) {
     if (!kDebugMode || !logApiBodies) return;
     debugPrint('[$tag] $message');
