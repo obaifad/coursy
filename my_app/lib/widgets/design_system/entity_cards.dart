@@ -53,7 +53,8 @@ class InstituteListCard extends StatelessWidget {
               message: 'institute_top_rated_badge'.tr,
               child: Semantics(
                 label: 'institute_top_rated_badge'.tr,
-                child: const Icon(Icons.verified_user_rounded, size: 20, color: AppColors.ratingStar),
+                // أخضر: البرتقالي لنجمة التقييم في نفس البطاقة.
+                child: const Icon(Icons.verified_user_rounded, size: 20, color: AppColors.success),
               ),
             )
           : null,
