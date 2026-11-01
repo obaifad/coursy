@@ -70,20 +70,19 @@ void main() {
       await pump(tester, const InstituteDetailsView(controllerTag: 't'), height: 1800);
     }
 
-    testWidgets('shows the first 3 courses after "About"; "View all" opens the Courses tab', (tester) async {
+    testWidgets('with courses: no courses section on the info tab; they stay in the Courses tab', (tester) async {
       await registerFakes(loggedIn: true, locale: 'ar');
       await open(tester);
 
       final info = find.byType(TabBarView);
-      final rows = find.descendant(of: info, matching: find.byType(CourseRowCard));
-      expect(rows, findsNWidgets(3), reason: '4 courses loaded, 3 shown');
-      final about = tester.getRect(find.text('about_institute'.tr));
-      expect(tester.getRect(rows.first).top, greaterThan(about.bottom), reason: 'after "About the institute"');
+      expect(find.text('about_institute'.tr), findsOneWidget);
+      expect(find.descendant(of: info, matching: find.byType(CourseRowCard)), findsNothing);
+      expect(find.descendant(of: info, matching: find.byType(AppSectionHeader)), findsNothing);
+      expect(find.descendant(of: info, matching: find.text('show_all'.tr)), findsNothing);
 
-      await tester.tap(find.descendant(of: info, matching: find.text('show_all'.tr)));
+      DefaultTabController.of(tester.element(info)).animateTo(1);
       await tester.pumpAndSettle();
-      final tabs = DefaultTabController.of(tester.element(find.byType(TabBarView)));
-      expect(tabs.index, 1, reason: '"View all" opens the Courses tab');
+      expect(find.text(sampleCourses().first.title), findsWidgets, reason: 'the Courses tab still lists them');
     });
 
     testWidgets('no courses: nothing extra on the info tab', (tester) async {
