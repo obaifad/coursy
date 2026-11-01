@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import '../data/repositories/enrollment_repository.dart';
 import '../data/repositories/notification_repository.dart';
+import '../models/app_models.dart';
 import '../storage/token_storage.dart';
 import '../storage/notification_delivery_store.dart';
 import '../config/app_debug_log.dart';
@@ -120,10 +121,14 @@ class EnrollmentSyncService extends GetxService {
         id: PushLocalNotifications.serverNotificationId(notification.id),
         title: title,
         body: body.isEmpty ? title : body,
-        payload: PushLocalNotifications.encodePayload(RemoteNotificationSync.notificationToPushData(notification)),
+        payload: _encodeNotificationPayload(notification),
       );
 
       await RemoteNotificationSync.onMessageReceived(RemoteNotificationSync.notificationToPushData(notification));
     }
+  }
+
+  String _encodeNotificationPayload(NotificationModel notification) {
+    return PushLocalNotifications.encodePayload(RemoteNotificationSync.notificationToPushData(notification));
   }
 }
