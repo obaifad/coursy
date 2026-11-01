@@ -62,17 +62,45 @@ class InstructorRepository extends GetxService {
     final result = await _client.handle(
       () => _client.get(
         ApiEndpoints.instructors,
-        query: {
-          'page': page,
-          'per_page': perPage,
-          if (instituteId != null) 'institute_id': instituteId,
-          if (isPrivate == true) 'is_private': 1,
-          if (resolvedSpecId != null) 'specialization_id': resolvedSpecId,
-        },
+        query: _instructorsQuery(page, perPage, isPrivate, instituteId, resolvedSpecId),
       ),
       (data) => PaginatedResult<InstructorModel>.fromBody(data, InstructorModel.fromJson),
     );
+    return _filterInstructors(result, isPrivate: isPrivate, subjectKey: subjectKey, resolvedSpecId: resolvedSpecId);
+  }
 
+  /// الصفحة كما حُفظت على القرص بعد آخر جلب ناجح (بنفس التصفية)، أو null.
+  PaginatedResult<InstructorModel>? cachedInstructorsPage({int page = 1, int perPage = 15, bool? isPrivate}) {
+    final result = _client.cached(
+      ApiEndpoints.instructors,
+      query: _instructorsQuery(page, perPage, isPrivate, null, null),
+      mapper: (data) => PaginatedResult<InstructorModel>.fromBody(data, InstructorModel.fromJson),
+    );
+    return result == null
+        ? null
+        : _filterInstructors(result, isPrivate: isPrivate, subjectKey: null, resolvedSpecId: null);
+  }
+
+  static Map<String, dynamic> _instructorsQuery(
+    int page,
+    int perPage,
+    bool? isPrivate,
+    int? instituteId,
+    int? resolvedSpecId,
+  ) => {
+    'page': page,
+    'per_page': perPage,
+    if (instituteId != null) 'institute_id': instituteId,
+    if (isPrivate == true) 'is_private': 1,
+    if (resolvedSpecId != null) 'specialization_id': resolvedSpecId,
+  };
+
+  PaginatedResult<InstructorModel> _filterInstructors(
+    PaginatedResult<InstructorModel> result, {
+    required bool? isPrivate,
+    required String? subjectKey,
+    required int? resolvedSpecId,
+  }) {
     var items = result.items;
     if (isPrivate == true) {
       items = items.where((item) => item.isPrivate).toList();

@@ -19,6 +19,7 @@ import '../data/repositories/payment_repository.dart';
 import '../data/repositories/home_repository.dart';
 import '../data/repositories/instructor_repository.dart';
 import '../data/repositories/institute_repository.dart';
+import '../storage/api_disk_cache.dart';
 import '../storage/home_cache.dart';
 import '../storage/notification_delivery_store.dart';
 import '../storage/recent_search_storage.dart';
@@ -54,6 +55,9 @@ class AppBindings extends Bindings {
     }
     if (!Get.isRegistered<HomeCache>()) {
       Get.put(HomeCache(), permanent: true);
+    }
+    if (!Get.isRegistered<ApiDiskCache>()) {
+      Get.put(ApiDiskCache(), permanent: true);
     }
     if (!Get.isRegistered<ApiClient>()) {
       Get.put(ApiClient(Get.find<TokenStorage>()), permanent: true);

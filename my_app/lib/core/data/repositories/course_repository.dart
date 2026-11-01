@@ -16,6 +16,15 @@ class CourseRepository extends GetxService {
   final ApiClient _client;
   final CourseRatingService _ratingService;
 
+  /// الصفحة كما حُفظت على القرص بعد آخر جلب ناجح (بلا إكمال التقييمات — الشبكة تكمله)، أو null.
+  PaginatedResult<CourseModel>? cachedCoursesPage({int page = 1, int perPage = 15, Map<String, dynamic>? query}) {
+    return _client.cached(
+      ApiEndpoints.courses,
+      query: <String, dynamic>{...?query, 'page': page, 'per_page': perPage},
+      mapper: (data) => PaginatedResult<CourseModel>.fromBody(data, CourseModel.fromJson),
+    );
+  }
+
   Future<PaginatedResult<CourseModel>> fetchCoursesPage({
     int page = 1,
     int perPage = 15,
@@ -33,6 +42,15 @@ class CourseRepository extends GetxService {
       lastPage: result.lastPage,
       total: result.total,
       hasMore: result.hasMore,
+    );
+  }
+
+  /// المقترحات كما حُفظت على القرص لهذا الطالب، أو null.
+  List<CourseModel>? cachedSuggestedCourses({int limit = 10}) {
+    return _client.cached(
+      ApiEndpoints.studentSuggestedCourses,
+      query: {'limit': limit},
+      mapper: (data) => extractListMap(data).map(CourseModel.fromJson).toList(),
     );
   }
 

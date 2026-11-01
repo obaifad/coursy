@@ -13,6 +13,10 @@ class CityRepository extends GetxService {
 
   final ApiClient _client;
 
+  /// المدن كما حُفظت على القرص (الصفحة الأولى، وهي عادةً كلها)، أو null.
+  List<CityModel>? cachedCities({int perPage = 100}) =>
+      cachedFirstPage(_client, ApiEndpoints.cities, CityModel.fromJson, perPage: perPage);
+
   Future<List<CityModel>> fetchCities({int perPage = 100}) async {
     // قائمة فارغة ليست خطأ (لا مدن في الخادم بعد) — الواجهة تعرضها كحالة فارغة لا كفشل اتصال.
     return fetchAllPages(_client, ApiEndpoints.cities, CityModel.fromJson, perPage: perPage);

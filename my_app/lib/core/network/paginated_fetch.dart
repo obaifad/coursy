@@ -54,3 +54,19 @@ Future<List<T>> fetchAllPages<T>(
 
   return all;
 }
+
+/// الصفحة الأولى من [fetchAllPages] كما حُفظت على القرص ([ApiClient.cached]) — نفس [query] و[perPage] —
+/// أو null. تكفي لرسم الشاشة فوراً؛ الشبكة تكمل الباقي.
+List<T>? cachedFirstPage<T>(
+  ApiClient client,
+  String path,
+  T Function(Map<String, dynamic>) mapper, {
+  Map<String, dynamic>? query,
+  int perPage = 50,
+}) {
+  return client.cached(
+    path,
+    query: {...?query, 'page': 1, 'per_page': perPage},
+    mapper: (data) => PaginatedResult<T>.fromBody(data, mapper).items,
+  );
+}

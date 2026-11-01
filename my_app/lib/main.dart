@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'app.dart';
+import 'core/cache/app_image_cache.dart';
+import 'core/storage/api_disk_cache.dart';
 import 'core/bindings/app_bindings.dart';
 import 'core/config/app_debug_log.dart';
 import 'core/locale/locale_controller.dart';
@@ -33,6 +35,9 @@ Future<void> main() async {
   await _step('firebase', bootstrapFirebase);
   await _step('enrollment-watch', EnrollmentWatchScheduler.init);
   await _step('storage', GetStorage.init);
+  await _step('api-cache', ApiDiskCache.init);
+  // فهرس الصور المخزّنة قبل أول إطار: تظهر فوراً بلا تلاشٍ (أجزاء من الثانية).
+  await _step('image-cache', AppImageCache.warmUp);
   AppBindings().dependencies();
   ApiClient.onUnauthorized = () => unawaited(SessionExpiry.handle());
   // حساب أوقفه المشرف (403 account_inactive): خروج مع رسالة الخادم بدل «انتهت الجلسة».

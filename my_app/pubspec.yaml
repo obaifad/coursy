@@ -52,6 +52,8 @@ dependencies:
   workmanager_platform_interface: 0.9.1+1
   shared_preferences: ^2.5.3
   cached_network_image: ^3.4.1
+  # مخزن صور بحدود خاصة (AppImageCache) بدل الافتراضي (200 صورة).
+  flutter_cache_manager: ^3.4.1
   qr_flutter: ^4.1.0
   firebase_crashlytics: ^5.4.0
   package_info_plus: ^9.0.1

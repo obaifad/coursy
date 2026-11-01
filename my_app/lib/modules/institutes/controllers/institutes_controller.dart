@@ -45,8 +45,24 @@ class InstitutesController extends GetxController with LatestLoadGuard, InitialL
   @override
   void onInit() {
     super.onInit();
+    _hydrateFromDisk();
     _loadCities();
     loadInstitutes();
+  }
+
+  /// بعد إعادة فتح التطبيق: المدن وآخر صفحة أولى محفوظة على القرص ([ApiDiskCache]) تُرسم فوراً بلا هيكل،
+  /// والشبكة تحدّثها بصمت.
+  void _hydrateFromDisk() {
+    final savedCities = _cityRepository.cachedCities();
+    if (savedCities != null && savedCities.isNotEmpty) cities.assignAll(savedCities);
+    final cached = _repository.cachedInstitutesPage(page: 1, perPage: _perPage, query: const {});
+    if (cached == null || cached.items.isEmpty) return;
+    institutes.assignAll(cached.items);
+    totalCount.value = cached.total;
+    hasMore.value = cached.hasMore;
+    _page = 1;
+    isLoading.value = false;
+    markLoaded();
   }
 
   @override
