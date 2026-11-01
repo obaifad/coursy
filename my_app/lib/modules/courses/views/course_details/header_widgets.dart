@@ -49,7 +49,10 @@ class _AttributeBadges extends StatelessWidget {
               : null,
         ),
       if (item.language != null && item.language!.isNotEmpty)
-        _DetailBadge(icon: Icons.language_rounded, label: item.language!),
+        _DetailBadge(
+          icon: Icons.language_rounded,
+          label: courseLanguageLabel(item.language!, locale: Get.locale?.languageCode ?? 'ar'),
+        ),
       if (item.requiresAdvancePayment) _DetailBadge(icon: Icons.payments_outlined, label: 'course_advance_payment'.tr),
     ];
 
