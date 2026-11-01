@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -98,8 +100,23 @@ abstract final class PushLocalNotifications {
     }
   }
 
-  /// `type=enrollment_approved&course_id=5` → خريطة بيانات مثل `RemoteMessage.data`.
+  /// بيانات الإشعار ← نص JSON يُحمل مع الإشعار المحلي. كان `k=v&k=v`، فقيمة من الخادم فيها
+  /// `&course_id=9` (عنوان أو رسالة) كانت تضيف مفتاحاً وتغيّر الشاشة التي يفتحها الضغط.
+  static String encodePayload(Map<String, dynamic> data) {
+    if (data.isEmpty) return '';
+    return jsonEncode({for (final e in data.entries) e.key: e.value?.toString()});
+  }
+
+  /// عكس [encodePayload] → خريطة بيانات مثل `RemoteMessage.data`. يقبل أيضاً الصيغة القديمة
+  /// `type=enrollment_approved&course_id=5` لإشعارات عُرضت قبل التحديث.
   static Map<String, dynamic> decodePayload(String payload) {
+    if (payload.startsWith('{')) {
+      try {
+        final decoded = jsonDecode(payload);
+        if (decoded is Map) return {for (final e in decoded.entries) '${e.key}': e.value};
+      } catch (_) {}
+      return <String, dynamic>{};
+    }
     final data = <String, dynamic>{};
     for (final part in payload.split('&')) {
       final idx = part.indexOf('=');
@@ -107,6 +124,14 @@ abstract final class PushLocalNotifications {
       data[part.substring(0, idx)] = part.substring(idx + 1);
     }
     return data;
+  }
+
+  /// عند انتهاء الجلسة: لا تبقى في درج الإشعارات حالات تسجيل ودفع الحساب السابق.
+  static Future<void> cancelAll() async {
+    if (kIsWeb) return;
+    try {
+      await _plugin.cancelAll();
+    } catch (_) {}
   }
 
   static Future<bool> requestAndroidPermission() async {
@@ -183,7 +208,8 @@ abstract final class PushLocalNotifications {
       channelDescription: 'Coursy notifications',
       importance: Importance.max,
       priority: Priority.high,
-      visibility: NotificationVisibility.public,
+      // نص الإشعار (قبول التسجيل، تأكيد الدفع، اسم الكورس) لا يظهر على شاشة القفل إلا إن سمح المستخدم بذلك.
+      visibility: NotificationVisibility.private,
       icon: '@drawable/ic_notification',
       playSound: true,
       enableVibration: true,
@@ -214,11 +240,6 @@ abstract final class PushLocalNotifications {
       return null;
     }
 
-    return (title: title ?? 'Coursy', body: body ?? '', payload: _encodePayload(data));
-  }
-
-  static String _encodePayload(Map<String, dynamic> data) {
-    if (data.isEmpty) return '';
-    return data.entries.map((e) => '${e.key}=${e.value}').join('&');
+    return (title: title ?? 'Coursy', body: body ?? '', payload: encodePayload(data));
   }
 }

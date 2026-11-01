@@ -150,8 +150,6 @@ class EnrollmentSyncService extends GetxService {
   }
 
   String _encodeNotificationPayload(NotificationModel notification) {
-    final data = RemoteNotificationSync.notificationToPushData(notification);
-    if (data.isEmpty) return '';
-    return data.entries.map((e) => '${e.key}=${e.value}').join('&');
+    return PushLocalNotifications.encodePayload(RemoteNotificationSync.notificationToPushData(notification));
   }
 }

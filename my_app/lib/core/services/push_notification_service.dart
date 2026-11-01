@@ -20,7 +20,8 @@ import '../utils/app_toast.dart';
 
 /// FCM: أذونات، تسجيل التوكن، عرض الإشعارات، والتوجيه عند الضغط.
 class PushNotificationService extends GetxService {
-  PushNotificationService(this._tokenStorage, this._deviceRepository);
+  PushNotificationService(this._tokenStorage, this._deviceRepository, {FirebaseMessaging? messaging})
+    : _messagingOverride = messaging;
 
   final TokenStorage _tokenStorage;
   final DeviceRepository _deviceRepository;
@@ -28,7 +29,8 @@ class PushNotificationService extends GetxService {
   static const _storageKey = 'push_notifications_enabled';
 
   // getter وليس حقلاً: على الويب/Windows لا يُهيّأ Firebase، والوصول المبكر لـ instance يُسقط التطبيق عند الإقلاع.
-  FirebaseMessaging get _messaging => FirebaseMessaging.instance;
+  FirebaseMessaging get _messaging => _messagingOverride ?? FirebaseMessaging.instance;
+  final FirebaseMessaging? _messagingOverride;
 
   late final GetStorage _prefs;
 
@@ -167,14 +169,26 @@ class PushNotificationService extends GetxService {
     }
   }
 
+  /// كل انتهاء جلسة (خروج، 401، حساب موقوف، حذف الحساب). إلغاء التسجيل على الخادم يحتاج التوكن، وفي مسار
+  /// 401 يكون قد مُسح، فيبقى ربط الجهاز بالحساب السابق على الخادم. لذلك نحذف توكن FCM نفسه: أي إشعار
+  /// يُرسل له بعد ذلك يُرفض من Firebase، والدخول التالي يسجّل توكناً جديداً.
   Future<void> onLogout() async {
     if (kIsWeb) return;
+    // الخروج العادي يحذف توكن FCM والجلسة ما زالت قائمة (حتى ينتهي طلب الخروج): توكن جديد يصل من
+    // onTokenRefresh في هذه الفترة كان سيُربط بالحساب الذي يخرج.
+    _closedSessionToken = _tokenStorage.token;
     try {
       await _unregisterCurrentToken();
     } catch (e) {
       AppDebugLog.fcm('logout unregister failed: $e');
     } finally {
       clearSyncedToken();
+      try {
+        await _messaging.deleteToken();
+      } catch (e) {
+        AppDebugLog.fcm('logout deleteToken failed: $e');
+      }
+      await PushLocalNotifications.cancelAll();
     }
   }
 
@@ -190,8 +204,12 @@ class PushNotificationService extends GetxService {
     }
   }
 
+  /// توكن الجلسة التي أُغلقت بـ [onLogout]: لا يُسجَّل جهاز لها بعد ذلك. الدخول التالي توكنه مختلف.
+  String? _closedSessionToken;
+
   Future<void> _registerToken(String token, {bool force = false}) {
     if (!_tokenStorage.isLoggedIn || !notificationsEnabled.value) return Future<void>.value();
+    if (_closedSessionToken != null && _tokenStorage.token == _closedSessionToken) return Future<void>.value();
     if (!force && _lastSyncedToken == token) return Future<void>.value();
     // طلبات متزامنة (init + post-launch + resume) تشترك في نفس التسجيل الجاري.
     final running = _registering;

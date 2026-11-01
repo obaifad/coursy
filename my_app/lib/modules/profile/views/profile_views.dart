@@ -18,6 +18,7 @@ import '../../../core/navigation/app_navigation.dart';
 import '../../../core/session/session_refresh.dart';
 import '../../../core/bindings/root_binding.dart';
 import '../../../core/config/api_config.dart';
+import '../../../core/config/app_debug_log.dart';
 import '../../../core/utils/external_launcher.dart';
 import '../controllers/my_courses_controller.dart';
 import 'my_courses_tab_view.dart';
@@ -299,10 +300,18 @@ Future<void> _confirmAndLogout(BuildContext context) async {
     barrierDismissible: false,
   );
   if (confirmed != true) return;
-  await SessionRefresh.onLogout();
-  await Get.find<AuthRepository>().logout();
-  AppNavigation.enterAsGuest();
-  SessionRefresh.reloadAsGuest();
+  // فشل أي خطوة تنظيف لا يمنع الخروج: كان يُبقي التوكن محفوظاً والمستخدم في حسابه.
+  try {
+    await SessionRefresh.onLogout();
+  } catch (e) {
+    AppDebugLog.api('logout', 'local cleanup failed: $e');
+  }
+  try {
+    await Get.find<AuthRepository>().logout();
+  } finally {
+    AppNavigation.enterAsGuest();
+    SessionRefresh.reloadAsGuest();
+  }
 }
 
 /// تعديل الملف الشخصي (شريط هادئ): أقسام بيضاء مسطّحة بحدّ 1px — المعلومات الشخصية، الأكاديمية،

@@ -83,12 +83,15 @@ abstract final class BackgroundEnrollmentChecker {
           delivered.add(key);
           final courseId =
               _parseInt(row['course_id']) ?? (row['course'] is Map ? _parseInt((row['course'] as Map)['id']) : null);
-          final coursePart = courseId == null ? '' : '&course_id=$courseId';
           await PushLocalNotifications.showRaw(
             id: change.notificationId(id),
             title: texts[change.titleKey] ?? '',
             body: text(change, _courseTitle(row)),
-            payload: 'type=${change.type}&enrollment_id=$id$coursePart',
+            payload: PushLocalNotifications.encodePayload({
+              'type': change.type,
+              'enrollment_id': id,
+              if (courseId != null) 'course_id': courseId,
+            }),
             requirePermission: false,
           );
         }
