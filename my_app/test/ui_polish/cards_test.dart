@@ -142,7 +142,8 @@ void main() {
           children: [CourseRowCard(course: course)],
         ),
       );
-      final duration = tester.getRect(find.text(course.duration));
+      // المدة مختصرة في البطاقة الصفّية («120 س»).
+      final duration = tester.getRect(find.text('${course.durationHours} س'));
       final price = tester.getRect(find.byType(CoursePriceText));
       expect((duration.center.dy - price.center.dy).abs(), lessThan(4));
       expect(price.center.dx, lessThan(duration.center.dx)); // RTL: النهاية يساراً

@@ -364,8 +364,14 @@ class _HintCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.info_outline_rounded, color: AppColors.primary),
+              const AppFirstLineIcon(
+                Icons.info_outline_rounded,
+                size: 24,
+                color: AppColors.primary,
+                textStyle: TextStyle(height: 1.4),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(message, style: const TextStyle(height: 1.4, color: AppColors.textSecondary)),

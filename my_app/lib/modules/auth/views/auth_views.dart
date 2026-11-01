@@ -305,7 +305,11 @@ class _LoginErrorBanner extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.error_outline_rounded, color: AppColors.dangerText, size: 20),
+            AppFirstLineIcon(
+              Icons.error_outline_rounded,
+              color: AppColors.dangerText,
+              textStyle: AppFonts.tajawal(fontWeight: FontWeight.w700, height: 1.35),
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -333,7 +337,11 @@ class _WebLoginHint extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.info_outline, color: AppColors.ratingStar, size: 22),
+            AppFirstLineIcon(
+              Icons.info_outline,
+              color: AppColors.ratingStar,
+              textStyle: AppFonts.tajawal(fontSize: AppTextSize.sm, height: 1.4),
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text('web_cors_hint'.tr, style: AppFonts.tajawal(fontSize: AppTextSize.sm, height: 1.4)),

@@ -155,8 +155,14 @@ class _ReviewFormSection extends StatelessWidget {
       return _SectionCard(
         title: 'add_review'.tr,
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.info_outline_rounded, color: AppColors.primary),
+            const AppFirstLineIcon(
+              Icons.info_outline_rounded,
+              size: 24,
+              color: AppColors.primary,
+              textStyle: TextStyle(height: 1.4),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -173,8 +179,9 @@ class _ReviewFormSection extends StatelessWidget {
       return _SectionCard(
         title: 'add_review'.tr,
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.verified_rounded, color: AppColors.primary),
+            const AppFirstLineIcon(Icons.verified_rounded, size: 24, color: AppColors.primary),
             const SizedBox(width: 12),
             Expanded(
               child: Text('review_once_only'.tr, style: const TextStyle(color: AppColors.textSecondary)),
