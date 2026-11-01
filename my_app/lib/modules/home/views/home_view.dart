@@ -5,6 +5,7 @@ import '../../../core/locale/locale_rebuild.dart';
 import '../../../core/models/app_models.dart';
 import '../../../routes/app_routes.dart';
 import '../../../core/navigation/app_navigation.dart';
+import '../../../core/storage/token_storage.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../../widgets/app_skeletons.dart';
@@ -82,7 +83,27 @@ class HomeView extends GetView<HomeController> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           const AppHomeBrandLogo(),
-                          _HomeSettingsButton(onTap: () => Get.toNamed(AppRoutes.settings)),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // الإشعارات للطالب المسجّل فقط (قائمتها من حسابه). كانت لا تُفتح إلا بالضغط على إشعار.
+                              Obx(
+                                () => Get.find<TokenStorage>().isLoggedIn
+                                    ? _HomeHeaderButton(
+                                        icon: Icons.notifications_rounded,
+                                        label: 'notifications'.tr,
+                                        alignment: AlignmentDirectional.center,
+                                        onTap: () => Get.toNamed(AppRoutes.notifications),
+                                      )
+                                    : const SizedBox.shrink(),
+                              ),
+                              _HomeHeaderButton(
+                                icon: Icons.settings_rounded,
+                                label: 'settings'.tr,
+                                onTap: () => Get.toNamed(AppRoutes.settings),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -648,10 +669,19 @@ class _InstructorSubjectChip extends StatelessWidget {
 }
 
 /// زر إعدادات دائري متدرّج — أكثر حضورًا من الأيقونة الرمادية المسطّحة السابقة.
-class _HomeSettingsButton extends StatelessWidget {
-  const _HomeSettingsButton({required this.onTap});
+/// زر دائري في رأس الرئيسية (الإشعارات، الإعدادات).
+class _HomeHeaderButton extends StatelessWidget {
+  const _HomeHeaderButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.alignment = AlignmentDirectional.centerEnd,
+  });
 
+  final IconData icon;
+  final String label;
   final VoidCallback onTap;
+  final AlignmentDirectional alignment;
 
   /// بحجم الشعار المجاور (كلمته 30): بقطر 46 وظل ثقيل كان الزر أثقل من الشعار بوضوح.
   static const double _size = 40;
@@ -660,14 +690,14 @@ class _HomeSettingsButton extends StatelessWidget {
   Widget build(BuildContext context) {
     // الظل على Container خارجي (دائري) والتأثير على Material مقصوص بدائرة — بلا خلفية مربعة حول الزر.
     return Tooltip(
-      message: 'settings'.tr,
+      message: label,
       // AppTapTarget: عنصر مستقل لقارئ الشاشة يُفعَّل بالنقر المزدوج (كان يُدمج مع شريط البحث المجاور)،
       // والدائرة 40 بمساحة لمس 48.
       child: AppTapTarget(
-        label: 'settings'.tr,
+        label: label,
         onTap: onTap,
-        // حافّة الدائرة على حافّة شريط البحث تحتها (في المنتصف كانت تبتعد عنها 4).
-        alignment: AlignmentDirectional.centerEnd,
+        // زر الإعدادات (الأخير): حافّة الدائرة على حافّة شريط البحث تحتها (في المنتصف كانت تبتعد عنها 4).
+        alignment: alignment,
         child: Container(
           width: _size,
           height: _size,
@@ -683,7 +713,7 @@ class _HomeSettingsButton extends StatelessWidget {
             child: InkWell(
               onTap: onTap,
               customBorder: const CircleBorder(),
-              child: const Center(child: Icon(Icons.settings_rounded, color: Colors.white, size: 20)),
+              child: Center(child: Icon(icon, color: Colors.white, size: 20)),
             ),
           ),
         ),
