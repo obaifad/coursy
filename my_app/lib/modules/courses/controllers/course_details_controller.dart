@@ -151,17 +151,12 @@ class CourseDetailsController extends GetxController with SettledLoad {
       rating: details.rating > 0 || details.reviewsCount != null ? details.rating : previous.rating,
     );
     if (!hadSeed) return merged;
-    // القائمة (Home/Courses) غالباً أحدث من /courses/{id} — لا نستبدل العدد بقيمة أقدم.
+    // عدد الخادم هو المعتمد ولو كان أقل (حجز أُلغي أو عُدّل من لوحة التحكم)؛ عدد البطاقة فقط إن لم يُرسله.
+    // البطاقة قد تأتي من رئيسية محفوظة على الجهاز، فإبقاء الأكبر كان يثبّت عدداً قديماً.
     return merged.copyWith(
-      studentsCount: _preferStudentCount(previous.studentsCount, merged.studentsCount),
-      confirmedStudentsCount: _preferStudentCount(previous.confirmedStudentsCount, merged.confirmedStudentsCount),
+      studentsCount: merged.studentsCount ?? previous.studentsCount,
+      confirmedStudentsCount: merged.confirmedStudentsCount ?? previous.confirmedStudentsCount,
     );
-  }
-
-  int? _preferStudentCount(int? seed, int? fromApi) {
-    if (seed == null) return fromApi;
-    if (fromApi == null) return seed;
-    return fromApi >= seed ? fromApi : seed;
   }
 
   Future<void> _loadDetails(int id, {bool hadSeed = false}) async {
